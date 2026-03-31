@@ -1,0 +1,168 @@
+# ─────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+*.so
+*.dylib
+
+# ─────────────────────────────────────────
+# Environment & Secrets
+# ─────────────────────────────────────────
+.env
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+secrets/
+credentials/
+
+# ─────────────────────────────────────────
+# Data (never commit raw/processed data)
+# ─────────────────────────────────────────
+data/raw/
+data/processed/
+data/vectorstore/
+*.parquet
+*.arrow
+*.feather
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.bin
+*.safetensors
+*.gguf
+*.ggml
+
+# ─────────────────────────────────────────
+# Vector DB
+# ─────────────────────────────────────────
+chroma/
+chromadb/
+qdrant_storage/
+*.chroma
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+
+# ─────────────────────────────────────────
+# ML / Model artifacts
+# ─────────────────────────────────────────
+models/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.tflite
+runs/
+wandb/
+mlruns/
+.mlflow/
+
+# ─────────────────────────────────────────
+# Tree-sitter build artifacts
+# ─────────────────────────────────────────
+build/
+vendor/
+*.so
+parser.c
+
+# ─────────────────────────────────────────
+# Logs
+# ─────────────────────────────────────────
+logs/
+*.log
+*.log.*
+log/
+
+# ─────────────────────────────────────────
+# Output / Generated files
+# ─────────────────────────────────────────
+output/generated/
+*.tid
+*.docx
+*.pdf
+reports/
+
+# ─────────────────────────────────────────
+# Cache
+# ─────────────────────────────────────────
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+*.cache
+__pycache__/
+.ipynb_checkpoints/
+*.ipynb
+
+# ─────────────────────────────────────────
+# Coverage
+# ─────────────────────────────────────────
+.coverage
+.coverage.*
+coverage.xml
+coverage/
+htmlcov/
+
+# ─────────────────────────────────────────
+# OS
+# ─────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ─────────────────────────────────────────
+# IDE
+# ─────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.orig
+.project
+.classpath
+.settings/
+
+# ─────────────────────────────────────────
+# Temporary files
+# ─────────────────────────────────────────
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ─────────────────────────────────────────
+# Keep these empty dirs
+# ─────────────────────────────────────────
+!data/.gitkeep
+!logs/.gitkeep
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/vectorstore/.gitkeep
+!output/generated/.gitkeep
