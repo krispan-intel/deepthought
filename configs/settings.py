@@ -1,18 +1,32 @@
-from pydantic_settings import BaseSettings
-from pydantic import Field
+"""
+configs/settings.py
+
+Global configuration for DeepThought.
+Loaded from .env file via pydantic-settings.
+"""
+
 from pathlib import Path
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
-    
-    # ── Internal LLM ─────────────────────
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    # ── Internal LLM ─────────────────────────────────────────────
     internal_llm_base_url: str = Field(
         default="http://10.67.116.243:3001/v1"
     )
     internal_llm_api_key: str = Field(
         default="sk-xxx"
     )
-    
-    # ── Models ───────────────────────────
+
+    # ── Models ───────────────────────────────────────────────────
     maverick_model: str = Field(
         default="FLEX_STG_DeepSeek-V3-0324-671B"
     )
@@ -25,43 +39,47 @@ class Settings(BaseSettings):
     debate_judge_model: str = Field(
         default="IT_DCAI_GAUDI2_Qwen3-32B"
     )
+    tid_formatter_model: str = Field(
+        default="FLEX_STG_DeepSeek-V3-0324-671B"
+    )
     embedding_model: str = Field(
         default="IKT-Qwen3-Embedding-8B"
     )
-    
-    # ── Claude ───────────────────────────
+
+    # ── Claude (Reality Checker) ──────────────────────────────────
     anthropic_api_key: str = Field(default="")
     reality_checker_model: str = Field(
         default="claude-sonnet-4-5"
     )
-    
-    # ── Vector DB ────────────────────────
+
+    # ── Vector DB ────────────────────────────────────────────────
     vectordb_type: str = Field(default="chroma")
     vectordb_path: Path = Field(
         default=Path("./data/vectorstore")
     )
-    
-    # ── Data Paths ───────────────────────
+    qdrant_url: str = Field(
+        default="http://localhost:6333"
+    )
+
+    # ── Data Paths ───────────────────────────────────────────────
     data_raw_path: Path = Field(
         default=Path("./data/raw")
     )
     data_processed_path: Path = Field(
         default=Path("./data/processed")
     )
-    
-    # ── Pipeline ─────────────────────────
+    github_token: str = Field(default="")
+
+    # ── Pipeline ─────────────────────────────────────────────────
     lambda_mmr: float = Field(default=0.7)
     max_revision_iterations: int = Field(default=3)
     min_confidence_score: float = Field(default=0.75)
     max_debate_rounds: int = Field(default=3)
-    
-    # ── Logging ──────────────────────────
+
+    # ── Logging ──────────────────────────────────────────────────
     log_level: str = Field(default="INFO")
     log_path: Path = Field(default=Path("./logs"))
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
-# 全域單例
+
+# Global singleton
 settings = Settings()
