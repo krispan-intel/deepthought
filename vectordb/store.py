@@ -18,6 +18,7 @@ import numpy as np
 from chromadb.config import Settings as ChromaSettings
 from loguru import logger
 
+from vectordb.embedder import create_embedder, LocalEmbedder
 from configs.settings import settings
 from core.deepthought_equation import (
     DeepThoughtEquation,
@@ -245,7 +246,7 @@ class DeepThoughtVectorStore:
         )
 
         # Embedder
-        self.embedder = embedder or DeepThoughtEmbedder()
+        self.embedder = embedder or create_embedder()
 
         # Collections cache
         self._collections: Dict[CollectionName, Any] = {}
@@ -273,56 +274,40 @@ class DeepThoughtVectorStore:
     def add_documents(
         self,
         documents: List[Document],
-        collection: CollectionName,
-        batch_size: int = 100,
+        collection_name: CollectionName,
     ) -> int:
-        """
-        Add documents to a collection.
-
-        Args:
-            documents:   List of documents to add
-            collection:  Target collection
-            batch_size:  Embedding batch size
-
-        Returns:
-            Number of documents added
-        """
+        """Add documents to a collection."""
         if not documents:
             return 0
 
-        col = self._collections[collection]
-        added = 0
+        col = self._collections[collection_name]
 
-        # Process in batches
-        for i in range(0, len(documents), batch_size):
-            batch = documents[i:i + batch_size]
+        texts = [doc.content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
 
-            # Filter out duplicates
-            new_docs = self._filter_duplicates(batch, col)
-            if not new_docs:
-                continue
+        import hashlib
+        ids = []
+        for i, doc in enumerate(documents):
+            filepath = doc.metadata.get("file_path", "unknown_path")
+            node_name = doc.metadata.get("name", f"chunk_{i}")
+            chunk_role = doc.metadata.get("chunk_role", "complete")
 
-            # Embed
-            texts = [doc.content for doc in new_docs]
-            embeddings = self.embedder.embed(texts)
+            unique_string = f"{filepath}_{node_name}_{chunk_role}_{doc.content}"
+            doc_id = hashlib.md5(unique_string.encode("utf-8")).hexdigest()
+            ids.append(doc_id)
 
-            # Prepare for ChromaDB
+        try:
             col.add(
-                ids=[doc.doc_id for doc in new_docs],
-                embeddings=[e.tolist() for e in embeddings],
-                documents=[doc.content for doc in new_docs],
-                metadatas=[doc.metadata for doc in new_docs],
+                documents=texts,
+                metadatas=metadatas,
+                ids=ids
             )
-
-            added += len(new_docs)
-            logger.debug(
-                f"  Added {len(new_docs)} docs to {collection.value}"
-            )
-
-        logger.info(
-            f"✅ Added {added}/{len(documents)} docs → {collection.value}"
-        )
-        return added
+            logger.debug(f"  Added {len(documents)} docs to {collection_name.value}")
+            return len(documents)
+            
+        except Exception as e:
+            logger.error(f"Failed to add documents to ChromaDB: {e}")
+            raise
 
     def upsert_documents(
         self,

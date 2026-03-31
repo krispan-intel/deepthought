@@ -37,6 +37,7 @@ credentials/
 data/raw/
 data/processed/
 data/vectorstore/
+data/models/
 *.parquet
 *.arrow
 *.feather
