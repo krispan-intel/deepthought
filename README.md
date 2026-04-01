@@ -185,62 +185,65 @@ Input: Legacy Code + Modern Specs
 
 ## 📁 Project Structure
 
+Current repo layout (implemented):
+
 ```
 deepthought/
-├── core/                         # Core IP
-│   ├── deepthought_equation.py   # MMR_Patent implementation
-│   ├── void_detector.py          # Topological Void locator
-│   └── kconfig_parser.py         # Linux Kconfig parser
+├── core/
+│   └── deepthought_equation.py   # DeepThought Equation + MMR + arithmetic
 │
-├── agents/                       # LangGraph Agents
-│   ├── state.py                  # Shared state definition
-│   ├── pipeline.py               # Main state machine
-│   ├── forager.py                # Forager agent
-│   ├── maverick.py               # Maverick agent
-│   ├── reality_checker.py        # Reality Checker agent
-│   └── debate_panel.py           # Debate Panel agent
+├── agents/
+│   ├── state.py                  # Shared pipeline state + statuses
+│   ├── llm_client.py             # Unified LLM caller
+│   ├── forager.py                # Void retrieval agent
+│   ├── maverick.py               # Idea generation agent
+│   ├── reality_checker.py        # Critique/revision agent
+│   ├── debate_panel.py           # Multi-model synthesis agent
+│   └── pipeline.py               # Multi-agent orchestrator
 │
-├── data_collection/              # Data Ingestion
-│   ├── crawler/                  # Git, PDF, Web, API crawlers
-│   ├── parser/                   # Tree-sitter, PDF, LKML parsers
-│   └── chunker/                  # Code and text chunkers
+├── data_collection/
+│   ├── crawler/                  # Git/PDF/API/dataset crawlers
+│   ├── parser/                   # Tree-sitter + Kconfig parsers
+│   └── chunker/                  # Chunkers for embedding
 │
-├── vectordb/                     # Vector Database
-│   ├── store.py                  # Main interface
-│   ├── collections.py            # Collection definitions
-│   ├── embedder.py               # Embedding models
-│   └── retriever.py              # MMR retrieval
+├── vectordb/
+│   ├── store.py                  # Chroma interface + void APIs
+│   └── embedder.py               # Local/API embedding backends
 │
-├── output/                       # TID Generation
-│   ├── tid_formatter.py          # TID auto-formatter
-│   └── templates/                # TID markdown templates
+├── output/
+│   ├── tid_formatter.py          # TID report formatter (md + html)
+│   ├── templates/
+│   └── generated/                # Generated TID reports
 │
-├── services/                     # Service Layer
-│   ├── ingestion_service.py      # Data ingestion service
-│   ├── query_service.py          # Query service
-│   └── pipeline_service.py       # Pipeline execution service
+├── services/
+│   ├── ingestion_service.py      # Ingestion orchestration
+│   ├── idea_collision_service.py # Single-LLM idea collision
+│   ├── pipeline_service.py       # Multi-agent run service
+│   └── status_store.py           # Run status persistence + retry lookup
 │
-├── scripts/                      # Utility Scripts
+├── scripts/
 │   ├── setup_vectordb.py
 │   ├── ingest_kernel.py
-│   ├── ingest_specs.py
-│   └── run_pipeline.py
+│   ├── ingest_all.py
+│   ├── run_phase3_probe.py
+│   ├── run_idea_collision.py
+│   ├── run_pipeline.py
+│   └── generate_sample_tid_report.py
 │
-├── tests/                        # Test Suite
+├── tests/
 │   ├── test_core/
 │   ├── test_agents/
 │   ├── test_data_collection/
 │   └── test_vectordb/
 │
-├── configs/                      # Configuration
-│   ├── settings.py
-│   ├── models.py
-│   └── sources.py
+├── configs/
+│   └── settings.py
 │
 ├── logs/
 ├── data/
 │   ├── raw/
 │   ├── processed/
+│   ├── models/
 │   └── vectorstore/
 │
 ├── requirements.txt
@@ -248,6 +251,12 @@ deepthought/
 ├── .env.example
 └── README.md
 ```
+
+Planned (not fully implemented yet):
+- `core/void_detector.py`
+- `vectordb/retriever.py` and `vectordb/collections.py`
+- `services/query_service.py`
+- `output/tid_formatter.py` extensions for DOCX/PDF export
 
 ## 🚀 Quick Start
 
@@ -290,42 +299,59 @@ python scripts/run_pipeline.py \
     --target "scheduler latency optimization"
 ```
 
+## 📌 Current Implementation Status (2026-04-01)
+
+Implemented now:
+- End-to-end local ingestion pipeline (crawler -> parser -> chunker -> Chroma store)
+- DeepThought Equation + iterative MMR + concept arithmetic
+- Topological Void retrieval API and probe script
+- Multi-agent pipeline skeleton and runnable CLI (`forager`, `maverick`, `reality_checker`, `debate_panel`)
+- TID report formatter with dual outputs (Markdown + HTML)
+- Run status persistence and retry flow (`RETRY_PENDING` -> `--retry-failed`)
+
+Still missing / partial:
+- Full prior-art coverage (USPTO/EPO/WIPO production ingestion)
+- UMAP void landscape visualization
+- Human-in-the-loop approval UI/workflow
+- Claim-level confidence scoring and DOCX/PDF export
+- Production hardening (security integration, full audit, benchmark suite)
+
 ## ✅ TODO 
 
 ### Phase 1: Foundation 
-- [ ] Environment setup and verification 
-- [ ] Vector DB initialization (ChromaDB) 
-- [ ] Tree-sitter integration for C / Rust parsing 
+- [x] Environment setup and verification 
+- [x] Vector DB initialization (ChromaDB) 
+- [x] Tree-sitter integration for C / Rust parsing 
 - [ ] Basic RAG pipeline with LlamaIndex 
 
 ### Phase 2: Data Ingestion 
-- [ ] Linux Kernel crawler (arch/x86, sched, mm, bpf) 
-- [ ] Intel SDM PDF parser 
-- [ ] LKML mailing list parser 
-- [ ] Kconfig dependency graph builder 
-- [ ] ArXiv paper ingestion (cs.AR, cs.OS, cs.PF) 
+- [x] Linux Kernel crawler (arch/x86, sched, mm, bpf) 
+- [x] Intel SDM PDF parser 
+- [x] LKML mailing list parser 
+- [x] Kconfig dependency graph builder 
+- [x] ArXiv paper ingestion (cs.AR, cs.OS, cs.PF) 
 - [ ] USPTO patent ingestion 
-- [ ] Incremental update scheduler 
+- [x] Incremental update scheduler 
 
 ### Phase 3: Core Engine 
-- [ ] DeepThought Equation implementation 
-- [ ] Topological Void detector 
-- [ ] MMR-based retriever 
-- [ ] Concept arithmetic (Latent Space Arithmetic) 
+- [x] DeepThought Equation implementation 
+- [x] Topological Void detector 
+- [x] MMR-based retriever 
+- [x] Concept arithmetic (Latent Space Arithmetic) 
 - [ ] Void landscape visualization (UMAP 2D projection) 
 
 ### Phase 4: Agent Pipeline 
-- [ ] LangGraph State Machine skeleton 
-- [ ] Forager Agent 
-- [ ] Maverick Agent (DeepSeek-V3) 
-- [ ] Reality Checker Agent (Claude Sonnet 4) 
-- [ ] Debate Panel (DeepSeek-R1 + Qwen3-Coder + Qwen3) 
+- [x] LangGraph State Machine skeleton 
+- [x] Forager Agent 
+- [x] Maverick Agent (DeepSeek-V3) 
+- [x] Reality Checker Agent (Claude Sonnet 4) 
+- [x] Debate Panel (DeepSeek-R1 + Qwen3-Coder + Qwen3) 
 - [ ] Hallucination guard via RAG verification 
 - [ ] Human-in-the-loop review checkpoint 
 
 ### Phase 5: Output 
-- [ ] TID template engine 
-- [ ] Patent claim auto-generator 
+- [x] TID template engine 
+- [x] Patent claim auto-generator 
 - [ ] Prior art conflict detector 
 - [ ] Confidence scoring per claim 
 - [ ] Export to DOCX / PDF 

@@ -186,62 +186,65 @@ Input: Legacy Code + Modern Specs
 
 ## 📁 项目结构
 
+当前仓库结构（已实现）：
+
 ```
 deepthought/
-├── core/                         # 核心 IP
-│   ├── deepthought_equation.py   # MMR_Patent 实现
-│   ├── void_detector.py          # 拓扑空洞定位器
-│   └── kconfig_parser.py         # Linux Kconfig parser
+├── core/
+│   └── deepthought_equation.py   # DeepThought Equation + MMR + arithmetic
 │
-├── agents/                       # LangGraph Agents
-│   ├── state.py                  # 共享 state 定义
-│   ├── pipeline.py               # 主 state machine
-│   ├── forager.py                # Forager agent
-│   ├── maverick.py               # Maverick agent
-│   ├── reality_checker.py        # Reality Checker agent
-│   └── debate_panel.py           # Debate Panel agent
+├── agents/
+│   ├── state.py                  # 共享 pipeline state + status
+│   ├── llm_client.py             # 统一 LLM 调用器
+│   ├── forager.py                # 空洞检索 agent
+│   ├── maverick.py               # 创意生成 agent
+│   ├── reality_checker.py        # 批判与修订 agent
+│   ├── debate_panel.py           # 多模型综合评审 agent
+│   └── pipeline.py               # Multi-agent 编排器
 │
-├── data_collection/              # 数据摄取
-│   ├── crawler/                  # Git、PDF、Web、API crawlers
-│   ├── parser/                   # Tree-sitter、PDF、LKML parsers
-│   └── chunker/                  # 代码与文本 chunkers
+├── data_collection/
+│   ├── crawler/                  # Git/PDF/API/dataset crawlers
+│   ├── parser/                   # Tree-sitter + Kconfig parsers
+│   └── chunker/                  # 用于 embedding 的 chunkers
 │
-├── vectordb/                     # 向量数据库
-│   ├── store.py                  # 主接口
-│   ├── collections.py            # Collection 定义
-│   ├── embedder.py               # Embedding 模型
-│   └── retriever.py              # MMR retrieval
+├── vectordb/
+│   ├── store.py                  # Chroma 接口 + void API
+│   └── embedder.py               # 本地/API embedding backend
 │
-├── output/                       # TID 输出
-│   ├── tid_formatter.py          # TID 自动格式化
-│   └── templates/                # TID markdown 模板
+├── output/
+│   ├── tid_formatter.py          # TID 报告格式器（md + html）
+│   ├── templates/
+│   └── generated/                # 已生成报告
 │
-├── services/                     # Service Layer
-│   ├── ingestion_service.py      # 数据摄取服务
-│   ├── query_service.py          # 查询服务
-│   └── pipeline_service.py       # Pipeline 执行服务
+├── services/
+│   ├── ingestion_service.py      # 摄取流程编排
+│   ├── idea_collision_service.py # 单模型 idea collision
+│   ├── pipeline_service.py       # Multi-agent 运行服务
+│   └── status_store.py           # run status 持久化与重试检索
 │
-├── scripts/                      # 工具脚本
+├── scripts/
 │   ├── setup_vectordb.py
 │   ├── ingest_kernel.py
-│   ├── ingest_specs.py
-│   └── run_pipeline.py
+│   ├── ingest_all.py
+│   ├── run_phase3_probe.py
+│   ├── run_idea_collision.py
+│   ├── run_pipeline.py
+│   └── generate_sample_tid_report.py
 │
-├── tests/                        # 测试套件
+├── tests/
 │   ├── test_core/
 │   ├── test_agents/
 │   ├── test_data_collection/
 │   └── test_vectordb/
 │
-├── configs/                      # 配置
-│   ├── settings.py
-│   ├── models.py
-│   └── sources.py
+├── configs/
+│   └── settings.py
 │
 ├── logs/
 ├── data/
 │   ├── raw/
 │   ├── processed/
+│   ├── models/
 │   └── vectorstore/
 │
 ├── requirements.txt
@@ -249,6 +252,12 @@ deepthought/
 ├── .env.example
 └── README.md
 ```
+
+规划中（尚未完整实现）：
+- `core/void_detector.py`
+- `vectordb/retriever.py` 与 `vectordb/collections.py`
+- `services/query_service.py`
+- `output/tid_formatter.py` 的 DOCX/PDF 导出扩展
 
 ## 🚀 快速开始
 
@@ -291,42 +300,59 @@ python scripts/run_pipeline.py \
     --target "scheduler latency optimization"
 ```
 
+## 📌 当前实现进度（2026-04-01）
+
+已完成：
+- 本地数据摄取主流程（crawler -> parser -> chunker -> Chroma store）
+- DeepThought Equation、iterative MMR、concept arithmetic
+- Topological Void 检索 API 与 probe 脚本
+- Multi-agent 主干与可执行 CLI（`forager`、`maverick`、`reality_checker`、`debate_panel`）
+- TID 报告格式器（Markdown + HTML 双格式输出）
+- 运行状态持久化与重试流程（`RETRY_PENDING` + `--retry-failed`）
+
+尚缺或部分完成：
+- 完整 prior-art 覆盖（USPTO/EPO/WIPO 正式摄取）
+- UMAP 空洞景观可视化
+- Human-in-the-loop 审核界面/流程
+- claim 级置信度评分与 DOCX/PDF 导出
+- Production hardening（安全集成、完整审计、性能基准）
+
 ## ✅ TODO
 
 ### Phase 1: Foundation
-- [ ] 环境搭建与验证
-- [ ] Vector DB 初始化（ChromaDB）
-- [ ] C / Rust Tree-sitter 集成
+- [x] 环境搭建与验证
+- [x] Vector DB 初始化（ChromaDB）
+- [x] C / Rust Tree-sitter 集成
 - [ ] 基础 RAG pipeline（LlamaIndex）
 
 ### Phase 2: Data Ingestion
-- [ ] Linux Kernel crawler（arch/x86、sched、mm、bpf）
-- [ ] Intel SDM PDF parser
-- [ ] LKML 邮件列表 parser
-- [ ] Kconfig 依赖图构建器
-- [ ] ArXiv 论文摄取（cs.AR、cs.OS、cs.PF）
+- [x] Linux Kernel crawler（arch/x86、sched、mm、bpf）
+- [x] Intel SDM PDF parser
+- [x] LKML 邮件列表 parser
+- [x] Kconfig 依赖图构建器
+- [x] ArXiv 论文摄取（cs.AR、cs.OS、cs.PF）
 - [ ] USPTO 专利摄取
-- [ ] 增量更新调度器
+- [x] 增量更新调度器
 
 ### Phase 3: Core Engine
-- [ ] DeepThought Equation 实现
-- [ ] 拓扑空洞检测器
-- [ ] 基于 MMR 的 retriever
-- [ ] 概念算术（Latent Space Arithmetic）
+- [x] DeepThought Equation 实现
+- [x] 拓扑空洞检测器
+- [x] 基于 MMR 的 retriever
+- [x] 概念算术（Latent Space Arithmetic）
 - [ ] 空洞景观可视化（UMAP 2D projection）
 
 ### Phase 4: Agent Pipeline
-- [ ] LangGraph State Machine 骨架
-- [ ] Forager Agent
-- [ ] Maverick Agent（DeepSeek-V3）
-- [ ] Reality Checker Agent（Claude Sonnet 4）
-- [ ] Debate Panel（DeepSeek-R1 + Qwen3-Coder + Qwen3）
+- [x] LangGraph State Machine 骨架
+- [x] Forager Agent
+- [x] Maverick Agent（DeepSeek-V3）
+- [x] Reality Checker Agent（Claude Sonnet 4）
+- [x] Debate Panel（DeepSeek-R1 + Qwen3-Coder + Qwen3）
 - [ ] 基于 RAG 验证的幻觉防护
 - [ ] Human-in-the-loop 人工审查节点
 
 ### Phase 5: Output
-- [ ] TID 模板引擎
-- [ ] 专利 claim 自动生成
+- [x] TID 模板引擎
+- [x] 专利 claim 自动生成
 - [ ] 现有技术冲突检测
 - [ ] 每条 claim 的置信度评分
 - [ ] 导出 DOCX / PDF
