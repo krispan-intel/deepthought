@@ -1,5 +1,7 @@
 # 🧠 DeepThought
 
+Language: [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
+
 > *"The Answer to the Great Question of Life, the Universe and Everything"*
 > — Douglas Adams, The Hitchhiker's Guide to the Galaxy
 
@@ -161,6 +163,14 @@ Input: Legacy Code + Modern Specs
               | Output       |
               +--------------+
 ```
+
+## 🧭 Practical Notes: Void Semantics and Scale
+
+- A Topological Void in DeepThought is defined relative to the **local corpus** (your prior-art boundary), not the entire internet.
+- Current working scale (snapshot): **1024-dimensional embeddings** with around **140k indexed documents**.
+- Local RAG is used to establish novelty and evidence boundaries; LLM reasoning is used to propose cross-domain hypotheses.
+- A generated idea is not accepted directly: it must pass retrieval grounding, technical constraint checks, and multi-agent critique/debate before becoming a TID candidate.
+- This means the system optimizes for **evidence-backed invention hypotheses**, not guaranteed patentability claims.
 
 ## 📊 Data Sources
 

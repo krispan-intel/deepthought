@@ -247,7 +247,6 @@ class DeepThoughtVectorStore:
 
         # Embedder
         self.embedder = embedder or create_embedder()
-
         # Collections cache
         self._collections: Dict[CollectionName, Any] = {}
 
@@ -284,6 +283,7 @@ class DeepThoughtVectorStore:
 
         texts = [doc.content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
+        embeddings = self.embedder.embed(texts)
 
         import hashlib
         ids = []
@@ -298,6 +298,7 @@ class DeepThoughtVectorStore:
 
         try:
             col.add(
+                embeddings=[e.tolist() for e in embeddings],
                 documents=texts,
                 metadatas=metadatas,
                 ids=ids
@@ -320,7 +321,7 @@ class DeepThoughtVectorStore:
 
         col = self._collections[collection]
         texts = [doc.content for doc in documents]
-        embeddings = self.embedder.embed(texts)
+        embeddings = self.embedder.embed_documents(texts)
 
         col.upsert(
             ids=[doc.doc_id for doc in documents],
@@ -363,14 +364,14 @@ class DeepThoughtVectorStore:
             List of RetrievedDocument sorted by similarity
         """
         target_collections = collections or list(CollectionName)
-
-        # Embed query
         query_embedding = self.embedder.embed_query(query_text)
-
         all_results: List[RetrievedDocument] = []
 
         for col_name in target_collections:
             col = self._collections[col_name]
+
+            if col.count() == 0:
+                continue
 
             try:
                 results = col.query(
@@ -500,6 +501,7 @@ class DeepThoughtVectorStore:
         self,
         target_description: str,
         existing_solutions: Optional[List[str]] = None,
+        collections: Optional[List[CollectionName]] = None,
         domain_filter: Optional[str] = None,
         lambda_val: float = 0.7,
         top_k: int = 5,
@@ -512,6 +514,7 @@ class DeepThoughtVectorStore:
         Args:
             target_description: What we want to achieve/optimize
             existing_solutions: Known existing approaches
+            collections:        Which collections to search
             domain_filter:      e.g., "x86", "scheduler", "mm"
             lambda_val:         Innovation strategy
             top_k:              Number of voids to find
@@ -533,6 +536,7 @@ class DeepThoughtVectorStore:
         retrieved = self.query_with_mmr(
             query_text=target_description,
             existing_texts=existing_solutions,
+            collections=collections,
             n_results=top_k * 4,
             lambda_val=lambda_val,
             where=where,
