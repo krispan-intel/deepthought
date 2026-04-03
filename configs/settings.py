@@ -6,7 +6,7 @@ Loaded from .env file via pydantic-settings.
 """
 
 from pathlib import Path
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,15 +20,42 @@ class Settings(BaseSettings):
 
     # ── Internal LLM ─────────────────────────────────────────────
     internal_llm_base_url: str = Field(
-        default="http://10.67.116.243:3001/v1"
+        default="http://10.67.114.161:3001/v1",
+        validation_alias=AliasChoices("OPENAI_API_BASE", "INTERNAL_LLM_BASE_URL"),
     )
     internal_llm_api_key: str = Field(
-        default="sk-xxx"
+        default="sk-xxx",
+        validation_alias=AliasChoices("OPENAI_API_KEY", "INTERNAL_LLM_API_KEY"),
     )
+    llm_request_timeout_seconds: int = Field(
+        default=180
+    )
+    llm_request_max_attempts: int = Field(
+        default=3
+    )
+    llm_request_backoff_seconds: float = Field(
+        default=2.0
+    )
+    llm_fallback_models: str = Field(
+        default="DCAI_GAUDI2_DeepSeek-R1-671B,qwen3-coder-480b-a35b-instruct-fp8,IT_DCAI_GAUDI2_Qwen3-32B"
+    )
+
+    # ── Service Mode ────────────────────────────────────────────
+    service_loop_interval_seconds: int = Field(default=300)
+
+    # ── Notifications (SMTP) ────────────────────────────────────
+    smtp_host: str = Field(default="")
+    smtp_port: int = Field(default=587)
+    smtp_username: str = Field(default="")
+    smtp_password: str = Field(default="")
+    smtp_use_tls: bool = Field(default=True)
+    smtp_from: str = Field(default="")
+    tid_notify_to: str = Field(default="")
+    tid_email_notifications_enabled: bool = Field(default=False)
 
     # ── Models ───────────────────────────────────────────────────
     maverick_model: str = Field(
-        default="FLEX_STG_DeepSeek-V3-0324-671B"
+        default="DCAI_GAUDI2_DeepSeek-R1-671B"
     )
     debate_deep_thinker_model: str = Field(
         default="DCAI_GAUDI2_DeepSeek-R1-671B"
@@ -37,10 +64,10 @@ class Settings(BaseSettings):
         default="qwen3-coder-480b-a35b-instruct-fp8"
     )
     debate_judge_model: str = Field(
-        default="IT_DCAI_GAUDI2_Qwen3-32B"
+        default="DCAI_GAUDI2_DeepSeek-R1-671B"
     )
     tid_formatter_model: str = Field(
-        default="FLEX_STG_DeepSeek-V3-0324-671B"
+        default="DCAI_GAUDI2_DeepSeek-R1-671B"
     )
     embedding_model: str = Field(
         default="IKT-Qwen3-Embedding-8B"
@@ -49,7 +76,7 @@ class Settings(BaseSettings):
     # ── Claude (Reality Checker) ──────────────────────────────────
     anthropic_api_key: str = Field(default="")
     reality_checker_model: str = Field(
-        default="claude-sonnet-4-5"
+        default="DCAI_GAUDI2_DeepSeek-R1-671B"
     )
 
     # ── Vector DB ────────────────────────────────────────────────

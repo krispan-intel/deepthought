@@ -1,0 +1,46 @@
+services:
+  deepthought-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        http_proxy: ${http_proxy:-}
+        https_proxy: ${https_proxy:-}
+        no_proxy: ${no_proxy:-}
+        all_proxy: ${all_proxy:-}
+        socks_proxy: ${socks_proxy:-}
+    container_name: deepthought-service
+    restart: unless-stopped
+    environment:
+      PYTHONPATH: /app
+      PYTHONUNBUFFERED: "1"
+      http_proxy: ${http_proxy:-}
+      https_proxy: ${https_proxy:-}
+      no_proxy: ${no_proxy:-}
+      all_proxy: ${all_proxy:-}
+      socks_proxy: ${socks_proxy:-}
+      OPENAI_API_BASE: ${OPENAI_API_BASE:-http://10.67.114.161:3001/v1}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      TARGET: ${TARGET:-Generate new x86 IP or any improvement to any part of the Linux kernel on x86}
+      N_DRAFTS: ${N_DRAFTS:-8}
+      TOP_K_VOIDS: ${TOP_K_VOIDS:-30}
+      INTERVAL_SECONDS: ${INTERVAL_SECONDS:-300}
+      RANDOM_WALK_MUTATE_ENABLED: ${RANDOM_WALK_MUTATE_ENABLED:-true}
+      MUTATION_SEED_HINT: ${MUTATION_SEED_HINT:-Combine this seed concept with BPF techniques and propose an aggressive cross-domain hypothesis.}
+      SKIP_DUPLICATE_INPUT: ${SKIP_DUPLICATE_INPUT:-false}
+      TID_EMAIL_NOTIFICATIONS_ENABLED: ${TID_EMAIL_NOTIFICATIONS_ENABLED:-false}
+    command: >
+      sh -c 'set -e;
+      set -- python scripts/run_pipeline_service.py
+      --target "$TARGET"
+      --n-drafts "$N_DRAFTS"
+      --top-k-voids "$TOP_K_VOIDS"
+      --interval-seconds "$INTERVAL_SECONDS";
+      if [ "${RANDOM_WALK_MUTATE_ENABLED:-true}" = "true" ]; then set -- "$@" --random-walk-mutate; fi;
+      if [ -n "${MUTATION_SEED_HINT:-}" ]; then set -- "$@" --mutation-seed-hint "$MUTATION_SEED_HINT"; fi;
+      if [ "${SKIP_DUPLICATE_INPUT:-false}" = "true" ]; then set -- "$@" --skip-duplicate-input; fi;
+      exec "$@"'
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./output:/app/output

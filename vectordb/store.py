@@ -9,6 +9,7 @@ Integrates with the DeepThought Equation for MMR retrieval.
 from __future__ import annotations
 
 import hashlib
+import random
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional, Dict, Any
@@ -115,6 +116,8 @@ class Document:
 class RetrievedDocument:
     """A document retrieved from the vector store with scores."""
 
+    INVALID_LABELS = {"unknown", "unnamed", "none", "null", "n/a"}
+
     def __init__(
         self,
         document: Document,
@@ -130,15 +133,41 @@ class RetrievedDocument:
 
     def to_tech_vector(self) -> TechVector:
         """Convert to TechVector for DeepThought Equation."""
+        metadata = self.document.metadata
+        label = (
+            self._sanitize_label(metadata.get("function_name"))
+            or self._sanitize_label(metadata.get("name"))
+            or self._sanitize_label(metadata.get("title"))
+        )
+
+        if not label:
+            file_path = self._sanitize_label(metadata.get("file_path"))
+            start_line = metadata.get("start_line")
+            if file_path and start_line:
+                label = f"{file_path}:{start_line}"
+            elif file_path:
+                label = str(file_path)
+            else:
+                label = self.document.doc_id
+
         return TechVector(
             id=self.document.doc_id,
             vector=self.embedding,
-            label=self.document.metadata.get(
-                "function_name",
-                self.document.metadata.get("title", self.document.doc_id)
-            ),
-            metadata=self.document.metadata,
+            label=label,
+            metadata=metadata,
         )
+
+    @classmethod
+    def _sanitize_label(cls, value: Any) -> str:
+        if value is None:
+            return ""
+
+        text = str(value).strip()
+        if not text:
+            return ""
+        if text.lower() in cls.INVALID_LABELS:
+            return ""
+        return text
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -496,6 +525,76 @@ class DeepThoughtVectorStore:
         )
 
         return reranked[:n_results]
+
+    def sample_random_document(
+        self,
+        collections: Optional[List[CollectionName]] = None,
+    ) -> Optional[RetrievedDocument]:
+        """
+        Sample one random document from the vector store.
+
+        Args:
+            collections: Optional subset of collections. None means all collections.
+
+        Returns:
+            RetrievedDocument without distance semantics (distance=0.0), or None if DB is empty.
+        """
+        target_collections = collections or list(CollectionName)
+        weighted_pool: List[tuple[CollectionName, int]] = []
+        total_count = 0
+
+        for col_name in target_collections:
+            col = self._collections[col_name]
+            count = col.count()
+            if count <= 0:
+                continue
+            weighted_pool.append((col_name, count))
+            total_count += count
+
+        if total_count <= 0:
+            return None
+
+        pick = random.randint(0, total_count - 1)
+        running = 0
+        selected_col_name = weighted_pool[0][0]
+        selected_col_count = weighted_pool[0][1]
+        for col_name, count in weighted_pool:
+            if running + count > pick:
+                selected_col_name = col_name
+                selected_col_count = count
+                break
+            running += count
+
+        selected_col = self._collections[selected_col_name]
+        offset = random.randint(0, selected_col_count - 1)
+        result = selected_col.get(
+            limit=1,
+            offset=offset,
+            include=["documents", "metadatas", "embeddings"],
+        )
+
+        ids = result.get("ids", [])
+        if not ids:
+            return None
+
+        doc = Document(
+            content=(result.get("documents") or [""])[0],
+            metadata=(result.get("metadatas") or [{}])[0] or {},
+            doc_id=ids[0],
+        )
+
+        embedding_data = (result.get("embeddings") or [None])[0]
+        if embedding_data is None:
+            embedding = self.embedder.embed_one(doc.content)
+        else:
+            embedding = np.array(embedding_data, dtype=np.float32)
+
+        return RetrievedDocument(
+            document=doc,
+            embedding=embedding,
+            distance=0.0,
+            collection=selected_col_name,
+        )
 
     def find_topological_voids(
         self,

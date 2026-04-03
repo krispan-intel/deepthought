@@ -219,15 +219,18 @@ deepthought/
 │   ├── ingestion_service.py      # Ingestion orchestration
 │   ├── idea_collision_service.py # Single-LLM idea collision
 │   ├── pipeline_service.py       # Multi-agent run service
-│   └── status_store.py           # Run status persistence + retry lookup
+│   ├── status_store.py           # Run status persistence + retry lookup
+│   └── tid_notification_service.py # Email notification for new TIDs
 │
 ├── scripts/
 │   ├── setup_vectordb.py
 │   ├── ingest_kernel.py
 │   ├── ingest_all.py
 │   ├── run_phase3_probe.py
+│   ├── run_retrieval_audit.py
 │   ├── run_idea_collision.py
 │   ├── run_pipeline.py
+│   ├── run_pipeline_service.py
 │   └── generate_sample_tid_report.py
 │
 ├── tests/
@@ -299,7 +302,7 @@ python scripts/run_pipeline.py \
     --target "scheduler latency optimization"
 ```
 
-## 📌 Current Implementation Status (2026-04-01)
+## 📌 Current Implementation Status (2026-04-02)
 
 Implemented now:
 - End-to-end local ingestion pipeline (crawler -> parser -> chunker -> Chroma store)
@@ -308,6 +311,9 @@ Implemented now:
 - Multi-agent pipeline skeleton and runnable CLI (`forager`, `maverick`, `reality_checker`, `debate_panel`)
 - TID report formatter with dual outputs (Markdown + HTML)
 - Run status persistence and retry flow (`RETRY_PENDING` -> `--retry-failed`)
+- Pipeline execution validated with `APPROVED` verdict and report export
+- Service-mode continuous runner (`scripts/run_pipeline_service.py`)
+- New TID email notification service (`services/tid_notification_service.py`)
 
 Still missing / partial:
 - Full prior-art coverage (USPTO/EPO/WIPO production ingestion)
@@ -317,6 +323,16 @@ Still missing / partial:
 - Production hardening (security integration, full audit, benchmark suite)
 
 ## ✅ TODO 
+
+### Immediate Roadmap (P0-P3)
+- [ ] P0: Choose operating mode for this week (`run_pipeline.py` single-run vs `run_pipeline_service.py` always-on)
+- [ ] P0: Lock one baseline command and keep it as smoke-test reference
+- [ ] P0: Validate 2-3 consecutive successful runs on the current large-model config
+- [ ] P1: Keep service mode running and confirm stable `pipeline_runs.jsonl` growth
+- [ ] P1: Keep email notifications disabled during stabilization (`tid_email_notifications_enabled=false`)
+- [ ] P2: Add process supervision (systemd/supervisor) and auto-restart policy
+- [ ] P2: Add log rotation and retention policy for long-running service
+- [ ] P3: Add hallucination guard (RAG verification), prior-art conflict detector, and claim confidence scoring
 
 ### Phase 1: Foundation 
 - [x] Environment setup and verification 
@@ -362,6 +378,71 @@ Still missing / partial:
 - [ ] Performance benchmarking 
 - [ ] Multi-domain support (Android, RISC-V) 
 - [ ] Incremental void tracking over time
+- [x] Service mode for continuous execution
+- [x] New TID email notification hook (SMTP)
+
+## 🔁 Service Mode (Always On)
+
+DeepThought now supports a Dockerized always-on service runner.
+
+### Start / stop service
+
+```bash
+bash scripts/start_service.sh
+bash scripts/stop_service.sh
+```
+
+### Tail service logs
+
+```bash
+docker compose logs -f deepthought-service
+```
+
+### Data persistence and no-DB-rebuild behavior
+
+The container uses bind mounts:
+
+- `./data:/app/data`
+- `./logs:/app/logs`
+- `./output:/app/output`
+
+This means existing `data/raw` and `data/vectorstore` are reused across restarts.
+Starting/stopping the service does not rebuild the vector database.
+
+### Runtime controls (docker-compose environment)
+
+- `TARGET`: base mission for each loop iteration.
+- `N_DRAFTS`: number of Innovator drafts per run (default `8`).
+- `TOP_K_VOIDS`: number of voids selected for drafting (default `30`).
+- `INTERVAL_SECONDS`: service loop interval (default `300`).
+- `RANDOM_WALK_MUTATE_ENABLED`: if `true`, run Random Walk and Mutate before retrieval.
+- `MUTATION_SEED_HINT`: mutation instruction used by the Mutator Agent.
+- `SKIP_DUPLICATE_INPUT`: if `true`, skip runs whose input fingerprint already completed.
+- `TID_EMAIL_NOTIFICATIONS_ENABLED`: enable/disable SMTP notifications.
+
+### Random Walk and Mutate flow
+
+When `RANDOM_WALK_MUTATE_ENABLED=true`, each iteration does:
+
+1. Randomly sample one chunk from VectorDB.
+2. Mutate it via LLM into a new x86/Linux target phrase.
+3. Use the mutated target as retrieval query for MMR void discovery.
+
+## 📧 New TID Email Alerts
+
+Set SMTP variables before running service mode:
+
+```bash
+export SMTP_HOST=smtp.your-company.com
+export SMTP_PORT=587
+export SMTP_USE_TLS=true
+export SMTP_USERNAME=your_account
+export SMTP_PASSWORD=your_password
+export SMTP_FROM=deepthought@your-company.com
+export TID_NOTIFY_TO=your.name@your-company.com
+```
+
+The service sends one email per new `run_id` when a run reaches `APPROVED`/`COMPLETED` and has report outputs.
 
 ## 🔒 Security Model
 
