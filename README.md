@@ -327,12 +327,16 @@ Still missing / partial:
 ### Immediate Roadmap (P0-P3)
 - [ ] P0: Choose operating mode for this week (`run_pipeline.py` single-run vs `run_pipeline_service.py` always-on)
 - [ ] P0: Lock one baseline command and keep it as smoke-test reference
-- [ ] P0: Validate 2-3 consecutive successful runs on the current large-model config
+- [ ] P0: Complete long-run soak test until first `APPROVED` TID with Copilot backend (`--once` semantics)
 - [ ] P1: Keep service mode running and confirm stable `pipeline_runs.jsonl` growth
 - [ ] P1: Keep email notifications disabled during stabilization (`tid_email_notifications_enabled=false`)
 - [ ] P2: Add process supervision (systemd/supervisor) and auto-restart policy
 - [ ] P2: Add log rotation and retention policy for long-running service
-- [ ] P3: Add hallucination guard (RAG verification), prior-art conflict detector, and claim confidence scoring
+- [ ] P3: Add prior-art conflict detector and claim confidence scoring
+- [x] P0: Enable host-side Copilot CLI backend (`LLM_BACKEND=copilot_cli`)
+- [x] P0: Enforce strict export gate (`APPROVED` only)
+- [x] P1: Add ruthless culling (`fatal_flaw`, three-strikes, stage-failure red card)
+- [x] P1: Add virtual patent committee consensus (4 specialists + chairman + veto rules)
 
 ### Phase 1: Foundation 
 - [x] Environment setup and verification 
@@ -362,7 +366,7 @@ Still missing / partial:
 - [x] Maverick Agent (DeepSeek-V3) 
 - [x] Reality Checker Agent (Claude Sonnet 4) 
 - [x] Debate Panel (DeepSeek-R1 + Qwen3-Coder + Qwen3) 
-- [ ] Hallucination guard via RAG verification 
+- [x] Hallucination guard via committee fact-check retrieval and fatal-flaw rejection 
 - [ ] Human-in-the-loop review checkpoint 
 
 ### Phase 5: Output 
@@ -419,6 +423,28 @@ Starting/stopping the service does not rebuild the vector database.
 - `MUTATION_SEED_HINT`: mutation instruction used by the Mutator Agent.
 - `SKIP_DUPLICATE_INPUT`: if `true`, skip runs whose input fingerprint already completed.
 - `TID_EMAIL_NOTIFICATIONS_ENABLED`: enable/disable SMTP notifications.
+
+### Host-side GPT-5.4 experiment via GitHub Copilot CLI
+
+If your Linux host already has `gh auth login` completed and `gh copilot -p "..."` works,
+you can run the pipeline against the Copilot CLI backend instead of the internal OpenAI-compatible endpoint.
+
+```bash
+export LLM_BACKEND=copilot_cli
+export COPILOT_CLI_COMMAND="gh copilot"
+python scripts/run_pipeline_service.py \
+      --target "Generate new x86 IP or any improvement to any part of the Linux kernel on x86" \
+      --random-walk-mutate \
+      --n-drafts 8 \
+      --top-k-voids 30 \
+      --interval-seconds 300
+```
+
+Notes:
+
+- This mode is intended for host-side experimentation, not unattended Docker production use.
+- Before running, ensure `GH_TOKEN` / `GITHUB_TOKEN` are unset so `gh copilot` falls back to `~/.config/gh/hosts.yml`.
+- The Copilot CLI currently reports `gpt-5.4` in successful interactive runs, but model selection is controlled by GitHub Copilot rather than this repo.
 
 ### Random Walk and Mutate flow
 

@@ -573,17 +573,49 @@ class DeepThoughtVectorStore:
             include=["documents", "metadatas", "embeddings"],
         )
 
-        ids = result.get("ids", [])
-        if not ids:
+        ids = result.get("ids")
+        if ids is None:
             return None
 
+        if isinstance(ids, np.ndarray):
+            if ids.size == 0:
+                return None
+            doc_id = str(ids[0])
+        else:
+            if len(ids) == 0:
+                return None
+            doc_id = str(ids[0])
+
+        documents = result.get("documents")
+        if documents is None:
+            content = ""
+        elif isinstance(documents, np.ndarray):
+            content = str(documents[0]) if documents.size > 0 else ""
+        else:
+            content = str(documents[0]) if len(documents) > 0 else ""
+
+        metadatas = result.get("metadatas")
+        if metadatas is None:
+            metadata = {}
+        elif isinstance(metadatas, np.ndarray):
+            metadata = metadatas[0] if metadatas.size > 0 else {}
+        else:
+            metadata = metadatas[0] if len(metadatas) > 0 else {}
+
         doc = Document(
-            content=(result.get("documents") or [""])[0],
-            metadata=(result.get("metadatas") or [{}])[0] or {},
-            doc_id=ids[0],
+            content=content,
+            metadata=metadata or {},
+            doc_id=doc_id,
         )
 
-        embedding_data = (result.get("embeddings") or [None])[0]
+        embeddings = result.get("embeddings")
+        if embeddings is None:
+            embedding_data = None
+        elif isinstance(embeddings, np.ndarray):
+            embedding_data = embeddings[0] if embeddings.size > 0 else None
+        else:
+            embedding_data = embeddings[0] if len(embeddings) > 0 else None
+
         if embedding_data is None:
             embedding = self.embedder.embed_one(doc.content)
         else:

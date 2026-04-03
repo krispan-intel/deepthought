@@ -29,6 +29,8 @@ class MaverickAgent:
             "Output valid JSON only."
         )
 
+        compact_context = self._compact_void_context(state.topological_void_context)
+
         user_prompt = f"""
 Domain: {state.domain}
 Target: {state.target}
@@ -39,9 +41,14 @@ Constraints:
 - Avoid generic AI buzzwords.
 - Include specific kernel subsystems, data structures, or locking implications where appropriate.
 - Each draft must include at least 3 patent claims.
+- HARD CONSTRAINT: Evidence grounding is mandatory.
+- Do NOT invent Linux kernel functions, structs, or x86 instructions.
+- In Implementation Plan, explicitly cite concrete file paths and symbols from Void context.
+- If the idea cannot be grounded in provided context, declare it unfeasible in feasibility_thesis and validation_plan.
+- In Architecture Overview, include a simple ASCII control-flow diagram.
 
 Void context:
-{state.topological_void_context}
+{compact_context}
 
 Return JSON:
 {{
@@ -116,6 +123,27 @@ Return JSON:
         state.drafts = drafts
         state.metadata["draft_count"] = len(drafts)
         return state
+
+    @staticmethod
+    def _compact_void_context(context: str, max_chars: int = 3800) -> str:
+        text = (context or "").strip()
+        if len(text) <= max_chars:
+            return text
+
+        lines = [ln for ln in text.splitlines() if ln.strip()]
+        head = []
+        for ln in lines:
+            if ln.startswith("Void #") or ln.startswith("Target:") or ln.startswith("Domain:") or ln.startswith("Lambda"):
+                head.append(ln)
+            if len("\n".join(head)) > max_chars:
+                break
+
+        compact = "\n".join(head).strip()
+        if not compact:
+            compact = text[:max_chars]
+        if len(compact) > max_chars:
+            compact = compact[:max_chars]
+        return compact
 
     def _parse_json(self, text: str) -> Dict[str, Any]:
         try:
