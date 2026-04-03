@@ -105,11 +105,11 @@ class DeepThoughtPipeline:
                 why_now=draft.why_now,
             ),
             scorecard=TIDScorecard(
-                innovation=draft.innovation,
-                implementation_difficulty=draft.implementation_difficulty,
-                commercial_value=draft.commercial_value,
-                technical_risk=draft.technical_risk,
-                prior_art_conflict_risk=draft.prior_art_conflict_risk,
+                innovation=self._clamp_star(draft.innovation),
+                implementation_difficulty=self._clamp_star(draft.implementation_difficulty),
+                commercial_value=self._clamp_star(draft.commercial_value),
+                technical_risk=self._clamp_star(draft.technical_risk),
+                prior_art_conflict_risk=self._clamp_star(draft.prior_art_conflict_risk),
             ),
             detail=TIDDetail(
                 problem_statement=draft.problem_statement,
@@ -147,6 +147,10 @@ class DeepThoughtPipeline:
                 chosen.status = "EXPORTED"
 
         return state
+
+    @staticmethod
+    def _clamp_star(value: int) -> int:
+        return max(1, min(5, int(value)))
 
     def _mark_failure(self, state: PipelineState, stage: str, exc: Exception) -> PipelineState:
         state.failed_stages.append(stage)

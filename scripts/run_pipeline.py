@@ -7,11 +7,13 @@ Run DeepThought multi-agent pipeline end-to-end.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from configs.settings import settings
 from services.pipeline_service import PipelineService
 from services.status_store import PipelineStatusStore
 
@@ -47,6 +49,12 @@ def main() -> int:
     args = parse_args()
     service = PipelineService()
     status_store = PipelineStatusStore(file_path=args.status_file)
+
+    print(f"LLM base URL: {settings.internal_llm_base_url}")
+    print(f"Maverick model: {settings.maverick_model}")
+    print(f"Reality checker model: {settings.reality_checker_model}")
+    print(f"OPENAI_API_BASE set: {'yes' if os.environ.get('OPENAI_API_BASE') else 'no'}")
+    print(f"INTERNAL_LLM_BASE_URL set: {'yes' if os.environ.get('INTERNAL_LLM_BASE_URL') else 'no'}")
 
     if args.retry_failed:
         retry_input = status_store.latest_retry_input()

@@ -1,0 +1,16 @@
+.git
+.gitignore
+.venv
+.pytest_cache
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.ipynb
+logs/*
+output/generated/*
+data/raw/*
+data/processed/*
+data/vectorstore/*
+data/models/*

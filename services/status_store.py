@@ -6,6 +6,7 @@ Persist pipeline run statuses and enable retry of failed runs.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import asdict
 from datetime import datetime
@@ -27,6 +28,45 @@ class PipelineStatusStore:
             fp.write(json.dumps(record, ensure_ascii=False) + "\n")
         return self.file_path
 
+    def append_skipped(self, input_payload: Dict[str, Any], reason: str = "duplicate_input") -> Path:
+        record = {
+            "run_id": f"skip-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+            "timestamp": datetime.utcnow().isoformat(timespec="seconds"),
+            "run_status": "SKIPPED_DUPLICATE",
+            "failed_stages": [],
+            "last_error": "",
+            "input": input_payload,
+            "input_fingerprint": self._fingerprint_input(input_payload),
+            "skip_reason": reason,
+            "void_statuses": [],
+            "tid_statuses": [],
+            "output_paths": {},
+            "debate_result": None,
+        }
+        with self.file_path.open("a", encoding="utf-8") as fp:
+            fp.write(json.dumps(record, ensure_ascii=False) + "\n")
+        return self.file_path
+
+    def has_completed_input(self, input_payload: Dict[str, Any]) -> bool:
+        if not self.file_path.exists():
+            return False
+
+        fingerprint = self._fingerprint_input(input_payload)
+        lines = self.file_path.read_text(encoding="utf-8").splitlines()
+        for line in reversed(lines):
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if row.get("run_status") not in {"APPROVED", "COMPLETED"}:
+                continue
+
+            row_fp = row.get("input_fingerprint")
+            if not row_fp:
+                row_fp = self._fingerprint_input(row.get("input", {}))
+            if row_fp == fingerprint:
+                return True
+        return False
+
     def latest_retry_input(self) -> Optional[Dict[str, Any]]:
         if not self.file_path.exists():
             return None
@@ -41,15 +81,22 @@ class PipelineStatusStore:
         return None
 
     def _to_record(self, state: PipelineState) -> Dict[str, Any]:
+        input_payload = state.metadata.get("input", {})
         return {
             "run_id": state.run_id,
             "timestamp": datetime.utcnow().isoformat(timespec="seconds"),
             "run_status": state.run_status,
             "failed_stages": state.failed_stages,
             "last_error": state.last_error,
-            "input": state.metadata.get("input", {}),
+            "input": input_payload,
+            "input_fingerprint": self._fingerprint_input(input_payload),
             "void_statuses": [asdict(v) for v in state.void_statuses],
             "tid_statuses": [asdict(t) for t in state.tid_statuses],
             "output_paths": state.output_paths,
             "debate_result": asdict(state.debate_result) if state.debate_result else None,
         }
+
+    @staticmethod
+    def _fingerprint_input(input_payload: Dict[str, Any]) -> str:
+        canonical = json.dumps(input_payload or {}, ensure_ascii=False, sort_keys=True)
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]

@@ -23,8 +23,9 @@ class MaverickAgent:
 
     def run(self, state: PipelineState, n_drafts: int = 3) -> PipelineState:
         system_prompt = (
-            "You are Maverick, a divergent invention ideation agent. "
-            "Generate novel but technically plausible invention drafts. "
+            "You are an ambitious Kernel and Hardware Architect. "
+            "Draft deep system-level Technical Invention Disclosure ideas that fill topological voids. "
+            "Use precise Linux kernel and x86 hardware terminology only. "
             "Output valid JSON only."
         )
 
@@ -32,6 +33,12 @@ class MaverickAgent:
 Domain: {state.domain}
 Target: {state.target}
 Requested drafts: {n_drafts}
+
+Constraints:
+- Focus strictly on Linux kernel internals plus x86 architecture coupling.
+- Avoid generic AI buzzwords.
+- Include specific kernel subsystems, data structures, or locking implications where appropriate.
+- Each draft must include at least 3 patent claims.
 
 Void context:
 {state.topological_void_context}
@@ -89,11 +96,11 @@ Return JSON:
                     feasibility_thesis=str(item.get("feasibility_thesis", "")),
                     market_thesis=str(item.get("market_thesis", "")),
                     why_now=str(item.get("why_now", "")),
-                    innovation=int(scores.get("innovation", 3)),
-                    implementation_difficulty=int(scores.get("implementation_difficulty", 3)),
-                    commercial_value=int(scores.get("commercial_value", 3)),
-                    technical_risk=int(scores.get("technical_risk", 3)),
-                    prior_art_conflict_risk=int(scores.get("prior_art_conflict_risk", 3)),
+                    innovation=self._clamp_star(scores.get("innovation", 3)),
+                    implementation_difficulty=self._clamp_star(scores.get("implementation_difficulty", 3)),
+                    commercial_value=self._clamp_star(scores.get("commercial_value", 3)),
+                    technical_risk=self._clamp_star(scores.get("technical_risk", 3)),
+                    prior_art_conflict_risk=self._clamp_star(scores.get("prior_art_conflict_risk", 3)),
                     problem_statement=str(detail.get("problem_statement", "")),
                     prior_art_gap=str(detail.get("prior_art_gap", "")),
                     proposed_invention=str(detail.get("proposed_invention", "")),
@@ -125,3 +132,11 @@ Return JSON:
             return json.loads(braces.group(1))
 
         raise ValueError("Maverick output is not valid JSON")
+
+    @staticmethod
+    def _clamp_star(value: Any) -> int:
+        try:
+            score = int(value)
+        except (TypeError, ValueError):
+            score = 3
+        return max(1, min(5, score))

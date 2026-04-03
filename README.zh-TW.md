@@ -220,15 +220,18 @@ deepthought/
 │   ├── ingestion_service.py      # 匯入流程協調
 │   ├── idea_collision_service.py # 單模型 idea collision
 │   ├── pipeline_service.py       # Multi-agent 執行服務
-│   └── status_store.py           # run status 持久化與重試查找
+│   ├── status_store.py           # run status 持久化與重試查找
+│   └── tid_notification_service.py # 新 TID email 通知服務
 │
 ├── scripts/
 │   ├── setup_vectordb.py
 │   ├── ingest_kernel.py
 │   ├── ingest_all.py
 │   ├── run_phase3_probe.py
+│   ├── run_retrieval_audit.py
 │   ├── run_idea_collision.py
 │   ├── run_pipeline.py
+│   ├── run_pipeline_service.py
 │   └── generate_sample_tid_report.py
 │
 ├── tests/
@@ -300,7 +303,7 @@ python scripts/run_pipeline.py \
     --target "scheduler latency optimization"
 ```
 
-## 📌 目前實作進度（2026-04-01）
+## 📌 目前實作進度（2026-04-02）
 
 已完成：
 - 本地端資料匯入主流程（crawler -> parser -> chunker -> Chroma store）
@@ -309,6 +312,9 @@ python scripts/run_pipeline.py \
 - Multi-agent 主幹與可執行 CLI（`forager`、`maverick`、`reality_checker`、`debate_panel`）
 - TID 報告格式器（Markdown + HTML 雙格式輸出）
 - 執行狀態持久化與重試流程（`RETRY_PENDING` + `--retry-failed`）
+- Pipeline 實跑已驗證可到 `APPROVED` 並輸出報告
+- 常駐 service 模式（`scripts/run_pipeline_service.py`）
+- 新 TID email 通知服務（`services/tid_notification_service.py`）
 
 尚缺或部分完成：
 - 完整 prior-art 覆蓋（USPTO/EPO/WIPO 正式匯入）
@@ -318,6 +324,16 @@ python scripts/run_pipeline.py \
 - Production hardening（安全整合、完整稽核、效能基準）
 
 ## ✅ TODO
+
+### 立即執行路線（P0-P3）
+- [ ] P0：先選定本週執行模式（`run_pipeline.py` 單次 vs `run_pipeline_service.py` 常駐）
+- [ ] P0：固定一條 baseline 指令，作為 smoke test 參考
+- [ ] P0：在目前超大模型配置下，連續驗證 2-3 次成功 run
+- [ ] P1：持續跑 service 模式，確認 `pipeline_runs.jsonl` 穩定成長
+- [ ] P1：在穩定化期間維持通知關閉（`tid_email_notifications_enabled=false`）
+- [ ] P2：補上 process supervision（systemd/supervisor）與自動重啟策略
+- [ ] P2：補上 log rotation 與保留策略（長期服務）
+- [ ] P3：補上 hallucination guard（RAG 驗證）、prior-art conflict detector、claim confidence scoring
 
 ### Phase 1: Foundation
 - [x] 環境建立與驗證
@@ -363,6 +379,71 @@ python scripts/run_pipeline.py \
 - [ ] 效能基準測試
 - [ ] 多領域支援（Android、RISC-V）
 - [ ] 隨時間追蹤拓撲空洞變化
+- [x] 常駐 service 執行模式
+- [x] 新 TID email 通知掛鉤（SMTP）
+
+## 🔁 Service 模式（常駐執行）
+
+DeepThought 目前支援 Docker 化的常駐服務執行。
+
+### 啟動 / 停止服務
+
+```bash
+bash scripts/start_service.sh
+bash scripts/stop_service.sh
+```
+
+### 追蹤服務日誌
+
+```bash
+docker compose logs -f deepthought-service
+```
+
+### 資料持久化與不重建 DB 行為
+
+容器使用以下 bind mount：
+
+- `./data:/app/data`
+- `./logs:/app/logs`
+- `./output:/app/output`
+
+因此既有 `data/raw` 與 `data/vectorstore` 會在重啟後直接沿用。
+啟停服務不會重建向量資料庫。
+
+### 執行參數（docker-compose environment）
+
+- `TARGET`：每輪迭代的基礎任務目標。
+- `N_DRAFTS`：每輪 Innovator 產生草案數（預設 `8`）。
+- `TOP_K_VOIDS`：每輪挑選的 void 數量（預設 `30`）。
+- `INTERVAL_SECONDS`：迴圈間隔秒數（預設 `300`）。
+- `RANDOM_WALK_MUTATE_ENABLED`：`true` 時，檢索前先做 Random Walk and Mutate。
+- `MUTATION_SEED_HINT`：Mutator Agent 的突變提示語。
+- `SKIP_DUPLICATE_INPUT`：`true` 時，已完成的相同輸入指紋會略過。
+- `TID_EMAIL_NOTIFICATIONS_ENABLED`：啟用/停用 SMTP 通知。
+
+### Random Walk and Mutate 流程
+
+當 `RANDOM_WALK_MUTATE_ENABLED=true`，每輪會執行：
+
+1. 從 VectorDB 隨機抽一個 chunk。
+2. 經由 LLM 突變成新的 x86/Linux 目標語句。
+3. 以突變後 target 進入 MMR void discovery。
+
+## 📧 新 TID Email 通知
+
+啟動 service 前設定 SMTP 參數：
+
+```bash
+export SMTP_HOST=smtp.your-company.com
+export SMTP_PORT=587
+export SMTP_USE_TLS=true
+export SMTP_USERNAME=your_account
+export SMTP_PASSWORD=your_password
+export SMTP_FROM=deepthought@your-company.com
+export TID_NOTIFY_TO=your.name@your-company.com
+```
+
+當 run 到 `APPROVED`/`COMPLETED` 且有報告輸出時，系統會針對每個新 `run_id` 發送一次通知信。
 
 ## 🔒 安全模型
 

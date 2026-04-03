@@ -10,6 +10,7 @@ import json
 import re
 from typing import Dict, List
 
+from configs.settings import settings
 from agents.llm_client import LLMClient
 from agents.state import CritiqueResult, PipelineState
 
@@ -23,27 +24,40 @@ class RealityCheckerAgent:
 
         for draft in state.drafts:
             system_prompt = (
-                "You are Reality Checker, a strict technical critic. "
-                "Assess feasibility, consistency, and prior-art collision risk. "
+                                "You are a merciless Linux Kernel Maintainer and Intel patent committee reviewer. "
+                                "You despise hallucinations, fluff, and unfeasible system design. "
                 "Output valid JSON only."
             )
             user_prompt = f"""
-Draft title: {draft.title}
+Critique this TID draft:
+
+Title: {draft.title}
 One-liner: {draft.one_liner}
 Novelty thesis: {draft.novelty_thesis}
 Feasibility thesis: {draft.feasibility_thesis}
 Problem statement: {draft.problem_statement}
+Prior-art gap: {draft.prior_art_gap}
 Proposed invention: {draft.proposed_invention}
 Architecture: {draft.architecture_overview}
 Implementation plan: {draft.implementation_plan}
 Validation plan: {draft.validation_plan}
+Claims: {draft.draft_claims}
 
-Return JSON:
+Evaluation criteria:
+1. Hallucination check: verify Linux kernel functions and x86 concepts are realistic.
+2. Domain compliance: must be x86 plus Linux kernel internals.
+3. Patentability: non-obviousness and prior-art risk.
+
+Return strict JSON with this exact shape:
 {{
-  "verdict": "APPROVE|REVISE|REJECT",
-  "rationale": "string",
-  "required_revisions": ["string"],
-  "confidence": 0.0
+    "scorecard": {{
+        "innovation": 1,
+        "feasibility": 1,
+        "prior_art_risk": 1
+    }},
+    "hallucinations_found": ["string"],
+    "actionable_feedback": "string",
+    "approved": false
 }}
 """.strip()
 
@@ -53,13 +67,22 @@ Return JSON:
                 temperature=0.2,
             )
             data = self._parse_json(raw)
+            scorecard = data.get("scorecard", {}) if isinstance(data, dict) else {}
+            feasibility = self._clamp_star(scorecard.get("feasibility", 2))
+            innovation = self._clamp_star(scorecard.get("innovation", 2))
+            prior_art_risk = self._clamp_star(scorecard.get("prior_art_risk", 3))
+            hallucinations = [str(x) for x in data.get("hallucinations_found", [])]
+            approved = bool(data.get("approved", False)) and feasibility >= 4 and not hallucinations
+            verdict = "APPROVE" if approved else ("REJECT" if feasibility <= 2 else "REVISE")
+            feedback = str(data.get("actionable_feedback", "")).strip()
+            confidence = min(0.99, max(0.1, (innovation + feasibility + (6 - prior_art_risk)) / 15.0))
 
             critiques.append(
                 CritiqueResult(
-                    verdict=str(data.get("verdict", "REVISE")).upper(),
-                    rationale=str(data.get("rationale", "")),
-                    required_revisions=[str(x) for x in data.get("required_revisions", [])],
-                    confidence=float(data.get("confidence", 0.5)),
+                    verdict=verdict,
+                    rationale=feedback or "No actionable feedback provided",
+                    required_revisions=[feedback] + hallucinations if (feedback or hallucinations) else ["Tighten feasibility and remove hallucinations"],
+                    confidence=confidence,
                 )
             )
 
@@ -73,12 +96,73 @@ Return JSON:
                 revised.append(draft)
                 continue
 
-            patch = "\n".join(f"- {x}" for x in critique.required_revisions)
-            draft.proposed_invention = (
-                draft.proposed_invention.strip() +
-                "\n\nRevision constraints applied:\n" + patch
+            system_prompt = (
+                "You are Innovator, an aggressive kernel and x86 architect revising a TID draft. "
+                "Apply all reviewer feedback while keeping high novelty and technical plausibility. "
+                "Output valid JSON only."
             )
-            revised.append(draft)
+            user_prompt = f"""
+Current draft title: {draft.title}
+Current one-liner: {draft.one_liner}
+Current novelty thesis: {draft.novelty_thesis}
+Current feasibility thesis: {draft.feasibility_thesis}
+Current problem statement: {draft.problem_statement}
+Current prior-art gap: {draft.prior_art_gap}
+Current proposed invention: {draft.proposed_invention}
+Current architecture: {draft.architecture_overview}
+Current implementation plan: {draft.implementation_plan}
+Current validation plan: {draft.validation_plan}
+Current claims: {draft.draft_claims}
+
+Reviewer required revisions:
+{chr(10).join(f'- {x}' for x in critique.required_revisions)}
+
+Return JSON:
+{{
+  "title": "string",
+  "one_liner": "string",
+  "novelty_thesis": "string",
+  "feasibility_thesis": "string",
+  "market_thesis": "string",
+  "why_now": "string",
+  "scores": {{
+    "innovation": 1,
+    "implementation_difficulty": 1,
+    "commercial_value": 1,
+    "technical_risk": 1,
+    "prior_art_conflict_risk": 1
+  }},
+  "tid_detail": {{
+    "problem_statement": "string",
+    "prior_art_gap": "string",
+    "proposed_invention": "string",
+    "architecture_overview": "string",
+    "implementation_plan": "string",
+    "validation_plan": "string",
+    "draft_claims": ["string"],
+    "risks_and_mitigations": ["string"],
+    "references": ["string"]
+  }}
+}}
+""".strip()
+
+            try:
+                raw = self.llm.chat(
+                    model=settings.maverick_model,
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                    temperature=0.5,
+                )
+                payload = self._parse_json(raw)
+                revised.append(self._merge_revised_draft(draft, payload))
+            except Exception:
+                # Fallback: keep draft but annotate constraints to avoid losing progress.
+                patch = "\n".join(f"- {x}" for x in critique.required_revisions)
+                draft.proposed_invention = (
+                    draft.proposed_invention.strip() +
+                    "\n\nRevision constraints applied:\n" + patch
+                )
+                revised.append(draft)
 
         state.drafts = revised
         state.revisions += 1
@@ -99,8 +183,52 @@ Return JSON:
             return json.loads(braces.group(1))
 
         return {
-            "verdict": "REVISE",
-            "rationale": "Could not parse critique JSON",
-            "required_revisions": ["Return strict JSON output"],
-            "confidence": 0.2,
+            "scorecard": {
+                "innovation": 2,
+                "feasibility": 2,
+                "prior_art_risk": 3,
+            },
+            "hallucinations_found": ["Could not parse critique JSON"],
+            "actionable_feedback": "Return strict JSON output and fix factual kernel and x86 references",
+            "approved": False,
         }
+
+    @staticmethod
+    def _clamp_star(value) -> int:
+        try:
+            score = int(value)
+        except (TypeError, ValueError):
+            score = 3
+        return max(1, min(5, score))
+
+    def _merge_revised_draft(self, original, payload: Dict) -> "DraftIdea":
+        from agents.state import DraftIdea
+
+        scores = payload.get("scores", {}) if isinstance(payload, dict) else {}
+        detail = payload.get("tid_detail", {}) if isinstance(payload, dict) else {}
+        return DraftIdea(
+            title=str(payload.get("title", original.title)),
+            one_liner=str(payload.get("one_liner", original.one_liner)),
+            novelty_thesis=str(payload.get("novelty_thesis", original.novelty_thesis)),
+            feasibility_thesis=str(payload.get("feasibility_thesis", original.feasibility_thesis)),
+            market_thesis=str(payload.get("market_thesis", original.market_thesis)),
+            why_now=str(payload.get("why_now", original.why_now)),
+            innovation=self._clamp_star(scores.get("innovation", original.innovation)),
+            implementation_difficulty=self._clamp_star(
+                scores.get("implementation_difficulty", original.implementation_difficulty)
+            ),
+            commercial_value=self._clamp_star(scores.get("commercial_value", original.commercial_value)),
+            technical_risk=self._clamp_star(scores.get("technical_risk", original.technical_risk)),
+            prior_art_conflict_risk=self._clamp_star(
+                scores.get("prior_art_conflict_risk", original.prior_art_conflict_risk)
+            ),
+            problem_statement=str(detail.get("problem_statement", original.problem_statement)),
+            prior_art_gap=str(detail.get("prior_art_gap", original.prior_art_gap)),
+            proposed_invention=str(detail.get("proposed_invention", original.proposed_invention)),
+            architecture_overview=str(detail.get("architecture_overview", original.architecture_overview)),
+            implementation_plan=str(detail.get("implementation_plan", original.implementation_plan)),
+            validation_plan=str(detail.get("validation_plan", original.validation_plan)),
+            draft_claims=[str(x) for x in detail.get("draft_claims", original.draft_claims)],
+            risks_and_mitigations=[str(x) for x in detail.get("risks_and_mitigations", original.risks_and_mitigations)],
+            references=[str(x) for x in detail.get("references", original.references)],
+        )
