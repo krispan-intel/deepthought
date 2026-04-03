@@ -1,24 +1,31 @@
 """
 agents/debate_panel.py
 
-Debate Panel agent: multi-model synthesis over approved/revised drafts.
+Virtual Patent Committee:
+- 4 specialist reviewers (kernel, prior-art, strategy, security)
+- optional fact-check retrieval for contested claims
+- chairman synthesis with deterministic veto rules
 """
 
 from __future__ import annotations
 
 import json
 import re
-from typing import Dict, List
+from typing import Any, Dict, List
+
+from loguru import logger
 
 from configs.settings import settings
 
 from agents.llm_client import LLMClient
 from agents.state import DebateResult, PipelineState
+from vectordb.store import DeepThoughtVectorStore
 
 
 class DebatePanelAgent:
     def __init__(self, llm: LLMClient | None = None):
         self.llm = llm or LLMClient()
+        self.store = DeepThoughtVectorStore()
 
     def run(self, state: PipelineState) -> PipelineState:
         if not state.drafts:
@@ -32,28 +39,57 @@ class DebatePanelAgent:
 
         draft_blob = self._format_drafts(state)
 
-        thinker = self.llm.chat(
-            model=settings.debate_deep_thinker_model,
-            system_prompt="You are Deep Thinker. Find edge cases, hidden assumptions, and long-term constraints.",
-            user_prompt=draft_blob,
-            temperature=0.5,
-        )
-        coder = self.llm.chat(
-            model=settings.debate_code_expert_model,
-            system_prompt="You are Code Expert. Evaluate implementation realism, integration cost, and verification strategy.",
-            user_prompt=draft_blob,
-            temperature=0.4,
-        )
+        reports = {
+            "kernel_hardliner": self._specialist_review(
+                role="Kernel Hardliner",
+                model=settings.debate_code_expert_model,
+                system_prompt=(
+                    "You are The Kernel Hardliner. Focus on Linux kernel implementation correctness, "
+                    "locking and concurrency validity. Reject unsafe ideas."
+                ),
+                draft_blob=draft_blob,
+            ),
+            "prior_art_shark": self._specialist_review(
+                role="Prior-Art Shark",
+                model=settings.debate_deep_thinker_model,
+                system_prompt=(
+                    "You are The Prior-Art Shark. Focus on novelty, non-obviousness, and overlap risk with known work."
+                ),
+                draft_blob=draft_blob,
+            ),
+            "intel_strategist": self._specialist_review(
+                role="Intel Strategist",
+                model=settings.debate_deep_thinker_model,
+                system_prompt=(
+                    "You are The Intel Strategist. Focus on x86 strategic value, Xeon competitiveness, and HW/SW co-design leverage."
+                ),
+                draft_blob=draft_blob,
+            ),
+            "security_guardian": self._specialist_review(
+                role="Security Guardian",
+                model=settings.debate_code_expert_model,
+                system_prompt=(
+                    "You are The Security and Stability Guardian. Focus on TAA/side-channel risk, crash risk, and compatibility guarantees."
+                ),
+                draft_blob=draft_blob,
+            ),
+        }
 
-        judge_prompt = f"""
-Drafts:
-{draft_blob}
+        fact_checks = self._run_fact_checks(reports)
 
-Deep Thinker view:
-{thinker}
+        chairman_prompt = f"""
+You are the Chairman of the Intel DeepThought Patent Committee.
 
-Code Expert view:
-{coder}
+Consensus rules:
+- CRITICAL REJECT: if any specialist reports status REJECT or fatal flaw.
+- REVISE: if no fatal flaws but any score < 4 or unresolved major issues.
+- APPROVE: only if all 4 specialists score >= 4 and no fatal flaw.
+
+Specialist reports (JSON):
+{json.dumps(reports, ensure_ascii=False, indent=2)}
+
+Fact-check notes:
+{json.dumps(fact_checks, ensure_ascii=False, indent=2)}
 
 Return strict JSON:
 {{
@@ -64,19 +100,34 @@ Return strict JSON:
 }}
 """.strip()
 
-        judge = self.llm.chat(
+        chairman = self.llm.chat(
             model=settings.debate_judge_model,
-            system_prompt="You are final judge. Select the best candidate and produce concise final synthesis.",
-            user_prompt=judge_prompt,
-            temperature=0.3,
+            system_prompt="Be strict, concise, and enforce the committee rules.",
+            user_prompt=chairman_prompt,
+            temperature=0.2,
         )
-        result = self._parse_json(judge)
+        chairman_result = self._parse_json(chairman)
+
+        deterministic = self._deterministic_verdict(reports)
+        final_verdict = deterministic["final_verdict"]
+        synthesis = deterministic["synthesis"]
+        confidence = deterministic["confidence"]
+        winning_title = str(chairman_result.get("winning_title", "")).strip()
+        if not winning_title and state.drafts:
+            winning_title = state.drafts[0].title
+
+        state.metadata["committee_reports"] = reports
+        state.metadata["committee_fact_checks"] = fact_checks
+
+        if final_verdict == "REJECT":
+            state.run_status = "REJECTED"
+            state.last_error = synthesis
 
         state.debate_result = DebateResult(
-            final_verdict=str(result.get("final_verdict", "REVISE")).upper(),
-            winning_title=str(result.get("winning_title", "")),
-            synthesis=str(result.get("synthesis", "")),
-            confidence=float(result.get("confidence", 0.5)),
+            final_verdict=final_verdict,
+            winning_title=winning_title,
+            synthesis=synthesis,
+            confidence=confidence,
         )
 
         selected = 0
@@ -86,6 +137,112 @@ Return strict JSON:
                 break
         state.selected_draft_index = selected
         return state
+
+    def _specialist_review(self, role: str, model: str, system_prompt: str, draft_blob: str) -> Dict[str, Any]:
+        user_prompt = f"""
+Role: {role}
+
+Review all candidate drafts below and pick the strongest one for your report.
+
+Drafts:
+{draft_blob}
+
+Return strict JSON:
+{{
+  "preferred_title": "string",
+  "status": "APPROVE|REVISE|REJECT",
+  "fatal_flaw": "string or empty",
+  "score": 1,
+  "issues": ["string"],
+  "yellow_cards": 0,
+  "fact_check_queries": ["kernel symbol or file path to verify"]
+}}
+""".strip()
+
+        raw = self.llm.chat(
+            model=model,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            temperature=0.2,
+        )
+        data = self._parse_json(raw)
+        status = str(data.get("status", "REVISE")).upper().strip()
+        if status not in {"APPROVE", "REVISE", "REJECT"}:
+            status = "REVISE"
+
+        return {
+            "preferred_title": str(data.get("preferred_title", "")).strip(),
+            "status": status,
+            "fatal_flaw": str(data.get("fatal_flaw", "")).strip(),
+            "score": self._clamp_score(data.get("score", 2)),
+            "issues": [str(x) for x in data.get("issues", [])][:10],
+            "yellow_cards": max(0, int(data.get("yellow_cards", 0) or 0)),
+            "fact_check_queries": [str(x) for x in data.get("fact_check_queries", [])][:6],
+        }
+
+    def _run_fact_checks(self, reports: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+        checks: Dict[str, Any] = {}
+        for name, report in reports.items():
+            queries = report.get("fact_check_queries", [])
+            if not queries:
+                continue
+
+            query_results: Dict[str, List[Dict[str, Any]]] = {}
+            for q in queries[:3]:
+                try:
+                    hits = self.store.query(query_text=q, n_results=2)
+                    query_results[q] = [
+                        {
+                            "label": h.to_tech_vector().label,
+                            "similarity": round(float(h.similarity), 4),
+                            "source": str(h.document.metadata.get("file_path", "")),
+                        }
+                        for h in hits
+                    ]
+                except Exception as exc:
+                    query_results[q] = [{"error": str(exc)}]
+
+            checks[name] = query_results
+        return checks
+
+    @staticmethod
+    def _clamp_score(value: Any) -> int:
+        try:
+            score = int(value)
+        except (TypeError, ValueError):
+            score = 2
+        return max(1, min(5, score))
+
+    @staticmethod
+    def _deterministic_verdict(reports: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+        statuses = [r.get("status", "REVISE") for r in reports.values()]
+        fatal = [r.get("fatal_flaw", "").strip() for r in reports.values() if r.get("fatal_flaw", "").strip()]
+        scores = [int(r.get("score", 2) or 2) for r in reports.values()]
+        yellow_cards = sum(int(r.get("yellow_cards", 0) or 0) for r in reports.values())
+
+        if any(s == "REJECT" for s in statuses) or fatal:
+            reason = "; ".join(fatal) if fatal else "Committee fatal rejection"
+            return {"final_verdict": "REJECT", "synthesis": reason, "confidence": 0.95}
+
+        if yellow_cards >= 2:
+            return {
+                "final_verdict": "REJECT",
+                "synthesis": f"Rejected by yellow-card rule (yellow_cards={yellow_cards})",
+                "confidence": 0.9,
+            }
+
+        if all(score >= 4 for score in scores) and all(s == "APPROVE" for s in statuses):
+            return {
+                "final_verdict": "APPROVE",
+                "synthesis": "All specialists approved with score >= 4.",
+                "confidence": 0.9,
+            }
+
+        return {
+            "final_verdict": "REVISE",
+            "synthesis": "Committee requested revision due to unresolved issues.",
+            "confidence": 0.7,
+        }
 
     def _format_drafts(self, state: PipelineState) -> str:
         lines: List[str] = []
@@ -98,6 +255,11 @@ Return strict JSON:
                     f"Novelty: {d.novelty_thesis}",
                     f"Feasibility: {d.feasibility_thesis}",
                     f"Market: {d.market_thesis}",
+                    f"Problem: {d.problem_statement}",
+                    f"Proposed Invention: {d.proposed_invention}",
+                    f"Architecture: {d.architecture_overview}",
+                    f"Implementation Plan: {d.implementation_plan}",
+                    f"Claims: {d.draft_claims}",
                     "",
                 ]
             )

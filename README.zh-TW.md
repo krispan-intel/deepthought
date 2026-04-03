@@ -328,12 +328,16 @@ python scripts/run_pipeline.py \
 ### 立即執行路線（P0-P3）
 - [ ] P0：先選定本週執行模式（`run_pipeline.py` 單次 vs `run_pipeline_service.py` 常駐）
 - [ ] P0：固定一條 baseline 指令，作為 smoke test 參考
-- [ ] P0：在目前超大模型配置下，連續驗證 2-3 次成功 run
+- [ ] P0：完成 Copilot backend 長跑驗證，直到第一份 `APPROVED` TID（`--once` 語義）
 - [ ] P1：持續跑 service 模式，確認 `pipeline_runs.jsonl` 穩定成長
 - [ ] P1：在穩定化期間維持通知關閉（`tid_email_notifications_enabled=false`）
 - [ ] P2：補上 process supervision（systemd/supervisor）與自動重啟策略
 - [ ] P2：補上 log rotation 與保留策略（長期服務）
-- [ ] P3：補上 hallucination guard（RAG 驗證）、prior-art conflict detector、claim confidence scoring
+- [ ] P3：補上 prior-art conflict detector 與 claim confidence scoring
+- [x] P0：啟用 Linux 主機 Copilot CLI backend（`LLM_BACKEND=copilot_cli`）
+- [x] P0：啟用嚴格輸出閘門（僅 `APPROVED` 才輸出 TID）
+- [x] P1：加入殘酷淘汰機制（`fatal_flaw`、三振出局、stage 失敗紅牌）
+- [x] P1：加入虛擬專利委員會共識審查（四專家 + 主席 + 一票否決）
 
 ### Phase 1: Foundation
 - [x] 環境建立與驗證
@@ -363,7 +367,7 @@ python scripts/run_pipeline.py \
 - [x] Maverick Agent（DeepSeek-V3）
 - [x] Reality Checker Agent（Claude Sonnet 4）
 - [x] Debate Panel（DeepSeek-R1 + Qwen3-Coder + Qwen3）
-- [ ] 透過 RAG 驗證的幻覺防護
+- [x] 透過委員會 fact-check 檢索與 fatal-flaw 規則的幻覺防護
 - [ ] Human-in-the-loop 人工審查節點
 
 ### Phase 5: Output
@@ -420,6 +424,28 @@ docker compose logs -f deepthought-service
 - `MUTATION_SEED_HINT`：Mutator Agent 的突變提示語。
 - `SKIP_DUPLICATE_INPUT`：`true` 時，已完成的相同輸入指紋會略過。
 - `TID_EMAIL_NOTIFICATIONS_ENABLED`：啟用/停用 SMTP 通知。
+
+### 在 Linux 主機上用 GitHub Copilot CLI 試跑 GPT-5.4
+
+如果你的 Linux 主機已完成 `gh auth login`，且 `gh copilot -p "..."` 可以正常回應，
+就可以把 pipeline backend 切成 Copilot CLI，而不是內部 OpenAI-compatible endpoint。
+
+```bash
+export LLM_BACKEND=copilot_cli
+export COPILOT_CLI_COMMAND="gh copilot"
+python scripts/run_pipeline_service.py \
+      --target "Generate new x86 IP or any improvement to any part of the Linux kernel on x86" \
+      --random-walk-mutate \
+      --n-drafts 8 \
+      --top-k-voids 30 \
+      --interval-seconds 300
+```
+
+注意：
+
+- 這個模式適合 Linux 主機上的實驗，不建議直接當成無人值守 Docker production backend。
+- 執行前請確認 `GH_TOKEN` / `GITHUB_TOKEN` 已 unset，讓 `gh copilot` 會回退讀取 `~/.config/gh/hosts.yml`。
+- 成功互動時 Copilot CLI 目前會顯示使用 `gpt-5.4`，但實際模型選擇權仍在 GitHub Copilot 端，不是由本 repo 控制。
 
 ### Random Walk and Mutate 流程
 

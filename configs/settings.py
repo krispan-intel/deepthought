@@ -36,6 +36,18 @@ class Settings(BaseSettings):
     llm_request_backoff_seconds: float = Field(
         default=2.0
     )
+    llm_backend: str = Field(
+        default="openai"
+    )
+    copilot_cli_command: str = Field(
+        default="gh copilot"
+    )
+    copilot_cli_timeout_seconds: int = Field(
+        default=420
+    )
+    copilot_prompt_max_chars: int = Field(
+        default=12000
+    )
     llm_fallback_models: str = Field(
         default="DCAI_GAUDI2_DeepSeek-R1-671B,qwen3-coder-480b-a35b-instruct-fp8,IT_DCAI_GAUDI2_Qwen3-32B"
     )
@@ -102,6 +114,8 @@ class Settings(BaseSettings):
     max_revision_iterations: int = Field(default=3)
     min_confidence_score: float = Field(default=0.75)
     max_debate_rounds: int = Field(default=3)
+    export_only_approved_tid: bool = Field(default=True)
+    reject_on_stage_failure: bool = Field(default=True)
 
     # ── Logging ──────────────────────────────────────────────────
     log_level: str = Field(default="INFO")

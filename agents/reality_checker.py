@@ -24,8 +24,8 @@ class RealityCheckerAgent:
 
         for draft in state.drafts:
             system_prompt = (
-                                "You are a merciless Linux Kernel Maintainer and Intel patent committee reviewer. "
-                                "You despise hallucinations, fluff, and unfeasible system design. "
+                "You are a ruthless Intel patent reviewer and Linux kernel maintainer. "
+                "Your KPI is to reject bad ideas, not to fix them. "
                 "Output valid JSON only."
             )
             user_prompt = f"""
@@ -47,9 +47,19 @@ Evaluation criteria:
 1. Hallucination check: verify Linux kernel functions and x86 concepts are realistic.
 2. Domain compliance: must be x86 plus Linux kernel internals.
 3. Patentability: non-obviousness and prior-art risk.
+4. Locking and concurrency validity: detect race conditions, ABBA deadlocks, illegal lock pointer migrations.
+5. Hardware reality: TSX/TAA mitigations must be acknowledged with robust software fallback.
+6. ext4/VFS compatibility: no on-disk format break and no fictional metadata fields.
+
+Decision policy:
+- APPROVED: only if technically sound and no major flaw.
+- REVISE: core idea is promising but fixable.
+- REJECT: fundamental architectural flaw, unsafe concurrency model, or incompatible design.
 
 Return strict JSON with this exact shape:
 {{
+    "status": "APPROVED|REVISE|REJECT",
+    "fatal_flaw": "string or empty",
     "scorecard": {{
         "innovation": 1,
         "feasibility": 1,
@@ -72,8 +82,14 @@ Return strict JSON with this exact shape:
             innovation = self._clamp_star(scorecard.get("innovation", 2))
             prior_art_risk = self._clamp_star(scorecard.get("prior_art_risk", 3))
             hallucinations = [str(x) for x in data.get("hallucinations_found", [])]
-            approved = bool(data.get("approved", False)) and feasibility >= 4 and not hallucinations
-            verdict = "APPROVE" if approved else ("REJECT" if feasibility <= 2 else "REVISE")
+            status = str(data.get("status", "")).upper().strip()
+            fatal_flaw = str(data.get("fatal_flaw", "")).strip()
+
+            if status not in {"APPROVED", "REVISE", "REJECT"}:
+                approved = bool(data.get("approved", False)) and feasibility >= 4 and not hallucinations and not fatal_flaw
+                status = "APPROVED" if approved else ("REJECT" if feasibility <= 2 or fatal_flaw else "REVISE")
+
+            verdict = "APPROVE" if status == "APPROVED" else status
             feedback = str(data.get("actionable_feedback", "")).strip()
             confidence = min(0.99, max(0.1, (innovation + feasibility + (6 - prior_art_risk)) / 15.0))
 
@@ -83,6 +99,7 @@ Return strict JSON with this exact shape:
                     rationale=feedback or "No actionable feedback provided",
                     required_revisions=[feedback] + hallucinations if (feedback or hallucinations) else ["Tighten feasibility and remove hallucinations"],
                     confidence=confidence,
+                    fatal_flaw=fatal_flaw,
                 )
             )
 
@@ -183,6 +200,8 @@ Return JSON:
             return json.loads(braces.group(1))
 
         return {
+            "status": "REVISE",
+            "fatal_flaw": "",
             "scorecard": {
                 "innovation": 2,
                 "feasibility": 2,

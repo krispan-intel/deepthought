@@ -43,6 +43,7 @@ class CritiqueResult:
     rationale: str
     required_revisions: List[str] = field(default_factory=list)
     confidence: float = 0.5
+    fatal_flaw: str = ""
 
 
 @dataclass

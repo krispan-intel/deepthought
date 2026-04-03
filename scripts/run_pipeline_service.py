@@ -65,7 +65,11 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_MUTATION_HINT,
         help="Instruction used by LLM when mutating random seed chunk",
     )
-    parser.add_argument("--once", action="store_true", help="Run one iteration then exit")
+    parser.add_argument(
+        "--once",
+        action="store_true",
+        help="Run until one APPROVED TID is produced (non-approved iterations do not count)",
+    )
     parser.add_argument(
         "--skip-duplicate-input",
         action="store_true",
@@ -74,7 +78,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def run_once(args: argparse.Namespace) -> int:
+def run_once(args: argparse.Namespace):
     service = PipelineService()
     status_store = PipelineStatusStore(file_path=args.status_file)
     notifier = TIDNotificationService()
@@ -116,7 +120,7 @@ def run_once(args: argparse.Namespace) -> int:
         status_path = status_store.append_skipped(input_payload=input_payload)
         print("Service iteration skipped (duplicate input already completed)")
         print(f"Status file: {status_path}")
-        return 0
+        return None
 
     state = service.run(
         domain=args.domain,
@@ -142,11 +146,15 @@ def run_once(args: argparse.Namespace) -> int:
     print(f"Run ID: {state.run_id}")
     print(f"Run status: {state.run_status}")
     print(f"Status file: {status_path}")
+    if state.failed_stages:
+        print(f"Failed stages: {', '.join(state.failed_stages)}")
+    if state.last_error:
+        print(f"Last error: {state.last_error}")
     if state.output_paths:
         print(f"Markdown: {state.output_paths.get('markdown', '')}")
         print(f"HTML: {state.output_paths.get('html', '')}")
     print(f"Email notified: {'yes' if notified else 'no'}")
-    return 0
+    return state
 
 
 def main() -> int:
@@ -155,11 +163,30 @@ def main() -> int:
         raise ValueError("--interval-seconds must be positive")
 
     print(f"Service mode start | interval={args.interval_seconds}s")
-    print(f"LLM base URL: {settings.internal_llm_base_url}")
-    print(f"Maverick model: {settings.maverick_model}")
+    print(f"LLM backend: {settings.llm_backend}")
+    if settings.llm_backend == "copilot_cli":
+        print(f"Copilot CLI command: {settings.copilot_cli_command}")
+    else:
+        print(f"LLM base URL: {settings.internal_llm_base_url}")
+        print(f"Maverick model: {settings.maverick_model}")
 
     if args.once:
-        return run_once(args)
+        attempt = 0
+        while True:
+            attempt += 1
+            print(f"Once-mode attempt: {attempt}")
+            try:
+                state = run_once(args)
+            except Exception as exc:
+                logger.exception(f"Once-mode iteration crashed: {exc}")
+                state = None
+
+            if state and state.run_status == "APPROVED" and state.output_paths:
+                print("Once-mode satisfied: APPROVED TID generated.")
+                return 0
+
+            print("Once-mode continuing: no APPROVED TID yet.")
+            time.sleep(args.interval_seconds)
 
     while True:
         try:

@@ -25,7 +25,7 @@ def _validate_star(value: int, name: str) -> int:
 
 
 def _stars(value: int) -> str:
-    return "★" * value + "☆" * (5 - value)
+  return f"[{value}/5]"
 
 
 def _safe_text(value: str) -> str:
@@ -134,9 +134,9 @@ Target: {self.target}
 - Commercial Value: {_safe_text(self.summary.market_thesis)}
 - Why Now: {_safe_text(self.summary.why_now) or "N/A"}
 
-## 2. Scorecard (1-5 Stars)
+## 2. Scorecard (1-5)
 
-| Dimension | Score | Stars |
+| Dimension | Score | Rating |
 |---|---:|---|
 | Innovation | {self.scorecard.innovation}/5 | {_stars(self.scorecard.innovation)} |
 | Implementation Difficulty | {self.scorecard.implementation_difficulty}/5 | {_stars(self.scorecard.implementation_difficulty)} |
@@ -258,10 +258,10 @@ Target: {self.target}
     </section>
 
     <section class="card">
-      <h2>2. Scorecard (1-5 Stars)</h2>
+      <h2>2. Scorecard (1-5)</h2>
       <table>
         <thead>
-          <tr><th>Dimension</th><th>Score</th><th>Stars</th></tr>
+          <tr><th>Dimension</th><th>Score</th><th>Rating</th></tr>
         </thead>
         <tbody>
           <tr><td>Innovation</td><td>{self.scorecard.innovation}/5</td><td class="stars">{_stars(self.scorecard.innovation)}</td></tr>

@@ -7,6 +7,7 @@ DeepThought multi-agent pipeline orchestrator.
 from __future__ import annotations
 
 from pathlib import Path
+from loguru import logger
 
 from configs.settings import settings
 from output.tid_formatter import TIDDetail, TIDReport, TIDScorecard, TIDSummary
@@ -48,18 +49,49 @@ class DeepThoughtPipeline:
 
         # Revision loop driven by reality checker
         try:
-            for _ in range(settings.max_revision_iterations):
+            revision_attempts = 0
+            while revision_attempts < settings.max_revision_iterations:
                 state = self.reality_checker.run(state)
+                revision_attempts += 1
                 has_revise = any(c.verdict == "REVISE" for c in state.critiques)
+                has_approve = any(c.verdict == "APPROVE" for c in state.critiques)
                 hard_reject = all(c.verdict == "REJECT" for c in state.critiques)
+                fatal_flaws = [c.fatal_flaw for c in state.critiques if c.fatal_flaw]
+
                 if hard_reject:
+                    state.run_status = "REJECTED"
+                    state.last_error = "; ".join(fatal_flaws) if fatal_flaws else "All drafts rejected by reality checker"
+                    state.metadata["rejected_reason"] = state.last_error
+                    for t in state.tid_statuses:
+                        t.status = "REJECTED"
                     break
+
                 if not has_revise:
                     break
+
+                if revision_attempts >= settings.max_revision_iterations:
+                    # Three-strikes rule: unresolved revisions are aborted.
+                    state.run_status = "REJECTED"
+                    state.last_error = "Failed to satisfy reality checker after maximum revisions"
+                    state.metadata["rejected_reason"] = state.last_error
+                    for t in state.tid_statuses:
+                        if t.status not in {"REJECTED"}:
+                            t.status = "REJECTED"
+                    break
+
+                if has_revise and not has_approve:
+                    state = self.reality_checker.revise_drafts(state)
+                    continue
+
+                # Mixed APPROVE/REVISE case: revise unresolved drafts and continue.
                 state = self.reality_checker.revise_drafts(state)
+
             state.metadata["stage_status"]["reality_checker"] = "OK"
         except Exception as exc:
             state = self._mark_failure(state, "reality_checker", exc)
+
+        if state.run_status == "REJECTED":
+            return state
 
         try:
             state = self.debate_panel.run(state)
@@ -73,11 +105,26 @@ class DeepThoughtPipeline:
                 t.status = "REJECTED"
 
         if state.failed_stages:
-            state.run_status = "RETRY_PENDING"
+            if settings.reject_on_stage_failure:
+                state.run_status = "REJECTED"
+                if not state.last_error:
+                    state.last_error = f"Stage failure: {', '.join(state.failed_stages)}"
+                for t in state.tid_statuses:
+                    if t.status not in {"APPROVED_AND_EXPORTED", "REJECTED"}:
+                        t.status = "REJECTED"
+                        t.last_error = state.last_error
+            else:
+                state.run_status = "RETRY_PENDING"
         elif state.debate_result and state.debate_result.final_verdict == "APPROVE":
             state.run_status = "APPROVED"
+        elif state.debate_result and state.debate_result.final_verdict == "REJECT":
+            state.run_status = "REJECTED"
+            if not state.last_error:
+                state.last_error = state.debate_result.synthesis
         else:
-            state.run_status = "COMPLETED"
+            state.run_status = "RETRY_PENDING"
+            if state.debate_result and not state.last_error:
+                state.last_error = state.debate_result.synthesis
         return state
 
     def export_reports(
@@ -87,6 +134,17 @@ class DeepThoughtPipeline:
         tid_prefix: str = "TID-MA",
     ) -> PipelineState:
         if not state.drafts:
+            return state
+
+        if settings.export_only_approved_tid and state.run_status != "APPROVED":
+            logger.info(
+                "Skip TID export due to strict gate | run_status={} | export_only_approved_tid=true",
+                state.run_status,
+            )
+            if state.tid_statuses:
+                for t in state.tid_statuses:
+                    if t.status not in {"REJECTED"}:
+                        t.status = "NOT_EXPORTED"
             return state
 
         idx = max(0, min(state.selected_draft_index, len(state.drafts) - 1))
@@ -157,9 +215,12 @@ class DeepThoughtPipeline:
         state.last_error = f"{stage}: {exc}"
         state.metadata.setdefault("stage_status", {})
         state.metadata["stage_status"][stage] = "FAILED"
-        state.run_status = "RETRY_PENDING"
+        lowered = str(exc).lower()
+        if "timed out" in lowered or "timeout" in lowered:
+            state.metadata["fatal_flaw"] = "Model timeout under committee SLA"
+        state.run_status = "REJECTED" if settings.reject_on_stage_failure else "RETRY_PENDING"
         for t in state.tid_statuses:
             if t.status not in {"APPROVED_AND_EXPORTED", "REJECTED"}:
-                t.status = "RETRY_PENDING"
+                t.status = "REJECTED" if settings.reject_on_stage_failure else "RETRY_PENDING"
                 t.last_error = state.last_error
         return state
