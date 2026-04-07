@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import numpy as np
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Dict, Any
+from typing import Callable, List, Optional, Tuple, Dict, Any
 from loguru import logger
 
 
@@ -69,6 +69,12 @@ class VoidResult:
     )
     void_description: str = ""
     lambda_used: float = 0.7
+    domain_score: float = 0.0
+    pairwise_score: float = 0.0
+    sparse_overlap_count: int = 0
+    sparse_anchor_tokens: Tuple[str, ...] = field(default_factory=tuple)
+    marginality_low: float = 0.0
+    marginality_high: float = 0.0
 
     @property
     def novelty_score(self) -> float:
@@ -171,6 +177,14 @@ class VoidLandscape:
         return "\n".join(lines)
 
 
+@dataclass
+class MarginalityThresholds:
+    low: float
+    high: float
+    sample_size: int = 0
+    source: str = "static"
+
+
 # ─────────────────────────────────────────────────────────────────
 # Core Engine
 # ─────────────────────────────────────────────────────────────────
@@ -260,6 +274,221 @@ class DeepThoughtEquation:
         )
 
         return mmr_score, relevance, max_redundancy
+
+    def calibrate_marginality_thresholds(
+        self,
+        candidates: List[TechVector],
+        v_target: Optional[TechVector] = None,
+        min_low: float = 0.18,
+        max_high: float = 0.82,
+        top_n: int = 12,
+    ) -> MarginalityThresholds:
+        if len(candidates) < 2:
+            return MarginalityThresholds(
+                low=min_low,
+                high=max(min_low + 0.1, min(max_high, 0.55)),
+                sample_size=0,
+                source="fallback",
+            )
+
+        ranked = list(candidates)
+        if v_target is not None:
+            ranked.sort(
+                key=lambda candidate: self.cosine_similarity(candidate.vector, v_target.vector),
+                reverse=True,
+            )
+        ranked = ranked[: max(2, min(top_n, len(ranked)))]
+
+        similarities: List[float] = []
+        for index, left in enumerate(ranked):
+            for right in ranked[index + 1 :]:
+                similarities.append(self.cosine_similarity(left.vector, right.vector))
+
+        if not similarities:
+            return MarginalityThresholds(
+                low=min_low,
+                high=max(min_low + 0.1, min(max_high, 0.55)),
+                sample_size=0,
+                source="fallback",
+            )
+
+        values = np.array(similarities, dtype=np.float32)
+        low = float(np.quantile(values, 0.35))
+        high = float(np.quantile(values, 0.75))
+        low = max(min_low, min(low, max_high - 0.08))
+        high = min(max_high, max(high, low + 0.08))
+
+        return MarginalityThresholds(
+            low=low,
+            high=high,
+            sample_size=len(similarities),
+            source="dense_neighborhood_quantiles",
+        )
+
+    def find_hybrid_voids_iterative(
+        self,
+        v_target: TechVector,
+        candidates: List[TechVector],
+        existing: List[TechVector],
+        sparse_tokens: Dict[str, List[str]],
+        global_cooccurrence_checker: Callable[[List[str], List[str]], bool],
+        n_select: int = 5,
+        domain: str = "unknown",
+        domain_threshold: float = 0.45,
+        thresholds: Optional[MarginalityThresholds] = None,
+    ) -> VoidLandscape:
+        logger.info(
+            f"🕵️  DeepThought Equation (hybrid triad) | "
+            f"candidates={len(candidates)} | existing={len(existing)} | "
+            f"n_select={n_select} | λ={self.lambda_val}"
+        )
+
+        if len(candidates) < 2:
+            return self.find_voids_iterative(
+                v_target=v_target,
+                candidates=candidates,
+                existing=existing,
+                n_select=n_select,
+                domain=domain,
+            )
+
+        thresholds = thresholds or self.calibrate_marginality_thresholds(
+            candidates=candidates,
+            v_target=v_target,
+        )
+
+        relevance_map = {
+            candidate.id: self.cosine_similarity(candidate.vector, v_target.vector)
+            for candidate in candidates
+        }
+        existing_vectors = [item.vector for item in existing]
+        redundancy_map = {
+            candidate.id: (
+                max(self.cosine_similarity(candidate.vector, other) for other in existing_vectors)
+                if existing_vectors
+                else 0.0
+            )
+            for candidate in candidates
+        }
+
+        pair_candidates: List[VoidResult] = []
+        for index, left in enumerate(candidates):
+            left_relevance = relevance_map[left.id]
+            if left_relevance < domain_threshold:
+                continue
+
+            left_tokens = sparse_tokens.get(left.id, [])
+            if not left_tokens:
+                continue
+
+            for right in candidates[index + 1 :]:
+                right_relevance = relevance_map[right.id]
+                if right_relevance < domain_threshold:
+                    continue
+
+                pair_similarity = self.cosine_similarity(left.vector, right.vector)
+                if pair_similarity < thresholds.low or pair_similarity > thresholds.high:
+                    continue
+
+                right_tokens = sparse_tokens.get(right.id, [])
+                if not right_tokens:
+                    continue
+
+                if global_cooccurrence_checker(left_tokens, right_tokens):
+                    continue
+
+                combined_vector = left.vector + right.vector
+                norm = np.linalg.norm(combined_vector)
+                if norm > 0:
+                    combined_vector = combined_vector / norm
+
+                anchor_tokens = tuple(sorted(set(left_tokens[:3] + right_tokens[:3])))
+                synthetic = TechVector(
+                    id=f"{left.id}::{right.id}",
+                    vector=combined_vector,
+                    label=f"{left.label} <> {right.label}",
+                    metadata={
+                        "anchor_a_id": left.id,
+                        "anchor_a_label": left.label,
+                        "anchor_b_id": right.id,
+                        "anchor_b_label": right.label,
+                        "anchor_a_tokens": left_tokens,
+                        "anchor_b_tokens": right_tokens,
+                    },
+                )
+
+                relevance = (left_relevance + right_relevance) / 2.0
+                max_redundancy = max(redundancy_map[left.id], redundancy_map[right.id])
+                midpoint = (thresholds.low + thresholds.high) / 2.0
+                half_band = max((thresholds.high - thresholds.low) / 2.0, 1e-6)
+                marginality_fit = max(0.0, 1.0 - abs(pair_similarity - midpoint) / half_band)
+                hybrid_score = (
+                    self.lambda_val * relevance
+                    - (1.0 - self.lambda_val) * max_redundancy
+                    + 0.25 * marginality_fit
+                    + 0.10
+                )
+
+                pair_candidates.append(
+                    VoidResult(
+                        candidate=synthetic,
+                        mmr_score=hybrid_score,
+                        relevance_score=relevance,
+                        max_redundancy_score=max_redundancy,
+                        nearest_existing=self._find_nearest_existing(synthetic, existing, top_n=3),
+                        lambda_used=self.lambda_val,
+                        domain_score=relevance,
+                        pairwise_score=pair_similarity,
+                        sparse_overlap_count=0,
+                        sparse_anchor_tokens=anchor_tokens,
+                        marginality_low=thresholds.low,
+                        marginality_high=thresholds.high,
+                    )
+                )
+
+        if not pair_candidates:
+            logger.warning("Hybrid triad produced no valid pairs; falling back to iterative MMR")
+            return self.find_voids_iterative(
+                v_target=v_target,
+                candidates=candidates,
+                existing=existing,
+                n_select=n_select,
+                domain=domain,
+            )
+
+        pair_candidates.sort(key=lambda item: item.mmr_score, reverse=True)
+
+        selected: List[VoidResult] = []
+        used_anchor_ids: set[str] = set()
+        for candidate in pair_candidates:
+            metadata = candidate.candidate.metadata
+            left_id = str(metadata.get("anchor_a_id", ""))
+            right_id = str(metadata.get("anchor_b_id", ""))
+            if left_id in used_anchor_ids or right_id in used_anchor_ids:
+                continue
+
+            if any(
+                self.cosine_similarity(candidate.candidate.vector, prior.candidate.vector) > thresholds.high
+                for prior in selected
+            ):
+                continue
+
+            candidate.void_description = self._describe_void(candidate, v_target)
+            selected.append(candidate)
+            used_anchor_ids.update({left_id, right_id})
+
+            if len(selected) >= n_select:
+                break
+
+        landscape = VoidLandscape(
+            target=v_target,
+            voids=selected,
+            lambda_used=self.lambda_val,
+            domain=domain,
+        )
+
+        logger.info(f"✅ {landscape.summary()}")
+        return landscape
 
     # ── Void Detection: Batch Mode ────────────────────────────────
 
@@ -672,6 +901,20 @@ class DeepThoughtEquation:
         else:
             significance = "weak void"
 
+        metadata = void.candidate.metadata
+        anchor_a = str(metadata.get("anchor_a_label", "")).strip()
+        anchor_b = str(metadata.get("anchor_b_label", "")).strip()
+        sparse_tokens = ", ".join(void.sparse_anchor_tokens)
+        hybrid_context = ""
+        if anchor_a and anchor_b:
+            hybrid_context = (
+                f" Hybrid concept anchors: '{anchor_a}' + '{anchor_b}'."
+                f" Pairwise dense similarity: {void.pairwise_score:.2f}"
+                f" within calibrated band [{void.marginality_low:.2f}, {void.marginality_high:.2f}]."
+            )
+            if sparse_tokens:
+                hybrid_context += f" Sparse anchors: {sparse_tokens}."
+
         return (
             f"[{significance}] "
             f"Concept '{void.candidate.label}' sits in an unexplored "
@@ -679,4 +922,5 @@ class DeepThoughtEquation:
             f"Relevance to target: {void.relevance_score:.2f}. "
             f"Novelty (distance from existing): {void.novelty_score:.2f}. "
             f"Nearest existing solutions: {nearest_str}."
+            f"{hybrid_context}"
         )

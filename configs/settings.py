@@ -96,6 +96,9 @@ class Settings(BaseSettings):
     vectordb_path: Path = Field(
         default=Path("./data/vectorstore")
     )
+    sparse_index_path: Path = Field(
+        default=Path("./data/vectorstore/sparse_sidecar.sqlite3")
+    )
     qdrant_url: str = Field(
         default="http://localhost:6333"
     )
@@ -111,6 +114,7 @@ class Settings(BaseSettings):
 
     # ── Pipeline ─────────────────────────────────────────────────
     lambda_mmr: float = Field(default=0.7)
+    triad_domain_threshold: float = Field(default=0.45)
     max_revision_iterations: int = Field(default=3)
     min_confidence_score: float = Field(default=0.75)
     max_debate_rounds: int = Field(default=3)
