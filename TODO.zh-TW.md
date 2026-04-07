@@ -20,6 +20,37 @@
 - [x] P1：加入殘酷淘汰機制（`fatal_flaw`、三振出局、stage 失敗紅牌）
 - [x] P1：加入虛擬專利委員會共識審查（四專家 + 主席 + 一票否決）
 
+## Pipeline 平行化改造（吞吐優先）
+- [ ] P0：將 Debate Panel 的 4 位 reviewer 改為平行執行（I/O 併發），主席維持單點收斂裁決。
+- [ ] P0：Forager 生產者與 Maverick/Reviewer 消費者解耦（Queue 架構），避免單輪串行阻塞。
+- [ ] P1：新增單一 Writer（status/audit/output）避免多 worker 寫檔競爭。
+- [ ] P1：加入 worker 併發上限與背壓（queue max size）控制，避免 DB/CLI 配額互搶。
+- [ ] P1：新增 `pipeline_parallel_mode` 開關與預設安全值（例如 reviewer_workers=4, maverick_workers=2）。
+- [ ] P2：針對 triad pair 計算做多進程平行化與批次 co-occurrence 檢查。
+- [ ] P2：建立吞吐監控指標（每輪耗時、各 stage p95、隊列深度、失敗率）。
+
+```mermaid
+flowchart LR
+	A[Forager Producer] --> Q[(Void Task Queue)]
+	Q --> M1[Maverick Worker 1]
+	Q --> M2[Maverick Worker 2]
+	M1 --> RQ[(Review Queue)]
+	M2 --> RQ
+
+	RQ --> RC[Reality Checker]
+	RC --> C1[Reviewer Kernel]
+	RC --> C2[Reviewer Prior-Art]
+	RC --> C3[Reviewer Strategy]
+	RC --> C4[Reviewer Security]
+
+	C1 --> J[Chairman Judge]
+	C2 --> J
+	C3 --> J
+	C4 --> J
+
+	J --> W[Single Writer: status/audit/output]
+```
+
 ## Phase 1: Foundation
 - [x] 環境建立與驗證
 - [x] Vector DB 初始化（ChromaDB）

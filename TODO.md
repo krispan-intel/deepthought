@@ -20,6 +20,37 @@ Last Updated: 2026-04-07
 - [x] P1: Add ruthless culling (`fatal_flaw`, three-strikes, stage-failure red card)
 - [x] P1: Add virtual patent committee consensus (4 specialists + chairman + veto rules)
 
+## Pipeline Parallelism Refactor (Throughput First)
+- [ ] P0: Parallelize Debate Panel specialist reviewers (I/O concurrency), keep chairman as single deterministic reducer.
+- [ ] P0: Decouple Forager producer from Maverick/Reviewer consumers using queue-based orchestration.
+- [ ] P1: Add a single-writer sink for status/audit/output to avoid multi-worker file contention.
+- [ ] P1: Add worker limits and queue backpressure controls to prevent DB/CLI contention spikes.
+- [ ] P1: Add `pipeline_parallel_mode` switch with safe defaults (e.g., reviewer_workers=4, maverick_workers=2).
+- [ ] P2: Parallelize triad pair scoring and batch co-occurrence checks in Forager math stage.
+- [ ] P2: Add throughput observability (stage p95 latency, queue depth, fail rate, round duration).
+
+```mermaid
+flowchart LR
+	A[Forager Producer] --> Q[(Void Task Queue)]
+	Q --> M1[Maverick Worker 1]
+	Q --> M2[Maverick Worker 2]
+	M1 --> RQ[(Review Queue)]
+	M2 --> RQ
+
+	RQ --> RC[Reality Checker]
+	RC --> C1[Reviewer Kernel]
+	RC --> C2[Reviewer Prior-Art]
+	RC --> C3[Reviewer Strategy]
+	RC --> C4[Reviewer Security]
+
+	C1 --> J[Chairman Judge]
+	C2 --> J
+	C3 --> J
+	C4 --> J
+
+	J --> W[Single Writer: status/audit/output]
+```
+
 ## Phase 1: Foundation
 - [x] Environment setup and verification
 - [x] Vector DB initialization (ChromaDB)

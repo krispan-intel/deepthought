@@ -819,11 +819,15 @@ class DeepThoughtVectorStore:
             )
 
         filtered_retrieved, rejected = self._prepare_hybrid_candidates(retrieved)
+        max_filtered = max(2, int(settings.triad_max_filtered_candidates))
+        if len(filtered_retrieved) > max_filtered:
+            filtered_retrieved = filtered_retrieved[:max_filtered]
         logger.info(
-            "Hybrid candidate pool | requested_per_collection={} | retrieved={} | filtered={} | rejected_missing_label={} | rejected_noisy_label={}",
+            "Hybrid candidate pool | requested_per_collection={} | retrieved={} | filtered={} | max_filtered={} | rejected_missing_label={} | rejected_noisy_label={}",
             initial_candidate_count,
             len(retrieved),
             len(filtered_retrieved),
+            max_filtered,
             rejected["missing_semantic_label"],
             rejected["noisy_label"],
         )
