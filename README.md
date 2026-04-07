@@ -375,8 +375,8 @@ Still missing / partial:
 - [ ] Export to DOCX / PDF 
 
 ### Phase 6: Production Hardening 
-- [ ] Full audit logging 
-- [ ] Incremental void tracking over time
+- [x] Full audit logging 
+- [x] Incremental void tracking over time
 - [x] Service mode for continuous execution
 - [x] New TID email notification hook (SMTP)
 

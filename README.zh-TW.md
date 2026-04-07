@@ -374,8 +374,8 @@ python scripts/run_pipeline.py \
 - [ ] 匯出 DOCX / PDF
 
 ### Phase 6: Production Hardening
-- [ ] 完整 audit logging
-- [ ] 隨時間追蹤拓撲空洞變化
+- [x] 完整 audit logging
+- [x] 隨時間追蹤拓撲空洞變化
 - [x] 常駐 service 執行模式
 - [x] 新 TID email 通知掛鉤（SMTP）
 
