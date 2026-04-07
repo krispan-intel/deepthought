@@ -12,8 +12,10 @@ Usage:
 
 import argparse
 import asyncio
+import re
 import sys
 from pathlib import Path
+from typing import Iterable
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -45,6 +47,50 @@ SUBSYSTEM_PATHS = {
         "Documentation/",
     ],
 }
+
+METADATA_BLEED_HEADER = re.compile(
+    r"^(?:file_path|filepath|path|url|author|md5|hash)\s*:\s*.*$",
+    re.IGNORECASE,
+)
+
+
+def sanitize_chunk_for_embedding(content: str, metadata: dict) -> str:
+    """
+    Strip obvious metadata headers from the text that is sent to the embedder.
+
+    The kernel ingestion path should embed code/comments only; operational metadata
+    belongs in the metadata dictionary, not in the semantic text payload.
+    """
+    text = str(content or "")
+    lines = text.splitlines()
+
+    while lines and METADATA_BLEED_HEADER.match(lines[0].strip()):
+        lines.pop(0)
+
+    suspicious_prefixes = [
+        str(metadata.get("file_path", "")).strip(),
+        str(metadata.get("uri", "")).strip(),
+        str(metadata.get("author", "")).strip(),
+    ]
+    suspicious_prefixes = [value for value in suspicious_prefixes if value]
+    while lines and any(lines[0].strip() == value for value in suspicious_prefixes):
+        lines.pop(0)
+
+    cleaned = "\n".join(lines).strip()
+    return cleaned or text.strip()
+
+
+def log_embedding_chunk_previews(chunks: Iterable, file_path: str, max_items: int = 2) -> None:
+    previews = list(chunks)[:max_items]
+    for index, chunk in enumerate(previews, start=1):
+        preview = " ".join(str(chunk.content).split())[:220]
+        logger.info(
+            "Embedding chunk preview | file={} | idx={} | role={} | preview={}",
+            file_path,
+            index,
+            chunk.metadata.get("chunk_role", "complete"),
+            preview,
+        )
 
 def clean_metadata(metadata: dict) -> dict:
     """
@@ -155,11 +201,14 @@ async def ingest_kernel(
         if not chunks:
             continue
 
+        if file_count < 2:
+            log_embedding_chunk_previews(chunks, file_path=file_path)
+
         # Convert to store Documents
         from vectordb.store import Document
         store_docs = [
             Document(
-                content=chunk.content,
+                content=sanitize_chunk_for_embedding(chunk.content, chunk.metadata),
                 metadata=clean_metadata(chunk.metadata),
             )
             for chunk in chunks

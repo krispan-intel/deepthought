@@ -10,6 +10,8 @@ import json
 import re
 from typing import Any, Dict, List
 
+from loguru import logger
+
 from configs.settings import settings
 
 from agents.llm_client import LLMClient
@@ -127,7 +129,54 @@ Return JSON:
 
         state.drafts = drafts
         state.metadata["draft_count"] = len(drafts)
+        summary = self._build_generation_summary(state=state, n_drafts=n_drafts, drafts=drafts)
+        state.metadata["maverick_generation"] = summary
+
+        if drafts:
+            top = summary["drafts"][0]
+            logger.info(
+                "Maverick generated drafts | run_id={} | requested={} | produced={} | subject={} | summary={}",
+                state.run_id,
+                n_drafts,
+                len(drafts),
+                top["subject"],
+                top["summary"],
+            )
+        else:
+            logger.warning(
+                "Maverick produced no RFC drafts | run_id={} | requested={} | reason={}",
+                state.run_id,
+                n_drafts,
+                summary["reason"],
+            )
+
         return state
+
+    @staticmethod
+    def _build_generation_summary(state: PipelineState, n_drafts: int, drafts: List[DraftIdea]) -> Dict[str, Any]:
+        if not drafts:
+            return {
+                "requested_drafts": n_drafts,
+                "produced_drafts": 0,
+                "status": "EMPTY",
+                "reason": "Model returned zero valid drafts",
+                "drafts": [],
+            }
+
+        return {
+            "requested_drafts": n_drafts,
+            "produced_drafts": len(drafts),
+            "status": "OK",
+            "reason": "",
+            "drafts": [
+                {
+                    "index": index,
+                    "subject": draft.title.strip(),
+                    "summary": draft.one_liner.strip()[:240],
+                }
+                for index, draft in enumerate(drafts)
+            ],
+        }
 
     @staticmethod
     def _compact_void_context(context: str, max_chars: int = 3800) -> str:

@@ -62,3 +62,28 @@ def test_hybrid_void_selection_prefers_zero_cooccurrence_pairs() -> None:
     assert top.sparse_overlap_count == 0
     assert "<>" in top.candidate.label
     assert "sched_feedback" in top.candidate.label
+
+
+def test_hybrid_void_selection_returns_empty_when_no_valid_pairs() -> None:
+    engine = DeepThoughtEquation(lambda_val=0.7)
+    target = make_vector("target", [1.0, 0.0, 0.0])
+    candidates = [
+        make_vector("sched_feedback", [0.97, 0.20, 0.0]),
+        make_vector("cache_pressure", [0.92, 0.38, 0.0]),
+    ]
+    sparse_tokens = {
+        "sched_feedback": ["scheduler", "latency", "feedback"],
+        "cache_pressure": ["cache", "pressure", "rebalance"],
+    }
+
+    landscape = engine.find_hybrid_voids_iterative(
+        v_target=target,
+        candidates=candidates,
+        existing=[],
+        sparse_tokens=sparse_tokens,
+        global_cooccurrence_checker=lambda left, right: True,
+        n_select=1,
+        domain_threshold=0.4,
+    )
+
+    assert landscape.voids == []

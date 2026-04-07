@@ -34,6 +34,14 @@ class DeepThoughtPipeline:
     def run(self, state: PipelineState, n_drafts: int = 3, top_k_voids: int = 5) -> PipelineState:
         state.run_status = "RUNNING"
         state.metadata.setdefault("stage_status", {})
+        logger.info(
+            "Pipeline run started | run_id={} | domain={} | target={} | n_drafts={} | top_k_voids={}",
+            state.run_id,
+            state.domain,
+            state.target,
+            n_drafts,
+            top_k_voids,
+        )
 
         try:
             state = self.forager.run(state, top_k=top_k_voids)
@@ -145,6 +153,14 @@ class DeepThoughtPipeline:
 
         if self.human_review:
             state = self.human_review.apply(state)
+
+        logger.info(
+            "Pipeline run finished | run_id={} | status={} | failed_stages={} | selected_draft_index={}",
+            state.run_id,
+            state.run_status,
+            ",".join(state.failed_stages) if state.failed_stages else "none",
+            state.selected_draft_index,
+        )
 
         return state
 
@@ -260,7 +276,15 @@ class DeepThoughtPipeline:
         state.failed_stages.append(stage)
         state.last_error = f"{stage}: {exc}"
         state.metadata.setdefault("stage_status", {})
+        state.metadata.setdefault("stage_errors", {})
         state.metadata["stage_status"][stage] = "FAILED"
+        state.metadata["stage_errors"][stage] = str(exc)
+        logger.error(
+            "Pipeline stage failed | run_id={} | stage={} | reason={}",
+            state.run_id,
+            stage,
+            str(exc),
+        )
         lowered = str(exc).lower()
         if "timed out" in lowered or "timeout" in lowered:
             state.metadata["fatal_flaw"] = "Model timeout under committee SLA"

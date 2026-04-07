@@ -344,13 +344,8 @@ class DeepThoughtEquation:
         )
 
         if len(candidates) < 2:
-            return self.find_voids_iterative(
-                v_target=v_target,
-                candidates=candidates,
-                existing=existing,
-                n_select=n_select,
-                domain=domain,
-            )
+            logger.warning("Hybrid triad aborted: fewer than 2 candidates available")
+            return self._empty_landscape(v_target=v_target, domain=domain)
 
         thresholds = thresholds or self.calibrate_marginality_thresholds(
             candidates=candidates,
@@ -447,14 +442,8 @@ class DeepThoughtEquation:
                 )
 
         if not pair_candidates:
-            logger.warning("Hybrid triad produced no valid pairs; falling back to iterative MMR")
-            return self.find_voids_iterative(
-                v_target=v_target,
-                candidates=candidates,
-                existing=existing,
-                n_select=n_select,
-                domain=domain,
-            )
+            logger.warning("Hybrid triad produced no valid pairs; returning empty landscape")
+            return self._empty_landscape(v_target=v_target, domain=domain)
 
         pair_candidates.sort(key=lambda item: item.mmr_score, reverse=True)
 
@@ -489,6 +478,14 @@ class DeepThoughtEquation:
 
         logger.info(f"✅ {landscape.summary()}")
         return landscape
+
+    def _empty_landscape(self, v_target: TechVector, domain: str) -> VoidLandscape:
+        return VoidLandscape(
+            target=v_target,
+            voids=[],
+            lambda_used=self.lambda_val,
+            domain=domain,
+        )
 
     # ── Void Detection: Batch Mode ────────────────────────────────
 
