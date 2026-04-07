@@ -93,19 +93,18 @@ The core mathematical engine has evolved from traditional global MMR to a **Hybr
 - Generates divergent RFC drafts
 - High temperature, unconstrained creativity
 - Explores the identified Void space
-- **Model**: `DeepSeek-V3-0324-671B` (divergent thinking)
+- **Model**: `copilot_cli` (GitHub Copilot managed model routing)
 
 ### 🛡️ The Reality Checker (Critic & Evaluator)
 - Executes **Global Prior-Art Check** (Google Patents / Semantic Scholar APIs)
 - Validates against physical constraints (x86 ISA, Linux ABI) via simulation and static checks
 - Generates precise error logs and performance debt metrics for the Conference Review Simulated Framework
-- **Model**: API Integrations + `Claude Sonnet 4` (strictest technical reasoning)
+- **Model**: API Integrations + `copilot_cli`
 
 ### ⚖️ The Debate Panel (Consensus)
-- Multi-model adversarial debate
-- **Deep Thinker**: `DeepSeek-R1-671B` — logic and edge cases
-- **Code Expert**: `Qwen3-Coder-480B` — implementation feasibility
-- **Judge**: `Qwen3-32B` — synthesis and final verdict
+- Conference-style adversarial committee simulation
+- **Reviewer Committee**: `copilot_cli` (role-conditioned rounds)
+- **Chairman Judge**: `copilot_cli` (final synthesis and verdict)
 
 ## 🔄 Pipeline Flow
 
@@ -121,7 +120,7 @@ Input: Legacy Code + Modern Specs
               v
    +--------> +------------+
    |          |  MAVERICK  |
-   |          |  DeepSeek-V3-671B            |
+        |          |  copilot_cli                 |
    |          |  RFC Draft Generation        |
    |          +------------+
    |                  |
@@ -134,7 +133,7 @@ Input: Legacy Code + Modern Specs
    |                  v
    |          +------------------+
    |          | REALITY CHECKER  |
-        |          | Constraint Eval  |
+   |          | Constraint Eval  |
    |          +------------------+
    |                  |
    +------------------+ (REVISE: Feed metrics back for Mutation - Max 3-5x)
@@ -144,8 +143,8 @@ Input: Legacy Code + Modern Specs
                       v
               +--------------+
               | DEBATE PANEL |
-              | R1-671B      |
-              | Qwen3-32B    |
+              | copilot_cli  |
+              | role-committee|
               +--------------+
                       |
                       v
@@ -360,11 +359,11 @@ Still missing / partial:
 ### Phase 4: Agent Pipeline 
 - [x] LangGraph State Machine skeleton 
 - [x] Forager Agent 
-- [x] Maverick Agent (DeepSeek-V3) 
-- [x] Reality Checker Agent (Claude Sonnet 4) 
+- [x] Maverick Agent (`copilot_cli`) 
+- [x] Reality Checker Agent (`copilot_cli`) 
 - [x] **Integrate Global Patent API** (Google Patents / Semantic Scholar) for prior-art fast-screening
 - [x] **Implement Conference Review Simulated Framework** (Feedback reviewer metrics to Maverick for multi-generation mutation)
-- [x] Debate Panel (DeepSeek-R1 + Qwen3-Coder + Qwen3) 
+- [x] Debate Panel (`copilot_cli` role-conditioned committee) 
 - [x] Hallucination guard via committee fact-check retrieval and fatal-flaw rejection 
 - [ ] Human-in-the-loop review checkpoint 
 
@@ -376,10 +375,7 @@ Still missing / partial:
 - [ ] Export to DOCX / PDF 
 
 ### Phase 6: Production Hardening 
-- [ ] Intel TDX / SGX security integration 
 - [ ] Full audit logging 
-- [ ] Performance benchmarking 
-- [ ] Multi-domain support (Android, RISC-V) 
 - [ ] Incremental void tracking over time
 - [x] Service mode for continuous execution
 - [x] New TID email notification hook (SMTP)
@@ -423,10 +419,10 @@ Starting/stopping the service does not rebuild the vector database.
 - `SKIP_DUPLICATE_INPUT`: if `true`, skip runs whose input fingerprint already completed.
 - `TID_EMAIL_NOTIFICATIONS_ENABLED`: enable/disable SMTP notifications.
 
-### Host-side GPT-5.4 experiment via GitHub Copilot CLI
+### Copilot CLI Backend (Current Default)
 
 If your Linux host already has `gh auth login` completed and `gh copilot -p "..."` works,
-you can run the pipeline against the Copilot CLI backend instead of the internal OpenAI-compatible endpoint.
+the pipeline runs with the Copilot CLI backend as the default model interface.
 
 ```bash
 export LLM_BACKEND=copilot_cli
@@ -477,13 +473,12 @@ All computation runs **100% locally** on Intel Hardware.
 |---------|-----------|
 | IP leakage | No data leaves local environment |
 | Void coordinates | Never transmitted externally |
-| External API calls | Claude API only (Reality Checker) |
+| External API calls | Semantic Scholar (optional) + Copilot CLI gateway |
 | Memory protection | Intel TME roadmap |
 | Execution isolation | Intel TDX / SGX roadmap |
 
-The only external network call is to the Anthropic API
-for the Reality Checker agent. All other LLMs run on
-the internal Intel Gaudi2 endpoint.
+External network calls can include Semantic Scholar API and
+GitHub Copilot CLI gateway, depending on runtime configuration.
 
 ## 📜 License
 
@@ -497,5 +492,5 @@ Proprietary — All Rights Reserved
 - [LlamaIndex](https://github.com/run-llama/llama_index) — RAG framework
 - [Tree-sitter](https://tree-sitter.github.io/) — AST parsing
 - [ChromaDB](https://www.trychroma.com/) — Local vector database
-- [DeepSeek](https://www.deepseek.com/) — Maverick and Debate models
+- [GitHub Copilot CLI](https://docs.github.com/en/copilot) — Unified model backend via `copilot_cli`
 - Douglas Adams — For naming inspiration

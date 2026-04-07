@@ -11,6 +11,7 @@ from loguru import logger
 
 from configs.settings import settings
 from output.tid_formatter import TIDDetail, TIDReport, TIDScorecard, TIDSummary
+from output.claim_analysis import assess_claims
 
 from agents.debate_panel import DebatePanelAgent
 from agents.forager import ForagerAgent
@@ -163,6 +164,16 @@ class DeepThoughtPipeline:
 
         idx = max(0, min(state.selected_draft_index, len(state.drafts) - 1))
         draft = state.drafts[idx]
+        claim_assessments = self._assess_draft_claims(state=state, draft_index=idx)
+        claim_confidence_lines = [
+            f"Claim {i}: confidence={item.confidence:.2f}, conflict_score={item.conflict_score:.2f}"
+            for i, item in enumerate(claim_assessments, start=1)
+        ]
+        prior_art_conflict_lines = [
+            f"Claim {i} conflicts with: {', '.join(item.conflict_hits)}"
+            for i, item in enumerate(claim_assessments, start=1)
+            if item.conflict_hits
+        ]
 
         report = TIDReport(
             tid_id=f"{tid_prefix}-001",
@@ -191,17 +202,15 @@ class DeepThoughtPipeline:
                 implementation_plan=draft.implementation_plan,
                 validation_plan=draft.validation_plan,
                 draft_claims=draft.draft_claims,
+                claim_confidence=claim_confidence_lines,
+                prior_art_conflicts=prior_art_conflict_lines,
                 risks_and_mitigations=draft.risks_and_mitigations,
                 references=draft.references,
             ),
         )
 
         out_dir = Path(output_dir)
-        md_path, html_path = report.save(out_dir)
-        state.output_paths = {
-            "markdown": str(md_path),
-            "html": str(html_path),
-        }
+        state.output_paths = report.save_extended(out_dir)
 
         idx = max(0, min(state.selected_draft_index, len(state.tid_statuses) - 1))
         if state.tid_statuses:
@@ -209,8 +218,10 @@ class DeepThoughtPipeline:
                 if t.status not in {"REJECTED"}:
                     t.status = "NOT_SELECTED"
             chosen = state.tid_statuses[idx]
-            chosen.output_markdown = str(md_path)
-            chosen.output_html = str(html_path)
+            chosen.output_markdown = state.output_paths.get("markdown", "")
+            chosen.output_html = state.output_paths.get("html", "")
+            chosen.output_docx = state.output_paths.get("docx", "")
+            chosen.output_pdf = state.output_paths.get("pdf", "")
             if state.run_status == "APPROVED":
                 chosen.status = "APPROVED_AND_EXPORTED"
             elif state.run_status == "RETRY_PENDING":
@@ -223,6 +234,21 @@ class DeepThoughtPipeline:
     @staticmethod
     def _clamp_star(value: int) -> int:
         return max(1, min(5, int(value)))
+
+    def _assess_draft_claims(self, state: PipelineState, draft_index: int):
+        draft = state.drafts[draft_index]
+        prior_art_corpus = list(state.existing_solutions)
+
+        if 0 <= draft_index < len(state.patent_checks):
+            prior_art_corpus.extend(state.patent_checks[draft_index].prior_art_hits)
+
+        prior_art_corpus.extend(draft.references)
+
+        return assess_claims(
+            claims=draft.draft_claims,
+            prior_art_corpus=prior_art_corpus,
+            conflict_threshold=0.42,
+        )
 
     def _mark_failure(self, state: PipelineState, stage: str, exc: Exception) -> PipelineState:
         state.failed_stages.append(stage)

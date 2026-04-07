@@ -92,19 +92,18 @@ DeepThought 則將這件事變得**系統化且數學化**。
 - 生成發散式 RFC 草案
 - 使用高溫、低約束創意模式
 - 探索已識別的空洞空間
-- **模型**：`DeepSeek-V3-0324-671B`（發散思考）
+- **模型**：`copilot_cli`（由 GitHub Copilot 管理模型路由）
 
 ### 🛡️ The Reality Checker（批判者與評估器）
 - 執行 **Global Prior-Art Check**（Google Patents / Semantic Scholar APIs）
 - 透過 simulation 與靜態檢查驗證實體限制（x86 ISA、Linux ABI）
 - 為 Conference Review Simulated Framework 產生精準錯誤日誌與 performance debt metrics
-- **模型**：API Integrations + `Claude Sonnet 4`（最嚴格的技術推理）
+- **模型**：API Integrations + `copilot_cli`
 
 ### ⚖️ The Debate Panel（共識層）
-- 多模型對抗式辯論
-- **Deep Thinker**：`DeepSeek-R1-671B` — 邏輯與邊界案例
-- **Code Expert**：`Qwen3-Coder-480B` — 實作可行性
-- **Judge**：`Qwen3-32B` — 綜合裁決與最終判定
+- 模擬 conference review 的對抗式委員會
+- **Reviewer Committee**：`copilot_cli`（角色化多輪審查）
+- **Chairman Judge**：`copilot_cli`（最終綜合與判定）
 
 ## 🔄 Pipeline 流程
 
@@ -120,7 +119,7 @@ Input: Legacy Code + Modern Specs
               v
    +--------> +------------+
    |          |  MAVERICK  |
-   |          |  DeepSeek-V3-671B            |
+        |          |  copilot_cli                 |
    |          |  RFC Draft Generation        |
    |          +------------+
    |                  |
@@ -133,7 +132,7 @@ Input: Legacy Code + Modern Specs
    |                  v
    |          +------------------+
    |          | REALITY CHECKER  |
-        |          | Constraint Eval  |
+   |          | Constraint Eval  |
    |          +------------------+
    |                  |
    +------------------+ (REVISE: 回饋 metrics 做 Mutation，最多 3-5 次)
@@ -143,8 +142,8 @@ Input: Legacy Code + Modern Specs
                       v
               +--------------+
               | DEBATE PANEL |
-              | R1-671B      |
-              | Qwen3-32B    |
+              | copilot_cli  |
+              | role-committee|
               +--------------+
                       |
                       v
@@ -359,11 +358,11 @@ python scripts/run_pipeline.py \
 ### Phase 4: Agent Pipeline
 - [x] LangGraph State Machine 骨架
 - [x] Forager Agent
-- [x] Maverick Agent（DeepSeek-V3）
-- [x] Reality Checker Agent（Claude Sonnet 4）
+- [x] Maverick Agent（`copilot_cli`）
+- [x] Reality Checker Agent（`copilot_cli`）
 - [x] **整合 Global Patent API**（Google Patents / Semantic Scholar）做 prior-art fast-screening
 - [x] **實作 Conference Review Simulated Framework**（將 reviewer metrics 回饋給 Maverick，進行多代 mutation）
-- [x] Debate Panel（DeepSeek-R1 + Qwen3-Coder + Qwen3）
+- [x] Debate Panel（`copilot_cli` 角色化委員會）
 - [x] 透過委員會 fact-check 檢索與 fatal-flaw 規則的幻覺防護
 - [ ] Human-in-the-loop 人工審查節點
 
@@ -375,10 +374,7 @@ python scripts/run_pipeline.py \
 - [ ] 匯出 DOCX / PDF
 
 ### Phase 6: Production Hardening
-- [ ] Intel TDX / SGX 安全整合
 - [ ] 完整 audit logging
-- [ ] 效能基準測試
-- [ ] 多領域支援（Android、RISC-V）
 - [ ] 隨時間追蹤拓撲空洞變化
 - [x] 常駐 service 執行模式
 - [x] 新 TID email 通知掛鉤（SMTP）
@@ -422,10 +418,10 @@ docker compose logs -f deepthought-service
 - `SKIP_DUPLICATE_INPUT`：`true` 時，已完成的相同輸入指紋會略過。
 - `TID_EMAIL_NOTIFICATIONS_ENABLED`：啟用/停用 SMTP 通知。
 
-### 在 Linux 主機上用 GitHub Copilot CLI 試跑 GPT-5.4
+### Copilot CLI Backend（目前預設）
 
 如果你的 Linux 主機已完成 `gh auth login`，且 `gh copilot -p "..."` 可以正常回應，
-就可以把 pipeline backend 切成 Copilot CLI，而不是內部 OpenAI-compatible endpoint。
+就可以使用 Copilot CLI 作為 pipeline 預設模型介面。
 
 ```bash
 export LLM_BACKEND=copilot_cli
@@ -476,12 +472,12 @@ export TID_NOTIFY_TO=your.name@your-company.com
 |------|----------|
 | IP 洩漏 | 無資料離開本地環境 |
 | Void 座標 | 永不外傳 |
-| 外部 API 呼叫 | 僅 Claude API（Reality Checker） |
+| 外部 API 呼叫 | Semantic Scholar（選配）+ Copilot CLI gateway |
 | 記憶體保護 | Intel TME roadmap |
 | 執行隔離 | Intel TDX / SGX roadmap |
 
-唯一的外部網路呼叫是給 Reality Checker agent 使用的 Anthropic API。
-其他所有 LLM 都在內部 Intel Gaudi2 endpoint 上執行。
+外部網路呼叫可能包含 Semantic Scholar API 與
+GitHub Copilot CLI gateway，會依執行配置啟用。
 
 ## 📜 授權
 
@@ -495,5 +491,5 @@ export TID_NOTIFY_TO=your.name@your-company.com
 - [LlamaIndex](https://github.com/run-llama/llama_index) — RAG framework
 - [Tree-sitter](https://tree-sitter.github.io/) — AST parsing
 - [ChromaDB](https://www.trychroma.com/) — 本地向量資料庫
-- [DeepSeek](https://www.deepseek.com/) — Maverick 與 Debate 模型
+- [GitHub Copilot CLI](https://docs.github.com/en/copilot) — 透過 `copilot_cli` 統一模型後端
 - Douglas Adams — 命名靈感來源

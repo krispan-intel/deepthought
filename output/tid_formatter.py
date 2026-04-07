@@ -14,6 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from html import escape
+from io import BytesIO
 from pathlib import Path
 from typing import List
 
@@ -25,7 +26,7 @@ def _validate_star(value: int, name: str) -> int:
 
 
 def _stars(value: int) -> str:
-  return f"[{value}/5]"
+    return f"[{value}/5]"
 
 
 def _safe_text(value: str) -> str:
@@ -84,6 +85,8 @@ class TIDDetail:
     implementation_plan: str
     validation_plan: str
     draft_claims: List[str] = field(default_factory=list)
+    claim_confidence: List[str] = field(default_factory=list)
+    prior_art_conflicts: List[str] = field(default_factory=list)
     risks_and_mitigations: List[str] = field(default_factory=list)
     references: List[str] = field(default_factory=list)
 
@@ -114,6 +117,14 @@ class TIDReport:
         refs_md = "\n".join(f"- {r}" for r in self.detail.references)
         if not refs_md:
             refs_md = "- (No references yet)"
+
+        confidence_md = "\n".join(f"- {x}" for x in self.detail.claim_confidence)
+        if not confidence_md:
+            confidence_md = "- (No claim confidence scores yet)"
+
+        conflicts_md = "\n".join(f"- {x}" for x in self.detail.prior_art_conflicts)
+        if not conflicts_md:
+            conflicts_md = "- (No explicit prior-art conflicts detected)"
 
         return f"""# {self.title}
 
@@ -172,6 +183,12 @@ Target: {self.target}
 
 ### 3.9 References
 {refs_md}
+
+### 3.10 Claim Confidence Scores
+{confidence_md}
+
+### 3.11 Prior-Art Conflict Detector
+{conflicts_md}
 """
 
     def to_html(self) -> str:
@@ -189,6 +206,14 @@ Target: {self.target}
         refs_html = "".join(
             f"<li>{escape(r)}</li>" for r in self.detail.references
         ) or "<li>(No references yet)</li>"
+
+        confidence_html = "".join(
+            f"<li>{escape(x)}</li>" for x in self.detail.claim_confidence
+        ) or "<li>(No claim confidence scores yet)</li>"
+
+        conflicts_html = "".join(
+            f"<li>{escape(x)}</li>" for x in self.detail.prior_art_conflicts
+        ) or "<li>(No explicit prior-art conflicts detected)</li>"
 
         return f"""<!doctype html>
 <html lang="en">
@@ -293,11 +318,81 @@ Target: {self.target}
       <ul>{risks_html}</ul>
       <h3>3.9 References</h3>
       <ul>{refs_html}</ul>
+        <h3>3.10 Claim Confidence Scores</h3>
+        <ul>{confidence_html}</ul>
+        <h3>3.11 Prior-Art Conflict Detector</h3>
+        <ul>{conflicts_html}</ul>
     </section>
   </div>
 </body>
 </html>
 """
+
+    def to_docx_bytes(self) -> bytes:
+        try:
+            from docx import Document
+        except Exception as exc:  # pragma: no cover - optional dependency
+            raise RuntimeError("python-docx is required for DOCX export") from exc
+
+        doc = Document()
+        doc.add_heading(self.title, level=1)
+        doc.add_paragraph(f"TID ID: {self.tid_id}")
+        doc.add_paragraph(f"Domain: {self.domain}")
+        doc.add_paragraph(f"Target: {self.target}")
+        doc.add_heading("Executive Summary", level=2)
+        doc.add_paragraph(self.summary.one_liner)
+        doc.add_paragraph(f"Novelty: {self.summary.novelty_thesis}")
+        doc.add_paragraph(f"Feasibility: {self.summary.feasibility_thesis}")
+        doc.add_heading("Claims", level=2)
+        for claim in self.detail.draft_claims:
+            doc.add_paragraph(claim, style="List Number")
+        doc.add_heading("Claim Confidence", level=2)
+        for line in self.detail.claim_confidence:
+            doc.add_paragraph(line, style="List Bullet")
+        doc.add_heading("Prior-Art Conflicts", level=2)
+        for line in self.detail.prior_art_conflicts:
+            doc.add_paragraph(line, style="List Bullet")
+
+        buffer = BytesIO()
+        doc.save(buffer)
+        return buffer.getvalue()
+
+    def to_pdf_bytes(self) -> bytes:
+        try:
+            from reportlab.lib.pagesizes import A4
+            from reportlab.pdfgen import canvas
+        except Exception as exc:  # pragma: no cover - optional dependency
+            raise RuntimeError("reportlab is required for PDF export") from exc
+
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=A4)
+        width, height = A4
+        x = 40
+        y = height - 40
+
+        def write_line(text: str) -> None:
+            nonlocal y
+            if y < 60:
+                c.showPage()
+                y = height - 40
+            c.drawString(x, y, (text or "")[:120])
+            y -= 14
+
+        write_line(self.title)
+        write_line(f"TID ID: {self.tid_id}")
+        write_line(f"Domain: {self.domain} | Target: {self.target}")
+        write_line("Claims:")
+        for idx, claim in enumerate(self.detail.draft_claims, start=1):
+            write_line(f"{idx}. {claim}")
+        write_line("Claim Confidence:")
+        for line in self.detail.claim_confidence:
+            write_line(f"- {line}")
+        write_line("Prior-Art Conflicts:")
+        for line in self.detail.prior_art_conflicts:
+            write_line(f"- {line}")
+
+        c.save()
+        return buffer.getvalue()
 
     def save(self, output_dir: Path | str, base_name: str | None = None) -> tuple[Path, Path]:
         out_dir = Path(output_dir)
@@ -310,3 +405,30 @@ Target: {self.target}
         md_path.write_text(self.to_markdown(), encoding="utf-8")
         html_path.write_text(self.to_html(), encoding="utf-8")
         return md_path, html_path
+
+    def save_extended(self, output_dir: Path | str, base_name: str | None = None) -> dict[str, str]:
+        md_path, html_path = self.save(output_dir=output_dir, base_name=base_name)
+        base = md_path.with_suffix("")
+        output = {
+            "markdown": str(md_path),
+            "html": str(html_path),
+            "docx": "",
+            "pdf": "",
+        }
+
+        docx_path = base.with_suffix(".docx")
+        pdf_path = base.with_suffix(".pdf")
+
+        try:
+            docx_path.write_bytes(self.to_docx_bytes())
+            output["docx"] = str(docx_path)
+        except RuntimeError:
+            pass
+
+        try:
+            pdf_path.write_bytes(self.to_pdf_bytes())
+            output["pdf"] = str(pdf_path)
+        except RuntimeError:
+            pass
+
+        return output
