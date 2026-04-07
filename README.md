@@ -313,7 +313,6 @@ Still missing / partial:
 - Full prior-art coverage (USPTO/EPO/WIPO production ingestion)
 - UMAP void landscape visualization
 - Human-in-the-loop approval UI/workflow
-- Claim-level confidence scoring and DOCX/PDF export
 - Production hardening (security integration, full audit, benchmark suite)
 
 ## ✅ TODO 
@@ -365,14 +364,14 @@ Still missing / partial:
 - [x] **Implement Conference Review Simulated Framework** (Feedback reviewer metrics to Maverick for multi-generation mutation)
 - [x] Debate Panel (`copilot_cli` role-conditioned committee) 
 - [x] Hallucination guard via committee fact-check retrieval and fatal-flaw rejection 
-- [ ] Human-in-the-loop review checkpoint 
+- [x] Human-in-the-loop review checkpoint 
 
 ### Phase 5: Output 
 - [x] TID template engine 
 - [x] Patent claim auto-generator 
-- [ ] Prior art conflict detector 
-- [ ] Confidence scoring per claim 
-- [ ] Export to DOCX / PDF 
+- [x] Prior art conflict detector 
+- [x] Confidence scoring per claim 
+- [x] Export to DOCX / PDF 
 
 ### Phase 6: Production Hardening 
 - [x] Full audit logging 

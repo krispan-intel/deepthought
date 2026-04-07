@@ -19,6 +19,7 @@ from agents.maverick import MaverickAgent
 from agents.patent_shield import PatentShieldAgent
 from agents.reality_checker import RealityCheckerAgent
 from agents.state import PipelineState, TIDStatus
+from services.human_review import HumanReviewCheckpoint
 
 
 class DeepThoughtPipeline:
@@ -28,6 +29,7 @@ class DeepThoughtPipeline:
         self.patent_shield = PatentShieldAgent()
         self.reality_checker = RealityCheckerAgent()
         self.debate_panel = DebatePanelAgent()
+        self.human_review = HumanReviewCheckpoint() if settings.human_review_checkpoint_enabled else None
 
     def run(self, state: PipelineState, n_drafts: int = 3, top_k_voids: int = 5) -> PipelineState:
         state.run_status = "RUNNING"
@@ -140,6 +142,10 @@ class DeepThoughtPipeline:
             state.run_status = "RETRY_PENDING"
             if state.debate_result and not state.last_error:
                 state.last_error = state.debate_result.synthesis
+
+        if self.human_review:
+            state = self.human_review.apply(state)
+
         return state
 
     def export_reports(

@@ -1,7 +1,8 @@
-"""Service layer exports."""
+"""Service package marker.
 
-from services.pipeline_service import PipelineService
-from services.tid_notification_service import TIDNotificationService
+Avoid eager imports here to prevent circular import issues between
+`agents.pipeline` and `services.pipeline_service` during test discovery.
+"""
 
-__all__ = ["PipelineService", "TIDNotificationService"]
+__all__: list[str] = []
 
