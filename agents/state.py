@@ -75,6 +75,15 @@ class TIDStatus:
 
 
 @dataclass
+class PatentCheckResult:
+    draft_index: int
+    status: str
+    conflict_score: float
+    rationale: str
+    prior_art_hits: List[str] = field(default_factory=list)
+
+
+@dataclass
 class PipelineState:
     domain: str
     target: str
@@ -90,6 +99,7 @@ class PipelineState:
     revisions: int = 0
     debate_result: Optional[DebateResult] = None
     selected_draft_index: int = 0
+    patent_checks: List[PatentCheckResult] = field(default_factory=list)
     void_statuses: List[VoidStatus] = field(default_factory=list)
     tid_statuses: List[TIDStatus] = field(default_factory=list)
     run_status: str = "PENDING"

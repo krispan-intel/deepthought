@@ -361,8 +361,8 @@ python scripts/run_pipeline.py \
 - [x] Forager Agent
 - [x] Maverick Agent（DeepSeek-V3）
 - [x] Reality Checker Agent（Claude Sonnet 4）
-- [ ] **整合 Global Patent API**（Google Patents / Semantic Scholar）做 prior-art fast-screening
-- [ ] **實作 Conference Review Simulated Framework**（將 reviewer metrics 回饋給 Maverick，進行多代 mutation）
+- [x] **整合 Global Patent API**（Google Patents / Semantic Scholar）做 prior-art fast-screening
+- [x] **實作 Conference Review Simulated Framework**（將 reviewer metrics 回饋給 Maverick，進行多代 mutation）
 - [x] Debate Panel（DeepSeek-R1 + Qwen3-Coder + Qwen3）
 - [x] 透過委員會 fact-check 檢索與 fatal-flaw 規則的幻覺防護
 - [ ] Human-in-the-loop 人工審查節點

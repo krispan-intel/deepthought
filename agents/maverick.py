@@ -30,6 +30,8 @@ class MaverickAgent:
         )
 
         compact_context = self._compact_void_context(state.topological_void_context)
+        review_feedback = state.metadata.get("conference_review_feedback", {})
+        feedback_text = self._format_conference_feedback(review_feedback)
 
         user_prompt = f"""
 Domain: {state.domain}
@@ -49,6 +51,9 @@ Constraints:
 
 Void context:
 {compact_context}
+
+Conference review feedback (if available):
+{feedback_text}
 
 Return JSON:
 {{
@@ -160,6 +165,26 @@ Return JSON:
             return json.loads(braces.group(1))
 
         raise ValueError("Maverick output is not valid JSON")
+
+    @staticmethod
+    def _format_conference_feedback(feedback: Any) -> str:
+        if not isinstance(feedback, dict) or not feedback:
+            return "No prior conference-review metrics available in this round."
+
+        top_points = feedback.get("top_revision_points", [])
+        if not isinstance(top_points, list):
+            top_points = []
+        bullets = "\n".join(f"- {str(item)}" for item in top_points[:8])
+        if not bullets:
+            bullets = "- No concrete revision points recorded."
+
+        return (
+            f"approve={feedback.get('approve_count', 0)}, "
+            f"revise={feedback.get('revise_count', 0)}, "
+            f"reject={feedback.get('reject_count', 0)}, "
+            f"fatal={feedback.get('fatal_count', 0)}\n"
+            f"Top revision points:\n{bullets}"
+        )
 
     @staticmethod
     def _clamp_star(value: Any) -> int:
