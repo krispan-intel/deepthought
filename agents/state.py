@@ -72,6 +72,8 @@ class TIDStatus:
     last_error: str = ""
     output_markdown: str = ""
     output_html: str = ""
+    output_docx: str = ""
+    output_pdf: str = ""
 
 
 @dataclass
