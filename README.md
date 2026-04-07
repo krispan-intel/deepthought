@@ -26,31 +26,22 @@ The knowledge space visualization:
     ░ = DeepThought target: high-value innovation gaps
     ★ = V_target (your optimization goal)
 
-## 📐 The DeepThought Equation
+## 📐 The Hybrid DeepThought Equation (BGE-M3 Dense-Sparse Triad)
 
-The core mathematical engine combining
-**Maximum Marginal Relevance (MMR)** with **Latent Space Arithmetic**.
+The core mathematical engine has evolved from traditional global MMR to a **Hybrid Vector-Inverted Index Triad**. We identify true Topological Voids by finding two concepts (A and B) within a domain anchor (C) that are semantically compatible but have **absolute zero historical co-occurrence**.
 
-MMR_Patent = λ · Sim(V_new, V_target) - (1-λ) · max[Sim(V_new, V_existing)]
-| Symbol | Meaning | 
-|--------|---------| 
-| V_new | Candidate innovation vector in latent space | 
-| V_target | Target domain / optimization goal vector | 
-| V_existing | Existing patents / solutions vectors | 
-| λ (lambda) | Balance: relevance vs. novelty (default: 0.7) | 
-| Sim(·) | Cosine similarity in embedding space | 
+**Objective:** Find Triad (C, A, B) that satisfies:
 
-### Interpretation
-High MMR_Patent score = High similarity to target goal (relevant)
-Low similarity to existing solutions (novel) = Topological Void = Innovation Opportunity
+1. Domain Cohesion: `Cos(Dense(A), Dense(C)) > τ_domain` AND `Cos(Dense(B), Dense(C)) > τ_domain`
+2. Calibrated Marginality: `τ_low ≤ Cos(Dense(A), Dense(B)) ≤ τ_high`
+3. True Global Void: `Boolean_AND(Sparse_Top_Tokens(A), Sparse_Top_Tokens(B)) == 0` (via Elasticsearch)
 
-### Lambda Strategy 
-| λ Value | Strategy | Use Case | 
-|---------|----------|----------| 
-| 0.9 | Aggressive | Closest to target, ignore prior art | 
-| 0.7 | Balanced ✅ | Default: relevant AND novel | 
-| 0.5 | Conservative | Maximize distance from existing | 
-| 0.3 | Disruptive | Blue ocean, paradigm shift |
+| Component | Meaning | Execution |
+|-----------|---------|-----------|
+| **Dense(·)** | 1024D Semantic Embedding | Nearest Neighbor (KNN) via FAISS for fast O(N) candidate retrieval. |
+| **Sparse(·)** | Top-5 Lexical Weights | Extracts precise "Concept Anchors" using BGE-M3's learned sparse layer. |
+| **τ_low, τ_high** | Marginality Threshold | Calibrated from git-history of "first-time subsystem collisions" to avoid Franken-IPs. |
+| **True Global Void** | Absolute historic vacuum | Exact boolean query against the entire inverted index (code + docs + papers). |
 
 ## 🏗️ Architecture: Decoupled 3-Tier Pipeline
 ```
@@ -58,26 +49,29 @@ Low similarity to existing solutions (novel) = Topological Void = Innovation Opp
 |                      DeepThought System                        |
 +================================================================+
 |                                                                |
-|  TIER 1: Data Tier (Secure Ingestion)                         |
+|  TIER 1: Hybrid Data Tier (Secure Ingestion)                   |
 |  +----------------------------------------------------------+  |
 |  |  100% Local RAG on Intel Hardware                        |  |
-|  |  Tree-sitter AST Parsing  -->  ChromaDB                  |  |
+|  |  Tree-sitter AST Parsing                                 |  |
+|  |   ├──> FAISS (1024D Dense Vectors)                       |  |
+|  |   └──> Elasticsearch (Inverted Index / Sparse Tokens)    |  |
 |  |  Sources: Linux Kernel, x86 Specs, Papers, Patents       |  |
 |  +----------------------------------------------------------+  |
 |                              |                                 |
 |                              v                                 |
-|  TIER 2: Logic Tier (LangGraph State Machine)                 |
+|  TIER 2: Logic Tier (Evolutionary State Machine)               |
 |  +----------------------------------------------------------+  |
-|  |  LangGraph orchestrates The Triad Agents                 |  |
+|  |  LangGraph orchestrates the Conference Review Simulated Framework |  |
 |  |                                                          |  |
-|  |  Forager         -->  DeepThought Equation               |  |
-|  |  Maverick        -->  Divergent RFC Generation           |  |
-|  |  Reality Checker -->  Ruthless Critique                  |  |
-|  |  Debate Panel    -->  Multi-Model Consensus              |  |
+|  |  Forager        -->  Hybrid Triad Void Detection         |  |
+|  |  Maverick       -->  Divergent RFC Gen (Concept Anchors) |  |
+|  |  Patent Shield  -->  Global Prior Art API Check          |  |
+|  |  Reality Checker-->  Constraint Validation & Critique    |  |
+|  |  Debate Panel   -->  Multi-Model Consensus & Mutation    |  |
 |  +----------------------------------------------------------+  |
 |                              |                                 |
 |                              v                                 |
-|  TIER 3: Execution Tier (Output)                              |
+|  TIER 3: Execution Tier (Output)                               |
 |  +----------------------------------------------------------+  |
 |  |  Automated Technical Invention Disclosures               |  |
 |  |  Lawyer-ready TID Templates                              |  |
@@ -90,10 +84,10 @@ Low similarity to existing solutions (novel) = Topological Void = Innovation Opp
 ## 🤖 The Triad Agents
 
 ### 🕵️ The Forager (Math Engine)
-- Executes the DeepThought Equation
-- Queries local RAG knowledge base
-- Locates Topological Voids in latent space
-- **Model**: Pure math + `IKT-Qwen3-Embedding-8B`
+- Executes the Hybrid DeepThought Triad Equation
+- Orchestrates Dual-Engine queries (FAISS for semantics + Elasticsearch for true co-occurrence)
+- Extracts BGE-M3 Top-5 Sparse Tokens as precision "Concept Anchors"
+- **Model**: `BAAI/bge-m3` + FAISS + Elasticsearch
 
 ### 💡 The Maverick (Idea Generator)
 - Generates divergent RFC drafts
@@ -101,11 +95,11 @@ Low similarity to existing solutions (novel) = Topological Void = Innovation Opp
 - Explores the identified Void space
 - **Model**: `DeepSeek-V3-0324-671B` (divergent thinking)
 
-### 🛡️ The Reality Checker (Critic)
-- Ruthlessly critiques based on physical kernel constraints
-- Validates against x86 ISA, Linux ABI, prior art
-- Issues APPROVE / REVISE / REJECT verdicts
-- **Model**: `Claude Sonnet 4` (strictest technical reasoning)
+### 🛡️ The Reality Checker (Critic & Evaluator)
+- Executes **Global Prior-Art Check** (Google Patents / Semantic Scholar APIs)
+- Validates against physical constraints (x86 ISA, Linux ABI) via simulation and static checks
+- Generates precise error logs and performance debt metrics for the Conference Review Simulated Framework
+- **Model**: API Integrations + `Claude Sonnet 4` (strictest technical reasoning)
 
 ### ⚖️ The Debate Panel (Consensus)
 - Multi-model adversarial debate
@@ -121,46 +115,47 @@ Input: Legacy Code + Modern Specs
               v
         +------------+
         |  FORAGER   |
-        |  MMR_Patent Equation          |
-        |  Topological Void Detection   |
+        |  Dense + Sparse Void Triad Filter  |
         +------------+
-              |
+              | (Concept Anchors A & B)
               v
-        +------------+
-        |  MAVERICK  |
-        |  DeepSeek-V3-671B             |
-        |  3x RFC Drafts  temp=0.8      |
-        +------------+
-              |
-              v
-        +------------------+
-        |  REALITY CHECKER |
-        |  Claude Sonnet 4 |
-        |  APPROVE / REVISE / REJECT    |
-        +------------------+
-              |
-        +-----+-----+
-        |           |
-      REVISE      APPROVE
-        |           |
-        |           v
-        |     +--------------+
-        |     | DEBATE PANEL |
-        |     | R1-671B      |
-        |     | Coder-480B   |
-        |     | Qwen3-32B    |
-        |     +--------------+
-        |           |
-        +-----+     v
-      max 3x  +----------------+
+   +--------> +------------+
+   |          |  MAVERICK  |
+   |          |  DeepSeek-V3-671B            |
+   |          |  RFC Draft Generation        |
+   |          +------------+
+   |                  |
+   |                  v
+   |          +------------------+
+   |          | PATENT SHIELD    |
+   |          | Global Prior Art |
+   |          +------------------+
+   |                  | (Pass)
+   |                  v
+   |          +------------------+
+   |          | REALITY CHECKER  |
+        |          | Constraint Eval  |
+   |          +------------------+
+   |                  |
+   +------------------+ (REVISE: Feed metrics back for Mutation - Max 3-5x)
+                      |
+                   APPROVE
+                      |
+                      v
+              +--------------+
+              | DEBATE PANEL |
+              | R1-671B      |
+              | Qwen3-32B    |
+              +--------------+
+                      |
+                      v
+              +----------------+
               | CONSENSUS JUDGE|
               +----------------+
-                     |
-                     v
+                      |
+                      v
               +--------------+
               | TID FORMATTER|
-              | Lawyer-ready |
-              | Output       |
               +--------------+
 ```
 
@@ -356,7 +351,9 @@ Still missing / partial:
 ### Phase 3: Core Engine 
 - [x] DeepThought Equation implementation 
 - [x] Topological Void detector 
-- [x] MMR-based retriever 
+- [x] **Refactor MMR to Hybrid BGE-M3 Triad Equation** (Dense + Sparse)
+- [x] **Deploy Elasticsearch / SQLite FTS5** sidecar for true global co-occurrence checks
+- [x] **Implement Historical First-Collision Calibration** to dynamically set marginality thresholds (`τ_low`, `τ_high`)
 - [x] Concept arithmetic (Latent Space Arithmetic) 
 - [ ] Void landscape visualization (UMAP 2D projection) 
 
@@ -365,6 +362,8 @@ Still missing / partial:
 - [x] Forager Agent 
 - [x] Maverick Agent (DeepSeek-V3) 
 - [x] Reality Checker Agent (Claude Sonnet 4) 
+- [ ] **Integrate Global Patent API** (Google Patents / Semantic Scholar) for prior-art fast-screening
+- [ ] **Implement Conference Review Simulated Framework** (Feedback reviewer metrics to Maverick for multi-generation mutation)
 - [x] Debate Panel (DeepSeek-R1 + Qwen3-Coder + Qwen3) 
 - [x] Hallucination guard via committee fact-check retrieval and fatal-flaw rejection 
 - [ ] Human-in-the-loop review checkpoint 

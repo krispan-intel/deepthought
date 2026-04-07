@@ -26,33 +26,22 @@ DeepThought 則將這件事變得**系統化且數學化**。
     ░ = DeepThought 鎖定的高價值創新缺口
     ★ = V_target（你的最佳化目標）
 
-## 📐 DeepThought 方程式
+## 📐 Hybrid DeepThought 方程式（BGE-M3 Dense-Sparse Triad）
 
-核心數學引擎結合了
-**最大邊際相關性（Maximum Marginal Relevance, MMR）** 與 **潛在空間算術（Latent Space Arithmetic）**。
+核心數學引擎已從傳統 global MMR 演進為 **Hybrid Vector-Inverted Index Triad**。系統會在一個領域錨點（C）之下，尋找兩個語意上相容、但在歷史資料中 **完全沒有共同出現** 的概念（A 與 B），以此識別真正的 Topological Void。
 
-MMR_Patent = λ · Sim(V_new, V_target) - (1-λ) · max[Sim(V_new, V_existing)]
+**目標：** 找出滿足以下條件的 Triad (C, A, B)：
 
-| 符號 | 意義 |
-|------|------|
-| V_new | 潛在空間中的候選創新向量 |
-| V_target | 目標領域 / 最佳化目標向量 |
-| V_existing | 既有專利 / 解法向量 |
-| λ (lambda) | 相關性與新穎性的平衡參數（預設 0.7） |
-| Sim(·) | 嵌入空間中的 cosine similarity |
+1. 領域凝聚性：`Cos(Dense(A), Dense(C)) > τ_domain` 且 `Cos(Dense(B), Dense(C)) > τ_domain`
+2. 邊際新穎性校準：`τ_low ≤ Cos(Dense(A), Dense(B)) ≤ τ_high`
+3. 真正的全域空洞：`Boolean_AND(Sparse_Top_Tokens(A), Sparse_Top_Tokens(B)) == 0`（透過 Elasticsearch）
 
-### 解讀
-MMR_Patent 分數高 = 與目標高度相似（具相關性）
-且與既有解法相似度低（具新穎性）
-= 拓撲空洞 = 創新機會
-
-### Lambda 策略
-| λ 值 | 策略 | 使用情境 |
+| 元件 | 意義 | 執行方式 |
 |------|------|----------|
-| 0.9 | 積極型 | 極度貼近目標，較少考慮先前技術 |
-| 0.7 | 平衡型 ✅ | 預設：兼顧相關性與新穎性 |
-| 0.5 | 保守型 | 最大化與既有解法的距離 |
-| 0.3 | 顛覆型 | 藍海探索、典範轉移 |
+| **Dense(·)** | 1024 維語意嵌入 | 透過 FAISS 做 Nearest Neighbor (KNN) 候選檢索。 |
+| **Sparse(·)** | Top-5 詞彙權重 | 使用 BGE-M3 的 learned sparse layer 萃取精準的「Concept Anchors」。 |
+| **τ_low, τ_high** | 邊際門檻 | 從 git history 的「首次子系統碰撞」校準而來，避免產生 Franken-IP。 |
+| **True Global Void** | 歷史上的絕對真空 | 對整體倒排索引（code + docs + papers）執行精確 boolean query。 |
 
 ## 🏗️ 架構：解耦的三層式 Pipeline
 ```
@@ -60,26 +49,29 @@ MMR_Patent 分數高 = 與目標高度相似（具相關性）
 |                      DeepThought System                        |
 +================================================================+
 |                                                                |
-|  TIER 1: Data Tier (Secure Ingestion)                         |
+|  TIER 1: Hybrid Data Tier (Secure Ingestion)                   |
 |  +----------------------------------------------------------+  |
 |  |  100% Local RAG on Intel Hardware                        |  |
-|  |  Tree-sitter AST Parsing  -->  ChromaDB                  |  |
+|  |  Tree-sitter AST Parsing                                 |  |
+|  |   ├──> FAISS (1024D Dense Vectors)                       |  |
+|  |   └──> Elasticsearch (Inverted Index / Sparse Tokens)    |  |
 |  |  Sources: Linux Kernel, x86 Specs, Papers, Patents       |  |
 |  +----------------------------------------------------------+  |
 |                              |                                 |
 |                              v                                 |
-|  TIER 2: Logic Tier (LangGraph State Machine)                 |
+|  TIER 2: Logic Tier (Evolutionary State Machine)               |
 |  +----------------------------------------------------------+  |
-|  |  LangGraph orchestrates The Triad Agents                 |  |
+|  |  LangGraph orchestrates the Conference Review Simulated Framework |  |
 |  |                                                          |  |
-|  |  Forager         -->  DeepThought Equation               |  |
-|  |  Maverick        -->  Divergent RFC Generation           |  |
-|  |  Reality Checker -->  Ruthless Critique                  |  |
-|  |  Debate Panel    -->  Multi-Model Consensus              |  |
+|  |  Forager        -->  Hybrid Triad Void Detection         |  |
+|  |  Maverick       -->  Divergent RFC Gen (Concept Anchors) |  |
+|  |  Patent Shield  -->  Global Prior Art API Check          |  |
+|  |  Reality Checker-->  Constraint Validation & Critique    |  |
+|  |  Debate Panel   -->  Multi-Model Consensus & Mutation    |  |
 |  +----------------------------------------------------------+  |
 |                              |                                 |
 |                              v                                 |
-|  TIER 3: Execution Tier (Output)                              |
+|  TIER 3: Execution Tier (Output)                               |
 |  +----------------------------------------------------------+  |
 |  |  Automated Technical Invention Disclosures               |  |
 |  |  Lawyer-ready TID Templates                              |  |
@@ -91,10 +83,10 @@ MMR_Patent 分數高 = 與目標高度相似（具相關性）
 ## 🤖 三位一體 Agents
 
 ### 🕵️ The Forager（數學引擎）
-- 執行 DeepThought 方程式
-- 查詢本地 RAG 知識庫
-- 在潛在空間中定位拓撲空洞
-- **模型**：純數學 + `IKT-Qwen3-Embedding-8B`
+- 執行 Hybrid DeepThought Triad Equation
+- 協調雙引擎查詢（FAISS 做語意檢索 + Elasticsearch 做真實共現檢查）
+- 萃取 BGE-M3 Top-5 Sparse Tokens 作為精準的「Concept Anchors」
+- **模型**：`BAAI/bge-m3` + FAISS + Elasticsearch
 
 ### 💡 The Maverick（點子生成器）
 - 生成發散式 RFC 草案
@@ -102,11 +94,11 @@ MMR_Patent 分數高 = 與目標高度相似（具相關性）
 - 探索已識別的空洞空間
 - **模型**：`DeepSeek-V3-0324-671B`（發散思考）
 
-### 🛡️ The Reality Checker（批判者）
-- 以實體系統與 kernel 限制做無情審查
-- 驗證 x86 ISA、Linux ABI、先前技術
-- 輸出 APPROVE / REVISE / REJECT 判定
-- **模型**：`Claude Sonnet 4`（最嚴格的技術推理）
+### 🛡️ The Reality Checker（批判者與評估器）
+- 執行 **Global Prior-Art Check**（Google Patents / Semantic Scholar APIs）
+- 透過 simulation 與靜態檢查驗證實體限制（x86 ISA、Linux ABI）
+- 為 Conference Review Simulated Framework 產生精準錯誤日誌與 performance debt metrics
+- **模型**：API Integrations + `Claude Sonnet 4`（最嚴格的技術推理）
 
 ### ⚖️ The Debate Panel（共識層）
 - 多模型對抗式辯論
@@ -122,46 +114,47 @@ Input: Legacy Code + Modern Specs
               v
         +------------+
         |  FORAGER   |
-        |  MMR_Patent Equation          |
-        |  Topological Void Detection   |
+        |  Dense + Sparse Void Triad Filter  |
         +------------+
-              |
+              | (Concept Anchors A & B)
               v
-        +------------+
-        |  MAVERICK  |
-        |  DeepSeek-V3-671B             |
-        |  3x RFC Drafts  temp=0.8      |
-        +------------+
-              |
-              v
-        +------------------+
-        |  REALITY CHECKER |
-        |  Claude Sonnet 4 |
-        |  APPROVE / REVISE / REJECT    |
-        +------------------+
-              |
-        +-----+-----+
-        |           |
-      REVISE      APPROVE
-        |           |
-        |           v
-        |     +--------------+
-        |     | DEBATE PANEL |
-        |     | R1-671B      |
-        |     | Coder-480B   |
-        |     | Qwen3-32B    |
-        |     +--------------+
-        |           |
-        +-----+     v
-      max 3x  +----------------+
+   +--------> +------------+
+   |          |  MAVERICK  |
+   |          |  DeepSeek-V3-671B            |
+   |          |  RFC Draft Generation        |
+   |          +------------+
+   |                  |
+   |                  v
+   |          +------------------+
+   |          | PATENT SHIELD    |
+   |          | Global Prior Art |
+   |          +------------------+
+   |                  | (Pass)
+   |                  v
+   |          +------------------+
+   |          | REALITY CHECKER  |
+        |          | Constraint Eval  |
+   |          +------------------+
+   |                  |
+   +------------------+ (REVISE: 回饋 metrics 做 Mutation，最多 3-5 次)
+                      |
+                   APPROVE
+                      |
+                      v
+              +--------------+
+              | DEBATE PANEL |
+              | R1-671B      |
+              | Qwen3-32B    |
+              +--------------+
+                      |
+                      v
+              +----------------+
               | CONSENSUS JUDGE|
               +----------------+
-                     |
-                     v
+                      |
+                      v
               +--------------+
               | TID FORMATTER|
-              | Lawyer-ready |
-              | Output       |
               +--------------+
 ```
 
@@ -357,7 +350,9 @@ python scripts/run_pipeline.py \
 ### Phase 3: Core Engine
 - [x] DeepThought Equation 實作
 - [x] 拓撲空洞偵測器
-- [x] 基於 MMR 的 retriever
+- [x] **將 MMR 重構為 Hybrid BGE-M3 Triad Equation**（Dense + Sparse）
+- [x] **部署 Elasticsearch / SQLite FTS5** sidecar，做真正的全域共現檢查
+- [x] **實作 Historical First-Collision Calibration**，動態設定邊際門檻（`τ_low`, `τ_high`）
 - [x] 概念算術（Latent Space Arithmetic）
 - [ ] 空洞地景視覺化（UMAP 2D projection）
 
@@ -366,6 +361,8 @@ python scripts/run_pipeline.py \
 - [x] Forager Agent
 - [x] Maverick Agent（DeepSeek-V3）
 - [x] Reality Checker Agent（Claude Sonnet 4）
+- [ ] **整合 Global Patent API**（Google Patents / Semantic Scholar）做 prior-art fast-screening
+- [ ] **實作 Conference Review Simulated Framework**（將 reviewer metrics 回饋給 Maverick，進行多代 mutation）
 - [x] Debate Panel（DeepSeek-R1 + Qwen3-Coder + Qwen3）
 - [x] 透過委員會 fact-check 檢索與 fatal-flaw 規則的幻覺防護
 - [ ] Human-in-the-loop 人工審查節點

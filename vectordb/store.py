@@ -26,6 +26,7 @@ from core.deepthought_equation import (
     TechVector,
     VoidLandscape,
 )
+from vectordb.sparse_index import SparseCooccurrenceIndex
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -154,7 +155,11 @@ class RetrievedDocument:
             id=self.document.doc_id,
             vector=self.embedding,
             label=label,
-            metadata=metadata,
+            metadata={
+                **metadata,
+                "content_excerpt": self.document.content[:400],
+                "collection": self.collection.value,
+            },
         )
 
     @classmethod
@@ -278,6 +283,7 @@ class DeepThoughtVectorStore:
         self.embedder = embedder or create_embedder()
         # Collections cache
         self._collections: Dict[CollectionName, Any] = {}
+        self.sparse_index = SparseCooccurrenceIndex(settings.sparse_index_path)
 
         # Initialize all collections
         self._init_collections()
@@ -332,6 +338,7 @@ class DeepThoughtVectorStore:
                 metadatas=metadatas,
                 ids=ids
             )
+            self._sync_sparse_collection(collection_name)
             logger.debug(f"  Added {len(documents)} docs to {collection_name.value}")
             return len(documents)
             
@@ -526,6 +533,64 @@ class DeepThoughtVectorStore:
 
         return reranked[:n_results]
 
+    def _collection_records(self, collection_name: CollectionName) -> List[Dict[str, str]]:
+        col = self._collections[collection_name]
+        count = col.count()
+        if count <= 0:
+            return []
+
+        result = col.get(
+            limit=count,
+            offset=0,
+            include=["documents", "metadatas"],
+        )
+        ids = result.get("ids")
+        documents = result.get("documents")
+        metadatas = result.get("metadatas")
+
+        if ids is None or documents is None or metadatas is None:
+            return []
+
+        records: List[Dict[str, str]] = []
+        for idx, doc_id in enumerate(ids):
+            metadata = metadatas[idx] or {}
+            label = (
+                RetrievedDocument._sanitize_label(metadata.get("function_name"))
+                or RetrievedDocument._sanitize_label(metadata.get("name"))
+                or RetrievedDocument._sanitize_label(metadata.get("title"))
+                or str(doc_id)
+            )
+            records.append(
+                {
+                    "doc_id": str(doc_id),
+                    "label": label,
+                    "content": str(documents[idx] or ""),
+                }
+            )
+        return records
+
+    def _sync_sparse_collection(self, collection_name: CollectionName) -> None:
+        records = self._collection_records(collection_name)
+        self.sparse_index.upsert_records(records=records, collection=collection_name.value)
+
+    def _ensure_sparse_index(self, collections: Optional[List[CollectionName]]) -> List[str]:
+        target_collections = collections or list(CollectionName)
+        collection_names: List[str] = []
+        for collection_name in target_collections:
+            self._sync_sparse_collection(collection_name)
+            collection_names.append(collection_name.value)
+        return collection_names
+
+    def _build_sparse_tokens(self, retrieved: List[RetrievedDocument]) -> Dict[str, List[str]]:
+        token_map: Dict[str, List[str]] = {}
+        for item in retrieved:
+            vector = item.to_tech_vector()
+            token_map[item.document.doc_id] = self.sparse_index.extract_top_tokens(
+                f"{vector.label} {item.document.content[:600]}",
+                max_tokens=5,
+            )
+        return token_map
+
     def sample_random_document(
         self,
         collections: Optional[List[CollectionName]] = None,
@@ -663,13 +728,11 @@ class DeepThoughtVectorStore:
         if domain_filter:
             where = {"subsystem": {"$eq": domain_filter}}
 
-        # Get candidates via MMR query
-        retrieved = self.query_with_mmr(
+        # Get dense candidates first; hybrid triad selection happens after retrieval.
+        retrieved = self.query(
             query_text=target_description,
-            existing_texts=existing_solutions,
             collections=collections,
             n_results=top_k * 4,
-            lambda_val=lambda_val,
             where=where,
         )
 
@@ -711,16 +774,33 @@ class DeepThoughtVectorStore:
 
         # Convert to TechVectors
         candidate_vectors = [r.to_tech_vector() for r in retrieved]
+        collection_names = self._ensure_sparse_index(collections)
+        sparse_tokens = self._build_sparse_tokens(retrieved)
 
-        # Run DeepThought Equation
+        # Run Hybrid DeepThought Equation
         engine = DeepThoughtEquation(lambda_val=lambda_val)
-        landscape = engine.find_voids_iterative(
+        thresholds = engine.calibrate_marginality_thresholds(
+            candidates=candidate_vectors,
+            v_target=v_target,
+        )
+        landscape = engine.find_hybrid_voids_iterative(
             v_target=v_target,
             candidates=candidate_vectors,
             existing=existing_vectors,
+            sparse_tokens=sparse_tokens,
+            global_cooccurrence_checker=lambda left, right: self.sparse_index.has_cooccurrence(
+                left,
+                right,
+                collections=collection_names,
+            ),
             n_select=top_k,
             domain=domain_filter or "unknown",
+            domain_threshold=settings.triad_domain_threshold,
+            thresholds=thresholds,
         )
+        landscape.target.metadata["triad_threshold_low"] = thresholds.low
+        landscape.target.metadata["triad_threshold_high"] = thresholds.high
+        landscape.target.metadata["triad_threshold_source"] = thresholds.source
 
         logger.info(f"✅ {landscape.summary()}")
         return landscape
