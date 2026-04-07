@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import random
+import re
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional, Dict, Any
@@ -84,6 +85,25 @@ COLLECTION_METADATA = {
         "update_freq": "weekly",
     },
 }
+
+SPARSE_SYNC_BATCH_SIZE = 256
+GENERIC_TRIAD_LABELS = {
+    "resource",
+    "data",
+    "value",
+    "values",
+    "result",
+    "results",
+    "item",
+    "items",
+    "node",
+    "nodes",
+    "entry",
+    "entries",
+    "default",
+    "unknown",
+}
+HASH_LABEL_RE = re.compile(r"^[0-9a-f]{16,64}$", re.IGNORECASE)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -332,18 +352,20 @@ class DeepThoughtVectorStore:
             ids.append(doc_id)
 
         try:
-            col.add(
+            # Use upsert so repeated ingestion can refresh metadata (e.g., new semantic titles)
+            # without requiring a full collection reset.
+            col.upsert(
                 embeddings=[e.tolist() for e in embeddings],
                 documents=texts,
                 metadatas=metadatas,
                 ids=ids
             )
             self._sync_sparse_collection(collection_name)
-            logger.debug(f"  Added {len(documents)} docs to {collection_name.value}")
+            logger.debug(f"  Upserted {len(documents)} docs to {collection_name.value}")
             return len(documents)
             
         except Exception as e:
-            logger.error(f"Failed to add documents to ChromaDB: {e}")
+            logger.error(f"Failed to upsert documents to ChromaDB: {e}")
             raise
 
     def upsert_documents(
@@ -539,34 +561,35 @@ class DeepThoughtVectorStore:
         if count <= 0:
             return []
 
-        result = col.get(
-            limit=count,
-            offset=0,
-            include=["documents", "metadatas"],
-        )
-        ids = result.get("ids")
-        documents = result.get("documents")
-        metadatas = result.get("metadatas")
-
-        if ids is None or documents is None or metadatas is None:
-            return []
-
         records: List[Dict[str, str]] = []
-        for idx, doc_id in enumerate(ids):
-            metadata = metadatas[idx] or {}
-            label = (
-                RetrievedDocument._sanitize_label(metadata.get("function_name"))
-                or RetrievedDocument._sanitize_label(metadata.get("name"))
-                or RetrievedDocument._sanitize_label(metadata.get("title"))
-                or str(doc_id)
+        for offset in range(0, count, SPARSE_SYNC_BATCH_SIZE):
+            result = col.get(
+                limit=min(SPARSE_SYNC_BATCH_SIZE, count - offset),
+                offset=offset,
+                include=["documents", "metadatas"],
             )
-            records.append(
-                {
-                    "doc_id": str(doc_id),
-                    "label": label,
-                    "content": str(documents[idx] or ""),
-                }
-            )
+            ids = result.get("ids")
+            documents = result.get("documents")
+            metadatas = result.get("metadatas")
+
+            if ids is None or documents is None or metadatas is None:
+                continue
+
+            for idx, doc_id in enumerate(ids):
+                metadata = metadatas[idx] or {}
+                label = (
+                    RetrievedDocument._sanitize_label(metadata.get("function_name"))
+                    or RetrievedDocument._sanitize_label(metadata.get("name"))
+                    or RetrievedDocument._sanitize_label(metadata.get("title"))
+                    or str(doc_id)
+                )
+                records.append(
+                    {
+                        "doc_id": str(doc_id),
+                        "label": label,
+                        "content": str(documents[idx] or ""),
+                    }
+                )
         return records
 
     def _sync_sparse_collection(self, collection_name: CollectionName) -> None:
@@ -590,6 +613,51 @@ class DeepThoughtVectorStore:
                 max_tokens=5,
             )
         return token_map
+
+    def _prepare_hybrid_candidates(
+        self,
+        retrieved: List[RetrievedDocument],
+    ) -> tuple[List[RetrievedDocument], Dict[str, int]]:
+        filtered: List[RetrievedDocument] = []
+        rejected = {
+            "missing_semantic_label": 0,
+            "noisy_label": 0,
+        }
+
+        for item in retrieved:
+            metadata = item.document.metadata or {}
+            semantic_label = (
+                RetrievedDocument._sanitize_label(metadata.get("function_name"))
+                or RetrievedDocument._sanitize_label(metadata.get("name"))
+                or RetrievedDocument._sanitize_label(metadata.get("title"))
+            )
+            if not semantic_label:
+                rejected["missing_semantic_label"] += 1
+                continue
+
+            if self._is_noisy_triad_label(semantic_label):
+                rejected["noisy_label"] += 1
+                continue
+
+            filtered.append(item)
+
+        return filtered, rejected
+
+    @staticmethod
+    def _is_noisy_triad_label(label: str) -> bool:
+        text = str(label or "").strip()
+        lowered = text.lower()
+        if not text:
+            return True
+        if lowered in GENERIC_TRIAD_LABELS:
+            return True
+        if HASH_LABEL_RE.fullmatch(text):
+            return True
+        if "/" in text or "\\" in text:
+            return True
+        if "." in text and any(text.lower().endswith(ext) for ext in (".pdf", ".txt", ".md", ".json", ".c", ".h", ".rst")):
+            return True
+        return False
 
     def sample_random_document(
         self,
@@ -729,15 +797,38 @@ class DeepThoughtVectorStore:
             where = {"subsystem": {"$eq": domain_filter}}
 
         # Get dense candidates first; hybrid triad selection happens after retrieval.
+        initial_candidate_count = max(top_k * 4, settings.triad_initial_candidate_pool_size)
         retrieved = self.query(
             query_text=target_description,
             collections=collections,
-            n_results=top_k * 4,
+            n_results=initial_candidate_count,
             where=where,
         )
 
         if not retrieved:
             logger.warning("No candidates found for void detection")
+            return VoidLandscape(
+                target=TechVector(
+                    id="target",
+                    vector=self.embedder.embed_query(target_description),
+                    label=target_description[:50],
+                ),
+                voids=[],
+                lambda_used=lambda_val,
+                domain=domain_filter or "unknown",
+            )
+
+        filtered_retrieved, rejected = self._prepare_hybrid_candidates(retrieved)
+        logger.info(
+            "Hybrid candidate pool | requested_per_collection={} | retrieved={} | filtered={} | rejected_missing_label={} | rejected_noisy_label={}",
+            initial_candidate_count,
+            len(retrieved),
+            len(filtered_retrieved),
+            rejected["missing_semantic_label"],
+            rejected["noisy_label"],
+        )
+        if not filtered_retrieved:
+            logger.warning("No clean semantic candidates survived triad filtering")
             return VoidLandscape(
                 target=TechVector(
                     id="target",
@@ -773,9 +864,9 @@ class DeepThoughtVectorStore:
             ]
 
         # Convert to TechVectors
-        candidate_vectors = [r.to_tech_vector() for r in retrieved]
+        candidate_vectors = [r.to_tech_vector() for r in filtered_retrieved]
         collection_names = self._ensure_sparse_index(collections)
-        sparse_tokens = self._build_sparse_tokens(retrieved)
+        sparse_tokens = self._build_sparse_tokens(filtered_retrieved)
 
         # Run Hybrid DeepThought Equation
         engine = DeepThoughtEquation(lambda_val=lambda_val)

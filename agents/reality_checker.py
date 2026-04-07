@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Dict, List
+from typing import Any, Dict, List
+
+from loguru import logger
 
 from configs.settings import settings
 from agents.llm_client import LLMClient
@@ -21,6 +23,7 @@ class RealityCheckerAgent:
 
     def run(self, state: PipelineState) -> PipelineState:
         critiques: List[CritiqueResult] = []
+        round_trace: List[Dict[str, Any]] = []
 
         for draft in state.drafts:
             system_prompt = (
@@ -102,16 +105,53 @@ Return strict JSON with this exact shape:
                     fatal_flaw=fatal_flaw,
                 )
             )
+            round_trace.append(
+                {
+                    "title": draft.title,
+                    "verdict": verdict,
+                    "pass": verdict == "APPROVE",
+                    "reason": feedback or fatal_flaw or "No actionable feedback provided",
+                    "fatal_flaw": fatal_flaw,
+                    "hallucinations_found": hallucinations,
+                    "required_revisions": [feedback] + hallucinations if (feedback or hallucinations) else ["Tighten feasibility and remove hallucinations"],
+                    "confidence": round(confidence, 4),
+                }
+            )
+            logger.info(
+                "Reality Checker verdict | run_id={} | title={} | verdict={} | reason={}",
+                state.run_id,
+                draft.title,
+                verdict,
+                (feedback or fatal_flaw or "No actionable feedback provided")[:220],
+            )
 
         state.critiques = critiques
+        state.metadata["reality_checker_reports"] = round_trace
         state.metadata["conference_review_feedback"] = self._build_conference_feedback(critiques)
+        state.metadata.setdefault("conference_review_trace", []).append(
+            {
+                "event": "review_round",
+                "round": state.revisions + 1,
+                "items": round_trace,
+            }
+        )
         return state
 
     def revise_drafts(self, state: PipelineState) -> PipelineState:
         revised = []
+        revision_trace: List[Dict[str, Any]] = []
         for draft, critique in zip(state.drafts, state.critiques):
             if critique.verdict != "REVISE":
                 revised.append(draft)
+                revision_trace.append(
+                    {
+                        "before_title": draft.title,
+                        "after_title": draft.title,
+                        "status": "SKIPPED",
+                        "feedback_used": list(critique.required_revisions),
+                        "summary": draft.one_liner[:240],
+                    }
+                )
                 continue
 
             system_prompt = (
@@ -172,8 +212,25 @@ Return JSON:
                     temperature=0.5,
                 )
                 payload = self._parse_json(raw)
-                revised.append(self._merge_revised_draft(draft, payload))
-            except Exception:
+                revised_draft = self._merge_revised_draft(draft, payload)
+                revised.append(revised_draft)
+                revision_trace.append(
+                    {
+                        "before_title": draft.title,
+                        "after_title": revised_draft.title,
+                        "status": "REVISED",
+                        "feedback_used": list(critique.required_revisions),
+                        "summary": revised_draft.one_liner[:240],
+                    }
+                )
+                logger.info(
+                    "Maverick revision applied | run_id={} | before={} | after={} | feedback_count={}",
+                    state.run_id,
+                    draft.title,
+                    revised_draft.title,
+                    len(critique.required_revisions),
+                )
+            except Exception as exc:
                 # Fallback: keep draft but annotate constraints to avoid losing progress.
                 patch = "\n".join(f"- {x}" for x in critique.required_revisions)
                 draft.proposed_invention = (
@@ -181,8 +238,30 @@ Return JSON:
                     "\n\nRevision constraints applied:\n" + patch
                 )
                 revised.append(draft)
+                revision_trace.append(
+                    {
+                        "before_title": draft.title,
+                        "after_title": draft.title,
+                        "status": "FALLBACK_PATCH",
+                        "feedback_used": list(critique.required_revisions),
+                        "summary": f"Fallback patch applied: {str(exc)[:200]}",
+                    }
+                )
+                logger.warning(
+                    "Maverick revision fallback | run_id={} | title={} | reason={}",
+                    state.run_id,
+                    draft.title,
+                    str(exc)[:220],
+                )
 
         state.drafts = revised
+        state.metadata.setdefault("conference_review_trace", []).append(
+            {
+                "event": "maverick_revision",
+                "round": state.revisions + 1,
+                "items": revision_trace,
+            }
+        )
         state.revisions += 1
         return state
 

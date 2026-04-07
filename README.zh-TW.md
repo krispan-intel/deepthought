@@ -43,69 +43,13 @@ DeepThought 則將這件事變得**系統化且數學化**。
 | **τ_low, τ_high** | 邊際門檻 | 從 git history 的「首次子系統碰撞」校準而來，避免產生 Franken-IP。 |
 | **True Global Void** | 歷史上的絕對真空 | 對整體倒排索引（code + docs + papers）執行精確 boolean query。 |
 
-## 🏗️ 架構：解耦的三層式 Pipeline
-```
-+================================================================+
-|                      DeepThought System                        |
-+================================================================+
-|                                                                |
-|  TIER 1: Hybrid Data Tier (Secure Ingestion)                   |
-|  +----------------------------------------------------------+  |
-|  |  100% Local RAG on Intel Hardware                        |  |
-|  |  Tree-sitter AST Parsing                                 |  |
-|  |   ├──> FAISS (1024D Dense Vectors)                       |  |
-|  |   └──> Elasticsearch (Inverted Index / Sparse Tokens)    |  |
-|  |  Sources: Linux Kernel, x86 Specs, Papers, Patents       |  |
-|  +----------------------------------------------------------+  |
-|                              |                                 |
-|                              v                                 |
-|  TIER 2: Logic Tier (Evolutionary State Machine)               |
-|  +----------------------------------------------------------+  |
-|  |  LangGraph orchestrates the Conference Review Simulated Framework |  |
-|  |                                                          |  |
-|  |  Forager        -->  Hybrid Triad Void Detection         |  |
-|  |  Maverick       -->  Divergent RFC Gen (Concept Anchors) |  |
-|  |  Patent Shield  -->  Global Prior Art API Check          |  |
-|  |  Reality Checker-->  Constraint Validation & Critique    |  |
-|  |  Debate Panel   -->  Multi-Model Consensus & Mutation    |  |
-|  +----------------------------------------------------------+  |
-|                              |                                 |
-|                              v                                 |
-|  TIER 3: Execution Tier (Output)                               |
-|  +----------------------------------------------------------+  |
-|  |  Automated Technical Invention Disclosures               |  |
-|  |  Lawyer-ready TID Templates                              |  |
-|  +----------------------------------------------------------+  |
-|                                                                |
-+================================================================+
-```
+## ✅ TODO
 
-## 🤖 三位一體 Agents
+目前維護於獨立清單檔：
 
-### 🕵️ The Forager（數學引擎）
-- 執行 Hybrid DeepThought Triad Equation
-- 協調雙引擎查詢（FAISS 做語意檢索 + Elasticsearch 做真實共現檢查）
-- 萃取 BGE-M3 Top-5 Sparse Tokens 作為精準的「Concept Anchors」
-- **模型**：`BAAI/bge-m3` + FAISS + Elasticsearch
-
-### 💡 The Maverick（點子生成器）
-- 生成發散式 RFC 草案
-- 使用高溫、低約束創意模式
-- 探索已識別的空洞空間
-- **模型**：`copilot_cli`（由 GitHub Copilot 管理模型路由）
-
-### 🛡️ The Reality Checker（批判者與評估器）
-- 執行 **Global Prior-Art Check**（Google Patents / Semantic Scholar APIs）
-- 透過 simulation 與靜態檢查驗證實體限制（x86 ISA、Linux ABI）
-- 為 Conference Review Simulated Framework 產生精準錯誤日誌與 performance debt metrics
-- **模型**：API Integrations + `copilot_cli`
-
-### ⚖️ The Debate Panel（共識層）
-- 模擬 conference review 的對抗式委員會
-- **Reviewer Committee**：`copilot_cli`（角色化多輪審查）
-- **Chairman Judge**：`copilot_cli`（最終綜合與判定）
-
-## 🔄 Pipeline 流程
+- English: [TODO.md](TODO.md)
+- 繁體中文: [TODO.zh-TW.md](TODO.zh-TW.md)
+- 简体中文: [TODO.zh-CN.md](TODO.zh-CN.md)
 
 ```
 Input: Legacy Code + Modern Specs
@@ -211,6 +155,7 @@ deepthought/
 ├── services/
 │   ├── ingestion_service.py      # 匯入流程協調
 │   ├── idea_collision_service.py # 單模型 idea collision
+│   ├── query_service.py          # 基礎 RAG 查詢服務（LlamaIndex）
 │   ├── pipeline_service.py       # Multi-agent 執行服務
 │   ├── status_store.py           # run status 持久化與重試查找
 │   └── tid_notification_service.py # 新 TID email 通知服務
@@ -251,7 +196,6 @@ deepthought/
 規劃中（尚未完整實作）：
 - `core/void_detector.py`
 - `vectordb/retriever.py` 與 `vectordb/collections.py`
-- `services/query_service.py`
 - `output/tid_formatter.py` 的 DOCX/PDF 匯出延伸
 
 ## 🚀 快速開始
@@ -334,7 +278,7 @@ python scripts/run_pipeline.py \
 - [x] 環境建立與驗證
 - [x] Vector DB 初始化（ChromaDB）
 - [x] C / Rust Tree-sitter 整合
-- [ ] 使用 LlamaIndex 的基礎 RAG pipeline
+- [x] 使用 LlamaIndex 的基礎 RAG pipeline
 
 ### Phase 2: Data Ingestion
 - [x] Linux Kernel crawler（arch/x86、sched、mm、bpf）

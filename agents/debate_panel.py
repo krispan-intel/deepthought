@@ -29,6 +29,11 @@ class DebatePanelAgent:
 
     def run(self, state: PipelineState) -> PipelineState:
         if not state.drafts:
+            state.metadata["judge_trace"] = {
+                "final_verdict": "REJECT",
+                "reason": "No drafts available for debate.",
+                "rule_trigger": "empty_drafts",
+            }
             state.debate_result = DebateResult(
                 final_verdict="REJECT",
                 synthesis="No drafts available for debate.",
@@ -118,6 +123,30 @@ Return strict JSON:
 
         state.metadata["committee_reports"] = reports
         state.metadata["committee_fact_checks"] = fact_checks
+        state.metadata["committee_review_log"] = self._build_committee_review_log(reports, fact_checks)
+        state.metadata["judge_trace"] = {
+            "chairman_result": chairman_result,
+            "deterministic_rule": deterministic,
+            "final_verdict": final_verdict,
+            "winning_title": winning_title,
+        }
+
+        for reviewer in state.metadata["committee_review_log"]:
+            logger.info(
+                "Committee review | run_id={} | reviewer={} | status={} | score={} | issue={}",
+                state.run_id,
+                reviewer["reviewer"],
+                reviewer["status"],
+                reviewer["score"],
+                reviewer["top_issue"],
+            )
+        logger.info(
+            "Judge decision | run_id={} | verdict={} | title={} | reason={}",
+            state.run_id,
+            final_verdict,
+            winning_title,
+            synthesis[:240],
+        )
 
         if final_verdict == "REJECT":
             state.run_status = "REJECTED"
@@ -180,6 +209,30 @@ Return strict JSON:
             "fact_check_queries": [str(x) for x in data.get("fact_check_queries", [])][:6],
         }
 
+    @staticmethod
+    def _build_committee_review_log(
+        reports: Dict[str, Dict[str, Any]],
+        fact_checks: Dict[str, Any],
+    ) -> List[Dict[str, Any]]:
+        review_log: List[Dict[str, Any]] = []
+        for reviewer, report in reports.items():
+            issues = [str(item) for item in report.get("issues", []) if str(item).strip()]
+            review_log.append(
+                {
+                    "reviewer": reviewer,
+                    "preferred_title": str(report.get("preferred_title", "")).strip(),
+                    "status": str(report.get("status", "REVISE")).strip(),
+                    "score": int(report.get("score", 2) or 2),
+                    "fatal_flaw": str(report.get("fatal_flaw", "")).strip(),
+                    "issues": issues,
+                    "top_issue": issues[0] if issues else "",
+                    "yellow_cards": int(report.get("yellow_cards", 0) or 0),
+                    "fact_check_queries": [str(item) for item in report.get("fact_check_queries", [])],
+                    "fact_checks": fact_checks.get(reviewer, {}),
+                }
+            )
+        return review_log
+
     def _run_fact_checks(self, reports: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
         checks: Dict[str, Any] = {}
         for name, report in reports.items():
@@ -222,13 +275,21 @@ Return strict JSON:
 
         if any(s == "REJECT" for s in statuses) or fatal:
             reason = "; ".join(fatal) if fatal else "Committee fatal rejection"
-            return {"final_verdict": "REJECT", "synthesis": reason, "confidence": 0.95}
+            return {
+                "final_verdict": "REJECT",
+                "synthesis": reason,
+                "confidence": 0.95,
+                "rule_trigger": "fatal_reject",
+                "reviewer_statuses": statuses,
+            }
 
         if yellow_cards >= 2:
             return {
                 "final_verdict": "REJECT",
                 "synthesis": f"Rejected by yellow-card rule (yellow_cards={yellow_cards})",
                 "confidence": 0.9,
+                "rule_trigger": "yellow_card_reject",
+                "reviewer_statuses": statuses,
             }
 
         if all(score >= 4 for score in scores) and all(s == "APPROVE" for s in statuses):
@@ -236,12 +297,16 @@ Return strict JSON:
                 "final_verdict": "APPROVE",
                 "synthesis": "All specialists approved with score >= 4.",
                 "confidence": 0.9,
+                "rule_trigger": "full_committee_approval",
+                "reviewer_statuses": statuses,
             }
 
         return {
             "final_verdict": "REVISE",
             "synthesis": "Committee requested revision due to unresolved issues.",
             "confidence": 0.7,
+            "rule_trigger": "revision_required",
+            "reviewer_statuses": statuses,
         }
 
     def _format_drafts(self, state: PipelineState) -> str:

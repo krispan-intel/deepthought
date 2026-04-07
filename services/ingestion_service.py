@@ -6,6 +6,7 @@ Ties together Crawlers, Parsers, Chunkers, and the Vector Store.
 """
 
 import json
+import re
 from typing import List
 from loguru import logger
 
@@ -36,6 +37,34 @@ def clean_metadata(metadata: dict) -> dict:
         else:
             cleaned[key] = str(value)
     return cleaned
+
+
+PDF_NOISE_LINE_RE = re.compile(
+    r"^(?:document\s*#:|page\s+\d+|copyright|intel\(|examples?$)\b",
+    re.IGNORECASE,
+)
+
+
+def build_pdf_page_title(source_name: str, page_num: int, text: str) -> str:
+    """Build a semantic label for a PDF page from its visible heading text."""
+    for raw_line in str(text or "").splitlines():
+        line = " ".join(raw_line.split()).strip("-: ")
+        if not line:
+            continue
+
+        if re.match(r"^Document\s*#:", line, flags=re.IGNORECASE):
+            continue
+
+        # Remove leading pagination boilerplate but keep the substantive heading.
+        line = re.sub(r"^\d+[-–]\d+\s+", "", line).strip("-: ")
+        if not line:
+            continue
+        if PDF_NOISE_LINE_RE.match(line):
+            continue
+
+        return f"{source_name} | {line[:120]}"
+
+    return f"{source_name} page {page_num}"
 
 
 class IngestionService:
@@ -161,6 +190,11 @@ class IngestionService:
 
                     page_metadata = result.metadata.copy()
                     page_metadata["page_num"] = page_num + 1
+                    page_metadata["title"] = build_pdf_page_title(
+                        source_name=source.name,
+                        page_num=page_num + 1,
+                        text=text,
+                    )
                     
                     docs.append(ParsedDocument(
                         content=text,
