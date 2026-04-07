@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -30,8 +30,8 @@ class PipelineStatusStore:
 
     def append_skipped(self, input_payload: Dict[str, Any], reason: str = "duplicate_input") -> Path:
         record = {
-            "run_id": f"skip-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
-            "timestamp": datetime.utcnow().isoformat(timespec="seconds"),
+            "run_id": f"skip-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+            "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "run_status": "SKIPPED_DUPLICATE",
             "failed_stages": [],
             "last_error": "",
@@ -84,7 +84,7 @@ class PipelineStatusStore:
         input_payload = state.metadata.get("input", {})
         return {
             "run_id": state.run_id,
-            "timestamp": datetime.utcnow().isoformat(timespec="seconds"),
+            "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "run_status": state.run_status,
             "failed_stages": state.failed_stages,
             "last_error": state.last_error,
