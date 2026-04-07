@@ -15,6 +15,7 @@ from output.tid_formatter import TIDDetail, TIDReport, TIDScorecard, TIDSummary
 from agents.debate_panel import DebatePanelAgent
 from agents.forager import ForagerAgent
 from agents.maverick import MaverickAgent
+from agents.patent_shield import PatentShieldAgent
 from agents.reality_checker import RealityCheckerAgent
 from agents.state import PipelineState, TIDStatus
 
@@ -23,6 +24,7 @@ class DeepThoughtPipeline:
     def __init__(self):
         self.forager = ForagerAgent()
         self.maverick = MaverickAgent()
+        self.patent_shield = PatentShieldAgent()
         self.reality_checker = RealityCheckerAgent()
         self.debate_panel = DebatePanelAgent()
 
@@ -46,6 +48,18 @@ class DeepThoughtPipeline:
             TIDStatus(draft_index=i, title=d.title, status="DRAFTED")
             for i, d in enumerate(state.drafts)
         ]
+
+        try:
+            state = self.patent_shield.run(state)
+            state.metadata["stage_status"]["patent_shield"] = "OK"
+        except Exception as exc:
+            return self._mark_failure(state, "patent_shield", exc)
+
+        if state.run_status == "REJECTED":
+            for t in state.tid_statuses:
+                t.status = "REJECTED"
+                t.last_error = state.last_error
+            return state
 
         # Revision loop driven by reality checker
         try:

@@ -362,8 +362,8 @@ Still missing / partial:
 - [x] Forager Agent 
 - [x] Maverick Agent (DeepSeek-V3) 
 - [x] Reality Checker Agent (Claude Sonnet 4) 
-- [ ] **Integrate Global Patent API** (Google Patents / Semantic Scholar) for prior-art fast-screening
-- [ ] **Implement Conference Review Simulated Framework** (Feedback reviewer metrics to Maverick for multi-generation mutation)
+- [x] **Integrate Global Patent API** (Google Patents / Semantic Scholar) for prior-art fast-screening
+- [x] **Implement Conference Review Simulated Framework** (Feedback reviewer metrics to Maverick for multi-generation mutation)
 - [x] Debate Panel (DeepSeek-R1 + Qwen3-Coder + Qwen3) 
 - [x] Hallucination guard via committee fact-check retrieval and fatal-flaw rejection 
 - [ ] Human-in-the-loop review checkpoint 

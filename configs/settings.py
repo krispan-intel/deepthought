@@ -120,6 +120,13 @@ class Settings(BaseSettings):
     max_debate_rounds: int = Field(default=3)
     export_only_approved_tid: bool = Field(default=True)
     reject_on_stage_failure: bool = Field(default=True)
+    patent_api_enabled: bool = Field(default=False)
+    semantic_scholar_api_url: str = Field(
+        default="https://api.semanticscholar.org/graph/v1/paper/search"
+    )
+    patent_shield_timeout_seconds: int = Field(default=8)
+    patent_shield_max_results: int = Field(default=3)
+    patent_conflict_threshold: float = Field(default=0.72)
 
     # ── Logging ──────────────────────────────────────────────────
     log_level: str = Field(default="INFO")

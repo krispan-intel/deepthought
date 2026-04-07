@@ -104,6 +104,7 @@ Return strict JSON with this exact shape:
             )
 
         state.critiques = critiques
+        state.metadata["conference_review_feedback"] = self._build_conference_feedback(critiques)
         return state
 
     def revise_drafts(self, state: PipelineState) -> PipelineState:
@@ -251,3 +252,57 @@ Return JSON:
             risks_and_mitigations=[str(x) for x in detail.get("risks_and_mitigations", original.risks_and_mitigations)],
             references=[str(x) for x in detail.get("references", original.references)],
         )
+
+    @staticmethod
+    def _build_conference_feedback(critiques: List[CritiqueResult]) -> Dict:
+        if not critiques:
+            return {
+                "round_size": 0,
+                "approve_count": 0,
+                "revise_count": 0,
+                "reject_count": 0,
+                "fatal_count": 0,
+                "top_revision_points": [],
+            }
+
+        revision_points: List[str] = []
+        approve_count = 0
+        revise_count = 0
+        reject_count = 0
+        fatal_count = 0
+
+        for critique in critiques:
+            if critique.verdict == "APPROVE":
+                approve_count += 1
+            elif critique.verdict == "REVISE":
+                revise_count += 1
+            else:
+                reject_count += 1
+
+            if critique.fatal_flaw:
+                fatal_count += 1
+
+            for point in critique.required_revisions:
+                text = str(point).strip()
+                if text:
+                    revision_points.append(text)
+
+        deduped: List[str] = []
+        seen = set()
+        for point in revision_points:
+            key = point.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(point)
+            if len(deduped) >= 8:
+                break
+
+        return {
+            "round_size": len(critiques),
+            "approve_count": approve_count,
+            "revise_count": revise_count,
+            "reject_count": reject_count,
+            "fatal_count": fatal_count,
+            "top_revision_points": deduped,
+        }
