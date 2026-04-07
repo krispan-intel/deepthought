@@ -10,11 +10,16 @@ from typing import List, Optional
 
 from agents.pipeline import DeepThoughtPipeline
 from agents.state import PipelineState
+from configs.settings import settings
+from services.audit_logger import PipelineAuditLogger
+from services.void_tracker import IncrementalVoidTracker
 
 
 class PipelineService:
     def __init__(self):
         self.pipeline = DeepThoughtPipeline()
+        self.audit_logger = PipelineAuditLogger() if settings.audit_log_enabled else None
+        self.void_tracker = IncrementalVoidTracker() if settings.void_tracking_enabled else None
 
     def run(
         self,
@@ -60,4 +65,12 @@ class PipelineService:
             output_dir=output_dir,
             tid_prefix=tid_prefix,
         )
+
+        if self.void_tracker:
+            state.metadata["void_tracking"] = self.void_tracker.record_run(state)
+
+        if self.audit_logger:
+            audit_path = self.audit_logger.append_run_audit(state)
+            state.metadata["audit_log_path"] = str(audit_path)
+
         return state

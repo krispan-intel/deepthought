@@ -131,6 +131,10 @@ class Settings(BaseSettings):
     # ── Logging ──────────────────────────────────────────────────
     log_level: str = Field(default="INFO")
     log_path: Path = Field(default=Path("./logs"))
+    audit_log_enabled: bool = Field(default=True)
+    audit_log_path: Path = Field(default=Path("./logs/audit/pipeline_audit.jsonl"))
+    void_tracking_enabled: bool = Field(default=True)
+    void_tracking_path: Path = Field(default=Path("./data/processed/void_history.jsonl"))
 
 
 # Global singleton
