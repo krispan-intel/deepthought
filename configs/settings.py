@@ -127,6 +127,11 @@ class Settings(BaseSettings):
     patent_shield_timeout_seconds: int = Field(default=8)
     patent_shield_max_results: int = Field(default=3)
     patent_conflict_threshold: float = Field(default=0.72)
+    human_review_checkpoint_enabled: bool = Field(default=False)
+    human_review_auto_approve: bool = Field(default=False)
+    human_review_decisions_path: Path = Field(
+        default=Path("./data/processed/human_review_decisions.jsonl")
+    )
 
     # ── Logging ──────────────────────────────────────────────────
     log_level: str = Field(default="INFO")

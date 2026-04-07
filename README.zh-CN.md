@@ -312,7 +312,6 @@ python scripts/run_pipeline.py \
 - 完整 prior-art 覆盖（USPTO/EPO/WIPO 正式摄取）
 - UMAP 空洞景观可视化
 - Human-in-the-loop 审核界面/流程
-- claim 级置信度评分与 DOCX/PDF 导出
 - Production hardening（安全集成、完整审计、性能基准）
 
 ## ✅ TODO
@@ -364,14 +363,14 @@ python scripts/run_pipeline.py \
 - [x] **实现 Conference Review Simulated Framework**（将 reviewer metrics 回馈给 Maverick，进行多代 mutation）
 - [x] Debate Panel（`copilot_cli` 角色化委员会）
 - [x] 基于委员会 fact-check 检索与 fatal-flaw 规则的幻觉防护
-- [ ] Human-in-the-loop 人工审查节点
+- [x] Human-in-the-loop 人工审查节点
 
 ### Phase 5: Output
 - [x] TID 模板引擎
 - [x] 专利 claim 自动生成
-- [ ] 现有技术冲突检测
-- [ ] 每条 claim 的置信度评分
-- [ ] 导出 DOCX / PDF
+- [x] 现有技术冲突检测
+- [x] 每条 claim 的置信度评分
+- [x] 导出 DOCX / PDF
 
 ### Phase 6: Production Hardening
 - [x] 完整审计日志

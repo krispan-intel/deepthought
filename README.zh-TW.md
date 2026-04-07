@@ -312,7 +312,6 @@ python scripts/run_pipeline.py \
 - 完整 prior-art 覆蓋（USPTO/EPO/WIPO 正式匯入）
 - UMAP 空洞地景視覺化
 - Human-in-the-loop 審核介面/流程
-- claim 級別信心分數與 DOCX/PDF 輸出
 - Production hardening（安全整合、完整稽核、效能基準）
 
 ## ✅ TODO
@@ -364,14 +363,14 @@ python scripts/run_pipeline.py \
 - [x] **實作 Conference Review Simulated Framework**（將 reviewer metrics 回饋給 Maverick，進行多代 mutation）
 - [x] Debate Panel（`copilot_cli` 角色化委員會）
 - [x] 透過委員會 fact-check 檢索與 fatal-flaw 規則的幻覺防護
-- [ ] Human-in-the-loop 人工審查節點
+- [x] Human-in-the-loop 人工審查節點
 
 ### Phase 5: Output
 - [x] TID 模板引擎
 - [x] 專利 claim 自動生成
-- [ ] 先前技術衝突檢測
-- [ ] 每條 claim 的信心分數
-- [ ] 匯出 DOCX / PDF
+- [x] 先前技術衝突檢測
+- [x] 每條 claim 的信心分數
+- [x] 匯出 DOCX / PDF
 
 ### Phase 6: Production Hardening
 - [x] 完整 audit logging
