@@ -23,13 +23,14 @@ from services.target_mutation_service import DEFAULT_MUTATION_HINT, TargetMutati
 from services.tid_notification_service import TIDNotificationService
 
 
-DEFAULT_TARGET = "Generate new x86 IP or any improvement to any part of the Linux kernel on x86"
+DEFAULT_TARGET = ""
+AUTO_BASE_TARGET = "Derive a high-value x86/Linux kernel optimization target from sampled evidence"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run DeepThought in continuous service mode")
     parser.add_argument("--domain", default="all_domains", help="Domain label (non-restrictive by default)")
-    parser.add_argument("--target", default=DEFAULT_TARGET, help="Target optimization goal")
+    parser.add_argument("--target", default=DEFAULT_TARGET, help="Target optimization goal (optional in auto-target mode)")
     parser.add_argument(
         "--collection",
         action="append",
@@ -61,6 +62,11 @@ def parse_args() -> argparse.Namespace:
         help="Sample random chunk from VectorDB and mutate it into a new target before retrieval",
     )
     parser.add_argument(
+        "--auto-target",
+        action="store_true",
+        help="Auto-generate target from random sampled chunks each iteration (implies --random-walk-mutate)",
+    )
+    parser.add_argument(
         "--mutation-seed-hint",
         default=DEFAULT_MUTATION_HINT,
         help="Instruction used by LLM when mutating random seed chunk",
@@ -75,20 +81,82 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Skip iteration when the same input already has APPROVED/COMPLETED status",
     )
+    parser.add_argument(
+        "--verbose-review-logs",
+        action="store_true",
+        help="Print conference review / committee / judge traces to terminal",
+    )
+    parser.add_argument(
+        "--no-delay-on-reject",
+        action="store_true",
+        help="Start next iteration immediately when run_status is REJECTED",
+    )
+    parser.add_argument(
+        "--no-delay-on-failure",
+        action="store_true",
+        help="Start next iteration immediately on any failed run status (REJECTED/RETRY_PENDING) or crash",
+    )
     return parser.parse_args()
 
 
-def run_once(args: argparse.Namespace):
-    service = PipelineService()
-    status_store = PipelineStatusStore(file_path=args.status_file)
-    notifier = TIDNotificationService()
+def _print_review_traces(state) -> None:
+    metadata = state.metadata or {}
+
+    review_trace = metadata.get("conference_review_trace", [])
+    if isinstance(review_trace, list) and review_trace:
+        print("[review] conference trace")
+        for event in review_trace[-3:]:
+            event_type = event.get("event", "unknown")
+            round_id = event.get("round", "?")
+            items = event.get("items", []) if isinstance(event.get("items", []), list) else []
+            print(f"  - event={event_type} round={round_id} items={len(items)}")
+            for item in items[:3]:
+                title = str(item.get("title") or item.get("before_title") or "").strip()
+                verdict = str(item.get("verdict") or item.get("status") or "").strip()
+                reason = str(item.get("reason") or item.get("summary") or "").strip()
+                print(f"      title={title[:80]} | status={verdict} | note={reason[:140]}")
+
+    committee_log = metadata.get("committee_review_log", [])
+    if isinstance(committee_log, list) and committee_log:
+        print("[review] committee summary")
+        for reviewer in committee_log[:6]:
+            print(
+                "  - reviewer={} status={} score={} issue={}".format(
+                    str(reviewer.get("reviewer", ""))[:32],
+                    str(reviewer.get("status", ""))[:12],
+                    reviewer.get("score", ""),
+                    str(reviewer.get("top_issue", ""))[:140],
+                )
+            )
+
+    judge_trace = metadata.get("judge_trace", {})
+    if isinstance(judge_trace, dict) and judge_trace:
+        print("[review] judge")
+        print(
+            "  - verdict={} title={} rule={} reason={}".format(
+                judge_trace.get("final_verdict", ""),
+                str(judge_trace.get("winning_title", ""))[:100],
+                (judge_trace.get("deterministic_rule") or {}).get("rule_trigger", ""),
+                str((judge_trace.get("deterministic_rule") or {}).get("synthesis", ""))[:180],
+            )
+        )
+
+
+def run_once(
+    args: argparse.Namespace,
+    service: PipelineService,
+    status_store: PipelineStatusStore,
+    notifier: TIDNotificationService,
+    mutator: TargetMutationService | None,
+):
     effective_target = args.target
     mutation_info = {}
 
     if args.random_walk_mutate:
-        mutator = TargetMutationService()
-        mutation_info = mutator.mutate_target(
-            base_target=args.target,
+        active_mutator = mutator or TargetMutationService()
+        base_target = args.target.strip() if args.target else AUTO_BASE_TARGET
+        mutation_info = active_mutator.mutate_target(
+            base_target=base_target,
             collection_names=args.collection,
             mutation_hint=args.mutation_seed_hint,
         )
@@ -153,14 +221,37 @@ def run_once(args: argparse.Namespace):
     if state.output_paths:
         print(f"Markdown: {state.output_paths.get('markdown', '')}")
         print(f"HTML: {state.output_paths.get('html', '')}")
+    if args.verbose_review_logs:
+        _print_review_traces(state)
     print(f"Email notified: {'yes' if notified else 'no'}")
     return state
+
+
+def _compute_sleep_seconds(args: argparse.Namespace, state, crashed: bool = False) -> int:
+    if args.no_delay_on_failure:
+        if crashed:
+            return 0
+        if state is not None:
+            status = getattr(state, "run_status", "")
+            failed_stages = getattr(state, "failed_stages", [])
+            if status in {"REJECTED", "RETRY_PENDING"} or bool(failed_stages):
+                return 0
+
+    if args.no_delay_on_reject and state is not None and getattr(state, "run_status", "") == "REJECTED":
+        return 0
+    return args.interval_seconds
 
 
 def main() -> int:
     args = parse_args()
     if args.interval_seconds <= 0:
         raise ValueError("--interval-seconds must be positive")
+
+    if args.auto_target:
+        args.random_walk_mutate = True
+
+    if not args.target and not args.random_walk_mutate:
+        raise ValueError("Provide --target, or enable auto target search via --auto-target (or --random-walk-mutate)")
 
     print(f"Service mode start | interval={args.interval_seconds}s")
     print(f"LLM backend: {settings.llm_backend}")
@@ -171,12 +262,16 @@ def main() -> int:
         print(f"Maverick model: {settings.maverick_model}")
 
     if args.once:
+        service = PipelineService()
+        status_store = PipelineStatusStore(file_path=args.status_file)
+        notifier = TIDNotificationService()
+        mutator = TargetMutationService() if args.random_walk_mutate else None
         attempt = 0
         while True:
             attempt += 1
             print(f"Once-mode attempt: {attempt}")
             try:
-                state = run_once(args)
+                state = run_once(args, service, status_store, notifier, mutator)
             except Exception as exc:
                 logger.exception(f"Once-mode iteration crashed: {exc}")
                 state = None
@@ -185,15 +280,32 @@ def main() -> int:
                 print("Once-mode satisfied: APPROVED TID generated.")
                 return 0
 
-            print("Once-mode continuing: no APPROVED TID yet.")
-            time.sleep(args.interval_seconds)
+            sleep_seconds = _compute_sleep_seconds(args, state)
+            if sleep_seconds > 0:
+                print(f"Once-mode continuing: no APPROVED TID yet. Next attempt in {sleep_seconds}s")
+                time.sleep(sleep_seconds)
+            else:
+                print("Once-mode continuing immediately after failed run (no delay)")
+
+    service = PipelineService()
+    status_store = PipelineStatusStore(file_path=args.status_file)
+    notifier = TIDNotificationService()
+    mutator = TargetMutationService() if args.random_walk_mutate else None
 
     while True:
+        state = None
+        crashed = False
         try:
-            run_once(args)
+            state = run_once(args, service, status_store, notifier, mutator)
         except Exception as exc:
+            crashed = True
             logger.exception(f"Service iteration crashed: {exc}")
-        time.sleep(args.interval_seconds)
+        sleep_seconds = _compute_sleep_seconds(args, state, crashed=crashed)
+        if sleep_seconds > 0:
+            print(f"Next service iteration in {sleep_seconds}s")
+            time.sleep(sleep_seconds)
+        else:
+            print("Next service iteration starts immediately (failure fast-retry enabled)")
 
 
 if __name__ == "__main__":

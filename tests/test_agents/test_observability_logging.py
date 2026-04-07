@@ -140,6 +140,32 @@ def test_maverick_records_empty_generation_reason() -> None:
     assert "zero valid drafts" in report["reason"].lower()
 
 
+def test_maverick_parser_handles_wrapped_json_with_footer() -> None:
+    agent = MaverickAgent(llm=_FakeLLM([]))
+    wrapped = (
+        "Sure, here is the output:\n"
+        "```json\n"
+        "{\"drafts\": [{\"title\": \"A\", \"one_liner\": \"B\", \"scores\": {}, \"tid_detail\": {}}]}\n"
+        "```\n"
+        "Total usage est: 123 tokens"
+    )
+
+    payload = agent._parse_json(wrapped)
+
+    assert isinstance(payload, dict)
+    assert payload.get("drafts", [{}])[0].get("title") == "A"
+
+
+def test_maverick_parser_accepts_list_payload_with_drafts_dict() -> None:
+    agent = MaverickAgent(llm=_FakeLLM([]))
+    text = '[{"meta":"x"}, {"drafts": []}]'
+
+    payload = agent._parse_json(text)
+
+    assert isinstance(payload, dict)
+    assert "drafts" in payload
+
+
 def test_reality_checker_records_review_and_revision_trace() -> None:
     critique_response = json.dumps(
         {

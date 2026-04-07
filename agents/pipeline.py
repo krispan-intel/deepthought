@@ -49,6 +49,21 @@ class DeepThoughtPipeline:
         except Exception as exc:
             return self._mark_failure(state, "forager", exc)
 
+        if not self._has_forager_evidence(state):
+            state.run_status = "REJECTED"
+            state.last_error = "No topological voids found; skipped draft generation"
+            state.metadata["rejected_reason"] = state.last_error
+            state.metadata["stage_status"]["maverick"] = "SKIPPED_NO_VOIDS"
+            state.metadata["stage_status"]["patent_shield"] = "SKIPPED_NO_VOIDS"
+            state.metadata["stage_status"]["reality_checker"] = "SKIPPED_NO_VOIDS"
+            state.metadata["stage_status"]["debate_panel"] = "SKIPPED_NO_VOIDS"
+            logger.warning(
+                "Pipeline short-circuited after Forager | run_id={} | reason={}",
+                state.run_id,
+                state.last_error,
+            )
+            return state
+
         try:
             state = self.maverick.run(state, n_drafts=n_drafts)
             state.metadata["stage_status"]["maverick"] = "OK"
@@ -163,6 +178,12 @@ class DeepThoughtPipeline:
         )
 
         return state
+
+    @staticmethod
+    def _has_forager_evidence(state: PipelineState) -> bool:
+        has_voids = bool(state.void_statuses)
+        has_context = bool((state.topological_void_context or "").strip())
+        return has_voids and has_context
 
     def export_reports(
         self,

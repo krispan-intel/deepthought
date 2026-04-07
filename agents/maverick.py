@@ -96,7 +96,23 @@ Return JSON:
             user_prompt=user_prompt,
             temperature=0.85,
         )
-        payload = self._parse_json(raw)
+        try:
+            payload = self._parse_json(raw)
+        except ValueError as exc:
+            preview = self._build_output_preview(raw)
+            state.metadata["maverick_generation"] = {
+                "requested_drafts": n_drafts,
+                "produced_drafts": 0,
+                "status": "PARSE_ERROR",
+                "reason": str(exc),
+                "raw_preview": preview,
+            }
+            logger.error(
+                "Maverick parse failed | run_id={} | preview={}",
+                state.run_id,
+                preview,
+            )
+            raise ValueError(f"Maverick output is not valid JSON | preview={preview}") from exc
 
         drafts: List[DraftIdea] = []
         for item in payload.get("drafts", []):
@@ -200,20 +216,68 @@ Return JSON:
         return compact
 
     def _parse_json(self, text: str) -> Dict[str, Any]:
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            pass
+        cleaned = self._normalize_output(text)
+        decoder = json.JSONDecoder()
 
-        fenced = re.search(r"```(?:json)?\s*(\{[\s\S]*\})\s*```", text)
-        if fenced:
-            return json.loads(fenced.group(1))
-
-        braces = re.search(r"(\{[\s\S]*\})", text)
-        if braces:
-            return json.loads(braces.group(1))
+        for candidate in self._iter_json_candidates(cleaned):
+            snippet = candidate.lstrip()
+            if not snippet:
+                continue
+            try:
+                parsed = json.loads(snippet)
+            except json.JSONDecodeError:
+                try:
+                    parsed, _ = decoder.raw_decode(snippet)
+                except json.JSONDecodeError:
+                    continue
+            payload = self._coerce_payload(parsed)
+            if payload is not None:
+                return payload
 
         raise ValueError("Maverick output is not valid JSON")
+
+    @staticmethod
+    def _coerce_payload(parsed: Any) -> Dict[str, Any] | None:
+        if isinstance(parsed, dict):
+            return parsed
+        if isinstance(parsed, list):
+            for item in parsed:
+                if isinstance(item, dict) and "drafts" in item:
+                    return item
+        return None
+
+    @staticmethod
+    def _normalize_output(text: str) -> str:
+        # Remove common ANSI escape sequences from terminal-rendered CLI output.
+        return re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", text or "").strip()
+
+    def _iter_json_candidates(self, text: str) -> List[str]:
+        candidates: List[str] = [text]
+
+        for fenced in re.finditer(r"```(?:json)?\s*([\s\S]*?)\s*```", text, flags=re.IGNORECASE):
+            candidates.append(fenced.group(1))
+
+        for token in ("{", "["):
+            idx = text.find(token)
+            while idx != -1:
+                candidates.append(text[idx:])
+                idx = text.find(token, idx + 1)
+
+        seen = set()
+        deduped: List[str] = []
+        for item in candidates:
+            key = item.strip()
+            if key and key not in seen:
+                seen.add(key)
+                deduped.append(item)
+        return deduped
+
+    @staticmethod
+    def _build_output_preview(text: str, limit: int = 280) -> str:
+        compact = " ".join(MaverickAgent._normalize_output(text).split())
+        if len(compact) <= limit:
+            return compact
+        return compact[: limit - 3] + "..."
 
     @staticmethod
     def _format_conference_feedback(feedback: Any) -> str:
