@@ -116,6 +116,7 @@ class Settings(BaseSettings):
     lambda_mmr: float = Field(default=0.7)
     triad_domain_threshold: float = Field(default=0.45)
     triad_initial_candidate_pool_size: int = Field(default=300)
+    triad_max_filtered_candidates: int = Field(default=220)
     max_revision_iterations: int = Field(default=3)
     min_confidence_score: float = Field(default=0.75)
     max_debate_rounds: int = Field(default=3)
