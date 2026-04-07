@@ -7,7 +7,7 @@ Shared state for DeepThought multi-agent pipeline.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
@@ -107,5 +107,5 @@ class PipelineState:
     last_error: str = ""
 
     output_paths: Dict[str, str] = field(default_factory=dict)
-    started_at: datetime = field(default_factory=datetime.utcnow)
+    started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = field(default_factory=dict)

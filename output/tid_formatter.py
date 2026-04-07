@@ -12,7 +12,7 @@ Design goals:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
 from typing import List
@@ -99,7 +99,7 @@ class TIDReport:
     summary: TIDSummary
     scorecard: TIDScorecard
     detail: TIDDetail
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     generated_by: str = "DeepThought"
 
     def to_markdown(self) -> str:
