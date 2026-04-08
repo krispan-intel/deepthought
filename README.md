@@ -95,6 +95,12 @@ The core mathematical engine has evolved from traditional global MMR to a **Hybr
 - Explores the identified Void space
 - **Model**: `copilot_cli` (GitHub Copilot managed model routing)
 
+### 🛡️ The Patent Shield (Fast-Fail Gate)
+- Pre-screens drafts against global APIs (Semantic Scholar / Google Patents) before expensive LLM processing
+- Extracts key claims and checks for direct 1:1 prior-art conflicts
+- Immediately halts a branch on exact match, saving downstream compute
+- **Model**: API integrations (`patent_shield.py`)
+
 ### 🛡️ The Reality Checker (Critic & Evaluator)
 - Executes **Global Prior-Art Check** (Google Patents / Semantic Scholar APIs)
 - Validates against physical constraints (x86 ISA, Linux ABI) via simulation and static checks
@@ -191,6 +197,7 @@ deepthought/
 │   ├── llm_client.py             # Unified LLM caller
 │   ├── forager.py                # Void retrieval agent
 │   ├── maverick.py               # Idea generation agent
+│   ├── patent_shield.py          # Prior-art fast-fail gate
 │   ├── reality_checker.py        # Critique/revision agent
 │   ├── debate_panel.py           # Multi-model synthesis agent
 │   └── pipeline.py               # Multi-agent orchestrator
@@ -202,10 +209,12 @@ deepthought/
 │
 ├── vectordb/
 │   ├── store.py                  # Chroma interface + void APIs
+│   ├── sparse_index.py           # SQLite FTS5 / ES inverted index
 │   └── embedder.py               # Local/API embedding backends
 │
 ├── output/
-│   ├── tid_formatter.py          # TID report formatter (md + html)
+│   ├── tid_formatter.py          # TID report formatter (md + html + docx + pdf)
+│   ├── claim_analysis.py         # Patent claim auto-generator + confidence scoring
 │   ├── templates/
 │   └── generated/                # Generated TID reports
 │
@@ -215,23 +224,36 @@ deepthought/
 │   ├── query_service.py          # Basic RAG query service (LlamaIndex)
 │   ├── pipeline_service.py       # Multi-agent run service
 │   ├── status_store.py           # Run status persistence + retry lookup
+│   ├── audit_logger.py           # Append-only JSONL audit trail
+│   ├── human_review.py           # Human-in-the-loop review checkpoint
+│   ├── target_mutation_service.py # Random-walk target mutation
+│   ├── void_tracker.py           # Incremental void tracking over time
 │   └── tid_notification_service.py # Email notification for new TIDs
 │
 ├── scripts/
+│   ├── verify_env.py
 │   ├── setup_vectordb.py
+│   ├── setup_treesitter.py
 │   ├── ingest_kernel.py
 │   ├── ingest_all.py
 │   ├── run_phase3_probe.py
+│   ├── run_forager_probe.py
 │   ├── run_retrieval_audit.py
 │   ├── run_idea_collision.py
 │   ├── run_pipeline.py
 │   ├── run_pipeline_service.py
+│   ├── run_db_contamination_audit.py
+│   ├── run_hardware_specs_experiment.py
+│   ├── run_kernel_source_cleanup_pipeline.py
+│   ├── cleanup_kernel_source_noise.py
 │   └── generate_sample_tid_report.py
 │
 ├── tests/
 │   ├── test_core/
 │   ├── test_agents/
 │   ├── test_data_collection/
+│   ├── test_output/
+│   ├── test_services/
 │   └── test_vectordb/
 │
 ├── configs/
@@ -253,7 +275,6 @@ deepthought/
 Planned (not fully implemented yet):
 - `core/void_detector.py`
 - `vectordb/retriever.py` and `vectordb/collections.py`
-- `output/tid_formatter.py` extensions for DOCX/PDF export
 
 ## 🚀 Quick Start
 
@@ -296,7 +317,7 @@ python scripts/run_pipeline.py \
     --target "scheduler latency optimization"
 ```
 
-## 📌 Current Implementation Status (2026-04-02)
+## 📌 Current Implementation Status (2026-04-08)
 
 Implemented now:
 - End-to-end local ingestion pipeline (crawler -> parser -> chunker -> Chroma store)

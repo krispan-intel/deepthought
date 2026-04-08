@@ -1,9 +1,9 @@
 # DeepThought TODO 清單
 
-最後更新：2026-04-07
+最後更新：2026-04-08
 
 ## 目前優先事項
-- [ ] 先將目前所有待提交變更（tests/scripts/docs/observability）整理成乾淨 commit 批次。
+- [x] 先將目前所有待提交變更（tests/scripts/docs/observability）整理成乾淨 commit 批次。
 - [ ] 在本次 commit 完成後，針對 `kernel_source` 的可疑歷史資料（commit-message / hash-like 標籤）做定向清理。
 
 ## 立即執行路線（P0-P3）
@@ -21,11 +21,11 @@
 - [x] P1：加入虛擬專利委員會共識審查（四專家 + 主席 + 一票否決）
 
 ## Pipeline 平行化改造（吞吐優先）
-- [ ] P0：將 Debate Panel 的 4 位 reviewer 改為平行執行（I/O 併發），主席維持單點收斂裁決。
-- [ ] P0：Forager 生產者與 Maverick/Reviewer 消費者解耦（Queue 架構），避免單輪串行阻塞。
+- [x] P0：將 Debate Panel 的 4 位 reviewer 改為平行執行（I/O 併發），主席維持單點收斂裁決。
+- [x] P0：Forager 生產者與 Maverick/Reviewer 消費者解耦（Queue 架構），避免單輪串行阻塞。
 - [ ] P1：新增單一 Writer（status/audit/output）避免多 worker 寫檔競爭。
 - [ ] P1：加入 worker 併發上限與背壓（queue max size）控制，避免 DB/CLI 配額互搶。
-- [ ] P1：新增 `pipeline_parallel_mode` 開關與預設安全值（例如 reviewer_workers=4, maverick_workers=2）。
+- [x] P1：新增 `pipeline_parallel_mode` 開關與預設安全值（例如 reviewer_workers=4, maverick_workers=2）。
 - [ ] P2：針對 triad pair 計算做多進程平行化與批次 co-occurrence 檢查。
 - [ ] P2：建立吞吐監控指標（每輪耗時、各 stage p95、隊列深度、失敗率）。
 

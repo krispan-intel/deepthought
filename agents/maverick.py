@@ -36,28 +36,7 @@ class MaverickAgent:
         feedback_text = self._format_conference_feedback(review_feedback)
 
         user_prompt = f"""
-Domain: {state.domain}
-Target: {state.target}
-Requested drafts: {n_drafts}
-
-Constraints:
-- Focus strictly on Linux kernel internals plus x86 architecture coupling.
-- Avoid generic AI buzzwords.
-- Include specific kernel subsystems, data structures, or locking implications where appropriate.
-- Each draft must include at least 3 patent claims.
-- HARD CONSTRAINT: Evidence grounding is mandatory.
-- Do NOT invent Linux kernel functions, structs, or x86 instructions.
-- In Implementation Plan, explicitly cite concrete file paths and symbols from Void context.
-- If the idea cannot be grounded in provided context, declare it unfeasible in feasibility_thesis and validation_plan.
-- In Architecture Overview, include a simple ASCII control-flow diagram.
-
-Void context:
-{compact_context}
-
-Conference review feedback (if available):
-{feedback_text}
-
-Return JSON:
+OUTPUT FORMAT (respond with ONLY this JSON, no prose before or after):
 {{
   "drafts": [
     {{
@@ -88,6 +67,27 @@ Return JSON:
     }}
   ]
 }}
+
+Domain: {state.domain}
+Target: {state.target}
+Requested drafts: {n_drafts}
+
+Constraints:
+- Focus strictly on Linux kernel internals plus x86 architecture coupling.
+- Avoid generic AI buzzwords.
+- Include specific kernel subsystems, data structures, or locking implications where appropriate.
+- Each draft must include at least 3 patent claims.
+- HARD CONSTRAINT: Evidence grounding is mandatory.
+- Do NOT invent Linux kernel functions, structs, or x86 instructions.
+- In Implementation Plan, explicitly cite concrete file paths and symbols from Void context.
+- If the idea cannot be grounded in provided context, declare it unfeasible in feasibility_thesis and validation_plan.
+- In Architecture Overview, include a simple ASCII control-flow diagram.
+
+Void context:
+{compact_context}
+
+Conference review feedback (if available):
+{feedback_text}
 """.strip()
 
         raw = self.llm.chat(
@@ -219,6 +219,7 @@ Return JSON:
         cleaned = self._normalize_output(text)
         decoder = json.JSONDecoder()
 
+        # Pass 1: standard parse across all candidate substrings
         for candidate in self._iter_json_candidates(cleaned):
             snippet = candidate.lstrip()
             if not snippet:
@@ -233,6 +234,47 @@ Return JSON:
             payload = self._coerce_payload(parsed)
             if payload is not None:
                 return payload
+
+        # Pass 2: json-repair handles trailing commas, missing brackets, truncated output
+        try:
+            from json_repair import repair_json
+            repaired = repair_json(cleaned, return_objects=True)
+            payload = self._coerce_payload(repaired)
+            if payload is not None:
+                logger.warning("Maverick JSON recovered via json-repair | run preview truncated")
+                return payload
+        except Exception:
+            pass
+
+        # Pass 3: ask the LLM to fix its own output (one extra call, last resort)
+        if self.llm is not None:
+            try:
+                fix_prompt = (
+                    "The following text is malformed JSON. "
+                    "Return ONLY the corrected JSON with no explanation:\n\n"
+                    + cleaned[:6000]
+                )
+                fixed_raw = self.llm.chat(
+                    model=self.model,
+                    system_prompt="You are a JSON repair tool. Output only valid JSON.",
+                    user_prompt=fix_prompt,
+                    temperature=0.0,
+                )
+                fixed_cleaned = self._normalize_output(fixed_raw)
+                for candidate in self._iter_json_candidates(fixed_cleaned):
+                    snippet = candidate.lstrip()
+                    if not snippet:
+                        continue
+                    try:
+                        parsed = json.loads(snippet)
+                    except json.JSONDecodeError:
+                        continue
+                    payload = self._coerce_payload(parsed)
+                    if payload is not None:
+                        logger.warning("Maverick JSON recovered via self-repair LLM call")
+                        return payload
+            except Exception as repair_exc:
+                logger.warning("Maverick self-repair LLM call failed | error={}", repair_exc)
 
         raise ValueError("Maverick output is not valid JSON")
 

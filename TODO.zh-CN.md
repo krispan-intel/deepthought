@@ -1,9 +1,9 @@
 # DeepThought TODO 清单
 
-最后更新：2026-04-07
+最后更新：2026-04-08
 
 ## 当前优先事项
-- [ ] 先将当前所有待提交变更（tests/scripts/docs/observability）整理为干净 commit 批次。
+- [x] 先将当前所有待提交变更（tests/scripts/docs/observability）整理为干净 commit 批次。
 - [ ] 在本次 commit 完成后，针对 `kernel_source` 的可疑历史数据（commit-message / hash-like 标签）进行定向清理。
 
 ## 立即执行路线（P0-P3）
@@ -21,11 +21,11 @@
 - [x] P1：加入虚拟专利委员会共识审查（四专家 + 主席 + 一票否决）
 
 ## Pipeline 并行化改造（吞吐优先）
-- [ ] P0：将 Debate Panel 的 4 位 reviewer 改为并行执行（I/O 并发），主席保持单点收敛裁决。
-- [ ] P0：将 Forager 生产者与 Maverick/Reviewer 消费者解耦（Queue 架构），避免单轮串行阻塞。
+- [x] P0：将 Debate Panel 的 4 位 reviewer 改为并行执行（I/O 并发），主席保持单点收敛裁决。
+- [x] P0：将 Forager 生产者与 Maverick/Reviewer 消费者解耦（Queue 架构），避免单轮串行阻塞。
 - [ ] P1：增加单一 Writer（status/audit/output）避免多 worker 写文件竞争。
 - [ ] P1：增加 worker 并发上限与背压（queue max size）控制，避免 DB/CLI 配额互抢。
-- [ ] P1：增加 `pipeline_parallel_mode` 开关与安全默认值（如 reviewer_workers=4, maverick_workers=2）。
+- [x] P1：增加 `pipeline_parallel_mode` 开关与安全默认值（如 reviewer_workers=4, maverick_workers=2）。
 - [ ] P2：对 triad pair 计算做多进程并行化，并将 co-occurrence 检查批处理化。
 - [ ] P2：增加吞吐可观测性指标（各 stage p95、队列深度、失败率、单轮耗时）。
 

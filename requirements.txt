@@ -34,6 +34,7 @@ tree-sitter-python>=0.23.0
 # ── LLM Clients ──────────────────────────
 openai>=1.50.0
 anthropic>=0.36.0
+json-repair>=0.30.0
 
 # ── Embedding ────────────────────────────
 sentence-transformers>=3.2.0
