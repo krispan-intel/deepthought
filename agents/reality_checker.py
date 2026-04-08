@@ -26,12 +26,41 @@ class RealityCheckerAgent:
         round_trace: List[Dict[str, Any]] = []
 
         for draft in state.drafts:
+            convergence_rule = ""
+            if state.revisions >= 2:
+                convergence_rule = (
+                    " CRITICAL CONVERGENCE RULE: This is revision round "
+                    f"{state.revisions + 1}. If the major architectural flaws from "
+                    "previous rounds have been addressed, you MUST output APPROVED. "
+                    "Do NOT invent new minor nitpicks or move the goalposts. "
+                    "If the core concept is physically implementable and the author has "
+                    "complied with your previous constraints, output APPROVED and leave "
+                    "minor implementation details for the engineer to resolve."
+                )
             system_prompt = (
-                "You are a ruthless Intel patent reviewer and Linux kernel maintainer. "
-                "Your KPI is to reject bad ideas, not to fix them. "
+                "You are a senior Intel patent reviewer and Linux kernel architect. "
+                "Your goal is to identify technically sound ideas worth patenting and help them improve. "
+                "Be rigorous but constructive: prefer REVISE over REJECT whenever the core idea is salvageable. "
+                "Reserve REJECT strictly for ideas that are physically impossible, rely on fictional kernel APIs, "
+                "or have an unfixable ABI breakage. "
                 "Output valid JSON only."
+                + convergence_rule
             )
             user_prompt = f"""
+OUTPUT FORMAT (respond with ONLY this JSON, no prose before or after):
+{{
+    "status": "APPROVED|REVISE|REJECT",
+    "fatal_flaw": "string or empty — only populate for true showstoppers",
+    "scorecard": {{
+        "innovation": 1,
+        "feasibility": 1,
+        "prior_art_risk": 1
+    }},
+    "hallucinations_found": ["only list fictional kernel symbols or impossible x86 ops"],
+    "actionable_feedback": "string — specific, fixable instructions if REVISE",
+    "approved": false
+}}
+
 Critique this TID draft:
 
 Title: {draft.title}
@@ -47,31 +76,16 @@ Validation plan: {draft.validation_plan}
 Claims: {draft.draft_claims}
 
 Evaluation criteria:
-1. Hallucination check: verify Linux kernel functions and x86 concepts are realistic.
-2. Domain compliance: must be x86 plus Linux kernel internals.
-3. Patentability: non-obviousness and prior-art risk.
-4. Locking and concurrency validity: detect race conditions, ABBA deadlocks, illegal lock pointer migrations.
-5. Hardware reality: TSX/TAA mitigations must be acknowledged with robust software fallback.
-6. ext4/VFS compatibility: no on-disk format break and no fictional metadata fields.
+1. Hallucination check: only flag functions or instructions that do not exist (not merely obscure).
+2. Domain compliance: x86 plus Linux kernel internals.
+3. Patentability: is the core idea non-obvious? Minor prior-art overlap alone is not fatal.
+4. Concurrency validity: flag only clear ABBA deadlocks or races, not speculative ones.
+5. Hardware reality: TSX/TAA mitigations need acknowledgment but do not need to be fully designed.
 
 Decision policy:
-- APPROVED: only if technically sound and no major flaw.
-- REVISE: core idea is promising but fixable.
-- REJECT: fundamental architectural flaw, unsafe concurrency model, or incompatible design.
-
-Return strict JSON with this exact shape:
-{{
-    "status": "APPROVED|REVISE|REJECT",
-    "fatal_flaw": "string or empty",
-    "scorecard": {{
-        "innovation": 1,
-        "feasibility": 1,
-        "prior_art_risk": 1
-    }},
-    "hallucinations_found": ["string"],
-    "actionable_feedback": "string",
-    "approved": false
-}}
+- APPROVED: technically plausible, non-obvious core idea, no showstopper flaw.
+- REVISE: promising idea with fixable issues — provide specific actionable_feedback.
+- REJECT: only for physically impossible designs, pure fiction, or unfixable ABI breaks.
 """.strip()
 
             raw = self.llm.chat_reality_checker(
@@ -155,28 +169,22 @@ Return strict JSON with this exact shape:
                 continue
 
             system_prompt = (
-                "You are Innovator, an aggressive kernel and x86 architect revising a TID draft. "
-                "Apply all reviewer feedback while keeping high novelty and technical plausibility. "
+                "You are a senior kernel and x86 IP architect acting as both the Inventor and their "
+                "Senior IP Advisor. Your previous draft was critiqued. Your advisor has given you a "
+                "strict convergence strategy to get this approved:\n"
+                "1. CUT THE DEAD WEIGHT: Immediately drop any component the reviewer flagged as "
+                "physically impossible, ABI-breaking, or fictional. Do not defend them.\n"
+                "2. NARROW THE BOUNDARY: Reframe the invention strictly around the surviving mechanism. "
+                "If the reviewer said only one sub-component is interesting, make the ENTIRE draft "
+                "focus on that sub-component.\n"
+                "3. FORMAT AS AN IP CLAIM: Write a defensible System Architecture specification, "
+                "not a software patch. Be precise about data structures, lock ordering, and kernel paths.\n"
                 "Output valid JSON only."
             )
             user_prompt = f"""
-Current draft title: {draft.title}
-Current one-liner: {draft.one_liner}
-Current novelty thesis: {draft.novelty_thesis}
-Current feasibility thesis: {draft.feasibility_thesis}
-Current problem statement: {draft.problem_statement}
-Current prior-art gap: {draft.prior_art_gap}
-Current proposed invention: {draft.proposed_invention}
-Current architecture: {draft.architecture_overview}
-Current implementation plan: {draft.implementation_plan}
-Current validation plan: {draft.validation_plan}
-Current claims: {draft.draft_claims}
-
-Reviewer required revisions:
-{chr(10).join(f'- {x}' for x in critique.required_revisions)}
-
-Return JSON:
+OUTPUT FORMAT (respond with ONLY this JSON, no prose before or after):
 {{
+  "strategic_rebuttal": "bullet-point summary of exactly what you dropped and what you narrowed",
   "title": "string",
   "one_liner": "string",
   "novelty_thesis": "string",
@@ -202,6 +210,23 @@ Return JSON:
     "references": ["string"]
   }}
 }}
+
+Revision round: {state.revisions + 1}
+
+Current draft title: {draft.title}
+Current one-liner: {draft.one_liner}
+Current novelty thesis: {draft.novelty_thesis}
+Current feasibility thesis: {draft.feasibility_thesis}
+Current problem statement: {draft.problem_statement}
+Current prior-art gap: {draft.prior_art_gap}
+Current proposed invention: {draft.proposed_invention}
+Current architecture: {draft.architecture_overview}
+Current implementation plan: {draft.implementation_plan}
+Current validation plan: {draft.validation_plan}
+Current claims: {draft.draft_claims}
+
+Reviewer required revisions:
+{chr(10).join(f'- {x}' for x in critique.required_revisions)}
 """.strip()
 
             try:
@@ -212,6 +237,7 @@ Return JSON:
                     temperature=0.5,
                 )
                 payload = self._parse_json(raw)
+                rebuttal = str(payload.get("strategic_rebuttal", "")).strip()
                 revised_draft = self._merge_revised_draft(draft, payload)
                 revised.append(revised_draft)
                 revision_trace.append(
@@ -221,14 +247,15 @@ Return JSON:
                         "status": "REVISED",
                         "feedback_used": list(critique.required_revisions),
                         "summary": revised_draft.one_liner[:240],
+                        "strategic_rebuttal": rebuttal[:400] if rebuttal else "",
                     }
                 )
                 logger.info(
-                    "Maverick revision applied | run_id={} | before={} | after={} | feedback_count={}",
+                    "Maverick revision applied | run_id={} | before={} | after={} | rebuttal={}",
                     state.run_id,
                     draft.title,
                     revised_draft.title,
-                    len(critique.required_revisions),
+                    rebuttal[:120] if rebuttal else "none",
                 )
             except Exception as exc:
                 # Fallback: keep draft but annotate constraints to avoid losing progress.

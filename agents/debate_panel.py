@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List
 
 from loguru import logger
@@ -44,41 +45,48 @@ class DebatePanelAgent:
 
         draft_blob = self._format_drafts(state)
 
-        reports = {
-            "kernel_hardliner": self._specialist_review(
-                role="Kernel Hardliner",
-                model=settings.debate_code_expert_model,
-                system_prompt=(
+        _specialist_defs = [
+            (
+                "kernel_hardliner",
+                "Kernel Hardliner",
+                settings.debate_code_expert_model,
+                (
                     "You are The Kernel Hardliner. Focus on Linux kernel implementation correctness, "
                     "locking and concurrency validity. Reject unsafe ideas."
                 ),
-                draft_blob=draft_blob,
             ),
-            "prior_art_shark": self._specialist_review(
-                role="Prior-Art Shark",
-                model=settings.debate_deep_thinker_model,
-                system_prompt=(
-                    "You are The Prior-Art Shark. Focus on novelty, non-obviousness, and overlap risk with known work."
-                ),
-                draft_blob=draft_blob,
+            (
+                "prior_art_shark",
+                "Prior-Art Shark",
+                settings.debate_deep_thinker_model,
+                "You are The Prior-Art Shark. Focus on novelty, non-obviousness, and overlap risk with known work.",
             ),
-            "intel_strategist": self._specialist_review(
-                role="Intel Strategist",
-                model=settings.debate_deep_thinker_model,
-                system_prompt=(
-                    "You are The Intel Strategist. Focus on x86 strategic value, Xeon competitiveness, and HW/SW co-design leverage."
-                ),
-                draft_blob=draft_blob,
+            (
+                "intel_strategist",
+                "Intel Strategist",
+                settings.debate_deep_thinker_model,
+                "You are The Intel Strategist. Focus on x86 strategic value, Xeon competitiveness, and HW/SW co-design leverage.",
             ),
-            "security_guardian": self._specialist_review(
-                role="Security Guardian",
-                model=settings.debate_code_expert_model,
-                system_prompt=(
-                    "You are The Security and Stability Guardian. Focus on TAA/side-channel risk, crash risk, and compatibility guarantees."
-                ),
-                draft_blob=draft_blob,
+            (
+                "security_guardian",
+                "Security Guardian",
+                settings.debate_code_expert_model,
+                "You are The Security and Stability Guardian. Focus on TAA/side-channel risk, crash risk, and compatibility guarantees.",
             ),
-        }
+        ]
+
+        with ThreadPoolExecutor(max_workers=len(_specialist_defs)) as executor:
+            futures = {
+                name: executor.submit(
+                    self._specialist_review,
+                    role=role,
+                    model=model,
+                    system_prompt=prompt,
+                    draft_blob=draft_blob,
+                )
+                for name, role, model, prompt in _specialist_defs
+            }
+            reports = {name: fut.result() for name, fut in futures.items()}
 
         fact_checks = self._run_fact_checks(reports)
 
@@ -234,12 +242,10 @@ Return strict JSON:
         return review_log
 
     def _run_fact_checks(self, reports: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
-        checks: Dict[str, Any] = {}
-        for name, report in reports.items():
+        def _check_one(name: str, report: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
             queries = report.get("fact_check_queries", [])
             if not queries:
-                continue
-
+                return name, {}
             query_results: Dict[str, List[Dict[str, Any]]] = {}
             for q in queries[:3]:
                 try:
@@ -254,8 +260,17 @@ Return strict JSON:
                     ]
                 except Exception as exc:
                     query_results[q] = [{"error": str(exc)}]
+            return name, query_results
 
-            checks[name] = query_results
+        checks: Dict[str, Any] = {}
+        with ThreadPoolExecutor(max_workers=len(reports) or 1) as executor:
+            futures = {
+                name: executor.submit(_check_one, name, report)
+                for name, report in reports.items()
+            }
+            for name, fut in futures.items():
+                _, result = fut.result()
+                checks[name] = result
         return checks
 
     @staticmethod
@@ -273,17 +288,27 @@ Return strict JSON:
         scores = [int(r.get("score", 2) or 2) for r in reports.values()]
         yellow_cards = sum(int(r.get("yellow_cards", 0) or 0) for r in reports.values())
 
-        if any(s == "REJECT" for s in statuses) or fatal:
-            reason = "; ".join(fatal) if fatal else "Committee fatal rejection"
+        if fatal:
+            reason = "; ".join(fatal)
             return {
                 "final_verdict": "REJECT",
                 "synthesis": reason,
                 "confidence": 0.95,
-                "rule_trigger": "fatal_reject",
+                "rule_trigger": "fatal_flaw_reject",
                 "reviewer_statuses": statuses,
             }
 
-        if yellow_cards >= 2:
+        reject_count = sum(1 for s in statuses if s == "REJECT")
+        if reject_count >= 2:
+            return {
+                "final_verdict": "REJECT",
+                "synthesis": f"Majority committee rejection ({reject_count}/{len(statuses)} REJECT, no fatal flaw stated)",
+                "confidence": 0.9,
+                "rule_trigger": "majority_reject",
+                "reviewer_statuses": statuses,
+            }
+
+        if yellow_cards >= 3:
             return {
                 "final_verdict": "REJECT",
                 "synthesis": f"Rejected by yellow-card rule (yellow_cards={yellow_cards})",
@@ -292,12 +317,26 @@ Return strict JSON:
                 "reviewer_statuses": statuses,
             }
 
-        if all(score >= 4 for score in scores) and all(s == "APPROVE" for s in statuses):
+        avg_score = sum(scores) / len(scores) if scores else 0.0
+        approve_count = sum(1 for s in statuses if s == "APPROVE")
+
+        # Full approval: all APPROVE and avg score >= 4
+        if approve_count == len(statuses) and avg_score >= 4.0:
             return {
                 "final_verdict": "APPROVE",
-                "synthesis": "All specialists approved with score >= 4.",
-                "confidence": 0.9,
+                "synthesis": f"Full committee approval (avg_score={avg_score:.1f}).",
+                "confidence": 0.92,
                 "rule_trigger": "full_committee_approval",
+                "reviewer_statuses": statuses,
+            }
+
+        # Majority approval: >=3 of 4 APPROVE, avg score >= 3.5, no REJECT
+        if approve_count >= 3 and avg_score >= 3.5 and reject_count == 0:
+            return {
+                "final_verdict": "APPROVE",
+                "synthesis": f"Majority committee approval ({approve_count}/{len(statuses)} APPROVE, avg_score={avg_score:.1f}).",
+                "confidence": 0.80,
+                "rule_trigger": "majority_approval",
                 "reviewer_statuses": statuses,
             }
 

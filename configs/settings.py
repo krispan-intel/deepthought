@@ -117,7 +117,7 @@ class Settings(BaseSettings):
     triad_domain_threshold: float = Field(default=0.45)
     triad_initial_candidate_pool_size: int = Field(default=300)
     triad_max_filtered_candidates: int = Field(default=220)
-    max_revision_iterations: int = Field(default=3)
+    max_revision_iterations: int = Field(default=5)
     min_confidence_score: float = Field(default=0.75)
     max_debate_rounds: int = Field(default=3)
     export_only_approved_tid: bool = Field(default=True)
@@ -134,6 +134,20 @@ class Settings(BaseSettings):
     human_review_decisions_path: Path = Field(
         default=Path("./data/processed/human_review_decisions.jsonl")
     )
+
+    # ── Parallelism ──────────────────────────────────────────────
+    pipeline_parallel_mode: bool = Field(default=False)
+    maverick_workers: int = Field(default=2)
+
+    # ── Hybrid Triad Scoring ─────────────────────────────────────
+    # Weight for marginality-fit bonus in hybrid_score.
+    # Rewards pairs whose pairwise similarity lands in the centre of
+    # the calibrated marginality band [τ_low, τ_high].
+    marginality_fit_weight: float = Field(default=0.25)
+    # Additive bias applied to every hybrid score so that all
+    # qualifying pairs score > 0 (domain filter guarantees
+    # relevance >= triad_domain_threshold).
+    hybrid_score_bias: float = Field(default=0.10)
 
     # ── Logging ──────────────────────────────────────────────────
     log_level: str = Field(default="INFO")

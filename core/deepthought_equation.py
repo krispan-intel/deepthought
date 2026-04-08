@@ -18,6 +18,8 @@ from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Tuple, Dict, Any
 from loguru import logger
 
+from configs.settings import settings
+
 
 # ─────────────────────────────────────────────────────────────────
 # Data Classes
@@ -412,16 +414,22 @@ class DeepThoughtEquation:
                     },
                 )
 
-                relevance = (left_relevance + right_relevance) / 2.0
-                max_redundancy = max(redundancy_map[left.id], redundancy_map[right.id])
+                # W1 fix: use true cosine of the combined vector, not arithmetic mean
+                relevance = self.cosine_similarity(combined_vector, v_target.vector)
+
+                # W2 fix: use average redundancy so one common anchor doesn't kill a novel pair
+                max_redundancy = (redundancy_map[left.id] + redundancy_map[right.id]) / 2.0
+
                 midpoint = (thresholds.low + thresholds.high) / 2.0
                 half_band = max((thresholds.high - thresholds.low) / 2.0, 1e-6)
                 marginality_fit = max(0.0, 1.0 - abs(pair_similarity - midpoint) / half_band)
+
+                # C1 fix: weights are now in settings, no magic constants
                 hybrid_score = (
                     self.lambda_val * relevance
                     - (1.0 - self.lambda_val) * max_redundancy
-                    + 0.25 * marginality_fit
-                    + 0.10
+                    + settings.marginality_fit_weight * marginality_fit
+                    + settings.hybrid_score_bias
                 )
 
                 pair_candidates.append(
@@ -453,8 +461,11 @@ class DeepThoughtEquation:
             metadata = candidate.candidate.metadata
             left_id = str(metadata.get("anchor_a_id", ""))
             right_id = str(metadata.get("anchor_b_id", ""))
-            if left_id in used_anchor_ids or right_id in used_anchor_ids:
-                continue
+            # N1 fix: only enforce anchor reuse if both IDs are non-empty;
+            # an empty ID must not poison the set and block all future pairs.
+            if left_id and right_id:
+                if left_id in used_anchor_ids or right_id in used_anchor_ids:
+                    continue
 
             if any(
                 self.cosine_similarity(candidate.candidate.vector, prior.candidate.vector) > thresholds.high

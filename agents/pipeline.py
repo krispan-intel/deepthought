@@ -6,7 +6,11 @@ DeepThought multi-agent pipeline orchestrator.
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from pathlib import Path
+from typing import List
+
 from loguru import logger
 
 from configs.settings import settings
@@ -18,7 +22,7 @@ from agents.forager import ForagerAgent
 from agents.maverick import MaverickAgent
 from agents.patent_shield import PatentShieldAgent
 from agents.reality_checker import RealityCheckerAgent
-from agents.state import PipelineState, TIDStatus
+from agents.state import DraftIdea, PipelineState, TIDStatus
 from services.human_review import HumanReviewCheckpoint
 
 
@@ -50,7 +54,7 @@ class DeepThoughtPipeline:
             return self._mark_failure(state, "forager", exc)
 
         if not self._has_forager_evidence(state):
-            state.run_status = "REJECTED"
+            state.run_status = "RETRY_PENDING"
             state.last_error = "No topological voids found; skipped draft generation"
             state.metadata["rejected_reason"] = state.last_error
             state.metadata["stage_status"]["maverick"] = "SKIPPED_NO_VOIDS"
@@ -65,7 +69,10 @@ class DeepThoughtPipeline:
             return state
 
         try:
-            state = self.maverick.run(state, n_drafts=n_drafts)
+            if settings.pipeline_parallel_mode and n_drafts > 1:
+                state = self._run_maverick_parallel(state, n_drafts=n_drafts)
+            else:
+                state = self.maverick.run(state, n_drafts=n_drafts)
             state.metadata["stage_status"]["maverick"] = "OK"
         except Exception as exc:
             return self._mark_failure(state, "maverick", exc)
@@ -185,6 +192,58 @@ class DeepThoughtPipeline:
         has_context = bool((state.topological_void_context or "").strip())
         return has_voids and has_context
 
+    def _run_maverick_parallel(self, state: PipelineState, n_drafts: int) -> PipelineState:
+        """Run Maverick workers in parallel, each generating 1 draft, then merge results."""
+        workers = min(n_drafts, max(1, settings.maverick_workers))
+
+        def _worker(_idx: int) -> List[DraftIdea]:
+            worker_state = replace(
+                state,
+                drafts=[],
+                failed_stages=[],
+                metadata=dict(state.metadata),
+            )
+            worker_state = self.maverick.run(worker_state, n_drafts=1)
+            return worker_state.drafts
+
+        all_drafts: List[DraftIdea] = []
+        errors: List[str] = []
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = [executor.submit(_worker, i) for i in range(n_drafts)]
+            for f in futures:
+                try:
+                    all_drafts.extend(f.result())
+                except Exception as exc:
+                    errors.append(str(exc))
+                    logger.warning(
+                        "Parallel Maverick worker failed | run_id={} | error={}",
+                        state.run_id,
+                        exc,
+                    )
+
+        if not all_drafts:
+            raise RuntimeError(
+                f"All {n_drafts} parallel Maverick workers produced no drafts. "
+                + (f"Errors: {'; '.join(errors)}" if errors else "")
+            )
+
+        state.drafts = all_drafts
+        state.metadata["draft_count"] = len(all_drafts)
+        state.metadata["maverick_generation"] = {
+            "requested_drafts": n_drafts,
+            "produced_drafts": len(all_drafts),
+            "status": "OK",
+            "parallel_workers": workers,
+        }
+        logger.info(
+            "Parallel Maverick finished | run_id={} | workers={} | produced={} | failed_workers={}",
+            state.run_id,
+            workers,
+            len(all_drafts),
+            len(errors),
+        )
+        return state
+
     def export_reports(
         self,
         state: PipelineState,
@@ -290,7 +349,7 @@ class DeepThoughtPipeline:
         return assess_claims(
             claims=draft.draft_claims,
             prior_art_corpus=prior_art_corpus,
-            conflict_threshold=0.42,
+            conflict_threshold=settings.patent_conflict_threshold,
         )
 
     def _mark_failure(self, state: PipelineState, stage: str, exc: Exception) -> PipelineState:
