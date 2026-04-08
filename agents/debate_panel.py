@@ -75,6 +75,13 @@ class DebatePanelAgent:
             ),
         ]
 
+        # Enforce queue depth limit for debate panel parallelism
+        if len(_specialist_defs) > settings.max_debate_queue_depth:
+            raise RuntimeError(
+                f"Debate panel specialist count ({len(_specialist_defs)}) exceeds "
+                f"max_debate_queue_depth ({settings.max_debate_queue_depth})"
+            )
+
         with ThreadPoolExecutor(max_workers=len(_specialist_defs)) as executor:
             futures = {
                 name: executor.submit(
@@ -263,7 +270,9 @@ Return strict JSON:
             return name, query_results
 
         checks: Dict[str, Any] = {}
-        with ThreadPoolExecutor(max_workers=len(reports) or 1) as executor:
+        # Cap fact-check parallelism to queue depth limit
+        max_workers = min(len(reports) or 1, settings.max_debate_queue_depth)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {
                 name: executor.submit(_check_one, name, report)
                 for name, report in reports.items()

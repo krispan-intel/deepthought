@@ -70,7 +70,17 @@ class DeepThoughtPipeline:
 
         try:
             if settings.pipeline_parallel_mode and n_drafts > 1:
-                state = self._run_maverick_parallel(state, n_drafts=n_drafts)
+                # Apply backpressure: cap n_drafts to prevent resource exhaustion
+                effective_drafts = n_drafts
+                if n_drafts > settings.max_maverick_queue_depth:
+                    effective_drafts = settings.max_maverick_queue_depth
+                    logger.warning(
+                        "Maverick queue backpressure applied | run_id={} | requested={} | capped={}",
+                        state.run_id,
+                        n_drafts,
+                        effective_drafts,
+                    )
+                state = self._run_maverick_parallel(state, n_drafts=effective_drafts)
             else:
                 state = self.maverick.run(state, n_drafts=n_drafts)
             state.metadata["stage_status"]["maverick"] = "OK"

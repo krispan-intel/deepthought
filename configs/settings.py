@@ -138,6 +138,14 @@ class Settings(BaseSettings):
     # ── Parallelism ──────────────────────────────────────────────
     pipeline_parallel_mode: bool = Field(default=False)
     maverick_workers: int = Field(default=2)
+    max_maverick_queue_depth: int = Field(
+        default=10,
+        description="Maximum parallel Maverick tasks (caps n_drafts to prevent resource exhaustion)"
+    )
+    max_debate_queue_depth: int = Field(
+        default=4,
+        description="Maximum parallel debate panel reviewers (hard limit for 4 specialists)"
+    )
 
     # ── Hybrid Triad Scoring ─────────────────────────────────────
     # Weight for marginality-fit bonus in hybrid_score.
