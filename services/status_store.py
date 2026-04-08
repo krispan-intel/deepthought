@@ -2,6 +2,7 @@
 services/status_store.py
 
 Persist pipeline run statuses and enable retry of failed runs.
+Uses IOWriterService to avoid file contention in parallel mode.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from typing import Any, Dict, Optional
 
 from configs.settings import settings
 from agents.state import PipelineState
+from services.io_writer import IOWriterService
 
 
 class PipelineStatusStore:
@@ -24,8 +26,7 @@ class PipelineStatusStore:
 
     def append(self, state: PipelineState) -> Path:
         record = self._to_record(state)
-        with self.file_path.open("a", encoding="utf-8") as fp:
-            fp.write(json.dumps(record, ensure_ascii=False) + "\n")
+        IOWriterService.write_jsonl(self.file_path, record)
         return self.file_path
 
     def append_skipped(self, input_payload: Dict[str, Any], reason: str = "duplicate_input") -> Path:
@@ -43,8 +44,7 @@ class PipelineStatusStore:
             "output_paths": {},
             "debate_result": None,
         }
-        with self.file_path.open("a", encoding="utf-8") as fp:
-            fp.write(json.dumps(record, ensure_ascii=False) + "\n")
+        IOWriterService.write_jsonl(self.file_path, record)
         return self.file_path
 
     def has_completed_input(self, input_payload: Dict[str, Any]) -> bool:

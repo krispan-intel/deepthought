@@ -1,6 +1,6 @@
 # DeepThought TODO List
 
-Last Updated: 2026-04-08
+Last Updated: 2026-04-09
 
 ## Immediate Actions
 - [x] Commit all pending changes (tests/scripts/docs/observability) as a clean batch before the next cleanup wave.
@@ -23,7 +23,7 @@ Last Updated: 2026-04-08
 ## Pipeline Parallelism Refactor (Throughput First)
 - [x] P0: Parallelize Debate Panel specialist reviewers (I/O concurrency), keep chairman as single deterministic reducer.
 - [x] P0: Decouple Forager producer from Maverick/Reviewer consumers using queue-based orchestration.
-- [ ] P1: Add a single-writer sink for status/audit/output to avoid multi-worker file contention.
+- [x] P1: Add a single-writer sink for status/audit/output to avoid multi-worker file contention.
 - [ ] P1: Add worker limits and queue backpressure controls to prevent DB/CLI contention spikes.
 - [x] P1: Add `pipeline_parallel_mode` switch with safe defaults (e.g., reviewer_workers=4, maverick_workers=2).
 - [ ] P2: Parallelize triad pair scoring and batch co-occurrence checks in Forager math stage.

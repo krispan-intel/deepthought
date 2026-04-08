@@ -1,4 +1,6 @@
 ---
+name: writer
+model: claude-haiku-4-5-20251001
 description: >
   Trigger this agent when the task involves updating documentation, writing or syncing
   README.md, docs/, or TODO.md files, adding docstrings to new public APIs, writing

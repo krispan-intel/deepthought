@@ -1,4 +1,6 @@
 ---
+name: pm
+model: claude-sonnet-4-6
 description: >
   Trigger this agent when deciding what to work on next, triaging open TODO items,
   planning a sprint or work session, evaluating whether a task is P0/P1/P2/P3,
