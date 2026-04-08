@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from loguru import logger
 
 from configs.settings import settings
+from services.io_writer import IOWriterService
 from services.pipeline_service import PipelineService
 from services.status_store import PipelineStatusStore
 from services.target_mutation_service import DEFAULT_MUTATION_HINT, TargetMutationService
@@ -253,6 +254,9 @@ def main() -> int:
     if not args.target and not args.random_walk_mutate:
         raise ValueError("Provide --target, or enable auto target search via --auto-target (or --random-walk-mutate)")
 
+    # Start IO writer service to prevent file contention in parallel mode
+    IOWriterService.start()
+
     print(f"Service mode start | interval={args.interval_seconds}s")
     print(f"LLM backend: {settings.llm_backend}")
     if settings.llm_backend == "copilot_cli":
@@ -261,51 +265,55 @@ def main() -> int:
         print(f"LLM base URL: {settings.internal_llm_base_url}")
         print(f"Maverick model: {settings.maverick_model}")
 
-    if args.once:
+    try:
+        if args.once:
+            service = PipelineService()
+            status_store = PipelineStatusStore(file_path=args.status_file)
+            notifier = TIDNotificationService()
+            mutator = TargetMutationService() if args.random_walk_mutate else None
+            attempt = 0
+            while True:
+                attempt += 1
+                print(f"Once-mode attempt: {attempt}")
+                try:
+                    state = run_once(args, service, status_store, notifier, mutator)
+                except Exception as exc:
+                    logger.exception(f"Once-mode iteration crashed: {exc}")
+                    state = None
+
+                if state and state.run_status == "APPROVED" and state.output_paths:
+                    print("Once-mode satisfied: APPROVED TID generated.")
+                    return 0
+
+                sleep_seconds = _compute_sleep_seconds(args, state)
+                if sleep_seconds > 0:
+                    print(f"Once-mode continuing: no APPROVED TID yet. Next attempt in {sleep_seconds}s")
+                    time.sleep(sleep_seconds)
+                else:
+                    print("Once-mode continuing immediately after failed run (no delay)")
+
         service = PipelineService()
         status_store = PipelineStatusStore(file_path=args.status_file)
         notifier = TIDNotificationService()
         mutator = TargetMutationService() if args.random_walk_mutate else None
-        attempt = 0
+
         while True:
-            attempt += 1
-            print(f"Once-mode attempt: {attempt}")
+            state = None
+            crashed = False
             try:
                 state = run_once(args, service, status_store, notifier, mutator)
             except Exception as exc:
-                logger.exception(f"Once-mode iteration crashed: {exc}")
-                state = None
-
-            if state and state.run_status == "APPROVED" and state.output_paths:
-                print("Once-mode satisfied: APPROVED TID generated.")
-                return 0
-
-            sleep_seconds = _compute_sleep_seconds(args, state)
+                crashed = True
+                logger.exception(f"Service iteration crashed: {exc}")
+            sleep_seconds = _compute_sleep_seconds(args, state, crashed=crashed)
             if sleep_seconds > 0:
-                print(f"Once-mode continuing: no APPROVED TID yet. Next attempt in {sleep_seconds}s")
+                print(f"Next service iteration in {sleep_seconds}s")
                 time.sleep(sleep_seconds)
             else:
-                print("Once-mode continuing immediately after failed run (no delay)")
-
-    service = PipelineService()
-    status_store = PipelineStatusStore(file_path=args.status_file)
-    notifier = TIDNotificationService()
-    mutator = TargetMutationService() if args.random_walk_mutate else None
-
-    while True:
-        state = None
-        crashed = False
-        try:
-            state = run_once(args, service, status_store, notifier, mutator)
-        except Exception as exc:
-            crashed = True
-            logger.exception(f"Service iteration crashed: {exc}")
-        sleep_seconds = _compute_sleep_seconds(args, state, crashed=crashed)
-        if sleep_seconds > 0:
-            print(f"Next service iteration in {sleep_seconds}s")
-            time.sleep(sleep_seconds)
-        else:
-            print("Next service iteration starts immediately (failure fast-retry enabled)")
+                print("Next service iteration starts immediately (failure fast-retry enabled)")
+    finally:
+        # Graceful shutdown: flush pending writes
+        IOWriterService.shutdown(timeout=10.0)
 
 
 if __name__ == "__main__":

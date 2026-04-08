@@ -1,4 +1,6 @@
 ---
+name: architect
+model: claude-opus-4-6
 description: >
   Trigger this agent when the task involves designing or changing system architecture,
   adding new pipeline stages, refactoring module boundaries, choosing data structures

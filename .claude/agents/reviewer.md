@@ -1,4 +1,6 @@
 ---
+name: reviewer
+model: claude-sonnet-4-6
 description: >
   Trigger this agent when reviewing a code change, running the /simplify skill, checking
   for correctness of a new feature, auditing thread safety or state mutation, verifying

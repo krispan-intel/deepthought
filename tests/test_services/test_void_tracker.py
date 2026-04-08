@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from agents.state import PipelineState, VoidStatus
+from services.io_writer import IOWriterService
 from services.void_tracker import IncrementalVoidTracker
 
 
@@ -22,13 +23,22 @@ def _state(run_id: str, void_id: str, label: str) -> PipelineState:
 
 
 def test_void_tracker_counts_new_and_recurring(tmp_path: Path) -> None:
-    path = tmp_path / "voids.jsonl"
-    tracker = IncrementalVoidTracker(file_path=path)
+    # Start IO writer service for this test
+    IOWriterService.start()
 
-    first = tracker.record_run(_state("run-1", "v1", "foo"))
-    second = tracker.record_run(_state("run-2", "v1", "foo"))
+    try:
+        path = tmp_path / "voids.jsonl"
+        tracker = IncrementalVoidTracker(file_path=path)
 
-    assert first["new_voids"] == 1
-    assert first["recurring_voids"] == 0
-    assert second["new_voids"] == 0
-    assert second["recurring_voids"] == 1
+        first = tracker.record_run(_state("run-1", "v1", "foo"))
+        IOWriterService.flush(timeout=5.0)
+
+        second = tracker.record_run(_state("run-2", "v1", "foo"))
+        IOWriterService.flush(timeout=5.0)
+
+        assert first["new_voids"] == 1
+        assert first["recurring_voids"] == 0
+        assert second["new_voids"] == 0
+        assert second["recurring_voids"] == 1
+    finally:
+        IOWriterService.shutdown(timeout=5.0)

@@ -1,4 +1,6 @@
 ---
+name: tester
+model: claude-haiku-4-5-20251001
 description: >
   Trigger this agent when writing new tests, reviewing test coverage for a recently
   changed module, diagnosing a failing test, identifying untested code paths after a

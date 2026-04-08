@@ -4,11 +4,11 @@ services/audit_logger.py
 Phase 6 audit logger:
 - Emits one immutable JSONL record per pipeline run.
 - Captures inputs, stage outcomes, outputs, and key metadata.
+- Uses IOWriterService to avoid file contention in parallel mode.
 """
 
 from __future__ import annotations
 
-import json
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,6 +16,7 @@ from typing import Dict
 
 from agents.state import PipelineState
 from configs.settings import settings
+from services.io_writer import IOWriterService
 
 
 class PipelineAuditLogger:
@@ -25,8 +26,7 @@ class PipelineAuditLogger:
 
     def append_run_audit(self, state: PipelineState) -> Path:
         record = self._build_record(state)
-        with self.file_path.open("a", encoding="utf-8") as fp:
-            fp.write(json.dumps(record, ensure_ascii=False) + "\n")
+        IOWriterService.write_jsonl(self.file_path, record)
         return self.file_path
 
     @staticmethod

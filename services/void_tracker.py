@@ -4,6 +4,7 @@ services/void_tracker.py
 Phase 6 incremental void tracking:
 - Records discovered voids for each run.
 - Computes new vs recurring void counts over time.
+- Uses IOWriterService to avoid file contention in parallel mode.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from typing import Dict, Set
 
 from agents.state import PipelineState, VoidStatus
 from configs.settings import settings
+from services.io_writer import IOWriterService
 
 
 class IncrementalVoidTracker:
@@ -29,26 +31,20 @@ class IncrementalVoidTracker:
         recurring_voids = current_signatures.intersection(seen)
 
         timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
-        with self.file_path.open("a", encoding="utf-8") as fp:
-            for void in state.void_statuses:
-                fp.write(
-                    json.dumps(
-                        {
-                            "timestamp": timestamp,
-                            "run_id": state.run_id,
-                            "domain": state.domain,
-                            "target": state.target,
-                            "void_signature": self._signature(void),
-                            "void_id": void.void_id,
-                            "label": void.label,
-                            "mmr_score": void.mmr_score,
-                            "relevance_score": void.relevance_score,
-                            "novelty_score": void.novelty_score,
-                        },
-                        ensure_ascii=False,
-                    )
-                    + "\n"
-                )
+        for void in state.void_statuses:
+            record = {
+                "timestamp": timestamp,
+                "run_id": state.run_id,
+                "domain": state.domain,
+                "target": state.target,
+                "void_signature": self._signature(void),
+                "void_id": void.void_id,
+                "label": void.label,
+                "mmr_score": void.mmr_score,
+                "relevance_score": void.relevance_score,
+                "novelty_score": void.novelty_score,
+            }
+            IOWriterService.write_jsonl(self.file_path, record)
 
         return {
             "tracked_voids": len(current_signatures),
