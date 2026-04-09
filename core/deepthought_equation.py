@@ -315,17 +315,116 @@ class DeepThoughtEquation:
             )
 
         values = np.array(similarities, dtype=np.float32)
-        low = float(np.quantile(values, 0.35))
-        high = float(np.quantile(values, 0.75))
-        low = max(min_low, min(low, max_high - 0.08))
-        high = min(max_high, max(high, low + 0.08))
+        low_raw = float(np.quantile(values, 0.35))
+        high_raw = float(np.quantile(values, 0.75))
+
+        # Widen marginality range to increase pairing success rate
+        # Original: ±0 breathing room → Now: -0.10 / +0.10 breathing room
+        low = max(min_low, low_raw - 0.10)
+        high = min(max_high, high_raw + 0.10)
+
+        # Ensure minimum width of 0.20 (prevent too-narrow windows like 0.08)
+        if (high - low) < 0.20:
+            midpoint = (low + high) / 2.0
+            low = max(min_low, midpoint - 0.10)
+            high = min(max_high, midpoint + 0.10)
 
         return MarginalityThresholds(
             low=low,
             high=high,
             sample_size=len(similarities),
-            source="dense_neighborhood_quantiles",
+            source="dense_neighborhood_quantiles_widened",
         )
+
+    @staticmethod
+    def calibrate_domain_threshold(
+        scores: List[float],
+        strategy: str = "percentile_75",
+        fallback: float = 0.50,
+    ) -> float:
+        """
+        Dynamic domain threshold calibration.
+
+        Adapts to corpus density by analyzing score distribution instead of
+        using hardcoded magic numbers. Solves anisotropy problem in vector space.
+
+        Args:
+            scores: Similarity scores from retrieved candidates (0.0 to 1.0)
+            strategy: Calibration strategy:
+                      - "percentile_75": Top 25% cutoff (default, most stable)
+                      - "max_relative_drop": Max score - 0.15 (intuitive)
+                      - "elbow": Knee point detection (advanced)
+            fallback: Fallback threshold if calibration fails or empty scores
+
+        Returns:
+            Calibrated threshold adapted to current corpus density
+
+        Examples:
+            Dense domain (scheduler): scores [0.65-0.85] → tau ~0.72
+            Sparse domain (CXL error): scores [0.35-0.55] → tau ~0.48
+        """
+        if not scores or len(scores) == 0:
+            logger.warning(f"Empty scores for threshold calibration, using fallback={fallback}")
+            return fallback
+
+        if strategy == "percentile_75":
+            # Take top 25% by percentile
+            tau = float(np.percentile(scores, 75))
+
+        elif strategy == "percentile_adaptive":
+            # Adaptive percentile based on corpus density (max_score proxy)
+            max_score = float(max(scores))
+
+            if max_score >= 0.70:
+                percentile = 80  # Dense domain (scheduler): strict filtering, top 20%
+            elif max_score >= 0.60:
+                percentile = 70  # Medium domain: standard filtering, top 30%
+            else:
+                percentile = 55  # Sparse domain (TDX): relaxed filtering, top 45%
+
+            tau = float(np.percentile(scores, percentile))
+
+            # Absolute floor: never go below 0.45 to prevent garbage in extreme cases
+            tau = max(tau, 0.45)
+
+            logger.info(
+                f"Adaptive percentile | max_score={max_score:.3f} | "
+                f"selected_percentile={percentile} | tau_before_floor={np.percentile(scores, percentile):.3f} | "
+                f"tau_final={tau:.3f}"
+            )
+
+        elif strategy == "max_relative_drop":
+            # Anchor to best score, allow 0.15 tolerance
+            tau = float(max(scores) - 0.15)
+
+        elif strategy == "elbow":
+            # Find knee point (steepest drop in sorted scores)
+            sorted_scores = sorted(scores, reverse=True)
+            if len(sorted_scores) < 3:
+                return fallback
+
+            drops = [sorted_scores[i] - sorted_scores[i+1]
+                     for i in range(len(sorted_scores) - 1)]
+            if not drops:
+                return fallback
+
+            knee_idx = int(np.argmax(drops))
+            tau = sorted_scores[knee_idx]
+
+        else:
+            logger.warning(f"Unknown strategy '{strategy}', using fallback={fallback}")
+            return fallback
+
+        # Sanity bounds: never go below 0.3 or above 0.9
+        tau = max(0.30, min(0.90, tau))
+
+        logger.info(
+            f"Dynamic threshold calibrated | strategy={strategy} | "
+            f"scores_count={len(scores)} | tau={tau:.4f} | "
+            f"score_range=[{min(scores):.3f}, {max(scores):.3f}]"
+        )
+
+        return tau
 
     def find_hybrid_voids_iterative(
         self,
@@ -369,30 +468,60 @@ class DeepThoughtEquation:
         }
 
         pair_candidates: List[VoidResult] = []
+        filter_stats = {
+            "total_pairs_checked": 0,
+            "filtered_left_relevance": 0,
+            "filtered_right_relevance": 0,
+            "filtered_marginality": 0,
+            "filtered_sparse_tokens": 0,
+            "filtered_cooccurrence": 0,
+            "filtered_sparse_overlap": 0,
+            "passed_all_filters": 0,
+        }
+
         for index, left in enumerate(candidates):
             left_relevance = relevance_map[left.id]
             if left_relevance < domain_threshold:
+                filter_stats["filtered_left_relevance"] += len(candidates) - index - 1
                 continue
 
             left_tokens = sparse_tokens.get(left.id, [])
             if not left_tokens:
+                filter_stats["filtered_sparse_tokens"] += len(candidates) - index - 1
                 continue
 
             for right in candidates[index + 1 :]:
+                filter_stats["total_pairs_checked"] += 1
+
                 right_relevance = relevance_map[right.id]
                 if right_relevance < domain_threshold:
+                    filter_stats["filtered_right_relevance"] += 1
                     continue
 
                 pair_similarity = self.cosine_similarity(left.vector, right.vector)
                 if pair_similarity < thresholds.low or pair_similarity > thresholds.high:
+                    filter_stats["filtered_marginality"] += 1
                     continue
 
                 right_tokens = sparse_tokens.get(right.id, [])
                 if not right_tokens:
+                    filter_stats["filtered_sparse_tokens"] += 1
                     continue
 
-                if global_cooccurrence_checker(left_tokens, right_tokens):
+                # TEMP DISABLED: Cooccurrence checker too strict (blocks on ANY token overlap, including generic "cpu", "memory")
+                # Future fix: only block if CORE nouns (not generic terms) have strong cooccurrence
+                # if global_cooccurrence_checker(left_tokens, right_tokens):
+                #     filter_stats["filtered_cooccurrence"] += 1
+                #     continue
+
+                # Sparse lexical overlap filter: block garbage pairs (e.g., WebUSB+eBPF)
+                # If two anchors share no tokens at all, they're likely unrelated junk
+                sparse_overlap = len(set(left_tokens) & set(right_tokens))
+                if sparse_overlap == 0:
+                    filter_stats["filtered_sparse_overlap"] += 1
                     continue
+
+                filter_stats["passed_all_filters"] += 1
 
                 combined_vector = left.vector + right.vector
                 norm = np.linalg.norm(combined_vector)
@@ -449,8 +578,24 @@ class DeepThoughtEquation:
                     )
                 )
 
+        logger.info(
+            f"Hybrid triad filter stats | "
+            f"total_pairs={filter_stats['total_pairs_checked']} | "
+            f"filtered: left_relevance={filter_stats['filtered_left_relevance']} "
+            f"right_relevance={filter_stats['filtered_right_relevance']} "
+            f"marginality={filter_stats['filtered_marginality']} "
+            f"sparse_tokens={filter_stats['filtered_sparse_tokens']} "
+            f"cooccurrence={filter_stats['filtered_cooccurrence']} "
+            f"sparse_overlap={filter_stats['filtered_sparse_overlap']} | "
+            f"passed={filter_stats['passed_all_filters']}"
+        )
+
         if not pair_candidates:
-            logger.warning("Hybrid triad produced no valid pairs; returning empty landscape")
+            logger.warning(
+                f"Hybrid triad produced no valid pairs after filtering | "
+                f"candidates={len(candidates)} | domain_threshold={domain_threshold:.3f} | "
+                f"marginality=[{thresholds.low:.3f}, {thresholds.high:.3f}]"
+            )
             return self._empty_landscape(v_target=v_target, domain=domain)
 
         pair_candidates.sort(key=lambda item: item.mmr_score, reverse=True)

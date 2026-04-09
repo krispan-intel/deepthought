@@ -878,6 +878,30 @@ class DeepThoughtVectorStore:
             candidates=candidate_vectors,
             v_target=v_target,
         )
+
+        # Dynamic domain threshold calibration
+        if settings.triad_threshold_strategy == "static":
+            dynamic_tau = settings.triad_domain_threshold
+            logger.info(f"Dynamic threshold disabled, using static={dynamic_tau:.3f}")
+        else:
+            # Compute dynamic domain threshold by analyzing candidate score distribution
+            candidate_scores = [
+                engine.cosine_similarity(c.vector, v_target.vector)
+                for c in candidate_vectors
+            ]
+
+            dynamic_tau = engine.calibrate_domain_threshold(
+                scores=candidate_scores,
+                strategy=settings.triad_threshold_strategy,
+                fallback=settings.triad_domain_threshold,
+            )
+
+            logger.info(
+                f"Domain threshold calibration | strategy={settings.triad_threshold_strategy} | "
+                f"static_fallback={settings.triad_domain_threshold:.3f} | "
+                f"dynamic_computed={dynamic_tau:.3f} | candidates={len(candidate_scores)}"
+            )
+
         landscape = engine.find_hybrid_voids_iterative(
             v_target=v_target,
             candidates=candidate_vectors,
@@ -890,12 +914,29 @@ class DeepThoughtVectorStore:
             ),
             n_select=top_k,
             domain=domain_filter or "unknown",
-            domain_threshold=settings.triad_domain_threshold,
+            domain_threshold=dynamic_tau,
             thresholds=thresholds,
         )
         landscape.target.metadata["triad_threshold_low"] = thresholds.low
         landscape.target.metadata["triad_threshold_high"] = thresholds.high
         landscape.target.metadata["triad_threshold_source"] = thresholds.source
+        landscape.target.metadata["domain_threshold_strategy"] = settings.triad_threshold_strategy
+        landscape.target.metadata["domain_threshold_static_fallback"] = settings.triad_domain_threshold
+        landscape.target.metadata["domain_threshold_dynamic_computed"] = dynamic_tau
+        if settings.triad_threshold_strategy != "static" and candidate_vectors:
+            candidate_scores_for_stats = [
+                engine.cosine_similarity(c.vector, v_target.vector)
+                for c in candidate_vectors
+            ]
+            landscape.target.metadata["candidate_score_distribution"] = {
+                "count": len(candidate_scores_for_stats),
+                "min": float(min(candidate_scores_for_stats)) if candidate_scores_for_stats else 0.0,
+                "median": float(np.median(candidate_scores_for_stats)) if candidate_scores_for_stats else 0.0,
+                "p75": float(np.percentile(candidate_scores_for_stats, 75)) if candidate_scores_for_stats else 0.0,
+                "max": float(max(candidate_scores_for_stats)) if candidate_scores_for_stats else 0.0,
+            }
+        else:
+            landscape.target.metadata["candidate_score_distribution"] = {}
 
         logger.info(f"✅ {landscape.summary()}")
         return landscape

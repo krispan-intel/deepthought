@@ -114,9 +114,13 @@ class Settings(BaseSettings):
 
     # ── Pipeline ─────────────────────────────────────────────────
     lambda_mmr: float = Field(default=0.7)
+    triad_threshold_strategy: str = Field(
+        default="percentile_adaptive",
+        description="Dynamic threshold calibration strategy: percentile_adaptive (recommended, auto-adapts to corpus density) | percentile_75 (fixed PR75) | max_relative_drop (intuitive) | elbow (advanced) | static (disable dynamic)"
+    )
     triad_domain_threshold: float = Field(
-        default=0.42,
-        description="Domain cohesion threshold for void detection (lowered 7% from 0.45 to reduce 'No voids found' rate)"
+        default=0.50,
+        description="Fallback threshold when dynamic calibration fails, or used directly if strategy='static'. Range: [0.30, 0.90]"
     )
     triad_initial_candidate_pool_size: int = Field(default=300)
     triad_max_filtered_candidates: int = Field(default=220)
