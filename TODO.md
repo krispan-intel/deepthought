@@ -5,14 +5,17 @@ Last Updated: 2026-04-09
 ## Immediate Actions
 - [x] Commit all pending changes (tests/scripts/docs/observability) as a clean batch before the next cleanup wave.
 - [x] Switch to Cartesian Matrix target generation (stable 100-target grid, proof-of-concept for 2-5% APPROVED)
+- [x] Add Corpus Analyst & Metrics Analyst agents to address data-driven optimization
 - [ ] Perform targeted cleanup for suspicious `kernel_source` legacy records (commit-message/hash-like labels) after current commit lands.
 
 ## Immediate Roadmap (P0-P3)
-- [ ] P0: Choose operating mode for this week (`run_pipeline.py` single-run vs `run_pipeline_service.py` always-on)
+- [x] P0: Choose operating mode for this week (service mode with `--once` for first APPROVED)
 - [ ] P0: Lock one baseline command and keep it as smoke-test reference
-- [ ] P0: Complete long-run soak test until first `APPROVED` TID with Copilot backend (`--once` semantics)
+- [ ] P0: Complete long-run soak test until first `APPROVED` TID with Copilot backend (`--once` semantics) ← IN PROGRESS
 - [ ] P1: Keep service mode running and confirm stable `pipeline_runs.jsonl` growth
 - [ ] P1: Keep email notifications disabled during stabilization (`tid_email_notifications_enabled=false`)
+- [ ] P1: Run Corpus Analyst for TDX/CXL coverage gaps (triggered by 42% No voids rate)
+- [ ] P1: Run Metrics Analyst weekly health checks (every Monday 09:00)
 - [ ] P2: Add process supervision (systemd/supervisor) and auto-restart policy
 - [ ] P2: Add log rotation and retention policy for long-running service
 - [ ] P3: Productionize prior-art conflict detector and claim confidence scoring
@@ -99,3 +102,13 @@ flowchart LR
 - [x] Incremental void tracking over time
 - [x] Service mode for continuous execution
 - [x] New TID email notification hook (SMTP)
+
+## Analysis & Optimization Agents (NEW)
+- [x] P0: Define Corpus Analyst agent (coverage gaps, data source recommendations)
+- [x] P0: Define Metrics Analyst agent (performance metrics, bottleneck identification)
+- [x] P0: Document agent workflow and collaboration patterns (docs/en/agent_workflow.md)
+- [ ] P1: First Corpus Analyst execution (analyze TDX/CXL gaps)
+- [ ] P1: First Metrics Analyst execution (daily report from current 12+ runs)
+- [ ] P2: Implement TDX crawler based on Corpus Analyst recommendations
+- [ ] P2: Implement CXL crawler if ROI justifies
+- [ ] P3: Set up scheduled Metrics Analyst reports (cron job)
