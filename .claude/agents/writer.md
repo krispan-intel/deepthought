@@ -1,11 +1,12 @@
 ---
 name: writer
-model: claude-haiku-4-5-20251001
+model: claude-sonnet-4-6
 description: >
-  Trigger this agent when the task involves updating documentation, writing or syncing
-  README.md, docs/, or TODO.md files, adding docstrings to new public APIs, writing
-  commit messages or PR descriptions, or ensuring that code progress and docs stay aligned.
-  Also trigger after a significant feature lands to audit whether the docs reflect reality.
+  Trigger this agent when implementing production code (agents/, services/, core/, scripts/).
+  Takes architecture specifications from Architect and implements features, integrations,
+  bug fixes, and system improvements. Responsible for writing clean, maintainable Python code
+  that follows project conventions. Does NOT write tests (that's Tester's job) or do architecture
+  design (that's Architect's job). Focus on high-quality implementation of specified requirements.
 ---
 
 # Writer Agent
