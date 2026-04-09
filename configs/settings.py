@@ -114,7 +114,10 @@ class Settings(BaseSettings):
 
     # ── Pipeline ─────────────────────────────────────────────────
     lambda_mmr: float = Field(default=0.7)
-    triad_domain_threshold: float = Field(default=0.45)
+    triad_domain_threshold: float = Field(
+        default=0.42,
+        description="Domain cohesion threshold for void detection (lowered 7% from 0.45 to reduce 'No voids found' rate)"
+    )
     triad_initial_candidate_pool_size: int = Field(default=300)
     triad_max_filtered_candidates: int = Field(default=220)
     max_revision_iterations: int = Field(default=5)
@@ -133,6 +136,12 @@ class Settings(BaseSettings):
     human_review_auto_approve: bool = Field(default=False)
     human_review_decisions_path: Path = Field(
         default=Path("./data/processed/human_review_decisions.jsonl")
+    )
+
+    # ── Target Generation ────────────────────────────────────────
+    target_generation_mode: str = Field(
+        default="cartesian",
+        description="Target generation strategy: 'cartesian' (stable matrix) or 'random_walk' (LLM mutation)"
     )
 
     # ── Parallelism ──────────────────────────────────────────────

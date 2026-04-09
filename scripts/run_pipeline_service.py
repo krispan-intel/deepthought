@@ -21,6 +21,7 @@ from services.io_writer import IOWriterService
 from services.pipeline_service import PipelineService
 from services.status_store import PipelineStatusStore
 from services.target_mutation_service import DEFAULT_MUTATION_HINT, TargetMutationService
+from services.target_cartesian_matrix import generate_cartesian_target, get_matrix_size
 from services.tid_notification_service import TIDNotificationService
 
 
@@ -149,11 +150,23 @@ def run_once(
     status_store: PipelineStatusStore,
     notifier: TIDNotificationService,
     mutator: TargetMutationService | None,
+    cartesian_index: int | None = None,
 ):
     effective_target = args.target
     mutation_info = {}
+    generation_mode = settings.target_generation_mode.lower()
 
-    if args.random_walk_mutate:
+    # Mode 1: Cartesian Matrix (stable, grounded targets)
+    if generation_mode == "cartesian" or args.auto_target:
+        effective_target = generate_cartesian_target(index=cartesian_index)
+        print(f"Cartesian matrix target: {effective_target}")
+        mutation_info = {
+            "target_generation_mode": "cartesian",
+            "cartesian_index": cartesian_index if cartesian_index is not None else "random",
+        }
+
+    # Mode 2: Random Walk Mutation (LLM-driven mutation)
+    elif args.random_walk_mutate:
         active_mutator = mutator or TargetMutationService()
         base_target = args.target.strip() if args.target else AUTO_BASE_TARGET
         mutation_info = active_mutator.mutate_target(
@@ -258,6 +271,9 @@ def main() -> int:
     IOWriterService.start()
 
     print(f"Service mode start | interval={args.interval_seconds}s")
+    print(f"Target generation mode: {settings.target_generation_mode}")
+    if settings.target_generation_mode == "cartesian":
+        print(f"Cartesian matrix size: {get_matrix_size()} targets")
     print(f"LLM backend: {settings.llm_backend}")
     if settings.llm_backend == "copilot_cli":
         print(f"Copilot CLI command: {settings.copilot_cli_command}")
@@ -265,6 +281,7 @@ def main() -> int:
         print(f"LLM base URL: {settings.internal_llm_base_url}")
         print(f"Maverick model: {settings.maverick_model}")
 
+    cartesian_counter = 0
     try:
         if args.once:
             service = PipelineService()
@@ -276,7 +293,9 @@ def main() -> int:
                 attempt += 1
                 print(f"Once-mode attempt: {attempt}")
                 try:
-                    state = run_once(args, service, status_store, notifier, mutator)
+                    cartesian_idx = cartesian_counter if settings.target_generation_mode == "cartesian" else None
+                    state = run_once(args, service, status_store, notifier, mutator, cartesian_index=cartesian_idx)
+                    cartesian_counter = (cartesian_counter + 1) % get_matrix_size()
                 except Exception as exc:
                     logger.exception(f"Once-mode iteration crashed: {exc}")
                     state = None
@@ -301,7 +320,9 @@ def main() -> int:
             state = None
             crashed = False
             try:
-                state = run_once(args, service, status_store, notifier, mutator)
+                cartesian_idx = cartesian_counter if settings.target_generation_mode == "cartesian" else None
+                state = run_once(args, service, status_store, notifier, mutator, cartesian_index=cartesian_idx)
+                cartesian_counter = (cartesian_counter + 1) % get_matrix_size()
             except Exception as exc:
                 crashed = True
                 logger.exception(f"Service iteration crashed: {exc}")

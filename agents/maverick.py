@@ -83,6 +83,18 @@ Constraints:
 - If the idea cannot be grounded in provided context, declare it unfeasible in feasibility_thesis and validation_plan.
 - In Architecture Overview, include a simple ASCII control-flow diagram.
 
+CRITICAL ARCHITECTURE RULES (violation = immediate rejection):
+1. Do NOT mix async operations (like eBPF maps, deferred work, or RCU callbacks) into strictly synchronous
+   or atomic kernel paths (like context switches, hardware interrupt handlers, or rq/runqueue locking).
+2. Do NOT use debug/reporting interfaces (procfs, debugfs, seq_file, arch_show_interrupts, print_bpf_insn)
+   as primary control plane routing or real-time decision points.
+3. Respect the boot-time vs runtime contract: CPUID, MSRs, and hardware topology are typically fixed at boot
+   or during initialization. Do not propose dynamic per-request renegotiation of immutable hardware state.
+4. Do NOT propose cross-CPU wakeup suppression or reschedule-IPI filtering without a grounded synchronization
+   model that preserves scheduler correctness under concurrent wakeups and CPU migration.
+5. Stay within the natural boundaries of the seed subsystem: if the void context is from scheduler code,
+   do not jump into unrelated domains like Wi-Fi MAC layer or PCIe ASPM without a credible causal bridge.
+
 Void context:
 {compact_context}
 

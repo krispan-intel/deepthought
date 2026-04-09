@@ -4,6 +4,7 @@ Last Updated: 2026-04-09
 
 ## Immediate Actions
 - [x] Commit all pending changes (tests/scripts/docs/observability) as a clean batch before the next cleanup wave.
+- [x] Switch to Cartesian Matrix target generation (stable 100-target grid, proof-of-concept for 2-5% APPROVED)
 - [ ] Perform targeted cleanup for suspicious `kernel_source` legacy records (commit-message/hash-like labels) after current commit lands.
 
 ## Immediate Roadmap (P0-P3)
