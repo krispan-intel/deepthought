@@ -21,6 +21,7 @@ from agents.debate_panel import DebatePanelAgent
 from agents.forager import ForagerAgent
 from agents.maverick import MaverickAgent
 from agents.patent_shield import PatentShieldAgent
+from agents.professor import ProfessorAgent
 from agents.reality_checker import RealityCheckerAgent
 from agents.state import DraftIdea, PipelineState, TIDStatus
 from services.human_review import HumanReviewCheckpoint
@@ -30,6 +31,7 @@ class DeepThoughtPipeline:
     def __init__(self):
         self.forager = ForagerAgent()
         self.maverick = MaverickAgent()
+        self.professor = ProfessorAgent()
         self.patent_shield = PatentShieldAgent()
         self.reality_checker = RealityCheckerAgent()
         self.debate_panel = DebatePanelAgent()
@@ -91,6 +93,28 @@ class DeepThoughtPipeline:
             TIDStatus(draft_index=i, title=d.title, status="DRAFTED")
             for i, d in enumerate(state.drafts)
         ]
+
+        # Professor pre-flight review: fast triage before expensive stages
+        try:
+            state = self.professor.run(state)
+            state.metadata["stage_status"]["professor"] = "OK"
+        except Exception as exc:
+            return self._mark_failure(state, "professor", exc)
+
+        # Short-circuit if Professor rejected all drafts
+        if not state.drafts:
+            state.run_status = "REJECTED"
+            state.last_error = "All drafts rejected by professor pre-flight review"
+            state.metadata["rejected_reason"] = state.last_error
+            for t in state.tid_statuses:
+                t.status = "REJECTED"
+                t.last_error = state.last_error
+            logger.warning(
+                "Pipeline short-circuited after Professor | run_id={} | reason={}",
+                state.run_id,
+                state.last_error,
+            )
+            return state
 
         try:
             state = self.patent_shield.run(state)

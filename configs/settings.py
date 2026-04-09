@@ -144,6 +144,16 @@ class Settings(BaseSettings):
         description="Target generation strategy: 'cartesian' (stable matrix) or 'random_walk' (LLM mutation)"
     )
 
+    # ── Professor Pre-flight Review ──────────────────────────────
+    professor_enabled: bool = Field(
+        default=True,
+        description="Enable Professor pre-flight review before Reality Checker"
+    )
+    professor_model: str = Field(
+        default="qwen3-coder-480b-a35b-instruct-fp8",
+        description="Model for Professor (code expert for architecture rules)"
+    )
+
     # ── Parallelism ──────────────────────────────────────────────
     pipeline_parallel_mode: bool = Field(default=False)
     maverick_workers: int = Field(default=2)
