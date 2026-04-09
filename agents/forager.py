@@ -40,6 +40,12 @@ class ForagerAgent:
             "lambda": landscape.lambda_used,
             "void_count": len(landscape.voids),
             "top_voids": self._summarize_voids(landscape.voids),
+            "domain_threshold": {
+                "strategy": landscape.target.metadata.get("domain_threshold_strategy", "unknown"),
+                "static_fallback": landscape.target.metadata.get("domain_threshold_static_fallback", 0.0),
+                "dynamic_computed": landscape.target.metadata.get("domain_threshold_dynamic_computed", 0.0),
+                "score_distribution": landscape.target.metadata.get("candidate_score_distribution", {}),
+            },
         }
         has_hybrid_triads = any(
             bool(item.get("anchor_a")) and bool(item.get("anchor_b"))

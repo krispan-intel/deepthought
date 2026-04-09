@@ -25,9 +25,17 @@ class MaverickAgent:
 
     def run(self, state: PipelineState, n_drafts: int = 3) -> PipelineState:
         system_prompt = (
-            "You are an ambitious Kernel and Hardware Architect. "
+            "You are an Elite System Architect specializing in cross-domain innovation. "
             "Draft deep system-level Technical Invention Disclosure ideas that fill topological voids. "
             "Use precise Linux kernel and x86 hardware terminology only. "
+            "\n\n"
+            "CRITICAL BRIDGE RULE:\n"
+            "You have been provided with a Topological Void containing two highly divergent concepts (Concept A and Concept B). "
+            "Do NOT simply force them together or pretend they natively interact. "
+            "Your invention MUST define a NEW INTERFACE, ABSTRACTION LAYER, OR STATE MACHINE (The Bridge) "
+            "that successfully translates between these two domains without violating their individual "
+            "physical or asynchronous constraints. The bridge is the invention.\n"
+            "\n"
             "Output valid JSON only."
         )
 
