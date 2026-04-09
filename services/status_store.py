@@ -94,6 +94,7 @@ class PipelineStatusStore:
             "tid_statuses": [asdict(t) for t in state.tid_statuses],
             "output_paths": state.output_paths,
             "debate_result": asdict(state.debate_result) if state.debate_result else None,
+            "metadata": state.metadata,  # Save full metadata (professor_review, stage_status, etc.)
         }
 
     @staticmethod
