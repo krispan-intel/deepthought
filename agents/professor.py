@@ -73,27 +73,29 @@ class ProfessorAgent:
 
 Your job: catch OBVIOUS blocking errors only. Do NOT do deep feasibility analysis (that's Reality Checker's job).
 
-Check these 3 BLOCKING issues:
+Check these 2 BLOCKING issues:
 
-1. ARCHITECTURE RULES VIOLATION
+1. ARCHITECTURE RULES VIOLATION (CRITICAL - always check)
    - Async operations (eBPF maps, RCU callbacks, deferred work) in strictly synchronous paths (context switch, rq locking, NMI/IRQ handlers)
    - Debug/reporting interfaces (procfs, debugfs, seq_file, arch_show_interrupts, print_bpf_insn) used as primary control plane
    - Boot-time vs runtime contract violation (dynamic CPUID renegotiation, modifying immutable hardware state)
    - Cross-CPU wakeup suppression or reschedule-IPI filtering without grounded synchronization model
    - Jumping across unrelated subsystems without credible causal bridge
 
-2. EVIDENCE GROUNDING
-   - Citing kernel functions, structs, macros, or file paths that do NOT appear in void context
-   - Inventing non-existent symbols or subsystem interfaces
-
-3. JSON FORMAT
+2. JSON FORMAT (CRITICAL - always check)
    - Malformed JSON structure
    - Missing required fields (title, claims, implementation_plan, etc.)
 
+IMPORTANT: Do NOT check evidence grounding (kernel functions/paths cited).
+- It is ACCEPTABLE for drafts to cite standard kernel functions not literally in void context
+- Example: void context mentions "scheduler" → draft can cite try_to_wake_up(), select_idle_sibling()
+- Only reject if draft invents COMPLETELY FICTIONAL subsystems (not real Linux code)
+
 Decision rules:
-- If draft has ANY blocking issue → REJECT
-- If draft passes all 3 checks → PASS (even if you have minor concerns)
-- Be lenient: when in doubt, PASS and let Reality Checker do deep analysis
+- If draft has critical architecture rule violation → REJECT
+- If draft has malformed JSON → REJECT
+- Otherwise → PASS (even if you have concerns about evidence, let Reality Checker judge)
+- Be lenient: when in doubt, PASS
 
 Output strict JSON only."""
 
