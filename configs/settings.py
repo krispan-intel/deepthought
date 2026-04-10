@@ -127,6 +127,10 @@ class Settings(BaseSettings):
     max_revision_iterations: int = Field(default=5)
     min_confidence_score: float = Field(default=0.75)
     max_debate_rounds: int = Field(default=3)
+    max_debate_revision_rounds: int = Field(
+        default=2,
+        description="Maximum rounds of Debate Panel revisions before giving up"
+    )
     export_only_approved_tid: bool = Field(default=True)
     reject_on_stage_failure: bool = Field(default=True)
     patent_api_enabled: bool = Field(default=False)

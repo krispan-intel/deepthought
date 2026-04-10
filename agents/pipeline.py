@@ -181,10 +181,190 @@ class DeepThoughtPipeline:
             state = self._mark_failure(state, "debate_panel", exc)
             # Keep pipeline moving even if debate fails.
 
-        if state.debate_result and state.debate_result.final_verdict == "REJECT":
-            for t in state.tid_statuses:
-                t.status = "REJECTED"
+        # Handle debate panel verdict with revision loop
+        if state.debate_result:
+            if state.debate_result.final_verdict == "APPROVE":
+                state.run_status = "APPROVED"
+                logger.info(
+                    "Pipeline completed successfully | run_id={} | verdict=APPROVED",
+                    state.run_id
+                )
 
+            elif state.debate_result.final_verdict == "REJECT":
+                state.run_status = "REJECTED"
+                state.last_error = "Debate Panel rejected the drafts"
+                for t in state.tid_statuses:
+                    t.status = "REJECTED"
+                logger.warning(
+                    "Pipeline rejected by debate panel | run_id={}",
+                    state.run_id
+                )
+
+            elif state.debate_result.final_verdict == "REVISE":
+                # NEW: Automated revision loop
+                debate_revision_round = 0
+                max_rounds = settings.max_debate_revision_rounds
+
+                logger.info(
+                    "Debate Panel requested revisions | run_id={} | max_rounds={}",
+                    state.run_id, max_rounds
+                )
+
+                while (
+                    state.debate_result.final_verdict == "REVISE"
+                    and debate_revision_round < max_rounds
+                ):
+                    debate_revision_round += 1
+                    logger.info(
+                        "Starting debate revision round | run_id={} | round={}/{}",
+                        state.run_id, debate_revision_round, max_rounds
+                    )
+
+                    # Extract actionable feedback from specialist reviews
+                    revision_feedback = self.debate_panel.extract_revision_feedback(state)
+
+                    # Store feedback in metadata for Maverick to use
+                    if "debate_revision_feedback" not in state.metadata:
+                        state.metadata["debate_revision_feedback"] = []
+                    state.metadata["debate_revision_feedback"].append({
+                        "round": debate_revision_round,
+                        "feedback": revision_feedback
+                    })
+
+                    # Aggregate feedback for Maverick (most recent round)
+                    state.metadata["conference_review_feedback"] = revision_feedback
+
+                    # Re-run Maverick with feedback (single targeted revision)
+                    logger.info(
+                        "Re-running Maverick with debate feedback | run_id={} | round={}",
+                        state.run_id, debate_revision_round
+                    )
+                    try:
+                        state = self.maverick.run(state, n_drafts=n_drafts)
+                    except Exception as exc:
+                        logger.warning(
+                            "Maverick failed during debate revision | run_id={} | round={} | error={}",
+                            state.run_id, debate_revision_round, exc
+                        )
+                        state.run_status = "REJECTED"
+                        state.last_error = f"Maverick failed during debate revision: {exc}"
+                        break
+
+                    if not state.drafts:
+                        logger.warning(
+                            "Maverick produced no drafts after revision | run_id={} | round={}",
+                            state.run_id, debate_revision_round
+                        )
+                        state.run_status = "REJECTED"
+                        state.last_error = "Maverick failed to produce drafts after debate revision"
+                        break
+
+                    # Re-run Professor (fast-fail gate)
+                    try:
+                        state = self.professor.run(state)
+                    except Exception as exc:
+                        logger.warning(
+                            "Professor failed during debate revision | run_id={} | round={} | error={}",
+                            state.run_id, debate_revision_round, exc
+                        )
+                        state.run_status = "REJECTED"
+                        state.last_error = f"Professor failed during debate revision: {exc}"
+                        break
+
+                    if not state.drafts:  # Professor rejected all
+                        logger.warning(
+                            "Professor rejected all revised drafts | run_id={} | round={}",
+                            state.run_id, debate_revision_round
+                        )
+                        state.run_status = "REJECTED"
+                        state.last_error = "All revised drafts rejected by professor"
+                        break
+
+                    # Re-run Patent Shield
+                    try:
+                        state = self.patent_shield.run(state)
+                    except Exception as exc:
+                        logger.warning(
+                            "Patent Shield failed during debate revision | run_id={} | round={} | error={}",
+                            state.run_id, debate_revision_round, exc
+                        )
+                        # Continue - Patent Shield failure is not fatal
+
+                    # Re-run Reality Checker
+                    logger.info(
+                        "Re-running Reality Checker | run_id={} | round={}",
+                        state.run_id, debate_revision_round
+                    )
+                    try:
+                        state = self.reality_checker.run(state)
+                    except Exception as exc:
+                        logger.warning(
+                            "Reality Checker failed during debate revision | run_id={} | round={} | error={}",
+                            state.run_id, debate_revision_round, exc
+                        )
+                        state.run_status = "REJECTED"
+                        state.last_error = f"Reality Checker failed during debate revision: {exc}"
+                        break
+
+                    if state.run_status == "REJECTED":
+                        logger.warning(
+                            "Reality Checker rejected revised drafts | run_id={} | round={}",
+                            state.run_id, debate_revision_round
+                        )
+                        break
+
+                    # Re-run Debate Panel
+                    logger.info(
+                        "Re-running Debate Panel | run_id={} | round={}",
+                        state.run_id, debate_revision_round
+                    )
+                    try:
+                        state = self.debate_panel.run(state)
+                    except Exception as exc:
+                        logger.warning(
+                            "Debate Panel failed during revision | run_id={} | round={} | error={}",
+                            state.run_id, debate_revision_round, exc
+                        )
+                        state.run_status = "REJECTED"
+                        state.last_error = f"Debate Panel failed during revision: {exc}"
+                        break
+
+                    # Check new verdict
+                    if state.debate_result.final_verdict == "APPROVE":
+                        state.run_status = "APPROVED"
+                        logger.info(
+                            "Drafts approved after revision | run_id={} | round={}",
+                            state.run_id, debate_revision_round
+                        )
+                        break
+                    elif state.debate_result.final_verdict == "REJECT":
+                        state.run_status = "REJECTED"
+                        state.last_error = "Debate Panel rejected revised drafts"
+                        for t in state.tid_statuses:
+                            t.status = "REJECTED"
+                        logger.warning(
+                            "Debate Panel rejected after revision | run_id={} | round={}",
+                            state.run_id, debate_revision_round
+                        )
+                        break
+                    # else: continue loop (still REVISE)
+
+                # After max rounds, if still REVISE
+                if state.debate_result.final_verdict == "REVISE" and debate_revision_round >= max_rounds:
+                    state.run_status = "REJECTED"
+                    state.last_error = f"Failed to satisfy debate panel after {max_rounds} revision rounds"
+                    for t in state.tid_statuses:
+                        t.status = "REJECTED"
+                    logger.warning(
+                        "Debate revision exhausted | run_id={} | rounds={}",
+                        state.run_id, max_rounds
+                    )
+
+            else:
+                # Fallback for unexpected verdict
+                state.run_status = "RETRY_PENDING"
+
+        # Handle stage failures
         if state.failed_stages:
             if settings.reject_on_stage_failure:
                 state.run_status = "REJECTED"
@@ -196,16 +376,6 @@ class DeepThoughtPipeline:
                         t.last_error = state.last_error
             else:
                 state.run_status = "RETRY_PENDING"
-        elif state.debate_result and state.debate_result.final_verdict == "APPROVE":
-            state.run_status = "APPROVED"
-        elif state.debate_result and state.debate_result.final_verdict == "REJECT":
-            state.run_status = "REJECTED"
-            if not state.last_error:
-                state.last_error = state.debate_result.synthesis
-        else:
-            state.run_status = "RETRY_PENDING"
-            if state.debate_result and not state.last_error:
-                state.last_error = state.debate_result.synthesis
 
         if self.human_review:
             state = self.human_review.apply(state)
