@@ -14,6 +14,7 @@ from loguru import logger
 
 from configs.settings import settings
 
+from agents.json_parser import robust_json_parse
 from agents.llm_client import LLMClient
 from agents.state import DraftIdea, PipelineState
 
@@ -85,10 +86,10 @@ Constraints:
 - Avoid generic AI buzzwords.
 - Include specific kernel subsystems, data structures, or locking implications where appropriate.
 - Each draft must include at least 3 patent claims.
-- HARD CONSTRAINT: Evidence grounding is mandatory.
-- Do NOT invent Linux kernel functions, structs, or x86 instructions.
-- In Implementation Plan, explicitly cite concrete file paths and symbols from Void context.
-- If the idea cannot be grounded in provided context, declare it unfeasible in feasibility_thesis and validation_plan.
+- PREFERENCE: Ground proposals in provided void context when possible.
+- You MAY cite well-known kernel subsystems (e.g., sched, mm, bpf, fs) even if not literally in void context.
+- If void concepts are too divergent to bridge credibly, focus your invention on ONE concept (either A or B) that has stronger technical merit.
+- Do NOT invent fictional functions, but referencing standard kernel APIs (kmalloc, schedule, etc.) is acceptable.
 - In Architecture Overview, include a simple ASCII control-flow diagram.
 
 CRITICAL ARCHITECTURE RULES (violation = immediate rejection):
@@ -103,6 +104,11 @@ CRITICAL ARCHITECTURE RULES (violation = immediate rejection):
 5. Stay within the natural boundaries of the seed subsystem: if the void context is from scheduler code,
    do not jump into unrelated domains like Wi-Fi MAC layer or PCIe ASPM without a credible causal bridge.
 
+FALLBACK RULE:
+If you cannot credibly bridge both Concept A and Concept B, generate drafts focusing on Concept A OR Concept B only.
+Returning zero drafts is UNACCEPTABLE. You MUST always generate exactly {n_drafts} drafts.
+Even if a concept seems peripheral, find the technical innovation angle within Linux kernel context.
+
 Void context:
 {compact_context}
 
@@ -116,8 +122,9 @@ Conference review feedback (if available):
             user_prompt=user_prompt,
             temperature=0.85,
         )
+        state.metadata["_maverick_raw_output"] = raw
         try:
-            payload = self._parse_json(raw)
+            payload = self._parse_json(raw, with_llm_repair=True)
         except ValueError as exc:
             preview = self._build_output_preview(raw)
             state.metadata["maverick_generation"] = {
@@ -126,6 +133,7 @@ Conference review feedback (if available):
                 "status": "PARSE_ERROR",
                 "reason": str(exc),
                 "raw_preview": preview,
+                "raw_output_length": len(raw),
             }
             logger.error(
                 "Maverick parse failed | run_id={} | preview={}",
@@ -191,12 +199,14 @@ Conference review feedback (if available):
     @staticmethod
     def _build_generation_summary(state: PipelineState, n_drafts: int, drafts: List[DraftIdea]) -> Dict[str, Any]:
         if not drafts:
+            raw_output = state.metadata.get("_maverick_raw_output", "")
             return {
                 "requested_drafts": n_drafts,
                 "produced_drafts": 0,
                 "status": "EMPTY",
                 "reason": "Model returned zero valid drafts",
                 "drafts": [],
+                "raw_output_length": len(raw_output),
             }
 
         return {
@@ -235,108 +245,36 @@ Conference review feedback (if available):
             compact = compact[:max_chars]
         return compact
 
-    def _parse_json(self, text: str) -> Dict[str, Any]:
-        cleaned = self._normalize_output(text)
-        decoder = json.JSONDecoder()
+    def _parse_json(self, text: str, with_llm_repair: bool = False) -> Dict[str, Any]:
+        """Parse JSON from Maverick output with 3-pass repair strategy."""
+        llm_repair_callback = None
+        if with_llm_repair and self.llm is not None:
 
-        # Pass 1: standard parse across all candidate substrings
-        for candidate in self._iter_json_candidates(cleaned):
-            snippet = candidate.lstrip()
-            if not snippet:
-                continue
-            try:
-                parsed = json.loads(snippet)
-            except json.JSONDecodeError:
-                try:
-                    parsed, _ = decoder.raw_decode(snippet)
-                except json.JSONDecodeError:
-                    continue
-            payload = self._coerce_payload(parsed)
-            if payload is not None:
-                return payload
-
-        # Pass 2: json-repair handles trailing commas, missing brackets, truncated output
-        try:
-            from json_repair import repair_json
-            repaired = repair_json(cleaned, return_objects=True)
-            payload = self._coerce_payload(repaired)
-            if payload is not None:
-                logger.warning("Maverick JSON recovered via json-repair | run preview truncated")
-                return payload
-        except Exception:
-            pass
-
-        # Pass 3: ask the LLM to fix its own output (one extra call, last resort)
-        if self.llm is not None:
-            try:
+            def repair_callback(malformed_json: str) -> str:
                 fix_prompt = (
                     "The following text is malformed JSON. "
-                    "Return ONLY the corrected JSON with no explanation:\n\n"
-                    + cleaned[:6000]
+                    "Return ONLY the corrected JSON with no explanation:\n\n" + malformed_json
                 )
-                fixed_raw = self.llm.chat(
+                return self.llm.chat(
                     model=self.model,
                     system_prompt="You are a JSON repair tool. Output only valid JSON.",
                     user_prompt=fix_prompt,
                     temperature=0.0,
                 )
-                fixed_cleaned = self._normalize_output(fixed_raw)
-                for candidate in self._iter_json_candidates(fixed_cleaned):
-                    snippet = candidate.lstrip()
-                    if not snippet:
-                        continue
-                    try:
-                        parsed = json.loads(snippet)
-                    except json.JSONDecodeError:
-                        continue
-                    payload = self._coerce_payload(parsed)
-                    if payload is not None:
-                        logger.warning("Maverick JSON recovered via self-repair LLM call")
-                        return payload
-            except Exception as repair_exc:
-                logger.warning("Maverick self-repair LLM call failed | error={}", repair_exc)
 
-        raise ValueError("Maverick output is not valid JSON")
+            llm_repair_callback = repair_callback
 
-    @staticmethod
-    def _coerce_payload(parsed: Any) -> Dict[str, Any] | None:
-        if isinstance(parsed, dict):
-            return parsed
-        if isinstance(parsed, list):
-            for item in parsed:
-                if isinstance(item, dict) and "drafts" in item:
-                    return item
-        return None
-
-    @staticmethod
-    def _normalize_output(text: str) -> str:
-        # Remove common ANSI escape sequences from terminal-rendered CLI output.
-        return re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", text or "").strip()
-
-    def _iter_json_candidates(self, text: str) -> List[str]:
-        candidates: List[str] = [text]
-
-        for fenced in re.finditer(r"```(?:json)?\s*([\s\S]*?)\s*```", text, flags=re.IGNORECASE):
-            candidates.append(fenced.group(1))
-
-        for token in ("{", "["):
-            idx = text.find(token)
-            while idx != -1:
-                candidates.append(text[idx:])
-                idx = text.find(token, idx + 1)
-
-        seen = set()
-        deduped: List[str] = []
-        for item in candidates:
-            key = item.strip()
-            if key and key not in seen:
-                seen.add(key)
-                deduped.append(item)
-        return deduped
+        return robust_json_parse(
+            text,
+            llm_repair_callback=llm_repair_callback,
+            agent_name="Maverick",
+        )
 
     @staticmethod
     def _build_output_preview(text: str, limit: int = 280) -> str:
-        compact = " ".join(MaverickAgent._normalize_output(text).split())
+        # Remove ANSI escape sequences and collapse whitespace
+        cleaned = re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", text or "").strip()
+        compact = " ".join(cleaned.split())
         if len(compact) <= limit:
             return compact
         return compact[: limit - 3] + "..."
