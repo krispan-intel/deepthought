@@ -183,6 +183,56 @@ Return strict JSON:
         state.selected_draft_index = selected
         return state
 
+    def extract_revision_feedback(self, state: PipelineState) -> Dict[str, Any]:
+        """
+        Extract actionable revision feedback from debate panel specialist reviews.
+
+        Returns structured feedback that Maverick can use to improve drafts.
+        """
+        if not state.debate_result:
+            return {}
+
+        committee_reports = state.metadata.get("committee_reports", {})
+        if not committee_reports:
+            return {}
+
+        feedback = {
+            "final_verdict": state.debate_result.final_verdict,
+            "chairman_synthesis": state.debate_result.synthesis,
+            "confidence": state.debate_result.confidence,
+            "reviewer_feedback": []
+        }
+
+        # Extract key concerns from each specialist
+        for reviewer_name, review in committee_reports.items():
+            status = review.get("status", "REVISE")
+            if status in ["REVISE", "REJECT"]:
+                issues = review.get("issues", [])
+                fatal_flaw = review.get("fatal_flaw", "")
+
+                # Truncate long comments
+                key_concerns = "; ".join(issues[:3]) if issues else ""
+                if len(key_concerns) > 500:
+                    key_concerns = key_concerns[:500] + "..."
+
+                # Extract actionable suggestions if present
+                actionable = ""
+                for issue in issues:
+                    if "suggest" in issue.lower() or "should" in issue.lower() or "must" in issue.lower():
+                        actionable = issue[:300]
+                        break
+
+                feedback["reviewer_feedback"].append({
+                    "role": reviewer_name,
+                    "status": status,
+                    "score": review.get("score", 2),
+                    "fatal_flaw": fatal_flaw[:200] if fatal_flaw else "",
+                    "key_concerns": key_concerns,
+                    "actionable_suggestions": actionable
+                })
+
+        return feedback
+
     def _specialist_review(self, role: str, model: str, system_prompt: str, draft_blob: str) -> Dict[str, Any]:
         user_prompt = f"""
 Role: {role}
