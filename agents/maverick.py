@@ -93,16 +93,61 @@ Constraints:
 - In Architecture Overview, include a simple ASCII control-flow diagram.
 
 CRITICAL ARCHITECTURE RULES (violation = immediate rejection):
-1. Do NOT mix async operations (like eBPF maps, deferred work, or RCU callbacks) into strictly synchronous
-   or atomic kernel paths (like context switches, hardware interrupt handlers, or rq/runqueue locking).
-2. Do NOT use debug/reporting interfaces (procfs, debugfs, seq_file, arch_show_interrupts, print_bpf_insn)
-   as primary control plane routing or real-time decision points.
-3. Respect the boot-time vs runtime contract: CPUID, MSRs, and hardware topology are typically fixed at boot
-   or during initialization. Do not propose dynamic per-request renegotiation of immutable hardware state.
-4. Do NOT propose cross-CPU wakeup suppression or reschedule-IPI filtering without a grounded synchronization
-   model that preserves scheduler correctness under concurrent wakeups and CPU migration.
-5. Stay within the natural boundaries of the seed subsystem: if the void context is from scheduler code,
-   do not jump into unrelated domains like Wi-Fi MAC layer or PCIe ASPM without a credible causal bridge.
+
+1. ATOMIC CONTEXT RULE
+   Do NOT mix async operations (eBPF maps, deferred work, RCU callbacks, copy_from_user,
+   kmalloc(GFP_KERNEL)) into strictly synchronous or atomic kernel paths (spinlock regions,
+   context switches, hardware interrupt handlers, NMI handlers, rq/runqueue locking).
+
+   ❌ FORBIDDEN EXAMPLE (from real rejection):
+   "Scheduler context-switch path → IRQ affinity routing changes"
+   (Places interrupt-routing on strictly synchronous path without explicit deferral)
+
+2. DEBUG-INTERFACE-AS-CONTROL-PLANE RULE
+   Do NOT use debug/reporting interfaces (procfs, debugfs, seq_file, arch_show_interrupts,
+   print_bpf_insn, tracepoints) as primary control plane routing or real-time decision points.
+   These are inspection tools, not hot-path logic.
+
+3. BOOT-TIME VS RUNTIME CONTRACT RULE
+   Respect the boot-time vs runtime contract: CPUID, MSRs, and hardware topology are
+   typically fixed at boot or during initialization. Do NOT propose dynamic per-request
+   renegotiation of immutable hardware state (CPUID feature flags do not change after boot).
+
+4. CROSS-CPU SYNCHRONIZATION RULE
+   Do NOT propose cross-CPU wakeup suppression or reschedule-IPI filtering without a
+   grounded synchronization model that preserves scheduler correctness under concurrent
+   wakeups and CPU migration (IPI suppression requires proving memory-ordering correctness).
+
+5. SUBSYSTEM BOUNDARY RULE
+   Stay within the natural boundaries of the seed subsystem. If void context is from
+   scheduler code, do NOT jump into unrelated domains (Wi-Fi MAC, PCIe ASPM, USB stack)
+   without a credible causal bridge. Cross-domain proposals must define explicit abstraction layers.
+
+   ❌ FORBIDDEN EXAMPLES (from real rejections):
+   a) "TDX host lifecycle state ↔ MT6357 backlight MMIO control"
+      (Virtualization + off-chip backlight = no causal bridge)
+   b) "VMX/EPT capability ↔ vm86 interrupt-shadow state"
+      (Modern virtualization + legacy vm86 = unrelated subsystems)
+   c) "AMX xstate ↔ VMX MMIO buffer-clear flags"
+      (Instruction-set extension + virtualization buffer = no causal connection)
+   d) "GPIO expander pins → x86 CR4.PVI + LAPIC delivery"
+      (Off-chip GPIO + on-chip CPU semantics = architectural mismatch)
+
+6. CAUSAL BRIDGE REQUIREMENT
+   If bridging two divergent subsystems (A and B), you MUST define:
+   - The NEW ABSTRACTION LAYER that translates between them
+   - The STATE MACHINE that coordinates their interaction
+   - The SYNCHRONIZATION MODEL that ensures correctness
+
+   Simply stating "use A to control B" without the bridge architecture is a critical violation.
+   The bridge IS the invention. Without it, you're just forcing unrelated systems together.
+
+7. NOVELTY RULE
+   Do NOT claim standard patterns as novel inventions:
+   - Optimistic concurrency (snapshot → compute → revalidate) = well-known since seqlock (2002)
+   - Double-checked locking, RCU read-side deferral, per-CPU counters = established techniques
+
+   Your invention must be a NEW APPLICATION or HARDWARE BRIDGE, not rediscovery.
 
 FALLBACK RULE:
 If you cannot credibly bridge both Concept A and Concept B, generate drafts focusing on Concept A OR Concept B only.
