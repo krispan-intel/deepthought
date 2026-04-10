@@ -13,6 +13,7 @@ from typing import Any, Dict, List
 from loguru import logger
 
 from configs.settings import settings
+from agents.json_parser import robust_json_parse
 from agents.llm_client import LLMClient
 from agents.state import CritiqueResult, PipelineState
 
@@ -293,31 +294,27 @@ Reviewer required revisions:
         return state
 
     def _parse_json(self, text: str) -> Dict:
+        """Parse JSON from Reality Checker output with fallback to REVISE verdict."""
         try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            pass
-
-        fenced = re.search(r"```(?:json)?\s*(\{[\s\S]*\})\s*```", text)
-        if fenced:
-            return json.loads(fenced.group(1))
-
-        braces = re.search(r"(\{[\s\S]*\})", text)
-        if braces:
-            return json.loads(braces.group(1))
-
-        return {
-            "status": "REVISE",
-            "fatal_flaw": "",
-            "scorecard": {
-                "innovation": 2,
-                "feasibility": 2,
-                "prior_art_risk": 3,
-            },
-            "hallucinations_found": ["Could not parse critique JSON"],
-            "actionable_feedback": "Return strict JSON output and fix factual kernel and x86 references",
-            "approved": False,
-        }
+            return robust_json_parse(
+                text,
+                llm_repair_callback=None,
+                agent_name="RealityChecker",
+            )
+        except ValueError:
+            # Fallback to REVISE verdict if parse fails
+            return {
+                "status": "REVISE",
+                "fatal_flaw": "",
+                "scorecard": {
+                    "innovation": 2,
+                    "feasibility": 2,
+                    "prior_art_risk": 3,
+                },
+                "hallucinations_found": ["Could not parse critique JSON"],
+                "actionable_feedback": "Return strict JSON output and fix factual kernel and x86 references",
+                "approved": False,
+            }
 
     @staticmethod
     def _clamp_star(value) -> int:

@@ -21,6 +21,7 @@ from typing import Any, Dict, List
 from loguru import logger
 
 from configs.settings import settings
+from agents.json_parser import robust_json_parse
 from agents.llm_client import LLMClient
 from agents.state import DraftIdea, PipelineState
 
@@ -215,29 +216,9 @@ Output now:
 
     @staticmethod
     def _parse_json(text: str) -> Dict[str, Any]:
-        """Parse JSON from LLM response."""
-        text = text.strip()
-
-        # Try direct parse
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            pass
-
-        # Try fenced code block
-        fenced = re.search(r"```(?:json)?\s*(\{[\s\S]*?\})\s*```", text, re.DOTALL)
-        if fenced:
-            try:
-                return json.loads(fenced.group(1))
-            except json.JSONDecodeError:
-                pass
-
-        # Try extracting first {...}
-        braces = re.search(r"(\{[\s\S]*\})", text, re.DOTALL)
-        if braces:
-            try:
-                return json.loads(braces.group(1))
-            except json.JSONDecodeError:
-                pass
-
-        raise ValueError(f"Could not parse JSON from professor output: {text[:200]}")
+        """Parse JSON from Professor output."""
+        return robust_json_parse(
+            text,
+            llm_repair_callback=None,
+            agent_name="Professor",
+        )

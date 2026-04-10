@@ -18,6 +18,7 @@ from loguru import logger
 
 from configs.settings import settings
 
+from agents.json_parser import robust_json_parse
 from agents.llm_client import LLMClient
 from agents.state import DebateResult, PipelineState
 from vectordb.store import DeepThoughtVectorStore
@@ -379,22 +380,18 @@ Return strict JSON:
         return "\n".join(lines)
 
     def _parse_json(self, text: str) -> Dict:
+        """Parse JSON from Debate Panel output with fallback to default verdict."""
         try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            pass
-
-        fenced = re.search(r"```(?:json)?\s*(\{[\s\S]*\})\s*```", text)
-        if fenced:
-            return json.loads(fenced.group(1))
-
-        braces = re.search(r"(\{[\s\S]*\})", text)
-        if braces:
-            return json.loads(braces.group(1))
-
-        return {
-            "final_verdict": "REVISE",
-            "winning_title": "",
-            "synthesis": text[:1000],
-            "confidence": 0.4,
-        }
+            return robust_json_parse(
+                text,
+                llm_repair_callback=None,
+                agent_name="DebatePanel",
+            )
+        except ValueError:
+            # Fallback to REVISE verdict if parse fails
+            return {
+                "final_verdict": "REVISE",
+                "winning_title": "",
+                "synthesis": text[:1000],
+                "confidence": 0.4,
+            }
