@@ -252,13 +252,26 @@ Return strict JSON:
   "yellow_cards": 0,
   "fact_check_queries": ["kernel symbol or file path to verify"]
 }}
+
+CRITICAL JSON SCHEMA REQUIREMENTS:
+If you assign status 'REVISE' or 'REJECT', you ABSOLUTELY MUST provide at least 3 specific, actionable technical critiques in the "issues" array.
+DO NOT return an empty array []. An empty issues array will cause the revision feedback loop to fail.
+
+Example of VALID issues array:
+"issues": [
+  "The proposed use of RCU read lock is invalid here because function X can sleep",
+  "You must define a concrete data structure for the abstraction layer between eBPF and CXL",
+  "The synchronization model violates scheduler correctness under concurrent wakeups"
+]
+
+If you assign status 'APPROVE', you may provide an empty issues array or constructive suggestions for future improvement.
 """.strip()
 
         raw = self.llm.chat(
             model=model,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
-            temperature=0.2,
+            temperature=0.5,
         )
         data = self._parse_json(raw)
         status = str(data.get("status", "REVISE")).upper().strip()
