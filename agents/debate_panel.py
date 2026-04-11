@@ -44,6 +44,10 @@ class DebatePanelAgent:
             )
             return state
 
+        # Check if Claude Agent proxy mode is enabled
+        if self._should_use_claude_proxy():
+            return self._delegate_to_claude_agent(state)
+
         draft_blob = self._format_drafts(state)
 
         _specialist_defs = [
@@ -458,3 +462,74 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
                 "synthesis": text[:1000],
                 "confidence": 0.4,
             }
+
+    def _should_use_claude_proxy(self) -> bool:
+        """Check if Claude Agent proxy mode should be used."""
+        # Enable proxy mode if any debate model starts with "claude-"
+        models = [
+            settings.debate_code_expert_model,
+            settings.debate_deep_thinker_model,
+            settings.debate_judge_model,
+        ]
+        return any(m.startswith("claude-") for m in models)
+
+    def _delegate_to_claude_agent(self, state: PipelineState) -> PipelineState:
+        """Save drafts for Claude Agent review and mark as pending."""
+        import json
+        from pathlib import Path
+        from datetime import datetime
+
+        pending_dir = Path("data/pending_reviews")
+        pending_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create review request
+        request = {
+            "run_id": state.run_id,
+            "timestamp": datetime.now().isoformat(),
+            "domain": state.domain,
+            "target": state.target,
+            "drafts": [
+                {
+                    "index": i,
+                    "title": d.title,
+                    "one_liner": d.one_liner,
+                    "novelty_thesis": d.novelty_thesis,
+                    "feasibility_thesis": d.feasibility_thesis,
+                    "market_thesis": d.market_thesis,
+                    "why_now": d.why_now,
+                    "problem_statement": d.problem_statement,
+                    "prior_art_gap": d.prior_art_gap,
+                    "proposed_invention": d.proposed_invention,
+                    "architecture_overview": d.architecture_overview,
+                    "implementation_plan": d.implementation_plan,
+                    "validation_plan": d.validation_plan,
+                    "draft_claims": d.draft_claims,
+                    "risks_and_mitigations": d.risks_and_mitigations,
+                    "references": d.references,
+                }
+                for i, d in enumerate(state.drafts)
+            ],
+        }
+
+        # Save to pending directory
+        review_file = pending_dir / f"{state.run_id}.json"
+        with open(review_file, "w", encoding="utf-8") as f:
+            json.dump(request, f, indent=2, ensure_ascii=False)
+
+        logger.info(
+            "Debate Panel delegated to Claude Agent | run_id={} | file={}",
+            state.run_id,
+            review_file,
+        )
+
+        # Mark as pending Claude review
+        state.metadata["claude_agent_review_pending"] = True
+        state.metadata["claude_agent_review_file"] = str(review_file)
+        state.debate_result = DebateResult(
+            final_verdict="PENDING_CLAUDE_REVIEW",
+            synthesis="Waiting for Claude Agent manual review",
+            winning_title="",
+            confidence=0.0,
+        )
+
+        return state
