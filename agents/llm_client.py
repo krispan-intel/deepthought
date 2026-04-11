@@ -46,6 +46,32 @@ class LLMClient:
         )
 
     def chat(self, model: str, system_prompt: str, user_prompt: str, temperature: float = 0.7) -> str:
+        # Prefer Anthropic API for Claude models if key exists
+        if model.startswith("claude-") and self._anthropic_enabled and settings.anthropic_api_key:
+            try:
+                import anthropic
+
+                client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+                resp = client.messages.create(
+                    model=model,
+                    max_tokens=4096,
+                    temperature=temperature,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_prompt}],
+                )
+                text_parts = []
+                for block in resp.content:
+                    value = getattr(block, "text", None)
+                    if value:
+                        text_parts.append(value)
+                logger.info(f"Anthropic API call succeeded | model={model}")
+                return "\n".join(text_parts).strip()
+            except Exception as exc:
+                if self._is_anthropic_forbidden_error(str(exc)):
+                    self._anthropic_enabled = False
+                logger.warning(f"Anthropic call failed for {model}, fallback to {self.backend}: {exc}")
+                # Fall through to backend below
+
         if self.backend == "copilot_cli":
             return self._chat_with_copilot_cli(
                 model=model,

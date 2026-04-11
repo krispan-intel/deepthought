@@ -70,10 +70,10 @@ class Settings(BaseSettings):
         default="DCAI_GAUDI2_DeepSeek-R1-671B"
     )
     debate_deep_thinker_model: str = Field(
-        default="DCAI_GAUDI2_DeepSeek-R1-671B"
+        default="claude-sonnet-4-6"
     )
     debate_code_expert_model: str = Field(
-        default="qwen3-coder-480b-a35b-instruct-fp8"
+        default="claude-sonnet-4-6"
     )
     debate_judge_model: str = Field(
         default="DCAI_GAUDI2_DeepSeek-R1-671B"
