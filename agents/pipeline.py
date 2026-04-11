@@ -200,6 +200,16 @@ class DeepThoughtPipeline:
                     state.run_id
                 )
 
+            elif state.debate_result.final_verdict == "PENDING_CLAUDE_REVIEW":
+                state.run_status = "PENDING_CLAUDE_REVIEW"
+                state.last_error = ""
+                logger.info(
+                    "Pipeline waiting for Claude Agent review | run_id={} | file={}",
+                    state.run_id,
+                    state.metadata.get("claude_agent_review_file", "unknown")
+                )
+                # Pipeline will complete here, review needs to be done externally
+
             elif state.debate_result.final_verdict == "REVISE":
                 # NEW: Automated revision loop
                 debate_revision_round = 0
