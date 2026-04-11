@@ -67,7 +67,7 @@ class Settings(BaseSettings):
 
     # ── Models ───────────────────────────────────────────────────
     maverick_model: str = Field(
-        default="DCAI_GAUDI2_DeepSeek-R1-671B"
+        default="claude-opus-4-6"
     )
     debate_deep_thinker_model: str = Field(
         default="claude-sonnet-4-6"
@@ -76,10 +76,10 @@ class Settings(BaseSettings):
         default="claude-sonnet-4-6"
     )
     debate_judge_model: str = Field(
-        default="DCAI_GAUDI2_DeepSeek-R1-671B"
+        default="claude-sonnet-4-6"
     )
     tid_formatter_model: str = Field(
-        default="DCAI_GAUDI2_DeepSeek-R1-671B"
+        default="claude-sonnet-4-6"
     )
     embedding_model: str = Field(
         default="IKT-Qwen3-Embedding-8B"
@@ -88,7 +88,7 @@ class Settings(BaseSettings):
     # ── Claude (Reality Checker) ──────────────────────────────────
     anthropic_api_key: str = Field(default="")
     reality_checker_model: str = Field(
-        default="DCAI_GAUDI2_DeepSeek-R1-671B"
+        default="claude-sonnet-4-6"
     )
 
     # ── Vector DB ────────────────────────────────────────────────
@@ -158,7 +158,7 @@ class Settings(BaseSettings):
         description="Enable Professor pre-flight review before Reality Checker"
     )
     professor_model: str = Field(
-        default="qwen3-coder-480b-a35b-instruct-fp8",
+        default="claude-sonnet-4-6",
         description="Model for Professor (code expert for architecture rules)"
     )
 
