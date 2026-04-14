@@ -75,6 +75,9 @@ class ClaudeAgentAutoWorkerV2:
             pending_file.unlink()
 
             logger.info(f"Maverick task completed: {run_id} | drafts={len(result['drafts'])}")
+
+            # Chain: auto-create Professor pending task
+            self._chain_to_professor(run_id, request, result)
             return True
 
         except Exception as exc:
@@ -110,6 +113,12 @@ class ClaudeAgentAutoWorkerV2:
             passed = sum(1 for v in result.get("verdicts", []) if v.get("verdict") == "PASS")
             total = len(result.get("verdicts", []))
             logger.info(f"Professor task completed: {run_id} | passed={passed}/{total}")
+
+            # Chain: auto-create Reality Checker pending task (if any drafts passed)
+            if passed > 0:
+                self._chain_to_reality_checker(run_id, request, result)
+            else:
+                logger.info(f"Professor rejected all drafts: {run_id} | skipping RC")
             return True
 
         except Exception as exc:
@@ -169,7 +178,14 @@ class ClaudeAgentAutoWorkerV2:
 
             approved = sum(1 for c in result.get("critiques", []) if c.get("approved", False))
             total = len(result.get("critiques", []))
-            logger.info(f"Reality Checker task completed: {run_id} | approved={approved}/{total}")
+            rc_status = result.get("status", "UNKNOWN")
+            logger.info(f"Reality Checker task completed: {run_id} | status={rc_status} | approved={approved}/{total}")
+
+            # Chain: auto-create Debate Panel pending task (if not all REJECT)
+            if rc_status != "REJECT":
+                self._chain_to_debate_panel(run_id, request, result)
+            else:
+                logger.info(f"Reality Checker rejected all drafts: {run_id} | skipping Debate Panel")
             return True
 
         except Exception as exc:
@@ -377,6 +393,107 @@ Revise the draft to address the feedback.
             return json.loads(json_str)
 
         raise ValueError(f"Could not parse JSON response from {agent_name}")
+
+    # ── Stage Chaining (Async Forager) ─────────────────────────────
+
+    def _chain_to_professor(self, run_id: str, maverick_request: dict, maverick_result: dict):
+        """After Maverick completes, auto-create Professor pending task."""
+        drafts = maverick_result.get("drafts", [])
+        if not drafts:
+            logger.warning(f"Chain skip: no drafts from Maverick | {run_id}")
+            return
+
+        void_context = maverick_request.get("void_context", "")[:2000]
+        draft_summaries = []
+        for i, d in enumerate(drafts):
+            td = d.get("tid_detail", {})
+            draft_summaries.append(
+                f"Draft #{i}: {d.get('title', '')}\n"
+                f"  One-liner: {d.get('one_liner', '')}\n"
+                f"  Novelty: {d.get('novelty_thesis', '')}\n"
+                f"  Problem: {td.get('problem_statement', '')}\n"
+                f"  Invention: {td.get('proposed_invention', '')}\n"
+                f"  Claims: {td.get('draft_claims', '')}\n"
+            )
+
+        system_prompt = (
+            "You are a Senior Kernel Architect conducting pre-flight technical review.\n"
+            "Check for OBVIOUS blocking errors only: architecture rule violations and malformed JSON.\n"
+            "Be lenient: when in doubt, PASS. Let Reality Checker do deep analysis.\n"
+            "Output strict JSON only."
+        )
+        user_prompt = (
+            f"Void context:\n{void_context}\n\n"
+            f"Drafts to review:\n{''.join(draft_summaries)}\n\n"
+            "Output format (strict JSON):\n"
+            '{"verdicts": [{"draft_index": 0, "verdict": "PASS|REJECT", "quality_score": 7.5, '
+            '"blocking_issues": [{"category": "string", "severity": "critical", "description": "string"}]}], '
+            '"summary": "string"}\n\nOutput now:'
+        )
+
+        pending = {
+            "run_id": run_id,
+            "timestamp": datetime.now().isoformat(),
+            "domain": maverick_request.get("domain", ""),
+            "target": maverick_request.get("target", ""),
+            "drafts": drafts,
+            "system_prompt": system_prompt,
+            "user_prompt": user_prompt,
+            "model": "claude-sonnet-4-5",
+        }
+
+        pending_file = self.pending_professor / f"{run_id}.json"
+        pending_file.write_text(json.dumps(pending, indent=2, ensure_ascii=False))
+        logger.info(f"Chained Maverick → Professor: {run_id} | drafts={len(drafts)}")
+
+    def _chain_to_reality_checker(self, run_id: str, professor_request: dict, professor_result: dict):
+        """After Professor completes, auto-create Reality Checker pending task."""
+        # Filter to only passed drafts
+        verdicts = professor_result.get("verdicts", [])
+        passed_indices = {v.get("draft_index", i) for i, v in enumerate(verdicts) if v.get("verdict") == "PASS"}
+        all_drafts = professor_request.get("drafts", [])
+        passed_drafts = [d for i, d in enumerate(all_drafts) if i in passed_indices]
+
+        if not passed_drafts:
+            # If no verdicts with indices, pass all drafts through
+            passed_drafts = all_drafts
+
+        pending = {
+            "run_id": run_id,
+            "timestamp": datetime.now().isoformat(),
+            "domain": professor_request.get("domain", ""),
+            "target": professor_request.get("target", ""),
+            "mode": "critique",
+            "drafts": passed_drafts,
+            "critiques": [],
+            "revisions": 0,
+            "model": "claude-sonnet-4-5",
+        }
+
+        pending_file = self.pending_reality_checker / f"{run_id}.json"
+        pending_file.write_text(json.dumps(pending, indent=2, ensure_ascii=False))
+        logger.info(f"Chained Professor → RC: {run_id} | drafts={len(passed_drafts)}")
+
+    def _chain_to_debate_panel(self, run_id: str, rc_request: dict, rc_result: dict):
+        """After Reality Checker completes, auto-create Debate Panel pending task."""
+        drafts = rc_request.get("drafts", [])
+        if not drafts:
+            logger.warning(f"Chain skip: no drafts for Debate Panel | {run_id}")
+            return
+
+        pending = {
+            "run_id": run_id,
+            "timestamp": datetime.now().isoformat(),
+            "domain": rc_request.get("domain", ""),
+            "target": rc_request.get("target", ""),
+            "drafts": drafts,
+        }
+
+        pending_file = self.pending_reviews / f"{run_id}.json"
+        pending_file.write_text(json.dumps(pending, indent=2, ensure_ascii=False))
+        logger.info(f"Chained RC → Debate Panel: {run_id} | drafts={len(drafts)}")
+
+    # ── Prompt Building ──────────────────────────────────────────
 
     def _format_draft_blob(self, drafts: list) -> str:
         """
