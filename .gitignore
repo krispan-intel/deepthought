@@ -38,6 +38,10 @@ data/raw/
 data/processed/
 data/vectorstore/
 data/models/
+data/completed_*/
+data/pending_*/
+data/*.tar.gz
+.env.backup_*
 *.parquet
 *.arrow
 *.feather
