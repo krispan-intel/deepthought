@@ -48,6 +48,14 @@ class Settings(BaseSettings):
     copilot_prompt_max_chars: int = Field(
         default=12000
     )
+    copilot_model: str = Field(
+        default="gpt-5.4",
+        description="Default model for gh copilot CLI (gpt-5.4, gpt-5.2, gpt-4.1, etc.)"
+    )
+    copilot_effort: str = Field(
+        default="high",
+        description="Reasoning effort level for gh copilot CLI (low, medium, high, xhigh)"
+    )
     llm_fallback_models: str = Field(
         default="DCAI_GAUDI2_DeepSeek-R1-671B,qwen3-coder-480b-a35b-instruct-fp8,IT_DCAI_GAUDI2_Qwen3-32B"
     )
@@ -183,6 +191,10 @@ class Settings(BaseSettings):
     # qualifying pairs score > 0 (domain filter guarantees
     # relevance >= triad_domain_threshold).
     hybrid_score_bias: float = Field(default=0.10)
+    # Vacancy probe: if a known document has cosine similarity > this
+    # threshold to the SLERP midpoint of a candidate pair, the void
+    # is considered occupied (fake void) and filtered out.
+    vacancy_probe_threshold: float = Field(default=0.92)
 
     # ── Logging ──────────────────────────────────────────────────
     log_level: str = Field(default="INFO")

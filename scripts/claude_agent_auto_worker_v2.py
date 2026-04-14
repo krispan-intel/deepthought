@@ -1,0 +1,720 @@
+#!/usr/bin/env python3
+"""
+Claude Agent Auto Worker V2
+
+Batch processes pending tasks using real LLMClient (gh copilot CLI backend).
+This replaces the template-based approach with genuine LLM-powered generation.
+"""
+
+import json
+import sys
+from datetime import datetime
+from pathlib import Path
+from loguru import logger
+
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from agents.llm_client import LLMClient
+from agents.json_parser import robust_json_parse
+
+logger.add("logs/claude_agent_auto_worker.log", rotation="100 MB", retention="7 days")
+
+
+class ClaudeAgentAutoWorkerV2:
+    def __init__(self):
+        self.llm = LLMClient()
+
+        self.pending_maverick = Path("data/pending_maverick")
+        self.pending_professor = Path("data/pending_professor")
+        self.pending_reality_checker = Path("data/pending_reality_checker")
+        self.pending_reviews = Path("data/pending_reviews")
+
+        self.completed_maverick = Path("data/completed_maverick")
+        self.completed_professor = Path("data/completed_professor")
+        self.completed_reality_checker = Path("data/completed_reality_checker")
+        self.completed_reviews = Path("data/completed_reviews")
+
+        # Ensure directories exist
+        for d in [self.pending_maverick, self.pending_professor, self.pending_reality_checker, self.pending_reviews,
+                  self.completed_maverick, self.completed_professor, self.completed_reality_checker, self.completed_reviews]:
+            d.mkdir(parents=True, exist_ok=True)
+
+    def process_maverick_task(self, pending_file: Path):
+        """Generate 3 patent drafts using real LLM (gh copilot CLI)"""
+        logger.info(f"Processing Maverick task: {pending_file.name}")
+
+        request = json.loads(pending_file.read_text())
+        run_id = request["run_id"]
+        system_prompt = request["system_prompt"]
+        user_prompt = request["user_prompt"]
+        model = request["model"]
+
+        try:
+            # Call real LLM
+            response_text = self.llm.chat(
+                model=model,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                temperature=0.85
+            )
+
+            # Parse JSON response
+            result = self._parse_json_response(response_text, "Maverick")
+
+            if "drafts" not in result or len(result["drafts"]) == 0:
+                raise ValueError("No drafts generated")
+
+            # Save to completed
+            result["run_id"] = run_id
+            result["timestamp"] = datetime.now().isoformat()
+            completed_file = self.completed_maverick / f"{run_id}.json"
+            completed_file.write_text(json.dumps(result, indent=2, ensure_ascii=False))
+
+            # Clean up pending
+            pending_file.unlink()
+
+            logger.info(f"Maverick task completed: {run_id} | drafts={len(result['drafts'])}")
+            return True
+
+        except Exception as exc:
+            logger.error(f"Maverick task failed: {run_id} | error={exc}")
+            return False
+
+    def process_professor_task(self, pending_file: Path):
+        """Review drafts using real LLM"""
+        logger.info(f"Processing Professor task: {pending_file.name}")
+
+        request = json.loads(pending_file.read_text())
+        run_id = request["run_id"]
+        system_prompt = request["system_prompt"]
+        user_prompt = request["user_prompt"]
+        model = request.get("model", "claude-sonnet-4-5")
+
+        try:
+            response_text = self.llm.chat(
+                model=model,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                temperature=0.3
+            )
+
+            result = self._parse_json_response(response_text, "Professor")
+            result["run_id"] = run_id
+            result["timestamp"] = datetime.now().isoformat()
+
+            completed_file = self.completed_professor / f"{run_id}.json"
+            completed_file.write_text(json.dumps(result, indent=2, ensure_ascii=False))
+            pending_file.unlink()
+
+            passed = sum(1 for v in result.get("verdicts", []) if v.get("verdict") == "PASS")
+            total = len(result.get("verdicts", []))
+            logger.info(f"Professor task completed: {run_id} | passed={passed}/{total}")
+            return True
+
+        except Exception as exc:
+            logger.error(f"Professor task failed: {run_id} | error={exc}")
+            return False
+
+    def process_reality_checker_task(self, pending_file: Path):
+        """Reality check using real LLM"""
+        logger.info(f"Processing Reality Checker task: {pending_file.name}")
+
+        request = json.loads(pending_file.read_text())
+        run_id = request["run_id"]
+        mode = request.get("mode", "critique")
+        drafts = request.get("drafts", [])
+        critiques = request.get("critiques", [])
+        model = request.get("model", "claude-sonnet-4-5")
+
+        try:
+            if mode == "critique":
+                # Critique mode: evaluate each draft
+                result_critiques = []
+                for draft in drafts:
+                    system_prompt, user_prompt = self._build_critique_prompts(draft)
+                    response_text = self.llm.chat_reality_checker(
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        temperature=0.2
+                    )
+                    critique = self._parse_json_response(response_text, "RealityChecker")
+                    result_critiques.append(critique)
+
+                result = {"critiques": result_critiques}
+            else:
+                # Revise mode: generate revised drafts
+                revised_drafts = []
+                for i, draft in enumerate(drafts):
+                    critique = critiques[i] if i < len(critiques) else {}
+                    system_prompt, user_prompt = self._build_revise_prompts(draft, critique)
+                    response_text = self.llm.chat(
+                        model=model,
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        temperature=0.5
+                    )
+                    revised = self._parse_json_response(response_text, "RealityChecker")
+                    revised_drafts.append(revised)
+
+                result = {"revised_drafts": revised_drafts}
+
+            result = self._parse_json_response(response_text, "RealityChecker")
+            result["run_id"] = run_id
+            result["timestamp"] = datetime.now().isoformat()
+
+            completed_file = self.completed_reality_checker / f"{run_id}.json"
+            completed_file.write_text(json.dumps(result, indent=2, ensure_ascii=False))
+            pending_file.unlink()
+
+            approved = sum(1 for c in result.get("critiques", []) if c.get("approved", False))
+            total = len(result.get("critiques", []))
+            logger.info(f"Reality Checker task completed: {run_id} | approved={approved}/{total}")
+            return True
+
+        except Exception as exc:
+            logger.error(f"Reality Checker task failed: {run_id} | error={exc}")
+            return False
+
+    def process_debate_panel_task(self, pending_file: Path):
+        """
+        Debate panel review using 4 specialists + chairman synthesis.
+
+        This is a full implementation that replicates the logic from agents/debate_panel.py:
+        - 4 parallel specialist reviews (kernel_hardliner, prior_art_shark, intel_strategist, security_guardian)
+        - Chairman synthesis based on specialist reports
+        - Deterministic verdict rules
+        - Skip fact-checking (requires vector store integration)
+        """
+        logger.info(f"Processing Debate Panel task: {pending_file.name}")
+
+        request = json.loads(pending_file.read_text())
+        run_id = request["run_id"]
+        drafts = request.get("drafts", [])
+
+        if not drafts:
+            logger.error(f"Debate Panel task failed: {run_id} | error=No drafts provided")
+            return False
+
+        try:
+            # Format drafts into draft_blob string
+            draft_blob = self._format_draft_blob(drafts)
+
+            # 4 specialist definitions (from agents/debate_panel.py lines 53-81)
+            specialists = [
+                {
+                    "name": "kernel_hardliner",
+                    "role": "Kernel Hardliner",
+                    "system_prompt": (
+                        "You are The Kernel Hardliner. Focus on Linux kernel implementation correctness, "
+                        "locking and concurrency validity. Reject unsafe ideas."
+                    ),
+                },
+                {
+                    "name": "prior_art_shark",
+                    "role": "Prior-Art Shark",
+                    "system_prompt": "You are The Prior-Art Shark. Focus on novelty, non-obviousness, and overlap risk with known work.",
+                },
+                {
+                    "name": "intel_strategist",
+                    "role": "Intel Strategist",
+                    "system_prompt": "You are The Intel Strategist. Focus on x86 strategic value, Xeon competitiveness, and HW/SW co-design leverage.",
+                },
+                {
+                    "name": "security_guardian",
+                    "role": "Security Guardian",
+                    "system_prompt": "You are The Security and Stability Guardian. Focus on TAA/side-channel risk, crash risk, and compatibility guarantees.",
+                },
+            ]
+
+            # Run 4 specialist reviews (parallel simulation via sequential calls)
+            reports = {}
+            for spec in specialists:
+                try:
+                    review = self._specialist_review(
+                        role=spec["role"],
+                        system_prompt=spec["system_prompt"],
+                        draft_blob=draft_blob,
+                    )
+                    reports[spec["name"]] = review
+                except Exception as exc:
+                    logger.warning(f"Specialist {spec['name']} failed for {run_id}: {exc}")
+                    # Provide default review if specialist fails
+                    reports[spec["name"]] = {
+                        "preferred_title": "",
+                        "status": "REVISE",
+                        "fatal_flaw": "",
+                        "score": 2,
+                        "issues": ["Specialist review failed - automated fallback"],
+                        "yellow_cards": 0,
+                        "fact_check_queries": [],
+                    }
+
+            # Apply deterministic verdict rules
+            chairman_result = self._deterministic_verdict(reports)
+
+            # Build result
+            result = {
+                "run_id": run_id,
+                "timestamp": datetime.now().isoformat(),
+                "reviews": reports,
+                "chairman_result": chairman_result,
+            }
+
+            completed_file = self.completed_reviews / f"{run_id}.json"
+            completed_file.write_text(json.dumps(result, indent=2, ensure_ascii=False))
+            pending_file.unlink()
+
+            verdict = chairman_result.get("final_verdict", "UNKNOWN")
+            logger.info(f"Debate Panel task completed: {run_id} | verdict={verdict}")
+            return True
+
+        except Exception as exc:
+            logger.error(f"Debate Panel task failed: {run_id} | error={exc}")
+            return False
+
+    def _build_critique_prompts(self, draft: dict) -> tuple[str, str]:
+        """Build system and user prompts for reality checker critique mode"""
+        system_prompt = (
+            "You are a senior Intel patent reviewer and Linux kernel architect. "
+            "Your goal is to identify technically sound ideas worth patenting and help them improve. "
+            "Be rigorous but constructive: prefer REVISE over REJECT whenever the core idea is salvageable. "
+            "Reserve REJECT strictly for ideas that are physically impossible, rely on fictional kernel APIs, "
+            "or have an unfixable ABI breakage. "
+            "\n\nCRITICAL: Historical regression anti-patterns that MUST be rejected:\n"
+            "- Lazy FPU/SIMD state switching using exceptions (CVE-2018-3665)\n"
+            "- Hardware exceptions as routine control flow in hot paths\n"
+            "- Deferred state saving for security-critical CPU architectural state\n"
+            "\nOutput valid JSON only."
+        )
+
+        tid_json = json.dumps(draft.get("tid_detail", {}), indent=2)
+        user_prompt = f"""
+OUTPUT FORMAT (respond with ONLY this JSON, no prose before or after):
+{{
+    "status": "APPROVED|REVISE|REJECT",
+    "fatal_flaw": "string or empty",
+    "scorecard": {{
+        "innovation": 1-5,
+        "feasibility": 1-5,
+        "prior_art_risk": 1-5
+    }},
+    "hallucinations_found": ["string"],
+    "actionable_feedback": "string or empty",
+    "approved": boolean
+}}
+
+Draft to review:
+Title: {draft.get("title", "")}
+One-liner: {draft.get("one_liner", "")}
+
+TID Detail:
+{tid_json}
+
+Verdict rules:
+- APPROVED: technically feasible, no showstoppers
+- REVISE: promising idea with fixable issues
+- REJECT: only for physically impossible designs or pure fiction
+""".strip()
+
+        return system_prompt, user_prompt
+
+    def _build_revise_prompts(self, draft: dict, critique: dict) -> tuple[str, str]:
+        """Build prompts for reality checker revise mode"""
+        system_prompt = (
+            "You are a senior kernel architect revising a patent draft based on critique. "
+            "Drop any components flagged as impossible. Focus on the salvageable core idea. "
+            "Output valid JSON only."
+        )
+
+        feedback = critique.get("actionable_feedback", "")
+        tid_json = json.dumps(draft.get("tid_detail", {}), indent=2)
+
+        user_prompt = f"""
+OUTPUT FORMAT (respond with ONLY this JSON):
+{{
+  "title": "string",
+  "one_liner": "string",
+  "novelty_thesis": "string",
+  "tid_detail": {{ ... }}
+}}
+
+Original draft:
+{json.dumps(draft, indent=2)}
+
+Critique feedback:
+{feedback}
+
+Revise the draft to address the feedback.
+""".strip()
+
+        return system_prompt, user_prompt
+
+    def _parse_json_response(self, response_text: str, agent_name: str) -> dict:
+        """Parse JSON response with multiple fallback strategies"""
+        # Try robust parser first
+        try:
+            return robust_json_parse(
+                response_text,
+                llm_repair_callback=None,
+                agent_name=agent_name
+            )
+        except Exception:
+            pass
+
+        # Try direct JSON parse
+        try:
+            return json.loads(response_text)
+        except json.JSONDecodeError:
+            pass
+
+        # Try extracting from markdown code blocks
+        if "```json" in response_text:
+            json_str = response_text.split("```json")[1].split("```")[0].strip()
+            return json.loads(json_str)
+        elif "```" in response_text:
+            json_str = response_text.split("```")[1].split("```")[0].strip()
+            return json.loads(json_str)
+
+        raise ValueError(f"Could not parse JSON response from {agent_name}")
+
+    def _format_draft_blob(self, drafts: list) -> str:
+        """
+        Format drafts into a readable string for specialist review.
+
+        Replicates logic from agents/debate_panel.py:_format_drafts (lines 428-447)
+        """
+        lines = []
+        for i, d in enumerate(drafts, start=1):
+            lines.extend([
+                f"Draft #{i}",
+                f"Title: {d.get('title', '')}",
+                f"One-liner: {d.get('one_liner', '')}",
+                f"Novelty: {d.get('novelty_thesis', '')}",
+                f"Feasibility: {d.get('feasibility_thesis', '')}",
+                f"Market: {d.get('market_thesis', '')}",
+                f"Problem: {d.get('problem_statement', '')}",
+                f"Proposed Invention: {d.get('proposed_invention', '')}",
+                f"Architecture: {d.get('architecture_overview', '')}",
+                f"Implementation Plan: {d.get('implementation_plan', '')}",
+                f"Claims: {d.get('draft_claims', '')}",
+                "",
+            ])
+        return "\n".join(lines)
+
+    def _specialist_review(self, role: str, system_prompt: str, draft_blob: str) -> dict:
+        """
+        Run a single specialist review.
+
+        Replicates logic from agents/debate_panel.py:_specialist_review (lines 240-293)
+        """
+        user_prompt = f"""
+Role: {role}
+
+Review all candidate drafts below and pick the strongest one for your report.
+
+Drafts:
+{draft_blob}
+
+Return strict JSON:
+{{
+  "preferred_title": "string",
+  "status": "APPROVE|REVISE|REJECT",
+  "fatal_flaw": "string or empty",
+  "score": 1,
+  "issues": ["string"],
+  "yellow_cards": 0,
+  "fact_check_queries": ["kernel symbol or file path to verify"]
+}}
+
+CRITICAL JSON SCHEMA REQUIREMENTS:
+If you assign status 'REVISE' or 'REJECT', you ABSOLUTELY MUST provide at least 3 specific, actionable technical critiques in the "issues" array.
+DO NOT return an empty array []. An empty issues array will cause the revision feedback loop to fail.
+
+Example of VALID issues array:
+"issues": [
+  "The proposed use of RCU read lock is invalid here because function X can sleep",
+  "You must define a concrete data structure for the abstraction layer between eBPF and CXL",
+  "The synchronization model violates scheduler correctness under concurrent wakeups"
+]
+
+If you assign status 'APPROVE', you may provide an empty issues array or constructive suggestions for future improvement.
+""".strip()
+
+        raw = self.llm.chat(
+            model="claude-sonnet-4-5",
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            temperature=0.5,
+        )
+
+        data = self._parse_json_response(raw, "DebatePanel-Specialist")
+
+        # Normalize status
+        status = str(data.get("status", "REVISE")).upper().strip()
+        if status not in {"APPROVE", "REVISE", "REJECT"}:
+            status = "REVISE"
+
+        # Clamp score to 1-5
+        score = data.get("score", 2)
+        try:
+            score = max(1, min(5, int(score)))
+        except (ValueError, TypeError):
+            score = 2
+
+        return {
+            "preferred_title": str(data.get("preferred_title", "")).strip(),
+            "status": status,
+            "fatal_flaw": str(data.get("fatal_flaw", "")).strip(),
+            "score": score,
+            "issues": [str(x) for x in data.get("issues", [])][:10],
+            "yellow_cards": max(0, int(data.get("yellow_cards", 0) or 0)),
+            "fact_check_queries": [str(x) for x in data.get("fact_check_queries", [])][:6],
+        }
+
+    @staticmethod
+    def _deterministic_verdict(reports: dict) -> dict:
+        """
+        Apply deterministic verdict rules based on specialist reports.
+
+        Replicates logic from agents/debate_panel.py:_deterministic_verdict (lines 362-426)
+        """
+        statuses = [r.get("status", "REVISE") for r in reports.values()]
+        fatal = [r.get("fatal_flaw", "").strip() for r in reports.values() if r.get("fatal_flaw", "").strip()]
+        scores = [float(r.get("score", 2.0) or 2.0) for r in reports.values()]
+        yellow_cards = sum(int(r.get("yellow_cards", 0) or 0) for r in reports.values())
+
+        # Rule 1: Fatal flaw reject
+        if fatal:
+            reason = "; ".join(fatal)
+            return {
+                "final_verdict": "REJECT",
+                "synthesis": reason,
+                "confidence": 0.95,
+                "rule_trigger": "fatal_flaw_reject",
+                "reviewer_statuses": statuses,
+            }
+
+        # Rule 2: Majority reject (≥2 of 4 REJECT)
+        reject_count = sum(1 for s in statuses if s == "REJECT")
+        if reject_count >= 2:
+            return {
+                "final_verdict": "REJECT",
+                "synthesis": f"Majority committee rejection ({reject_count}/{len(statuses)} REJECT, no fatal flaw stated)",
+                "confidence": 0.9,
+                "rule_trigger": "majority_reject",
+                "reviewer_statuses": statuses,
+            }
+
+        # Rule 3: Yellow card reject (≥3 yellow cards)
+        if yellow_cards >= 3:
+            return {
+                "final_verdict": "REJECT",
+                "synthesis": f"Rejected by yellow-card rule (yellow_cards={yellow_cards})",
+                "confidence": 0.9,
+                "rule_trigger": "yellow_card_reject",
+                "reviewer_statuses": statuses,
+            }
+
+        avg_score = sum(scores) / len(scores) if scores else 0.0
+        approve_count = sum(1 for s in statuses if s == "APPROVE")
+
+        # Rule 4: Full approval (all APPROVE + avg score >= 4)
+        if approve_count == len(statuses) and avg_score >= 4.0:
+            return {
+                "final_verdict": "APPROVE",
+                "synthesis": f"Full committee approval (avg_score={avg_score:.1f}).",
+                "confidence": 0.92,
+                "rule_trigger": "full_committee_approval",
+                "reviewer_statuses": statuses,
+            }
+
+        # Rule 5: Majority approval (≥3 of 4 APPROVE, avg score >= 3.5, no REJECT)
+        if approve_count >= 3 and avg_score >= 3.5 and reject_count == 0:
+            return {
+                "final_verdict": "APPROVE",
+                "synthesis": f"Majority committee approval ({approve_count}/{len(statuses)} APPROVE, avg_score={avg_score:.1f}).",
+                "confidence": 0.80,
+                "rule_trigger": "majority_approval",
+                "reviewer_statuses": statuses,
+            }
+
+        # Default: Revision required
+        return {
+            "final_verdict": "REVISE",
+            "synthesis": "Committee requested revision due to unresolved issues.",
+            "confidence": 0.7,
+            "rule_trigger": "revision_required",
+            "reviewer_statuses": statuses,
+        }
+
+    def run_batch(self):
+        """Process all pending tasks once (batch mode)"""
+        stats = {
+            "maverick": {"processed": 0, "succeeded": 0, "failed": 0},
+            "professor": {"processed": 0, "succeeded": 0, "failed": 0},
+            "reality_checker": {"processed": 0, "succeeded": 0, "failed": 0},
+            "debate_panel": {"processed": 0, "succeeded": 0, "failed": 0},
+        }
+
+        logger.info("=== Batch processing started ===")
+
+        # Process in priority order
+        for pending_file in sorted(self.pending_maverick.glob("*.json")):
+            stats["maverick"]["processed"] += 1
+            if self.process_maverick_task(pending_file):
+                stats["maverick"]["succeeded"] += 1
+            else:
+                stats["maverick"]["failed"] += 1
+
+        for pending_file in sorted(self.pending_professor.glob("*.json")):
+            stats["professor"]["processed"] += 1
+            if self.process_professor_task(pending_file):
+                stats["professor"]["succeeded"] += 1
+            else:
+                stats["professor"]["failed"] += 1
+
+        for pending_file in sorted(self.pending_reality_checker.glob("*.json")):
+            stats["reality_checker"]["processed"] += 1
+            if self.process_reality_checker_task(pending_file):
+                stats["reality_checker"]["succeeded"] += 1
+            else:
+                stats["reality_checker"]["failed"] += 1
+
+        for pending_file in sorted(self.pending_reviews.glob("*.json")):
+            stats["debate_panel"]["processed"] += 1
+            if self.process_debate_panel_task(pending_file):
+                stats["debate_panel"]["succeeded"] += 1
+            else:
+                stats["debate_panel"]["failed"] += 1
+
+        logger.info("=== Batch processing completed ===")
+        logger.info(f"Stats: {json.dumps(stats, indent=2)}")
+
+        # Print summary
+        print("\n" + "="*80)
+        print("BATCH PROCESSING SUMMARY")
+        print("="*80)
+        for agent, data in stats.items():
+            if data["processed"] > 0:
+                print(f"{agent.upper()}: {data['succeeded']}/{data['processed']} succeeded, {data['failed']} failed")
+        print("="*80 + "\n")
+
+        return stats
+
+    def run_continuous(self, check_interval_seconds: int = 10):
+        """
+        Continuously monitor and process pending tasks (async cleanup mode).
+
+        This mode is designed for copilot CLI which can be unstable:
+        - Tolerates individual task failures
+        - Continues processing even if some tasks timeout
+        - Runs indefinitely in background
+        """
+        import time
+
+        logger.info("=== Continuous async worker started | interval={}s ===", check_interval_seconds)
+        print(f"Claude Agent Auto Worker V2 started (continuous mode, interval={check_interval_seconds}s)")
+        print("Monitoring pending directories for tasks...")
+        print("Press Ctrl+C to stop")
+
+        total_stats = {
+            "maverick": {"succeeded": 0, "failed": 0},
+            "professor": {"succeeded": 0, "failed": 0},
+            "reality_checker": {"succeeded": 0, "failed": 0},
+            "debate_panel": {"succeeded": 0, "failed": 0},
+        }
+
+        cycle_count = 0
+
+        while True:
+            try:
+                cycle_count += 1
+                had_work = False
+
+                # Process one task from each queue per cycle (fair scheduling)
+                pending_files = {
+                    "maverick": list(self.pending_maverick.glob("*.json")),
+                    "professor": list(self.pending_professor.glob("*.json")),
+                    "reality_checker": list(self.pending_reality_checker.glob("*.json")),
+                    "debate_panel": list(self.pending_reviews.glob("*.json")),
+                }
+
+                total_pending = sum(len(files) for files in pending_files.values())
+
+                if total_pending > 0 and cycle_count % 10 == 0:  # Log every 10 cycles
+                    logger.info(
+                        f"Cycle {cycle_count} | Pending: Maverick={len(pending_files['maverick'])} "
+                        f"Professor={len(pending_files['professor'])} "
+                        f"RealityChecker={len(pending_files['reality_checker'])} "
+                        f"DebatePanel={len(pending_files['debate_panel'])}"
+                    )
+
+                # Process one task from each queue
+                for agent, files in pending_files.items():
+                    if not files:
+                        continue
+
+                    had_work = True
+                    pending_file = sorted(files)[0]  # Process oldest first
+
+                    try:
+                        if agent == "maverick":
+                            success = self.process_maverick_task(pending_file)
+                        elif agent == "professor":
+                            success = self.process_professor_task(pending_file)
+                        elif agent == "reality_checker":
+                            success = self.process_reality_checker_task(pending_file)
+                        elif agent == "debate_panel":
+                            success = self.process_debate_panel_task(pending_file)
+                        else:
+                            continue
+
+                        if success:
+                            total_stats[agent]["succeeded"] += 1
+                        else:
+                            total_stats[agent]["failed"] += 1
+                            # Failed tasks are NOT deleted - pipeline service will retry
+
+                    except Exception as exc:
+                        logger.error(f"Unexpected error processing {agent} task {pending_file.name}: {exc}")
+                        total_stats[agent]["failed"] += 1
+                        # Continue to next task
+
+                if not had_work:
+                    # No pending tasks, sleep
+                    time.sleep(check_interval_seconds)
+                else:
+                    # Had work, check again quickly
+                    time.sleep(1)
+
+            except KeyboardInterrupt:
+                logger.info("=== Continuous worker stopped by user ===")
+                print("\n" + "="*80)
+                print("WORKER STOPPED - LIFETIME STATISTICS")
+                print("="*80)
+                for agent, data in total_stats.items():
+                    total = data["succeeded"] + data["failed"]
+                    if total > 0:
+                        success_rate = (data["succeeded"] / total * 100) if total > 0 else 0
+                        print(f"{agent.upper()}: {data['succeeded']}/{total} succeeded ({success_rate:.1f}%), {data['failed']} failed")
+                print("="*80 + "\n")
+                break
+
+            except Exception as exc:
+                logger.error(f"Worker loop error: {exc}")
+                time.sleep(check_interval_seconds)
+
+
+if __name__ == "__main__":
+    import sys
+
+    worker = ClaudeAgentAutoWorkerV2()
+
+    # Check command line args
+    if len(sys.argv) > 1 and sys.argv[1] == "--batch":
+        # Batch mode: process all and exit
+        worker.run_batch()
+    else:
+        # Continuous mode: run forever
+        worker.run_continuous(check_interval_seconds=10)

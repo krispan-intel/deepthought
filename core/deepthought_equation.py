@@ -22,6 +22,27 @@ from configs.settings import settings
 
 
 # ─────────────────────────────────────────────────────────────────
+# Stop Words Filter
+# ─────────────────────────────────────────────────────────────────
+
+# Kernel-specific stop words: high-frequency tokens that lack domain specificity
+# These are filtered out when computing sparse lexical overlap to prevent false positives
+KERNEL_STOP_WORDS = {
+    # C language syntax keywords
+    "define", "include", "struct", "int", "void", "static", "const", "return",
+    "if", "else", "for", "while", "extern", "inline", "enum", "typedef", "sizeof",
+    "unsigned", "signed", "long", "short", "char", "float", "double", "volatile",
+
+    # Generic kernel vocabulary (high frequency, low specificity)
+    "linux", "kernel", "core", "sys", "init", "exit", "register", "registers",
+    "match", "device", "driver", "data", "info", "config", "flags", "state",
+    "lock", "unlock", "cpu", "memory", "error", "null", "true", "false",
+    "get", "set", "read", "write", "open", "close", "enable", "disable",
+    "start", "stop", "alloc", "free", "mm", "fs", "net", "arch",
+}
+
+
+# ─────────────────────────────────────────────────────────────────
 # Data Classes
 # ─────────────────────────────────────────────────────────────────
 
@@ -236,6 +257,31 @@ class DeepThoughtEquation:
         """
         return float(np.clip(np.dot(a, b), -1.0, 1.0))
 
+    @staticmethod
+    def slerp_midpoint(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        """
+        Spherical Linear Interpolation (SLERP) midpoint at t=0.5.
+
+        Unlike linear addition + renormalize, SLERP follows the geodesic
+        on the unit hypersphere, preserving semantic manifold geometry.
+        Falls back to normalized linear interpolation when vectors are
+        nearly parallel or anti-parallel (small angle).
+        """
+        dot = float(np.clip(np.dot(a, b), -1.0, 1.0))
+        theta = np.arccos(dot)
+        if theta < 1e-6:
+            # Nearly identical vectors — linear interpolation is fine
+            mid = (a + b) / 2.0
+        elif theta > np.pi - 1e-6:
+            # Nearly opposite — pick perpendicular direction
+            mid = (a + b) / 2.0
+        else:
+            sin_theta = np.sin(theta)
+            # t = 0.5 for midpoint
+            mid = (np.sin(0.5 * theta) / sin_theta) * a + (np.sin(0.5 * theta) / sin_theta) * b
+        norm = np.linalg.norm(mid)
+        return mid / norm if norm > 0 else a
+
     def compute_mmr_score(
         self,
         v_new: np.ndarray,
@@ -281,7 +327,7 @@ class DeepThoughtEquation:
         self,
         candidates: List[TechVector],
         v_target: Optional[TechVector] = None,
-        min_low: float = 0.18,
+        min_low: float = 0.40,  # Raised from 0.18: pairs with similarity < 0.40 are unrelated
         max_high: float = 0.82,
         top_n: int = 12,
     ) -> MarginalityThresholds:
@@ -415,8 +461,10 @@ class DeepThoughtEquation:
             logger.warning(f"Unknown strategy '{strategy}', using fallback={fallback}")
             return fallback
 
-        # Sanity bounds: never go below 0.3 or above 0.9
-        tau = max(0.30, min(0.90, tau))
+        # Sanity bounds: never go below 0.45 or above 0.9
+        # Raised from 0.30 to 0.45: cosine similarity < 0.45 in high-dimensional BGE-M3 space
+        # indicates unrelated concepts (prevents garbage pairs like DA8XX+MAX8907)
+        tau = max(0.45, min(0.90, tau))
 
         logger.info(
             f"Dynamic threshold calibrated | strategy={strategy} | "
@@ -467,6 +515,10 @@ class DeepThoughtEquation:
             for candidate in candidates
         }
 
+        # Build candidate vector matrix for vacancy probing (k=1 nearest neighbor)
+        candidate_matrix = np.stack([c.vector for c in candidates])
+        candidate_id_to_idx = {c.id: i for i, c in enumerate(candidates)}
+
         pair_candidates: List[VoidResult] = []
         filter_stats = {
             "total_pairs_checked": 0,
@@ -476,6 +528,7 @@ class DeepThoughtEquation:
             "filtered_sparse_tokens": 0,
             "filtered_cooccurrence": 0,
             "filtered_sparse_overlap": 0,
+            "filtered_vacancy": 0,
             "passed_all_filters": 0,
         }
 
@@ -515,18 +568,34 @@ class DeepThoughtEquation:
                 #     continue
 
                 # Sparse lexical overlap filter: block garbage pairs (e.g., WebUSB+eBPF)
-                # If two anchors share no tokens at all, they're likely unrelated junk
-                sparse_overlap = len(set(left_tokens) & set(right_tokens))
+                # Filter out stop words to prevent false positives from generic keywords like "define"
+                filtered_left = set(left_tokens) - KERNEL_STOP_WORDS
+                filtered_right = set(right_tokens) - KERNEL_STOP_WORDS
+                sparse_overlap = len(filtered_left & filtered_right)
+
+                # If two anchors share no MEANINGFUL tokens (after stop word removal), they're unrelated
                 if sparse_overlap == 0:
                     filter_stats["filtered_sparse_overlap"] += 1
                     continue
 
-                filter_stats["passed_all_filters"] += 1
+                # SLERP midpoint: geodesic on hypersphere instead of linear addition
+                combined_vector = self.slerp_midpoint(left.vector, right.vector)
 
-                combined_vector = left.vector + right.vector
-                norm = np.linalg.norm(combined_vector)
-                if norm > 0:
-                    combined_vector = combined_vector / norm
+                # Vacancy check: is the midpoint actually empty?
+                # Compute similarity of midpoint to ALL candidates (excluding A and B themselves).
+                # If a known document D sits very close to the midpoint, this void is fake.
+                midpoint_sims = candidate_matrix @ combined_vector
+                # Mask out A and B themselves by setting their similarity to -1
+                midpoint_sims[index] = -1.0
+                midpoint_sims[candidate_id_to_idx[right.id]] = -1.0
+                nearest_to_midpoint = float(np.max(midpoint_sims))
+
+                # If a document is closer than the vacancy threshold, this void is occupied
+                if nearest_to_midpoint > settings.vacancy_probe_threshold:
+                    filter_stats["filtered_vacancy"] += 1
+                    continue
+
+                filter_stats["passed_all_filters"] += 1
 
                 anchor_tokens = tuple(sorted(set(left_tokens[:3] + right_tokens[:3])))
                 synthetic = TechVector(
@@ -540,6 +609,7 @@ class DeepThoughtEquation:
                         "anchor_b_label": right.label,
                         "anchor_a_tokens": left_tokens,
                         "anchor_b_tokens": right_tokens,
+                        "vacancy_nearest_sim": nearest_to_midpoint,
                     },
                 )
 
@@ -586,7 +656,8 @@ class DeepThoughtEquation:
             f"marginality={filter_stats['filtered_marginality']} "
             f"sparse_tokens={filter_stats['filtered_sparse_tokens']} "
             f"cooccurrence={filter_stats['filtered_cooccurrence']} "
-            f"sparse_overlap={filter_stats['filtered_sparse_overlap']} | "
+            f"sparse_overlap={filter_stats['filtered_sparse_overlap']} "
+            f"vacancy={filter_stats['filtered_vacancy']} | "
             f"passed={filter_stats['passed_all_filters']}"
         )
 

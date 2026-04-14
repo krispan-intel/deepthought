@@ -30,18 +30,28 @@ DeepThought 则把这件事变成**系统化且数学化**的过程。
 
 核心数学引擎已经从传统 global MMR 演进为 **Hybrid Vector-Inverted Index Triad**。系统会在一个领域锚点（C）下寻找两个语义上兼容、但在历史资料中 **完全没有共同出现** 的概念（A 与 B），以此识别真正的 Topological Void。
 
+**实际公式：**
+
+```
+HybridScore(A,B) = λ · Cos(Dense(A⊕B), Dense(C))
+                 - (1-λ) · AvgRedundancy(A,B)
+                 + w_m · MarginalityFit(A,B)
+                 + bias
+```
+
 **目标：** 找到满足以下条件的 Triad (C, A, B)：
 
-1. 领域凝聚性：`Cos(Dense(A), Dense(C)) > τ_domain` 且 `Cos(Dense(B), Dense(C)) > τ_domain`
+1. 领域凝聚性：`Cos(Dense(A), Dense(C)) > τ_domain` 且 `Cos(Dense(B), Dense(C)) > τ_domain`（τ_domain 使用百分位自适应校准）
 2. 边际新颖性校准：`τ_low ≤ Cos(Dense(A), Dense(B)) ≤ τ_high`
-3. 真正的全局空洞：`Boolean_AND(Sparse_Top_Tokens(A), Sparse_Top_Tokens(B)) == 0`（通过 Elasticsearch）
+3. 稀疏词汇桥接：配对必须在去停用词过滤后至少共享一个有意义的 token（共现检查器通过 Elasticsearch 已**禁用**）
 
 | 组件 | 含义 | 执行方式 |
 |------|------|----------|
 | **Dense(·)** | 1024 维语义嵌入 | 通过 FAISS 做 Nearest Neighbor (KNN) 候选检索。 |
 | **Sparse(·)** | Top-5 词汇权重 | 使用 BGE-M3 的 learned sparse layer 提取精准的「Concept Anchors」。 |
 | **τ_low, τ_high** | 边际阈值 | 从 git history 的「首次子系统碰撞」校准而来，避免产生 Franken-IP。 |
-| **True Global Void** | 历史上的绝对真空 | 对整个倒排索引（code + docs + papers）执行精确 boolean query。 |
+| **τ_domain** | 领域凝聚阈值 | 百分位自适应校准（percentile-adaptive calibration）。 |
+| **Sparse Lexical Bridge** | 稀疏词汇桥接 | 去停用词后至少共享一个有意义 token；Elasticsearch 共现检查器已禁用。 |
 
 ## 🏗️ 架构：解耦的三层 Pipeline
 ```
@@ -65,6 +75,7 @@ DeepThought 则把这件事变成**系统化且数学化**的过程。
 |  |                                                          |  |
 |  |  Forager        -->  Hybrid Triad Void Detection         |  |
 |  |  Maverick       -->  Divergent RFC Gen (Concept Anchors) |  |
+|  |  Professor      -->  Pre-Flight Structure Review         |  |
 |  |  Patent Shield  -->  Global Prior Art API Check          |  |
 |  |  Reality Checker-->  Constraint Validation & Critique    |  |
 |  |  Debate Panel   -->  Multi-Model Consensus & Mutation    |  |
@@ -80,7 +91,7 @@ DeepThought 则把这件事变成**系统化且数学化**的过程。
 +================================================================+
 ```
 
-## 🤖 三位一体 Agents
+## 🤖 Agents
 
 ### 🕵️ The Forager（数学引擎）
 - 执行 Hybrid DeepThought Triad Equation
@@ -92,18 +103,35 @@ DeepThought 则把这件事变成**系统化且数学化**的过程。
 - 生成发散式 RFC 草案
 - 使用高温、低约束创意模式
 - 探索已识别的空洞空间
-- **模型**：`copilot_cli`（由 GitHub Copilot 管理模型路由）
+- **模型**：`gpt-5.4`（通过 `--model` 指定，`--effort high`）
+
+### 📚 The Professor（Pre-Flight 审查员）
+- Maverick 后的快速筛选关卡，验证草稿结构和技术一致性
+- 检查 RFC 格式完整性、术语一致性、claim 是否与 void 对应
+- 不合格草稿直接退回 Maverick 重新生成，节省下游算力
+- **模型**：`gpt-5.2`（通过 `--model` 指定，`--effort high`）
+
+### 🛡️ The Patent Shield（快速失败关卡）
+- 在昂贵的 LLM 处理之前，预先筛查草稿是否与全局 API（Semantic Scholar / Google Patents）冲突
+- 提取关键 claims 并检查是否存在直接 1:1 前案冲突
+- 精确匹配时立即终止该分支，节省下游算力
+- **模型**：API 集成（`patent_shield.py`）
 
 ### 🛡️ The Reality Checker（批判者与评估器）
 - 执行 **Global Prior-Art Check**（Google Patents / Semantic Scholar APIs）
 - 通过 simulation 与静态检查验证物理约束（x86 ISA、Linux ABI）
 - 为 Conference Review Simulated Framework 生成精确错误日志与 performance debt metrics
-- **模型**：API Integrations + `copilot_cli`
+- **模型**：API Integrations + `gpt-5.2`（通过 `--model` 指定，`--effort high`）
 
 ### ⚖️ The Debate Panel（共识层）
 - 模拟 conference review 的对抗式委员会
-- **Reviewer Committee**：`copilot_cli`（角色化多轮评审）
-- **Chairman Judge**：`copilot_cli`（最终综合与裁决）
+- **4 位具名 Specialist（并行执行）**：
+  - Kernel Hardliner（内核强硬派）
+  - Prior-Art Shark（前案鲨鱼）
+  - Intel Strategist（Intel 策略师）
+  - Security Guardian（安全守护者）
+- **确定性裁决规则**：fatal flaw 拒绝、多数拒绝（≥2）、黄牌拒绝（≥3）、全体批准、多数批准
+- **模型**：`gpt-5.2`（通过 `--model` 指定，`--effort high`）
 
 ## 🔄 Pipeline 流程
 
@@ -119,10 +147,17 @@ Input: Legacy Code + Modern Specs
               v
    +--------> +------------+
    |          |  MAVERICK  |
-        |          |  copilot_cli                 |
+   |          |  gpt-5.4 --effort high       |
    |          |  RFC Draft Generation        |
    |          +------------+
    |                  |
+   |                  v
+   |          +------------------+
+   |          |  PROFESSOR       |
+   |          |  gpt-5.2         |
+   |          |  Pre-Flight 审查  |
+   |          +------------------+
+   |                  | (Pass)
    |                  v
    |          +------------------+
    |          | PATENT SHIELD    |
@@ -142,8 +177,8 @@ Input: Legacy Code + Modern Specs
                       v
               +--------------+
               | DEBATE PANEL |
-              | copilot_cli  |
-              | role-committee|
+              | gpt-5.2      |
+              | 4 Specialists|
               +--------------+
                       |
                       v
@@ -190,6 +225,8 @@ deepthought/
 │   ├── llm_client.py             # 统一 LLM 调用器
 │   ├── forager.py                # 空洞检索 agent
 │   ├── maverick.py               # 创意生成 agent
+│   ├── professor.py              # Pre-Flight 结构审查 agent
+│   ├── patent_shield.py          # 前案快速失败关卡
 │   ├── reality_checker.py        # 批判与修订 agent
 │   ├── debate_panel.py           # 多模型综合评审 agent
 │   └── pipeline.py               # Multi-agent 编排器
@@ -201,10 +238,12 @@ deepthought/
 │
 ├── vectordb/
 │   ├── store.py                  # Chroma 接口 + void API
+│   ├── sparse_index.py           # SQLite FTS5 / ES 倒排索引
 │   └── embedder.py               # 本地/API embedding backend
 │
 ├── output/
-│   ├── tid_formatter.py          # TID 报告格式器（md + html）
+│   ├── tid_formatter.py          # TID 报告格式器（md + html + docx + pdf）
+│   ├── claim_analysis.py         # 专利 claim 自动生成 + 置信度评分
 │   ├── templates/
 │   └── generated/                # 已生成报告
 │
@@ -214,23 +253,36 @@ deepthought/
 │   ├── query_service.py          # 基础 RAG 查询服务（LlamaIndex）
 │   ├── pipeline_service.py       # Multi-agent 运行服务
 │   ├── status_store.py           # run status 持久化与重试检索
+│   ├── audit_logger.py           # 仅追加 JSONL 审计日志
+│   ├── human_review.py           # Human-in-the-loop 审核检查点
+│   ├── target_mutation_service.py # 随机游走目标突变
+│   ├── void_tracker.py           # 增量空洞追踪
 │   └── tid_notification_service.py # 新 TID email 通知服务
 │
 ├── scripts/
+│   ├── verify_env.py
 │   ├── setup_vectordb.py
+│   ├── setup_treesitter.py
 │   ├── ingest_kernel.py
 │   ├── ingest_all.py
 │   ├── run_phase3_probe.py
+│   ├── run_forager_probe.py
 │   ├── run_retrieval_audit.py
 │   ├── run_idea_collision.py
 │   ├── run_pipeline.py
 │   ├── run_pipeline_service.py
+│   ├── run_db_contamination_audit.py
+│   ├── run_hardware_specs_experiment.py
+│   ├── run_kernel_source_cleanup_pipeline.py
+│   ├── cleanup_kernel_source_noise.py
 │   └── generate_sample_tid_report.py
 │
 ├── tests/
 │   ├── test_core/
 │   ├── test_agents/
 │   ├── test_data_collection/
+│   ├── test_output/
+│   ├── test_services/
 │   └── test_vectordb/
 │
 ├── configs/
@@ -252,7 +304,6 @@ deepthought/
 规划中（尚未完整实现）：
 - `core/void_detector.py`
 - `vectordb/retriever.py` 与 `vectordb/collections.py`
-- `output/tid_formatter.py` 的 DOCX/PDF 导出扩展
 
 ## 🚀 快速开始
 
@@ -295,18 +346,22 @@ python scripts/run_pipeline.py \
     --target "scheduler latency optimization"
 ```
 
-## 📌 当前实现进度（2026-04-02）
+## 📌 当前实现进度（2026-04-14）
 
 已完成：
 - 本地数据摄取主流程（crawler -> parser -> chunker -> Chroma store）
 - DeepThought Equation、iterative MMR、concept arithmetic
 - Topological Void 检索 API 与 probe 脚本
-- Multi-agent 主干与可执行 CLI（`forager`、`maverick`、`reality_checker`、`debate_panel`）
+- Multi-agent 主干与可执行 CLI（`forager`、`maverick`、`professor`、`reality_checker`、`debate_panel`）
 - TID 报告格式器（Markdown + HTML 双格式输出）
 - 运行状态持久化与重试流程（`RETRY_PENDING` + `--retry-failed`）
 - Pipeline 实跑已验证可到 `APPROVED` 并产出报告
 - 常驻 service 模式（`scripts/run_pipeline_service.py`）
 - 新 TID email 通知服务（`services/tid_notification_service.py`）
+- Professor agent：Maverick 后的 Pre-Flight 结构审查关卡
+- Debate Panel 4 具名 specialist 并行评审 + 确定性裁决规则
+- 全部 agent 迁移至 Claude API，消除 Copilot CLI 依赖
+- 模型配置：Maverick 使用 gpt-5.4，审查阶段使用 gpt-5.2，均 `--effort high`
 
 尚缺或部分完成：
 - 完整 prior-art 覆盖（USPTO/EPO/WIPO 正式摄取）
@@ -381,7 +436,7 @@ python scripts/run_pipeline_service.py \
 
 - 这个模式适合 Linux 主机上的实验，不建议直接作为无人值守 Docker production backend。
 - 运行前请确认 `GH_TOKEN` / `GITHUB_TOKEN` 已 unset，让 `gh copilot` 回退读取 `~/.config/gh/hosts.yml`。
-- Copilot CLI 在成功交互时目前会显示使用 `gpt-5.4`，但实际模型选择权仍由 GitHub Copilot 控制，不由本 repo 直接指定。
+- Copilot CLI 在成功交互时目前会显示使用 `gpt-5.4`，模型选择现在由本 repo 通过 `--model` 参数控制。
 
 ### Random Walk and Mutate 流程
 

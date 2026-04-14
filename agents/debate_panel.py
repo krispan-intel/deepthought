@@ -362,7 +362,7 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
     def _deterministic_verdict(reports: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
         statuses = [r.get("status", "REVISE") for r in reports.values()]
         fatal = [r.get("fatal_flaw", "").strip() for r in reports.values() if r.get("fatal_flaw", "").strip()]
-        scores = [int(r.get("score", 2) or 2) for r in reports.values()]
+        scores = [float(r.get("score", 2.0) or 2.0) for r in reports.values()]
         yellow_cards = sum(int(r.get("yellow_cards", 0) or 0) for r in reports.values())
 
         if fatal:
@@ -474,13 +474,16 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
         return any(m.startswith("claude-") for m in models)
 
     def _delegate_to_claude_agent(self, state: PipelineState) -> PipelineState:
-        """Save drafts for Claude Agent review and mark as pending."""
+        """Save drafts for Claude Agent review and wait for completion."""
         import json
+        import time
         from pathlib import Path
         from datetime import datetime
 
         pending_dir = Path("data/pending_reviews")
+        completed_dir = Path("data/completed_reviews")
         pending_dir.mkdir(parents=True, exist_ok=True)
+        completed_dir.mkdir(parents=True, exist_ok=True)
 
         # Create review request
         request = {
@@ -512,24 +515,111 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
         }
 
         # Save to pending directory
-        review_file = pending_dir / f"{state.run_id}.json"
-        with open(review_file, "w", encoding="utf-8") as f:
-            json.dump(request, f, indent=2, ensure_ascii=False)
+        request_file = pending_dir / f"{state.run_id}.json"
+        completed_file = completed_dir / f"{state.run_id}.json"
+
+        request_file.write_text(json.dumps(request, indent=2, ensure_ascii=False))
 
         logger.info(
-            "Debate Panel delegated to Claude Agent | run_id={} | file={}",
+            "Delegated to Claude Agent (Debate Panel) | run_id={} | file={} | waiting...",
             state.run_id,
-            review_file,
+            request_file,
         )
 
-        # Mark as pending Claude review
-        state.metadata["claude_agent_review_pending"] = True
-        state.metadata["claude_agent_review_file"] = str(review_file)
-        state.debate_result = DebateResult(
-            final_verdict="PENDING_CLAUDE_REVIEW",
-            synthesis="Waiting for Claude Agent manual review",
-            winning_title="",
-            confidence=0.0,
-        )
+        # Wait for completion
+        max_wait_seconds = 300
+        check_interval = 5
+        elapsed = 0
+
+        while elapsed < max_wait_seconds:
+            if completed_file.exists():
+                logger.info(f"Claude Agent (Debate Panel) completed | run_id={state.run_id} | elapsed={elapsed}s")
+                try:
+                    result = json.loads(completed_file.read_text())
+                    reports = result.get("reviews", {})
+
+                    # Process reports through deterministic verdict
+                    deterministic = self._deterministic_verdict(reports)
+                    final_verdict = deterministic["final_verdict"]
+                    synthesis = deterministic["synthesis"]
+                    confidence = deterministic["confidence"]
+
+                    # Get winning title from first draft or reports
+                    winning_title = ""
+                    if state.drafts:
+                        winning_title = state.drafts[0].title
+                    if reports:
+                        first_report = next(iter(reports.values()))
+                        if first_report.get("preferred_title"):
+                            winning_title = first_report["preferred_title"]
+
+                    # Update state metadata
+                    state.metadata["committee_reports"] = reports
+                    state.metadata["committee_fact_checks"] = {}
+                    state.metadata["committee_review_log"] = self._build_committee_review_log(reports, {})
+                    state.metadata["judge_trace"] = {
+                        "deterministic_rule": deterministic,
+                        "final_verdict": final_verdict,
+                        "winning_title": winning_title,
+                    }
+                    state.metadata["claude_agent_review_status"] = "COMPLETED"
+
+                    # Log reviews
+                    for reviewer in state.metadata["committee_review_log"]:
+                        logger.info(
+                            "Committee review | run_id={} | reviewer={} | status={} | score={} | issue={}",
+                            state.run_id,
+                            reviewer["reviewer"],
+                            reviewer["status"],
+                            reviewer["score"],
+                            reviewer["top_issue"],
+                        )
+                    logger.info(
+                        "Judge decision | run_id={} | verdict={} | title={} | reason={}",
+                        state.run_id,
+                        final_verdict,
+                        winning_title,
+                        synthesis[:240],
+                    )
+
+                    # Set final verdict
+                    if final_verdict == "REJECT":
+                        state.run_status = "REJECTED"
+                        state.last_error = synthesis
+
+                    state.debate_result = DebateResult(
+                        final_verdict=final_verdict,
+                        winning_title=winning_title,
+                        synthesis=synthesis,
+                        confidence=confidence,
+                    )
+
+                    # Select winning draft
+                    selected = 0
+                    for i, d in enumerate(state.drafts):
+                        if d.title.strip().lower() == winning_title.strip().lower():
+                            selected = i
+                            break
+                    state.selected_draft_index = selected
+
+                    # Clean up pending file
+                    request_file.unlink(missing_ok=True)
+
+                    logger.info(f"Debate Panel completed via Claude Agent | run_id={state.run_id} | verdict={final_verdict}")
+
+                    return state
+
+                except Exception as exc:
+                    logger.error(f"Failed to parse Debate Panel result | run_id={state.run_id} | error={exc}")
+                    raise ValueError(f"Failed to parse Claude Agent Debate Panel result: {exc}")
+
+            time.sleep(check_interval)
+            elapsed += check_interval
+
+        # Timeout
+        state.metadata["claude_agent_review_status"] = "TIMEOUT"
+        state.run_status = "PENDING_CLAUDE_REVIEW"
+        state.last_error = f"Claude Agent (Debate Panel) timeout after {max_wait_seconds}s"
+        logger.error(f"Claude Agent (Debate Panel) timeout | run_id={state.run_id}")
 
         return state

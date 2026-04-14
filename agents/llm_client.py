@@ -255,19 +255,27 @@ class LLMClient:
 
     def _chat_with_copilot_cli(self, model: str, system_prompt: str, user_prompt: str, temperature: float) -> str:
         prompt = self._build_copilot_prompt(
-            model=model,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
-            temperature=temperature,
         )
         if len(prompt) > self.copilot_prompt_max_chars:
-            prompt = prompt[: self.copilot_prompt_max_chars]
+            prompt = self._smart_truncate(prompt, self.copilot_prompt_max_chars)
 
-        command = [*shlex.split(self.copilot_cli_command), "-p", prompt]
+        # Map pipeline model hints to available copilot models
+        copilot_model = self._resolve_copilot_model(model)
+        copilot_effort = settings.copilot_effort or "high"
+
+        command = [
+            *shlex.split(self.copilot_cli_command),
+            "-p", prompt,
+            "--model", copilot_model,
+            "--effort", copilot_effort,
+        ]
         logger.info(
-            "LLM backend dispatch | backend=copilot_cli | command={} | pipeline_model_hint={}",
-            self.copilot_cli_command,
-            model or "default",
+            "LLM backend dispatch | backend=copilot_cli | model={} | effort={} | prompt_len={}",
+            copilot_model,
+            copilot_effort,
+            len(prompt),
         )
         env = os.environ.copy()
         for name in ("GH_TOKEN", "GITHUB_TOKEN", "GITHUB_PAT"):
@@ -330,16 +338,86 @@ class LLMClient:
         raise last_error or RuntimeError("copilot_cli failed")
 
     @staticmethod
-    def _build_copilot_prompt(model: str, system_prompt: str, user_prompt: str, temperature: float) -> str:
-        model_note = model or "default"
+    def _build_copilot_prompt(system_prompt: str, user_prompt: str) -> str:
+        # Extract JSON schema block from user_prompt and move to system_instructions
+        # This ensures schema survives truncation (system_instructions is never cut)
+        schema_block = ""
+        cleaned_user = user_prompt.strip()
+
+        # Detect common schema patterns: "Return strict JSON:", "OUTPUT FORMAT", "Return ONLY"
+        schema_markers = [
+            "Return strict JSON:",
+            "Return ONLY strict JSON",
+            "OUTPUT FORMAT (respond with ONLY this JSON",
+            "OUTPUT FORMAT:",
+            "Return ONLY this exact JSON",
+        ]
+        for marker in schema_markers:
+            idx = cleaned_user.find(marker)
+            if idx != -1:
+                schema_block = cleaned_user[idx:]
+                cleaned_user = cleaned_user[:idx].rstrip()
+                break
+
+        sys_parts = [
+            "You MUST follow these instructions precisely. "
+            "If structured output (JSON) is requested, return ONLY the JSON structure with no additional text.",
+            "",
+            system_prompt.strip(),
+        ]
+        if schema_block:
+            sys_parts.extend(["", schema_block])
+
         return (
-            "Follow the system instructions strictly. "
-            "If structured output is requested, return only that structure.\n\n"
-            f"System instructions:\n{system_prompt.strip()}\n\n"
-            f"Requested model hint: {model_note}\n"
-            f"Temperature hint: {temperature:.2f}\n\n"
-            f"User task:\n{user_prompt.strip()}"
+            "<system_instructions>\n"
+            + "\n".join(sys_parts) + "\n"
+            "</system_instructions>\n\n"
+            "<user_request>\n"
+            f"{cleaned_user}\n"
+            "</user_request>"
         )
+
+    @staticmethod
+    def _smart_truncate(prompt: str, max_chars: int) -> str:
+        """Truncate by cutting middle of <user_request>, preserving system_instructions and schema."""
+        tag_start = prompt.find("<user_request>")
+        tag_end = prompt.rfind("</user_request>")
+        if tag_start == -1 or tag_end == -1:
+            return prompt[:max_chars]
+
+        head = prompt[:tag_start + len("<user_request>\n")]
+        tail = prompt[tag_end:]  # "</user_request>"
+        body = prompt[tag_start + len("<user_request>\n"):tag_end]
+
+        available = max_chars - len(head) - len(tail) - 50  # 50 chars for truncation notice
+        if available <= 0:
+            return prompt[:max_chars]
+
+        # Keep first 60% and last 40% of body (schema/instructions tend to be at the end)
+        keep_front = int(available * 0.6)
+        keep_back = available - keep_front
+        truncated_body = body[:keep_front] + "\n\n[... content truncated ...]\n\n" + body[-keep_back:]
+
+        return head + truncated_body + tail
+
+    @staticmethod
+    def _resolve_copilot_model(pipeline_model: str) -> str:
+        """Map pipeline model names to available gh copilot model names."""
+        m = (pipeline_model or "").lower().strip()
+        # Opus-class → best available (gpt-5.4)
+        if "opus" in m:
+            return "gpt-5.4"
+        # Sonnet-class → gpt-5.2
+        if "sonnet" in m:
+            return "gpt-5.2"
+        # Haiku-class → gpt-4.1 (cheap/fast)
+        if "haiku" in m:
+            return "gpt-4.1"
+        # DeepSeek / Qwen fallbacks → gpt-4.1
+        if "deepseek" in m or "qwen" in m:
+            return "gpt-4.1"
+        # Default: use settings
+        return settings.copilot_model or "gpt-5.4"
 
     @staticmethod
     def _strip_copilot_footer(text: str) -> str:

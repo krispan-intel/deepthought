@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List
 
 from loguru import logger
@@ -23,6 +25,130 @@ class MaverickAgent:
     def __init__(self, llm: LLMClient | None = None, model: str | None = None):
         self.llm = llm or LLMClient()
         self.model = model or settings.maverick_model
+
+    def _should_use_claude_proxy(self) -> bool:
+        """Check if Claude Agent proxy mode should be used."""
+        return self.model.startswith("claude-")
+
+    def _delegate_to_claude_agent(self, state: PipelineState, n_drafts: int, system_prompt: str, user_prompt: str) -> PipelineState:
+        """Save draft generation request for Claude Agent and wait for completion."""
+        import time
+
+        pending_dir = Path("data/pending_maverick")
+        completed_dir = Path("data/completed_maverick")
+        pending_dir.mkdir(parents=True, exist_ok=True)
+        completed_dir.mkdir(parents=True, exist_ok=True)
+
+        request = {
+            "run_id": state.run_id,
+            "timestamp": datetime.now().isoformat(),
+            "domain": state.domain,
+            "target": state.target,
+            "n_drafts": n_drafts,
+            "system_prompt": system_prompt,
+            "user_prompt": user_prompt,
+            "void_context": state.topological_void_context,
+            "model": self.model,
+        }
+
+        request_file = pending_dir / f"{state.run_id}.json"
+        completed_file = completed_dir / f"{state.run_id}.json"
+
+        request_file.write_text(json.dumps(request, indent=2, ensure_ascii=False))
+
+        logger.info(
+            "Delegated to Claude Agent (Maverick) | run_id={} | file={} | waiting for completion...",
+            state.run_id,
+            request_file,
+            n_drafts,
+        )
+
+        # Wait for completed file (Phase 2 auto-recovery)
+        max_wait_seconds = 1800  # 30 minutes
+        check_interval = 5  # Check every 5 seconds
+        elapsed = 0
+
+        while elapsed < max_wait_seconds:
+            if completed_file.exists():
+                logger.info(
+                    "Claude Agent (Maverick) completed | run_id={} | elapsed={}s",
+                    state.run_id,
+                    elapsed,
+                )
+                # Load completed result
+                try:
+                    result = json.loads(completed_file.read_text())
+                    drafts = result.get("drafts", [])
+
+                    # Parse drafts into DraftIdea objects
+                    from agents.state import DraftIdea
+                    parsed_drafts = []
+                    for item in drafts:
+                        scores = item.get("scores", {})
+                        detail = item.get("tid_detail", {})
+                        parsed_drafts.append(
+                            DraftIdea(
+                                title=str(item.get("title", "Untitled")),
+                                one_liner=str(item.get("one_liner", "")),
+                                novelty_thesis=str(item.get("novelty_thesis", "")),
+                                feasibility_thesis=str(item.get("feasibility_thesis", "")),
+                                market_thesis=str(item.get("market_thesis", "")),
+                                why_now=str(item.get("why_now", "")),
+                                innovation=self._clamp_star(scores.get("innovation", 3)),
+                                implementation_difficulty=self._clamp_star(scores.get("implementation_difficulty", 3)),
+                                commercial_value=self._clamp_star(scores.get("commercial_value", 3)),
+                                technical_risk=self._clamp_star(scores.get("technical_risk", 3)),
+                                prior_art_conflict_risk=self._clamp_star(scores.get("prior_art_conflict_risk", 3)),
+                                problem_statement=str(detail.get("problem_statement", "")),
+                                prior_art_gap=str(detail.get("prior_art_gap", "")),
+                                proposed_invention=str(detail.get("proposed_invention", "")),
+                                architecture_overview=str(detail.get("architecture_overview", "")),
+                                implementation_plan=str(detail.get("implementation_plan", "")),
+                                validation_plan=str(detail.get("validation_plan", "")),
+                                draft_claims=[str(x) for x in detail.get("draft_claims", [])],
+                                risks_and_mitigations=[str(x) for x in detail.get("risks_and_mitigations", [])],
+                                references=[str(x) for x in detail.get("references", [])],
+                            )
+                        )
+
+                    state.drafts = parsed_drafts
+                    state.metadata["draft_count"] = len(parsed_drafts)
+                    state.metadata["claude_agent_maverick_status"] = "COMPLETED"
+
+                    # Clean up
+                    request_file.unlink(missing_ok=True)
+
+                    logger.info(
+                        "Maverick generated drafts via Claude Agent | run_id={} | produced={}",
+                        state.run_id,
+                        len(parsed_drafts),
+                    )
+
+                    return state
+
+                except Exception as exc:
+                    logger.error(
+                        "Failed to parse Claude Agent result | run_id={} | error={}",
+                        state.run_id,
+                        exc,
+                    )
+                    raise ValueError(f"Failed to parse Claude Agent Maverick result: {exc}")
+
+            time.sleep(check_interval)
+            elapsed += check_interval
+
+        # Timeout
+        state.metadata["claude_agent_maverick_status"] = "TIMEOUT"
+        state.run_status = "PENDING_CLAUDE_MAVERICK"
+        state.last_error = f"Claude Agent (Maverick) timeout after {max_wait_seconds}s"
+
+        logger.error(
+            "Claude Agent (Maverick) timeout | run_id={} | max_wait={}s",
+            state.run_id,
+            max_wait_seconds,
+        )
+
+        return state
 
     def run(self, state: PipelineState, n_drafts: int = 3) -> PipelineState:
         system_prompt = (
@@ -149,6 +275,33 @@ CRITICAL ARCHITECTURE RULES (violation = immediate rejection):
 
    Your invention must be a NEW APPLICATION or HARDWARE BRIDGE, not rediscovery.
 
+8. EXCEPTION-AS-CONTROL-FLOW BAN
+   Never use hardware exceptions (e.g., #NM, #UD, Page Faults) as a routine control-flow
+   mechanism for performance optimization in hot kernel paths (scheduler, network datapath,
+   context switch). Traps and exception handling incur massive pipeline flushes and CPU cycle
+   overhead. Exceptions are for error handling, not for lazy state tracking.
+
+   ❌ FORBIDDEN EXAMPLE (from real rejection):
+   "Use CR0.TS + #NM exception to defer AVX-512 state save on context switch"
+   (This was abandoned by Linux in 2016 due to CVE-2018-3665 and performance degradation)
+
+9. STATE ISOLATION MANDATE
+   Never propose 'Lazy Context Switching' or deferred state saving for any CPU architectural
+   state (Registers, SIMD, Matrix engines, FPU). Linux mandates EAGER state switching to
+   guarantee strict cross-process isolation and mitigate side-channel data leaks (e.g.,
+   Meltdown/Spectre variants, CVE-2018-3665 Lazy FP state restore vulnerability).
+   Security trumps lazy performance optimizations.
+
+   The kernel removed lazy FPU switching in 2016 (Kernel 4.6) for security reasons.
+   Do NOT reinvent it.
+
+10. HARDWARE DELEGATION PRINCIPLE
+    If the modern CPU Instruction Set Architecture (ISA) provides native hardware-level
+    state tracking (e.g., XSAVE's XINUSE bitmap for tracking unmodified state), software
+    must NOT invent coarse-grained software algorithms to replicate it. Trust the hardware
+    state machine. XSAVEOPT/XSAVES already skip unmodified state - do NOT build software
+    wrappers around functionality the hardware provides more efficiently.
+
 FALLBACK RULE:
 If you cannot credibly bridge both Concept A and Concept B, generate drafts focusing on Concept A OR Concept B only.
 Returning zero drafts is UNACCEPTABLE. You MUST always generate exactly {n_drafts} drafts.
@@ -160,6 +313,10 @@ Void context:
 Conference review feedback (if available):
 {feedback_text}
 """.strip()
+
+        # Check if Claude Agent proxy mode is enabled
+        if self._should_use_claude_proxy():
+            return self._delegate_to_claude_agent(state, n_drafts, system_prompt, user_prompt)
 
         raw = self.llm.chat(
             model=self.model,
