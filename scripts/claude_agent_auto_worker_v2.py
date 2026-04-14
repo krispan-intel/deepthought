@@ -7,6 +7,7 @@ This replaces the template-based approach with genuine LLM-powered generation.
 """
 
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -22,7 +23,8 @@ logger.add("logs/claude_agent_auto_worker.log", rotation="100 MB", retention="7 
 
 
 class ClaudeAgentAutoWorkerV2:
-    def __init__(self):
+    def __init__(self, worker_id: str = None):
+        self.worker_id = worker_id or f"w{os.getpid()}"
         self.llm = LLMClient()
 
         self.pending_maverick = Path("data/pending_maverick")
@@ -730,8 +732,8 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
         """
         import time
 
-        logger.info("=== Continuous async worker started | interval={}s ===", check_interval_seconds)
-        print(f"Claude Agent Auto Worker V2 started (continuous mode, interval={check_interval_seconds}s)")
+        logger.info("=== Continuous async worker started | id={} | interval={}s ===", self.worker_id, check_interval_seconds)
+        print(f"Claude Agent Auto Worker V2 started (id={self.worker_id}, interval={check_interval_seconds}s)")
         print("Monitoring pending directories for tasks...")
         print("Press Ctrl+C to stop")
 
@@ -772,8 +774,24 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
                     if not files:
                         continue
 
+                    # Try to claim a task via atomic rename (supports concurrent workers)
+                    pending_file = None
+                    claimed_file = None
+                    for candidate in sorted(files):
+                        try:
+                            claimed = candidate.with_suffix(f".{self.worker_id}.lock")
+                            candidate.rename(claimed)
+                            pending_file = claimed
+                            claimed_file = claimed
+                            break
+                        except (FileNotFoundError, OSError):
+                            # Another worker already claimed this task
+                            continue
+
+                    if pending_file is None:
+                        continue
+
                     had_work = True
-                    pending_file = sorted(files)[0]  # Process oldest first
 
                     try:
                         if agent == "maverick":
@@ -791,12 +809,24 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
                             total_stats[agent]["succeeded"] += 1
                         else:
                             total_stats[agent]["failed"] += 1
-                            # Failed tasks are NOT deleted - pipeline service will retry
+                            # Restore file for retry if it still exists
+                            if claimed_file and claimed_file.exists():
+                                original = claimed_file.with_suffix(".json")
+                                try:
+                                    claimed_file.rename(original)
+                                except OSError:
+                                    pass
 
                     except Exception as exc:
                         logger.error(f"Unexpected error processing {agent} task {pending_file.name}: {exc}")
                         total_stats[agent]["failed"] += 1
-                        # Continue to next task
+                        # Restore file for retry
+                        if claimed_file and claimed_file.exists():
+                            original = claimed_file.with_suffix(".json")
+                            try:
+                                claimed_file.rename(original)
+                            except OSError:
+                                pass
 
                 if not had_work:
                     # No pending tasks, sleep
@@ -824,14 +854,16 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
 
 
 if __name__ == "__main__":
-    import sys
+    import argparse
 
-    worker = ClaudeAgentAutoWorkerV2()
+    parser = argparse.ArgumentParser(description="Claude Agent Auto Worker V2")
+    parser.add_argument("--batch", action="store_true", help="Process all pending tasks and exit")
+    parser.add_argument("--worker-id", default=None, help="Worker ID for concurrent mode (default: w<PID>)")
+    args = parser.parse_args()
 
-    # Check command line args
-    if len(sys.argv) > 1 and sys.argv[1] == "--batch":
-        # Batch mode: process all and exit
+    worker = ClaudeAgentAutoWorkerV2(worker_id=args.worker_id)
+
+    if args.batch:
         worker.run_batch()
     else:
-        # Continuous mode: run forever
         worker.run_continuous(check_interval_seconds=10)
