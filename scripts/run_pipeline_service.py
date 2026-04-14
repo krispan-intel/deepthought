@@ -242,6 +242,14 @@ def run_once(
 
 
 def _compute_sleep_seconds(args: argparse.Namespace, state, crashed: bool = False) -> int:
+    if state is not None:
+        status = getattr(state, "run_status", "")
+
+        # Async Forager: PENDING_CLAUDE_* means Forager is done, Auto Worker takes over.
+        # No delay — immediately start next Forager run.
+        if status.startswith("PENDING_CLAUDE"):
+            return 0
+
     if args.no_delay_on_failure:
         if crashed:
             return 0

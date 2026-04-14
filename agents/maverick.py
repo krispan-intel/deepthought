@@ -56,96 +56,14 @@ class MaverickAgent:
 
         request_file.write_text(json.dumps(request, indent=2, ensure_ascii=False))
 
+        # Fire-and-forget: Forager is async, Auto Worker handles the rest
+        state.run_status = "PENDING_CLAUDE_MAVERICK"
+        state.metadata["claude_agent_maverick_file"] = str(request_file)
+
         logger.info(
-            "Delegated to Claude Agent (Maverick) | run_id={} | file={} | waiting for completion...",
+            "Delegated to Claude Agent (Maverick) | run_id={} | file={} | fire-and-forget",
             state.run_id,
             request_file,
-            n_drafts,
-        )
-
-        # Wait for completed file (Phase 2 auto-recovery)
-        max_wait_seconds = 1800  # 30 minutes
-        check_interval = 5  # Check every 5 seconds
-        elapsed = 0
-
-        while elapsed < max_wait_seconds:
-            if completed_file.exists():
-                logger.info(
-                    "Claude Agent (Maverick) completed | run_id={} | elapsed={}s",
-                    state.run_id,
-                    elapsed,
-                )
-                # Load completed result
-                try:
-                    result = json.loads(completed_file.read_text())
-                    drafts = result.get("drafts", [])
-
-                    # Parse drafts into DraftIdea objects
-                    from agents.state import DraftIdea
-                    parsed_drafts = []
-                    for item in drafts:
-                        scores = item.get("scores", {})
-                        detail = item.get("tid_detail", {})
-                        parsed_drafts.append(
-                            DraftIdea(
-                                title=str(item.get("title", "Untitled")),
-                                one_liner=str(item.get("one_liner", "")),
-                                novelty_thesis=str(item.get("novelty_thesis", "")),
-                                feasibility_thesis=str(item.get("feasibility_thesis", "")),
-                                market_thesis=str(item.get("market_thesis", "")),
-                                why_now=str(item.get("why_now", "")),
-                                innovation=self._clamp_star(scores.get("innovation", 3)),
-                                implementation_difficulty=self._clamp_star(scores.get("implementation_difficulty", 3)),
-                                commercial_value=self._clamp_star(scores.get("commercial_value", 3)),
-                                technical_risk=self._clamp_star(scores.get("technical_risk", 3)),
-                                prior_art_conflict_risk=self._clamp_star(scores.get("prior_art_conflict_risk", 3)),
-                                problem_statement=str(detail.get("problem_statement", "")),
-                                prior_art_gap=str(detail.get("prior_art_gap", "")),
-                                proposed_invention=str(detail.get("proposed_invention", "")),
-                                architecture_overview=str(detail.get("architecture_overview", "")),
-                                implementation_plan=str(detail.get("implementation_plan", "")),
-                                validation_plan=str(detail.get("validation_plan", "")),
-                                draft_claims=[str(x) for x in detail.get("draft_claims", [])],
-                                risks_and_mitigations=[str(x) for x in detail.get("risks_and_mitigations", [])],
-                                references=[str(x) for x in detail.get("references", [])],
-                            )
-                        )
-
-                    state.drafts = parsed_drafts
-                    state.metadata["draft_count"] = len(parsed_drafts)
-                    state.metadata["claude_agent_maverick_status"] = "COMPLETED"
-
-                    # Clean up
-                    request_file.unlink(missing_ok=True)
-
-                    logger.info(
-                        "Maverick generated drafts via Claude Agent | run_id={} | produced={}",
-                        state.run_id,
-                        len(parsed_drafts),
-                    )
-
-                    return state
-
-                except Exception as exc:
-                    logger.error(
-                        "Failed to parse Claude Agent result | run_id={} | error={}",
-                        state.run_id,
-                        exc,
-                    )
-                    raise ValueError(f"Failed to parse Claude Agent Maverick result: {exc}")
-
-            time.sleep(check_interval)
-            elapsed += check_interval
-
-        # Timeout
-        state.metadata["claude_agent_maverick_status"] = "TIMEOUT"
-        state.run_status = "PENDING_CLAUDE_MAVERICK"
-        state.last_error = f"Claude Agent (Maverick) timeout after {max_wait_seconds}s"
-
-        logger.error(
-            "Claude Agent (Maverick) timeout | run_id={} | max_wait={}s",
-            state.run_id,
-            max_wait_seconds,
         )
 
         return state
