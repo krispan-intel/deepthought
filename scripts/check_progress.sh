@@ -33,19 +33,23 @@ else
     echo "│  Pipeline Service:  ❌ NOT RUNNING                                  │"
 fi
 
-# Auto Worker
-PID_FILE="logs/auto_worker.pid"
-if [ -f "$PID_FILE" ]; then
-    WORKER_PID=$(cat "$PID_FILE")
-    if ps -p "$WORKER_PID" > /dev/null 2>&1; then
-        WORKER_CPU=$(ps -p "$WORKER_PID" -o %cpu= | xargs)
-        WORKER_MEM=$(ps -p "$WORKER_PID" -o %mem= | xargs)
-        echo "│  Auto Worker:       ✅ RUNNING (PID: $WORKER_PID, CPU: ${WORKER_CPU}%, MEM: ${WORKER_MEM}%)  │"
-    else
-        echo "│  Auto Worker:       ❌ NOT RUNNING (stale PID)                      │"
+# Auto Workers (supports multiple concurrent workers)
+WORKER_COUNT=0
+WORKER_PIDS=""
+for pid_file in logs/auto_worker_*.pid logs/auto_worker.pid; do
+    [ -f "$pid_file" ] || continue
+    pid=$(cat "$pid_file")
+    if ps -p "$pid" > /dev/null 2>&1; then
+        WORKER_COUNT=$((WORKER_COUNT + 1))
+        WORKER_PIDS="$WORKER_PIDS $pid"
     fi
+done
+
+if [ "$WORKER_COUNT" -gt 0 ]; then
+    COPILOT_ACTIVE=$(ps aux | grep "[g]h copilot" | wc -l)
+    printf "│  Auto Workers:      ✅ %d RUNNING (copilot calls: %d)                  │\n" "$WORKER_COUNT" "$COPILOT_ACTIVE"
 else
-    echo "│  Auto Worker:       ❌ NOT RUNNING                                  │"
+    echo "│  Auto Workers:      ❌ NOT RUNNING                                 │"
 fi
 
 echo "│                                                                      │"
@@ -175,14 +179,17 @@ else
 fi
 
 echo "│                                                                      │"
-echo "│  Auto Worker Log (last 3 lines):                                    │"
-if [ -f "logs/auto_worker_continuous.log" ]; then
-    tail -3 logs/auto_worker_continuous.log | while IFS= read -r line; do
-        truncated=$(echo "$line" | cut -c 1-66)
-        printf "│    %-66s  │\n" "$truncated"
-    done
-else
-    echo "│    (no log)                                                          │"
+echo "│  Auto Worker Logs (latest per worker):                              │"
+FOUND_LOG=0
+for log_file in logs/auto_worker_w*.log; do
+    [ -f "$log_file" ] || continue
+    FOUND_LOG=1
+    wname=$(basename "$log_file" .log | sed 's/auto_worker_//')
+    last_line=$(tail -1 "$log_file" 2>/dev/null | cut -c 1-60)
+    printf "│    [%s] %-60s  │\n" "$wname" "$last_line"
+done
+if [ "$FOUND_LOG" -eq 0 ]; then
+    echo "│    (no worker logs)                                                  │"
 fi
 
 echo "│                                                                      │"
