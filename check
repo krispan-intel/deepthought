@@ -1,0 +1,4 @@
+#!/bin/bash
+# Quick alias for check_progress.sh
+cd "$(dirname "$0")"
+./scripts/check_progress.sh "$@"

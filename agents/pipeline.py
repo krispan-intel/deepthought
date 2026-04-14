@@ -85,6 +85,17 @@ class DeepThoughtPipeline:
                 state = self._run_maverick_parallel(state, n_drafts=effective_drafts)
             else:
                 state = self.maverick.run(state, n_drafts=n_drafts)
+
+            # Check if Maverick delegated to Claude Agent
+            if state.run_status == "PENDING_CLAUDE_MAVERICK":
+                state.metadata["stage_status"]["maverick"] = "PENDING_CLAUDE"
+                logger.info(
+                    "Pipeline paused for Claude Agent (Maverick) | run_id={} | file={}",
+                    state.run_id,
+                    state.metadata.get("claude_agent_maverick_file", "unknown")
+                )
+                return state
+
             state.metadata["stage_status"]["maverick"] = "OK"
         except Exception as exc:
             return self._mark_failure(state, "maverick", exc)
@@ -97,6 +108,17 @@ class DeepThoughtPipeline:
         # Professor pre-flight review: fast triage before expensive stages
         try:
             state = self.professor.run(state)
+
+            # Check if Professor delegated to Claude Agent
+            if state.run_status == "PENDING_CLAUDE_PROFESSOR":
+                state.metadata["stage_status"]["professor"] = "PENDING_CLAUDE"
+                logger.info(
+                    "Pipeline paused for Claude Agent (Professor) | run_id={} | file={}",
+                    state.run_id,
+                    state.metadata.get("claude_agent_professor_file", "unknown")
+                )
+                return state
+
             state.metadata["stage_status"]["professor"] = "OK"
         except Exception as exc:
             return self._mark_failure(state, "professor", exc)
@@ -133,6 +155,17 @@ class DeepThoughtPipeline:
             revision_attempts = 0
             while revision_attempts < settings.max_revision_iterations:
                 state = self.reality_checker.run(state)
+
+                # Check if Reality Checker delegated to Claude Agent
+                if state.run_status == "PENDING_CLAUDE_REALITY_CHECKER":
+                    state.metadata["stage_status"]["reality_checker"] = "PENDING_CLAUDE"
+                    logger.info(
+                        "Pipeline paused for Claude Agent (Reality Checker) | run_id={} | file={}",
+                        state.run_id,
+                        state.metadata.get("claude_agent_reality_checker_file", "unknown")
+                    )
+                    return state
+
                 revision_attempts += 1
                 has_revise = any(c.verdict == "REVISE" for c in state.critiques)
                 has_approve = any(c.verdict == "APPROVE" for c in state.critiques)
@@ -162,10 +195,28 @@ class DeepThoughtPipeline:
 
                 if has_revise and not has_approve:
                     state = self.reality_checker.revise_drafts(state)
+                    # Check if revise delegated to Claude Agent
+                    if state.run_status == "PENDING_CLAUDE_REALITY_CHECKER":
+                        state.metadata["stage_status"]["reality_checker"] = "PENDING_CLAUDE"
+                        logger.info(
+                            "Pipeline paused for Claude Agent (Reality Checker revise) | run_id={} | file={}",
+                            state.run_id,
+                            state.metadata.get("claude_agent_reality_checker_file", "unknown")
+                        )
+                        return state
                     continue
 
                 # Mixed APPROVE/REVISE case: revise unresolved drafts and continue.
                 state = self.reality_checker.revise_drafts(state)
+                # Check if revise delegated to Claude Agent
+                if state.run_status == "PENDING_CLAUDE_REALITY_CHECKER":
+                    state.metadata["stage_status"]["reality_checker"] = "PENDING_CLAUDE"
+                    logger.info(
+                        "Pipeline paused for Claude Agent (Reality Checker revise) | run_id={} | file={}",
+                        state.run_id,
+                        state.metadata.get("claude_agent_reality_checker_file", "unknown")
+                    )
+                    return state
 
             state.metadata["stage_status"]["reality_checker"] = "OK"
         except Exception as exc:

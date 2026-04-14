@@ -16,6 +16,9 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import asdict
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List
 
 from loguru import logger
@@ -37,6 +40,83 @@ class ProfessorAgent:
     def __init__(self, llm: LLMClient | None = None, model: str | None = None):
         self.llm = llm or LLMClient()
         self.model = model or settings.professor_model
+
+    def _should_use_claude_proxy(self) -> bool:
+        """Check if Claude Agent proxy mode should be used."""
+        return self.model.startswith("claude-")
+
+    def _delegate_to_claude_agent(self, state: PipelineState, system_prompt: str, user_prompt: str) -> PipelineState:
+        """Save professor review request for Claude Agent and wait for completion."""
+        import time
+
+        pending_dir = Path("data/pending_professor")
+        completed_dir = Path("data/completed_professor")
+        pending_dir.mkdir(parents=True, exist_ok=True)
+        completed_dir.mkdir(parents=True, exist_ok=True)
+
+        request = {
+            "run_id": state.run_id,
+            "timestamp": datetime.now().isoformat(),
+            "domain": state.domain,
+            "target": state.target,
+            "drafts": [asdict(draft) for draft in state.drafts],
+            "system_prompt": system_prompt,
+            "user_prompt": user_prompt,
+            "model": self.model,
+        }
+
+        request_file = pending_dir / f"{state.run_id}.json"
+        completed_file = completed_dir / f"{state.run_id}.json"
+
+        request_file.write_text(json.dumps(request, indent=2, ensure_ascii=False))
+
+        logger.info(
+            "Delegated to Claude Agent (Professor) | run_id={} | file={} | waiting...",
+            state.run_id,
+            request_file,
+        )
+
+        # Wait for completion
+        max_wait_seconds = 300
+        check_interval = 5
+        elapsed = 0
+
+        while elapsed < max_wait_seconds:
+            if completed_file.exists():
+                logger.info(f"Claude Agent (Professor) completed | run_id={state.run_id} | elapsed={elapsed}s")
+                try:
+                    result = json.loads(completed_file.read_text())
+                    verdicts = result.get("verdicts", [])
+
+                    # Filter drafts based on verdicts
+                    filtered_drafts = []
+                    for i, draft in enumerate(state.drafts):
+                        if i < len(verdicts) and verdicts[i].get("verdict", "PASS").upper() == "PASS":
+                            filtered_drafts.append(draft)
+
+                    state.drafts = filtered_drafts
+                    state.metadata["claude_agent_professor_status"] = "COMPLETED"
+
+                    request_file.unlink(missing_ok=True)
+
+                    logger.info(f"Professor completed via Claude Agent | run_id={state.run_id} | passed={len(filtered_drafts)}")
+
+                    return state
+
+                except Exception as exc:
+                    logger.error(f"Failed to parse Professor result | run_id={state.run_id} | error={exc}")
+                    raise ValueError(f"Failed to parse Claude Agent Professor result: {exc}")
+
+            time.sleep(check_interval)
+            elapsed += check_interval
+
+        # Timeout
+        state.metadata["claude_agent_professor_status"] = "TIMEOUT"
+        state.run_status = "PENDING_CLAUDE_PROFESSOR"
+        state.last_error = f"Claude Agent (Professor) timeout after {max_wait_seconds}s"
+        logger.error(f"Claude Agent (Professor) timeout | run_id={state.run_id}")
+
+        return state
 
     def run(self, state: PipelineState) -> PipelineState:
         """
@@ -82,6 +162,9 @@ Check these 2 BLOCKING issues:
    - Boot-time vs runtime contract violation (dynamic CPUID renegotiation, modifying immutable hardware state)
    - Cross-CPU wakeup suppression or reschedule-IPI filtering without grounded synchronization model
    - Jumping across unrelated subsystems without credible causal bridge
+   - EXCEPTION-AS-CONTROL-FLOW: Using hardware exceptions (#NM, #UD, page faults) as routine control flow in hot kernel paths (scheduler, context switch, network datapath). This includes CR0.TS + #NM for lazy FPU/SIMD state switching (removed in Linux 4.6 due to CVE-2018-3665)
+   - STATE ISOLATION: Proposing lazy context switching or deferred state saving for CPU architectural state (FPU, SIMD, Matrix engines). Linux mandates eager state switching for security (Meltdown/Spectre/CVE-2018-3665)
+   - HARDWARE DELEGATION: Reinventing functionality the hardware already provides (e.g., XSAVE's XINUSE bitmap for tracking unmodified state). Do NOT wrap hardware-level state tracking in software
 
 2. JSON FORMAT (CRITICAL - always check)
    - Malformed JSON structure
@@ -128,6 +211,10 @@ Output format (strict JSON):
 
 Output now:
 """.strip()
+
+        # Check if Claude Agent proxy mode is enabled
+        if self._should_use_claude_proxy():
+            return self._delegate_to_claude_agent(state, system_prompt, user_prompt)
 
         raw = self.llm.chat(
             model=self.model,

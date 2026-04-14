@@ -28,20 +28,34 @@ The knowledge space visualization:
 
 ## 📐 The Hybrid DeepThought Equation (BGE-M3 Dense-Sparse Triad)
 
-The core mathematical engine has evolved from traditional global MMR to a **Hybrid Vector-Inverted Index Triad**. We identify true Topological Voids by finding two concepts (A and B) within a domain anchor (C) that are semantically compatible but have **absolute zero historical co-occurrence**.
+The core mathematical engine has evolved from traditional global MMR to a **Hybrid Vector-Inverted Index Triad**. We identify Topological Voids by finding two concepts (A and B) within a domain anchor (C) that are semantically marginal but share a **sparse lexical bridge** — at least one meaningful co-occurring token.
+
+**Hybrid Score Formula:**
+
+```
+HybridScore(A,B) = λ · Cos(Dense(A⊕B), Dense(C))
+                 - (1-λ) · AvgRedundancy(A,B)
+                 + w_m · MarginalityFit(A,B)
+                 + bias
+```
+
+Where `MarginalityFit(A,B) = max(0, 1 - |Cos(A,B) - midpoint| / half_band)` is a Gaussian-like penalty that peaks when the pair similarity sits at the center of the marginality band and drops to zero outside it.
 
 **Objective:** Find Triad (C, A, B) that satisfies:
 
-1. Domain Cohesion: `Cos(Dense(A), Dense(C)) > τ_domain` AND `Cos(Dense(B), Dense(C)) > τ_domain`
+1. Domain Cohesion: `Cos(Dense(A), Dense(C)) > τ_domain` AND `Cos(Dense(B), Dense(C)) > τ_domain` (τ_domain uses percentile-adaptive calibration)
 2. Calibrated Marginality: `τ_low ≤ Cos(Dense(A), Dense(B)) ≤ τ_high`
-3. True Global Void: `Boolean_AND(Sparse_Top_Tokens(A), Sparse_Top_Tokens(B)) == 0` (via Elasticsearch)
+3. Sparse Lexical Bridge: `|SparseTokens(A) ∩ SparseTokens(B) - StopWords| > 0` — pairs must share at least one meaningful token
 
 | Component | Meaning | Execution |
 |-----------|---------|-----------|
 | **Dense(·)** | 1024D Semantic Embedding | Nearest Neighbor (KNN) via FAISS for fast O(N) candidate retrieval. |
 | **Sparse(·)** | Top-5 Lexical Weights | Extracts precise "Concept Anchors" using BGE-M3's learned sparse layer. |
+| **τ_domain** | Domain Cohesion Threshold | Percentile-adaptive calibration (not a static constant). |
 | **τ_low, τ_high** | Marginality Threshold | Calibrated from git-history of "first-time subsystem collisions" to avoid Franken-IPs. |
-| **True Global Void** | Absolute historic vacuum | Exact boolean query against the entire inverted index (code + docs + papers). |
+| **MarginalityFit** | Gaussian-like band penalty | Peaks at midpoint of [τ_low, τ_high], zero outside the band. |
+| **Sparse Lexical Bridge** | Shared token filter | Requires at least one non-stop-word token overlap between A and B sparse vocabularies. |
+| **StopWords** | Noise filter | Common function words removed before sparse token intersection. |
 
 ## 🏗️ Architecture: Decoupled 3-Tier Pipeline
 ```
@@ -63,11 +77,12 @@ The core mathematical engine has evolved from traditional global MMR to a **Hybr
 |  +----------------------------------------------------------+  |
 |  |  LangGraph orchestrates the Conference Review Simulated Framework |  |
 |  |                                                          |  |
-|  |  Forager        -->  Hybrid Triad Void Detection         |  |
-|  |  Maverick       -->  Divergent RFC Gen (Concept Anchors) |  |
-|  |  Patent Shield  -->  Global Prior Art API Check          |  |
-|  |  Reality Checker-->  Constraint Validation & Critique    |  |
-|  |  Debate Panel   -->  Multi-Model Consensus & Mutation    |  |
+|  |  Forager        -->  Hybrid Triad Void Detection                            |  |
+|  |  Maverick       -->  Divergent RFC Gen (gpt-5.4)                            |  |
+|  |  Professor      -->  Pre-Flight Draft Triage (gpt-5.2)                      |  |
+|  |  Patent Shield  -->  Global Prior Art API Check                             |  |
+|  |  Reality Checker-->  Constraint Validation & Critique (gpt-5.2)             |  |
+|  |  Debate Panel   -->  4-Specialist Parallel Review + Deterministic Verdict (gpt-5.4) |  |
 |  +----------------------------------------------------------+  |
 |                              |                                 |
 |                              v                                 |
@@ -93,7 +108,13 @@ The core mathematical engine has evolved from traditional global MMR to a **Hybr
 - Generates divergent RFC drafts
 - High temperature, unconstrained creativity
 - Explores the identified Void space
-- **Model**: `copilot_cli` (GitHub Copilot managed model routing)
+- **Model**: `copilot_cli` -> `gpt-5.4` via `--model --effort high`
+
+### 📚 The Professor (Pre-Flight Reviewer)
+- Fast triage gate after Maverick, before expensive stages
+- Validates draft structure, technical coherence, and claim quality
+- Rejects weak drafts early to save downstream compute
+- **Model**: `copilot_cli` -> `gpt-5.2` via `--model`
 
 ### 🛡️ The Patent Shield (Fast-Fail Gate)
 - Pre-screens drafts against global APIs (Semantic Scholar / Google Patents) before expensive LLM processing
@@ -105,12 +126,17 @@ The core mathematical engine has evolved from traditional global MMR to a **Hybr
 - Executes **Global Prior-Art Check** (Google Patents / Semantic Scholar APIs)
 - Validates against physical constraints (x86 ISA, Linux ABI) via simulation and static checks
 - Generates precise error logs and performance debt metrics for the Conference Review Simulated Framework
-- **Model**: API Integrations + `copilot_cli`
+- **Model**: API Integrations + `copilot_cli` -> `gpt-5.2` via `--model --effort high`
 
-### ⚖️ The Debate Panel (Consensus)
-- Conference-style adversarial committee simulation
-- **Reviewer Committee**: `copilot_cli` (role-conditioned rounds)
-- **Chairman Judge**: `copilot_cli` (final synthesis and verdict)
+### ⚖️ The Debate Panel (4-Specialist Consensus)
+- Conference-style adversarial committee with 4 named specialists:
+  - **Kernel Hardliner**: Linux kernel correctness, locking, concurrency
+  - **Prior-Art Shark**: Novelty, non-obviousness, overlap risk
+  - **Intel Strategist**: x86 strategic value, Xeon competitiveness, HW/SW co-design
+  - **Security Guardian**: TAA/side-channel risk, crash risk, compatibility
+- **Deterministic Verdict Rules**: Fatal flaw reject, majority reject (>=2), yellow card reject (>=3), full approval (all APPROVE + avg>=4), majority approval (>=3 + avg>=3.5)
+- Parallel execution via bash-level fleet (4 specialists run simultaneously)
+- **Model**: `copilot_cli` -> `gpt-5.4` via `--model --effort high`
 
 ## 🔄 Pipeline Flow
 
@@ -126,10 +152,17 @@ Input: Legacy Code + Modern Specs
               v
    +--------> +------------+
    |          |  MAVERICK  |
-        |          |  copilot_cli                 |
+   |          |  gpt-5.4                     |
    |          |  RFC Draft Generation        |
    |          +------------+
    |                  |
+   |                  v
+   |          +------------------+
+   |          | PROFESSOR        |
+   |          | gpt-5.2          |
+   |          | Pre-Flight Triage|
+   |          +------------------+
+   |                  | (Pass)
    |                  v
    |          +------------------+
    |          | PATENT SHIELD    |
@@ -139,6 +172,7 @@ Input: Legacy Code + Modern Specs
    |                  v
    |          +------------------+
    |          | REALITY CHECKER  |
+   |          | gpt-5.2          |
    |          | Constraint Eval  |
    |          +------------------+
    |                  |
@@ -147,21 +181,30 @@ Input: Legacy Code + Modern Specs
                    APPROVE
                       |
                       v
-              +--------------+
-              | DEBATE PANEL |
-              | copilot_cli  |
-              | role-committee|
-              +--------------+
-                      |
-                      v
-              +----------------+
-              | CONSENSUS JUDGE|
-              +----------------+
-                      |
-                      v
-              +--------------+
-              | TID FORMATTER|
-              +--------------+
+   +--------> +-------------------------------+
+   |          | DEBATE PANEL (4 Specialists)  |
+   |          | gpt-5.4 x4 parallel           |
+   |          +-------------------------------+
+   |          | Kernel Hardliner              |
+   |          | Prior-Art Shark               |
+   |          | Intel Strategist              |
+   |          | Security Guardian             |
+   |          +-------------------------------+
+   |                      |
+   |                      v
+   |          +-------------------------------+
+   |          | DETERMINISTIC VERDICT         |
+   |          | (rule-based, no LLM call)     |
+   |          +-------------------------------+
+   |                      |
+   +----------------------+ (REVISE: Debate revision loop)
+                          |
+                       APPROVE
+                          |
+                          v
+                  +--------------+
+                  | TID FORMATTER|
+                  +--------------+
 ```
 
 ## 🧭 Practical Notes: Void Semantics and Scale
@@ -317,13 +360,20 @@ python scripts/run_pipeline.py \
     --target "scheduler latency optimization"
 ```
 
-## 📌 Current Implementation Status (2026-04-08)
+## 📌 Current Implementation Status (2026-04-14)
 
 Implemented now:
 - End-to-end local ingestion pipeline (crawler -> parser -> chunker -> Chroma store)
 - DeepThought Equation + iterative MMR + concept arithmetic
 - Topological Void retrieval API and probe script
-- Multi-agent pipeline skeleton and runnable CLI (`forager`, `maverick`, `reality_checker`, `debate_panel`)
+- Multi-agent pipeline skeleton and runnable CLI (`forager`, `maverick`, `professor`, `reality_checker`, `debate_panel`)
+- Professor pre-flight review gate (fast triage before expensive stages)
+- Debate Panel 4-specialist parallel review with deterministic verdict rules
+- Auto Worker V2 with gh copilot CLI model routing (`--model`, `--effort`)
+- Schema-protected prompt engineering (XML tags, smart truncation)
+- Percentile-adaptive domain threshold calibration
+- Cartesian Matrix target generation
+- Auto Worker statistics and monitoring
 - TID report formatter with dual outputs (Markdown + HTML)
 - Run status persistence and retry flow (`RETRY_PENDING` -> `--retry-failed`)
 - Pipeline execution validated with `APPROVED` verdict and report export
@@ -403,7 +453,10 @@ Notes:
 
 - This mode is intended for host-side experimentation, not unattended Docker production use.
 - Before running, ensure `GH_TOKEN` / `GITHUB_TOKEN` are unset so `gh copilot` falls back to `~/.config/gh/hosts.yml`.
-- The Copilot CLI currently reports `gpt-5.4` in successful interactive runs, but model selection is controlled by GitHub Copilot rather than this repo.
+- Model selection is now controlled by this repo via `--model` flag: Maverick uses `gpt-5.4`, review stages use `gpt-5.2`.
+- Reasoning effort is set via `--effort high` for all stages.
+- Prompts use XML-tagged structure (`<system_instructions>` / `<user_request>`) for reliable schema compliance.
+- JSON schema is automatically extracted to `<system_instructions>` to survive prompt truncation.
 
 ### Random Walk and Mutate flow
 

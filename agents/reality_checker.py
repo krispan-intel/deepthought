@@ -8,6 +8,9 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import asdict
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List
 
 from loguru import logger
@@ -21,8 +24,87 @@ from agents.state import CritiqueResult, PipelineState
 class RealityCheckerAgent:
     def __init__(self, llm: LLMClient | None = None):
         self.llm = llm or LLMClient()
+        self.model = settings.reality_checker_model
+
+    def _should_use_claude_proxy(self) -> bool:
+        """Check if Claude Agent proxy mode should be used."""
+        return self.model.startswith("claude-")
+
+    def _delegate_to_claude_agent(self, state: PipelineState, critique_mode: bool = True) -> PipelineState:
+        """Save reality checker request for Claude Agent and wait for completion."""
+        import time
+
+        pending_dir = Path("data/pending_reality_checker")
+        completed_dir = Path("data/completed_reality_checker")
+        pending_dir.mkdir(parents=True, exist_ok=True)
+        completed_dir.mkdir(parents=True, exist_ok=True)
+
+        request = {
+            "run_id": state.run_id,
+            "timestamp": datetime.now().isoformat(),
+            "domain": state.domain,
+            "target": state.target,
+            "mode": "critique" if critique_mode else "revise",
+            "drafts": [asdict(draft) for draft in state.drafts],
+            "critiques": [asdict(critique) for critique in state.critiques] if not critique_mode else [],
+            "revisions": state.revisions,
+            "model": self.model,
+        }
+
+        request_file = pending_dir / f"{state.run_id}.json"
+        completed_file = completed_dir / f"{state.run_id}.json"
+
+        request_file.write_text(json.dumps(request, indent=2, ensure_ascii=False))
+
+        mode_str = "critique" if critique_mode else "revise"
+        logger.info(f"Delegated to Claude Agent (Reality Checker) | run_id={state.run_id} | mode={mode_str} | waiting...")
+
+        # Wait for completion
+        max_wait = 300
+        elapsed = 0
+        while elapsed < max_wait:
+            if completed_file.exists():
+                logger.info(f"Reality Checker completed | run_id={state.run_id} | elapsed={elapsed}s")
+                try:
+                    result = json.loads(completed_file.read_text())
+
+                    if critique_mode:
+                        # Parse critiques
+                        critiques_data = result.get("critiques", [])
+                        critiques = []
+                        for c in critiques_data:
+                            critiques.append(CritiqueResult(
+                                verdict=c.get("status", "APPROVE"),
+                                rationale=c.get("actionable_feedback", ""),
+                                required_revisions=[c.get("actionable_feedback", "")],
+                                confidence=0.9,
+                                fatal_flaw=c.get("fatal_flaw", "")
+                            ))
+                        state.critiques = critiques
+
+                    state.metadata["claude_agent_reality_checker_status"] = "COMPLETED"
+                    request_file.unlink(missing_ok=True)
+
+                    logger.info(f"Reality Checker via Claude Agent completed | run_id={state.run_id}")
+                    return state
+
+                except Exception as exc:
+                    logger.error(f"Failed to parse Reality Checker result | run_id={state.run_id} | error={exc}")
+                    raise ValueError(f"Failed to parse Claude Agent Reality Checker result: {exc}")
+
+            time.sleep(5)
+            elapsed += 5
+
+        state.metadata["claude_agent_reality_checker_status"] = "TIMEOUT"
+        state.run_status = "PENDING_CLAUDE_REALITY_CHECKER"
+        logger.error(f"Reality Checker timeout | run_id={state.run_id}")
+        return state
 
     def run(self, state: PipelineState) -> PipelineState:
+        # Check if Claude Agent proxy mode is enabled
+        if self._should_use_claude_proxy():
+            return self._delegate_to_claude_agent(state, critique_mode=True)
+
         critiques: List[CritiqueResult] = []
         round_trace: List[Dict[str, Any]] = []
 
@@ -44,6 +126,20 @@ class RealityCheckerAgent:
                 "Be rigorous but constructive: prefer REVISE over REJECT whenever the core idea is salvageable. "
                 "Reserve REJECT strictly for ideas that are physically impossible, rely on fictional kernel APIs, "
                 "or have an unfixable ABI breakage. "
+                "\n\n"
+                "CRITICAL: HISTORICAL REGRESSION SANITY CHECK\n"
+                "Before approving any architectural optimization, perform a Historical Regression Check:\n"
+                "Ask yourself: 'Is this proposal actually an old, deprecated Linux kernel pattern that was "
+                "reverted due to security vulnerabilities (like side-channels) or SMP scaling bottlenecks?'\n"
+                "If the draft proposes a mechanism that resembles an abandoned historic design (e.g., Lazy FPU "
+                "switching removed in Linux 4.6 due to CVE-2018-3665, Big Kernel Lock, coarse-grained polling), "
+                "you MUST output REJECT and cite the historical reason.\n"
+                "\n"
+                "Known historical anti-patterns that MUST be rejected:\n"
+                "- Lazy FPU/SIMD state switching using CR0.TS + #NM exceptions (removed in 2016, CVE-2018-3665)\n"
+                "- Using hardware exceptions (#NM, #UD, page faults) as routine control flow in hot paths\n"
+                "- Deferred state saving for security-critical CPU architectural state\n"
+                "\n"
                 "Output valid JSON only."
                 + convergence_rule
             )
@@ -153,6 +249,10 @@ Decision policy:
         return state
 
     def revise_drafts(self, state: PipelineState) -> PipelineState:
+        # Check if Claude Agent proxy mode is enabled
+        if self._should_use_claude_proxy():
+            return self._delegate_to_claude_agent(state, critique_mode=False)
+
         revised = []
         revision_trace: List[Dict[str, Any]] = []
         for draft, critique in zip(state.drafts, state.critiques):
