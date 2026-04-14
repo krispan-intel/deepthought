@@ -190,9 +190,116 @@ echo "└───────────────────────�
 echo ""
 
 # ─────────────────────────────────────────────────────────────────
-# 7. Quick Actions
+# 7. Pachinko Funnel (Stage-by-Stage Conversion)
 # ─────────────────────────────────────────────────────────────────
-echo "┌─ 7. QUICK ACTIONS ───────────────────────────────────────────────────┐"
+echo "┌─ 7. 🎰 PACHINKO FUNNEL ──────────────────────────────────────────────┐"
+echo "│                                                                      │"
+
+source .venv/bin/activate 2>/dev/null || true
+python3 << 'FUNNEL_EOF'
+import json, glob, os
+
+# Count completions at each stage
+maverick = len(glob.glob('data/completed_maverick/*.json'))
+professor = len(glob.glob('data/completed_professor/*.json'))
+rc = len(glob.glob('data/completed_reality_checker/*.json'))
+debate = len(glob.glob('data/completed_reviews/*.json'))
+
+# Professor pass rate (from completed professor files)
+prof_passed = 0
+prof_rejected = 0
+for f in glob.glob('data/completed_professor/*.json'):
+    try:
+        data = json.load(open(f))
+        verdicts = data.get("verdicts", [])
+        if any(v.get("verdict") == "PASS" for v in verdicts):
+            prof_passed += 1
+        else:
+            prof_rejected += 1
+    except:
+        pass
+
+# RC verdict breakdown
+rc_approve = rc_revise = rc_reject = 0
+for f in glob.glob('data/completed_reality_checker/*.json'):
+    try:
+        data = json.load(open(f))
+        s = data.get('status', data.get('verdict', ''))
+        if s in ('APPROVE', 'APPROVED'): rc_approve += 1
+        elif s == 'REVISE': rc_revise += 1
+        elif s == 'REJECT': rc_reject += 1
+    except:
+        pass
+
+# Debate verdict breakdown
+db_approve = db_revise = db_reject = 0
+for f in glob.glob('data/completed_reviews/*.json'):
+    try:
+        data = json.load(open(f))
+        cr = data.get('chairman_result', data)
+        v = cr.get('final_verdict', '')
+        if v == 'APPROVE': db_approve += 1
+        elif v == 'REVISE': db_revise += 1
+        elif v == 'REJECT': db_reject += 1
+    except:
+        pass
+
+# Final approved from pipeline_runs
+approved = 0
+total_runs = 0
+if os.path.exists('data/processed/pipeline_runs.jsonl'):
+    with open('data/processed/pipeline_runs.jsonl') as f:
+        for line in f:
+            if not line.strip(): continue
+            total_runs += 1
+            r = json.loads(line)
+            if r.get('run_status') == 'APPROVED':
+                approved += 1
+
+# Print funnel
+def pct(n, base):
+    return f"{100*n/base:.0f}%" if base > 0 else "-%"
+
+def bar(n, base, width=20):
+    ratio = n / base if base > 0 else 0
+    filled = int(ratio * width)
+    return "█" * filled + "░" * (width - filled)
+
+base = maverick if maverick > 0 else 1
+
+print(f"│  Forager → Maverick    {bar(maverick, base)} {maverick:4d}  (100%)       │")
+print(f"│  → Professor           {bar(professor, base)} {professor:4d}  ({pct(professor, maverick):>4s})       │")
+if professor > 0:
+    print(f"│    ├─ PASS: {prof_passed}   REJECT: {prof_rejected}                                   │")
+print(f"│  → Reality Checker     {bar(rc, base)} {rc:4d}  ({pct(rc, maverick):>4s})       │")
+if rc > 0:
+    print(f"│    ├─ APPROVE: {rc_approve}  REVISE: {rc_revise}  REJECT: {rc_reject}                          │")
+print(f"│  → Debate Panel        {bar(debate, base)} {debate:4d}  ({pct(debate, maverick):>4s})       │")
+if debate > 0:
+    print(f"│    ├─ APPROVE: {db_approve}  REVISE: {db_revise}  REJECT: {db_reject}                          │")
+print(f"│  → APPROVED TID        {bar(approved, base)} {approved:4d}  ({pct(approved, maverick):>4s})       │")
+print(f"│                                                                      │")
+print(f"│  Jackpot Rate: {pct(approved, maverick):>4s}  ({approved}/{maverick})                                │")
+
+# Pending queue depth (shows backlog)
+pending_m = len(glob.glob('data/pending_maverick/*.json'))
+pending_p = len(glob.glob('data/pending_professor/*.json'))
+pending_r = len(glob.glob('data/pending_reality_checker/*.json'))
+pending_d = len(glob.glob('data/pending_reviews/*.json'))
+total_pending = pending_m + pending_p + pending_r + pending_d
+if total_pending > 0:
+    print(f"│  Backlog: M={pending_m} P={pending_p} RC={pending_r} DP={pending_d} (total={total_pending})              │")
+
+FUNNEL_EOF
+
+echo "│                                                                      │"
+echo "└──────────────────────────────────────────────────────────────────────┘"
+echo ""
+
+# ─────────────────────────────────────────────────────────────────
+# 8. Quick Actions
+# ─────────────────────────────────────────────────────────────────
+echo "┌─ 8. QUICK ACTIONS ───────────────────────────────────────────────────┐"
 echo "│                                                                      │"
 echo "│  View full logs:                                                     │"
 echo "│    tail -f logs/pipeline_service.log                                │"
