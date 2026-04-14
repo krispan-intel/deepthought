@@ -1,36 +1,29 @@
 #!/bin/bash
 #
-# Stop Claude Agent Auto Worker V2
+# Stop all Claude Agent Auto Worker instances
 #
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-PID_FILE="$PROJECT_ROOT/logs/auto_worker.pid"
+PID_DIR="$PROJECT_ROOT/logs"
 
-if [ ! -f "$PID_FILE" ]; then
-    echo "No PID file found. Worker may not be running."
-    exit 0
-fi
+STOPPED=0
 
-WORKER_PID=$(cat "$PID_FILE")
-
-if ps -p "$WORKER_PID" > /dev/null 2>&1; then
-    echo "Stopping auto worker (PID: $WORKER_PID)..."
-    kill "$WORKER_PID"
-
-    # Wait for graceful shutdown
-    sleep 2
-
-    if ps -p "$WORKER_PID" > /dev/null 2>&1; then
-        echo "Worker didn't stop gracefully, forcing..."
-        kill -9 "$WORKER_PID" 2>/dev/null || true
+for pid_file in "$PID_DIR"/auto_worker_*.pid "$PID_DIR"/auto_worker.pid; do
+    [ -f "$pid_file" ] || continue
+    pid=$(cat "$pid_file")
+    if ps -p "$pid" > /dev/null 2>&1; then
+        echo "Stopping worker (PID: $pid)..."
+        kill "$pid" 2>/dev/null
+        STOPPED=$((STOPPED + 1))
     fi
+    rm -f "$pid_file"
+done
 
-    rm -f "$PID_FILE"
-    echo "Worker stopped."
+if [ "$STOPPED" -gt 0 ]; then
+    echo "$STOPPED worker(s) stopped."
 else
-    echo "Worker process $WORKER_PID not found (already stopped?)"
-    rm -f "$PID_FILE"
+    echo "No workers running."
 fi

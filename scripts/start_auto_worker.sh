@@ -1,47 +1,59 @@
 #!/bin/bash
 #
 # Start Claude Agent Auto Worker V2 in continuous mode
-# This worker will continuously process pending tasks asynchronously
+# Supports multiple concurrent workers: ./start_auto_worker.sh [N]
+#   N = number of workers (default: 1)
 #
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-LOG_FILE="$PROJECT_ROOT/logs/auto_worker_continuous.log"
-PID_FILE="$PROJECT_ROOT/logs/auto_worker.pid"
+PID_DIR="$PROJECT_ROOT/logs"
+NUM_WORKERS="${1:-1}"
 
 cd "$PROJECT_ROOT"
-
-# Check if worker is already running
-if [ -f "$PID_FILE" ]; then
-    OLD_PID=$(cat "$PID_FILE")
-    if ps -p "$OLD_PID" > /dev/null 2>&1; then
-        echo "Auto worker is already running (PID: $OLD_PID)"
-        echo "To stop it: kill $OLD_PID"
-        exit 1
-    else
-        # Stale PID file
-        rm -f "$PID_FILE"
-    fi
-fi
 
 # Activate virtual environment
 source "$PROJECT_ROOT/.venv/bin/activate"
 
-echo "Starting Claude Agent Auto Worker V2 (continuous mode)..."
-echo "Log file: $LOG_FILE"
+# Count existing workers
+EXISTING=$(find "$PID_DIR" -name "auto_worker_*.pid" 2>/dev/null | wc -l)
+if [ "$EXISTING" -gt 0 ]; then
+    RUNNING=0
+    for pid_file in "$PID_DIR"/auto_worker_*.pid; do
+        pid=$(cat "$pid_file")
+        if ps -p "$pid" > /dev/null 2>&1; then
+            RUNNING=$((RUNNING + 1))
+        else
+            rm -f "$pid_file"
+        fi
+    done
+    if [ "$RUNNING" -gt 0 ]; then
+        echo "$RUNNING worker(s) already running."
+        echo "To add more: stop first, then start with desired count."
+        echo "To stop all: $SCRIPT_DIR/stop_auto_worker.sh"
+        exit 1
+    fi
+fi
 
-# Start worker in background
-nohup python "$SCRIPT_DIR/claude_agent_auto_worker_v2.py" > "$LOG_FILE" 2>&1 &
-WORKER_PID=$!
+echo "Starting $NUM_WORKERS Auto Worker(s)..."
+echo ""
 
-# Save PID
-echo "$WORKER_PID" > "$PID_FILE"
+for i in $(seq 1 "$NUM_WORKERS"); do
+    WORKER_ID="w${i}"
+    LOG_FILE="$PID_DIR/auto_worker_${WORKER_ID}.log"
+    PID_FILE="$PID_DIR/auto_worker_${WORKER_ID}.pid"
 
-echo "Worker started with PID: $WORKER_PID"
+    nohup python "$SCRIPT_DIR/claude_agent_auto_worker_v2.py" --worker-id "$WORKER_ID" > "$LOG_FILE" 2>&1 &
+    WORKER_PID=$!
+    echo "$WORKER_PID" > "$PID_FILE"
+
+    echo "  Worker $WORKER_ID started (PID: $WORKER_PID) → $LOG_FILE"
+done
+
 echo ""
 echo "Commands:"
-echo "  View logs:  tail -f $LOG_FILE"
-echo "  Stop:       kill $WORKER_PID  (or: $SCRIPT_DIR/stop_auto_worker.sh)"
-echo "  Status:     ps aux | grep $WORKER_PID | grep -v grep"
+echo "  View logs:  tail -f $PID_DIR/auto_worker_w*.log"
+echo "  Stop all:   $SCRIPT_DIR/stop_auto_worker.sh"
+echo "  Status:     ps aux | grep auto_worker | grep -v grep"
