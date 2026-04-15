@@ -131,21 +131,29 @@ class ClaudeAgentAutoWorkerV2:
             return False
 
     def process_reality_checker_task(self, pending_file: Path):
-        """Reality check using real LLM"""
+        """
+        Reality check with revision loop.
+
+        Flow: critique → if REVISE → revise drafts → re-critique → up to max_revisions
+              if APPROVE → chain to Debate Panel
+              if REJECT  → stop
+        """
         logger.info(f"Processing Reality Checker task: {pending_file.name}")
 
         request = json.loads(pending_file.read_text())
         run_id = request["run_id"]
-        mode = request.get("mode", "critique")
         drafts = request.get("drafts", [])
-        critiques = request.get("critiques", [])
         model = request.get("model", "claude-sonnet-4-5")
+        max_revisions = 3
 
         try:
-            if mode == "critique":
-                # Critique mode: evaluate each draft
+            current_drafts = drafts
+            all_critiques = []
+
+            for revision_round in range(max_revisions + 1):
+                # Step 1: Critique current drafts
                 result_critiques = []
-                for draft in drafts:
+                for draft in current_drafts:
                     system_prompt, user_prompt = self._build_critique_prompts(draft)
                     response_text = self.llm.chat_reality_checker(
                         system_prompt=system_prompt,
@@ -155,12 +163,39 @@ class ClaudeAgentAutoWorkerV2:
                     critique = self._parse_json_response(response_text, "RealityChecker")
                     result_critiques.append(critique)
 
-                result = {"critiques": result_critiques}
-            else:
-                # Revise mode: generate revised drafts
+                all_critiques = result_critiques
+
+                # Determine overall status
+                statuses = [c.get("status", c.get("verdict", "REVISE")).upper() for c in result_critiques]
+                has_approve = any(s in ("APPROVE", "APPROVED") for s in statuses)
+                has_reject = all(s == "REJECT" for s in statuses)
+                has_revise = any(s == "REVISE" for s in statuses)
+
+                logger.info(
+                    f"RC round {revision_round + 1}/{max_revisions + 1}: {run_id} | "
+                    f"statuses={statuses} | approve={has_approve} reject={has_reject} revise={has_revise}"
+                )
+
+                # If all REJECT → stop
+                if has_reject:
+                    rc_status = "REJECT"
+                    break
+
+                # If no REVISE (all APPROVE) → pass to Debate Panel
+                if not has_revise:
+                    rc_status = "APPROVE"
+                    break
+
+                # REVISE: if we have rounds left, revise and re-critique
+                if revision_round >= max_revisions:
+                    rc_status = "REJECT"
+                    logger.info(f"RC max revisions reached: {run_id} | rejecting")
+                    break
+
+                # Step 2: Revise drafts based on critiques
                 revised_drafts = []
-                for i, draft in enumerate(drafts):
-                    critique = critiques[i] if i < len(critiques) else {}
+                for i, draft in enumerate(current_drafts):
+                    critique = result_critiques[i] if i < len(result_critiques) else {}
                     system_prompt, user_prompt = self._build_revise_prompts(draft, critique)
                     response_text = self.llm.chat(
                         model=model,
@@ -171,26 +206,37 @@ class ClaudeAgentAutoWorkerV2:
                     revised = self._parse_json_response(response_text, "RealityChecker")
                     revised_drafts.append(revised)
 
-                result = {"revised_drafts": revised_drafts}
+                current_drafts = revised_drafts
+                logger.info(f"RC revised {len(revised_drafts)} drafts: {run_id} | round {revision_round + 1}")
 
-            result = self._parse_json_response(response_text, "RealityChecker")
-            result["run_id"] = run_id
-            result["timestamp"] = datetime.now().isoformat()
+            # Save result
+            result = {
+                "run_id": run_id,
+                "timestamp": datetime.now().isoformat(),
+                "status": rc_status,
+                "critiques": all_critiques,
+                "final_drafts": current_drafts,
+                "revision_rounds": revision_round + 1,
+            }
 
             completed_file = self.completed_reality_checker / f"{run_id}.json"
             completed_file.write_text(json.dumps(result, indent=2, ensure_ascii=False))
             pending_file.unlink()
 
-            approved = sum(1 for c in result.get("critiques", []) if c.get("approved", False))
-            total = len(result.get("critiques", []))
-            rc_status = result.get("status", "UNKNOWN")
-            logger.info(f"Reality Checker task completed: {run_id} | status={rc_status} | approved={approved}/{total}")
+            logger.info(f"Reality Checker completed: {run_id} | status={rc_status} | rounds={revision_round + 1}")
 
-            # Chain: auto-create Debate Panel pending task (if not all REJECT)
-            if rc_status != "REJECT":
+            # Chain based on final status
+            if rc_status == "APPROVE":
+                # Use the final (possibly revised) drafts for Debate Panel
+                request["drafts"] = current_drafts
+                self._chain_to_debate_panel(run_id, request, result)
+            elif rc_status == "REVISE":
+                # Exhausted revisions but not rejected — still send to Debate Panel
+                request["drafts"] = current_drafts
                 self._chain_to_debate_panel(run_id, request, result)
             else:
-                logger.info(f"Reality Checker rejected all drafts: {run_id} | skipping Debate Panel")
+                logger.info(f"Reality Checker rejected: {run_id} | skipping Debate Panel")
+
             return True
 
         except Exception as exc:
