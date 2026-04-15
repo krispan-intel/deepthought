@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Extent-Aware CXL Folio Lease for Linux Page Cache — DeepThought TID</title>
+  <style>
+    :root {
+      --bg: #f7f7f4;
+      --card: #ffffff;
+      --ink: #1f2328;
+      --muted: #59636e;
+      --line: #dde2e7;
+      --accent: #0b5fff;
+      --star: #d99a00;
+    }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 20% 0%, #eef3ff, var(--bg) 42%);
+      color: var(--ink);
+      font: 15px/1.6 "Segoe UI", "Noto Sans", sans-serif;
+    }
+    .wrap { max-width: 1024px; margin: 0 auto; padding: 28px 16px 72px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+    h1, h2, h3 { margin: 0 0 10px; }
+    h1 { font-size: 28px; }
+    h2 { font-size: 20px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+    h3 { font-size: 16px; color: var(--muted); }
+    .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+    .pill { background: #f2f5f8; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; display: inline-block; margin: 4px 6px 0 0; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid var(--line); text-align: left; padding: 8px 6px; }
+    .stars { color: var(--star); letter-spacing: 1px; }
+    .muted { color: var(--muted); }
+    ul, ol { margin: 8px 0 0 20px; }
+    .verdict-banner {
+      text-align: center; padding: 16px; border-radius: 14px; margin-bottom: 14px;
+      font-size: 22px; font-weight: 700; color: #fff;
+      background: #f59e0b;
+    }
+    .arch-pre { background: #f8f9fa; border: 1px solid var(--line); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 13px; white-space: pre-wrap; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="verdict-banner">
+      Debate Panel Verdict: REVISE &mdash; revision_required
+    </div>
+
+    <section class="card">
+      <h1>Extent-Aware CXL Folio Lease for Linux Page Cache</h1>
+      <div class="meta muted">
+        <div><strong>TID ID:</strong> TID-EXAMPLE-001</div>
+        <div><strong>Run ID:</strong> run-8ab41bb6ea77</div>
+        <div><strong>Generated:</strong> 2026-04-15 14:56 UTC</div>
+        <div><strong>System:</strong> DeepThought (Async Forager + 8-Worker Pipeline)</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>1. Executive Summary</h2>
+      <h3>1.1 One-Liner</h3>
+      <p>A filesystem-aware folio lease layer places cold clean file-cache folios on CXL Type-3 memory while pinning journal-coupled dirty extents in DRAM.</p>
+      <h3>1.2 Key Angles</h3>
+      <div class="pill"><strong>Novelty:</strong> The invention is not generic memory tiering; it is a new bridge between filesystem extent semantics and x86 CXL latency domains. A lease sidecar keyed by address_space index translates iomap/ext4 extent topology, refault distance, and writeback state into a bounded folio state machine that drives DRAM-to-CXL placement without touching atomic paths.</div>
+      <div class="pill"><strong>Feasibility:</strong> Linux already has folios, XArray-backed page cache, workingset refault metrics, memory tiers, demotion paths, and CXL Type-3 nodes described by CDAT/HMAT. The proposal adds a sidecar metadata plane and worker-driven migration policy, reusing existing folio locking, xa_lock discipline, and writeback callbacks.</div>
+      <div class="pill"><strong>Commercial:</strong> CXL-heavy storage servers, metadata-dense object stores, VM image repositories, and build farms need larger effective page cache without proportional DRAM spend. The design converts cheap CXL capacity into filesystem-visible cache expansion while preserving DRAM for hot dirty working sets.</div>
+      <div class="pill"><strong>Why Now:</strong> Mainline Linux now has mature folio infrastructure, memory tiering, and production CXL Type-3 deployments. The hardware exposes stable boot-time latency classes, but the kernel still lacks a filesystem-specific translation layer that can exploit them.</div>
+    </section>
+
+    <section class="card">
+      <h2>2. Scorecard</h2>
+      <table>
+        <thead><tr><th>Dimension</th><th>Score</th><th>Rating</th></tr></thead>
+        <tbody>
+          <tr><td>Innovation</td><td>8/10</td><td class="stars">★★★★☆</td></tr>
+          <tr><td>Implementation Difficulty</td><td>8/10</td><td class="stars">★★★★☆</td></tr>
+          <tr><td>Commercial Value</td><td>8/10</td><td class="stars">★★★★☆</td></tr>
+          <tr><td>Technical Risk</td><td>6/10</td><td class="stars">★★★☆☆</td></tr>
+          <tr><td>Prior-Art Conflict Risk</td><td>4/10</td><td class="stars">★★☆☆☆</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>3. Technical Invention Disclosure</h2>
+      <h3>3.1 Problem Statement</h3>
+      <p>Linux page-cache placement is largely filesystem-agnostic. On x86 systems with CXL Type-3 memory behind HDM decoders, generic demotion can move the wrong folios: hot metadata is displaced, journal-pinned dirty folios are churned, and cold contiguous extents remain in DRAM. The result is refault amplification, xa_lock pressure, and wasted DRAM in file-serving workloads.</p>
+      <h3>3.2 Prior-Art Gap (Topological Void)</h3>
+      <p>Existing NUMA balancing, DAMON-guided reclaim, and generic memory tiering reason about page heat, not filesystem extent boundaries, writeback epochs, or journal pinning. DAX bypasses the page cache entirely and does not solve buffered I/O placement. No mainstream mechanism translates filesystem allocation knowledge into CXL-aware folio residency decisions.</p>
+      <h3>3.3 Proposed Invention</h3>
+      <p>Introduce a cxl_folio_lease abstraction: a sidecar metadata structure indexed by (mapping, index) that stores lease state, lease epoch, extent heat bucket, and poison/quarantine bits. Lease states are HOT_DRAM, WARM_CXL, DIRTY_PINNED, REFAULT_PROMOTE, and POISON_QUARANTINE. The bridge consumes signals from workingset refault distance, filesystem extent maps, writeback completion, and CXL node latency class, then issues migration or retention decisions only from reclaim, readahead, and writeback worker context. The core novelty is a translation layer between file extent semantics and CXL memory-tier semantics, enforced by an explicit state machine rather than ad hoc reclaim heuristics.</p>
+      <h3>3.4 Architecture Overview</h3>
+      <div class="arch-pre">[VFS read/write]\n  -&gt; [address_space / XArray i_pages]\n  -&gt; [cxl_folio_lease sidecar lookup]\n       -&gt; HOT_DRAM ---------&gt; retain in DRAM\n       -&gt; WARM_CXL --queue-&gt; demotion worker -&gt; migrate_folio() -&gt; CXL Type-3 node\n       -&gt; DIRTY_PINNED ----&gt; defer until writeback completion\n       -&gt; REFAULT_PROMOTE -&gt; promotion worker -&gt; DRAM\n       -&gt; POISON_QUARANTINE -&gt; split/isolate folio range\n\nFeedback edges:\n[workingset refault] -&gt; lease epoch\n[writeback completion] -&gt; lease transition\n[extent map / iomap] -&gt; heat bucket and migration granularity</div>
+      <h3>3.5 Implementation Plan</h3>
+      <p>1. Add a per-mapping sidecar xarray or radix side structure storing lease metadata by folio index. 2. Hook lease updates into filemap refault, readahead completion, and writeback completion paths while keeping all heavy work in workqueues. 3. Derive extent-aligned migration granularity from ext4 extent status trees or iomap-backed filesystems such as XFS. 4. Feed boot-time CXL CDAT/HMAT latency classes into the lease policy so only specific CXL nodes are used for WARM_CXL state. 5. Use folio_lock plus xa_lock for state transitions, with mapping-&gt;invalidate_lock to exclude truncate/invalidate races. 6. Integrate poison handling by marking affected lease entries POISON_QUARANTINE and preventing repeated refault thrash.</p>
+      <h3>3.6 Validation Plan</h3>
+      <p>Benchmark mixed hot/cold file-serving, package-install, and VM image workloads with fio, fs_mark, and kernel build trees. Measure refault rate, DRAM consumption, median and tail open/read latency, writeback stalls, and migration volume. Validate correctness under truncate, hole-punch, reclaim, memory hotplug, and injected CXL poison. Compare against stock Linux memory tiering and against DRAM-only placement.</p>
+      <h3>3.7 Draft Claims</h3>
+      <ol><li>A Linux kernel method comprising maintaining lease metadata for file-cache folios in a sidecar structure keyed by address_space index, wherein the lease metadata encodes both filesystem extent information and x86 CXL latency-domain information, and wherein folio migration between DRAM and CXL Type-3 memory is driven from the encoded lease state.</li><li>The method of claim 1, wherein lease transitions are limited to worker-context execution after evaluation of refault distance, writeback completion state, and filesystem extent contiguity, thereby excluding migration decisions from spinlock-held or interrupt-context paths.</li><li>The method of claim 1, wherein dirty folios associated with active journal or writeback state are assigned a DIRTY_PINNED lease state that inhibits demotion to CXL memory until a post-writeback transition occurs.</li><li>The method of claim 1, wherein CXL poison information is translated into a POISON_QUARANTINE lease state at folio or sub-folio granularity to suppress repeated refault and migration of corrupted cache ranges.</li></ol>
+      <h3>3.8 Risks and Mitigations</h3>
+      <ul><li>Risk: migration thrash on oscillating workloads; mitigation: add per-inode hysteresis and minimum lease residency epochs before a state change is eligible.</li><li>Risk: metadata overhead from sidecar tracking; mitigation: allocate lease entries lazily for multi-hit file-cache regions and compress state into compact bitfields.</li><li>Risk: truncate and invalidate races; mitigation: require mapping-&gt;invalidate_lock plus folio_lock before lease destruction or migration commit.</li></ul>
+      <h3>3.9 References</h3>
+      <ul><li>Linux Documentation/mm/page_cache.rst</li><li>Linux Documentation/admin-guide/cxl/memory-devices.rst</li><li>Linux Documentation/filesystems/iomap</li><li>Intel CXL-capable x86 platform firmware tables: CDAT/HMAT latency description</li></ul>
+    </section>
+
+    <section class="card">
+      <h2>4. Debate Panel Review</h2>
+      <p class="muted">4 specialists reviewed independently. Verdict determined by deterministic rules (fatal flaw, majority vote, yellow cards).</p>
+      
+    <div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid #f59e0b;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <strong>Kernel Hardliner</strong>
+        <span style="display:flex;gap:12px;align-items:center;">
+          <span class="pill" style="background:#f59e0b;color:#fff;border:none;">REVISE</span>
+          <span class="stars">★☆☆☆☆</span>
+          <span class="muted">YC: 0</span>
+        </span>
+      </div>
+      
+      <ul style="font-size:13px;margin-top:8px;"><li>Define the exact synchronization + lifetime model for the “lease sidecar” relative to folio lifetime (add, truncate/invalidate, reclaim, migration, writeback end). A separate metadata plane keyed by (mapping,index) is a classic UAF/race trap unless you specify: allocation/free points, refcounting (if any), and whether lookups are under mapping-&gt;i_pages xa_lock, RCU, or folio_lock. Also state lock ordering constraints to avoid xa_lock &lt;-&gt; folio_lock inversions.</li><li>Placement/migration must be strictly worker-context and must not introduce filesystem extent queries (iomap/ext4) in any non-sleepable or reclaim-critical context. Even in a worker, you need an explicit deadlock-avoidance rule set (e.g., never take jbd2/ext4 journal locks or inode i_rwsem while holding folio_lock / xa_lock / LRU locks; rely on existing aops/writeback callbacks and stable helpers).</li><li>“Pinning journal-coupled dirty extents in DRAM” needs a reclaim-safe bound. Without a hard limit and a fallback policy, you risk unreclaimable DRAM under memory pressure (memcg pressure, global reclaim, memory.high). Specify: (1) a maximum DRAM budget, (2) what happens when exceeded (writeback-first, demote-clean-only, or temporary demotion), and (3) how this interacts with cgroup reclaim.</li><li>Account for mmap’d page-cache folios and pins: migrating file folios requires rmap/unmap + migration entries, and must gracefully fail for pinned pages (e.g., long-term GUP/FOLL_PIN). The draft should explicitly route all moves through existing migrate_folio/migrate_pages machinery and define when a folio is ineligible (writeback, pinned, under filesystem lock constraints).</li><li>Filesystem extent semantics are not stable: delalloc/unwritten extents, hole punch, truncate, reflink/COW (XFS), and extent splitting/merging can invalidate “extent topology” assumptions. You need a concrete invalidation/versioning mechanism (per-inode generation counter, extent-map change hooks, or conservative revalidation) so that stale sidecar decisions cannot misclassify dirty/journal-coupled regions.</li><li>Avoid fighting existing MM policy: workingset refault distance, MGLRU, and NUMA tiering/demotion already make placement decisions. Specify how your state machine composes with (or gates) mm/vmscan demotion and memory-tiering so you don’t create oscillation (ping-pong migration) or regress hot-path behavior via excessive scanning/marking.</li></ul>
+    </div>
+    <div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid #f59e0b;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <strong>Prior Art Shark</strong>
+        <span style="display:flex;gap:12px;align-items:center;">
+          <span class="pill" style="background:#f59e0b;color:#fff;border:none;">REVISE</span>
+          <span class="stars">★★★★★</span>
+          <span class="muted">YC: 2</span>
+        </span>
+      </div>
+      
+      <ul style="font-size:13px;margin-top:8px;"><li>Define the exact lease state machine and its invariants (e.g., CLEAN_COLD→MIGRATABLE→ON_CXL, DIRTY→DRAM_ONLY, WRITEBACK→NO_MIGRATE). Specify which transitions are allowed under which locks (folio_lock, xa_lock, mapping-&gt;i_pages), and how you avoid races with truncate/invalidate, reclaim, and writeback completion.</li><li>Clarify how ‘journal-coupled dirty extents’ are detected in a filesystem-agnostic way. ext4+jbd2 vs XFS have different metadata/journaling models; you likely need explicit per-fs hooks (e.g., iomap callbacks or fs-specific tagging at dirtying/transaction join) and must state where those hooks live and what they export to the lease layer.</li><li>Specify the sidecar metadata lifetime and keying: is it keyed by (mapping, index) like XArray entries, by folio, or by inode extent ranges? You must handle folio split/merge, readahead insertion, page cache eviction, and migration (new folio object) without leaking or misattributing lease state.</li><li>Prove you are not ‘touching atomic paths’: show the exact fast-path impact for filemap_get_folio()/fault/readahead (extra indirections, cacheline touches). If any read-side lookup is added, quantify it and/or constrain it to worker-only decisions using existing telemetry (workingset refault, folio flags) read opportunistically.</li><li>Placement policy needs a concrete, non-obvious decision function beyond ‘cold clean goes to CXL’: incorporate extent topology and refault distance explicitly (e.g., extent-contiguous migration batching, refault-distance hysteresis, per-inode hotset caps). Otherwise the core looks like an obvious combination of memory tiering + page cache temperature signals.</li><li>Explain how this interacts with memcg and NUMA: do you migrate across tiers within the same memcg? How do you account CXL-resident folios for memcg limits, reclaim pressure, and PSI? Without a clear accounting model, the design risks being unmergeable or functionally incorrect under cgroup pressure.</li></ul>
+    </div>
+    <div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid #f59e0b;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <strong>Intel Strategist</strong>
+        <span style="display:flex;gap:12px;align-items:center;">
+          <span class="pill" style="background:#f59e0b;color:#fff;border:none;">REVISE</span>
+          <span class="stars">★★★★★</span>
+          <span class="muted">YC: 0</span>
+        </span>
+      </div>
+      
+      <ul style="font-size:13px;margin-top:8px;"><li>Define an explicit correctness contract for the lease sidecar: how it is created/invalidated across truncate/punch-hole, extent remap (iomap), writeback completion, and inode eviction. Spell out exact hooks (e.g., invalidate_mapping_pages / truncate_inode_pages_range / iomap writeback) and the sidecar’s lifetime rules vs address_space lifetime.</li><li>Specify the folio state machine and migration eligibility precisely: which folios are eligible (clean file-backed only?), how you exclude folios under writeback, mapped (mmap) folios, folios with elevated refcount/pins (GUP/pinning), and how you avoid migrating folios that would regress latency-sensitive faults. Provide concrete gating conditions using existing folio flags + mapping state.</li><li>Quantify and bound locking/overhead: you claim “without touching atomic paths,” but any per-folio policy keyed by XArray risks adding contention on xa_lock or lookup overhead on hot faults. You need a design that guarantees no additional work in filemap_fault/path, and show where policy runs (workqueue) and how it batches XArray walks safely.</li><li>Tie the placement policy to Linux’s existing tiering/demotion mechanics: clarify whether you use NUMA demotion (migrate_pages + demotion targets), memory_tier classification, or a bespoke CXL node selection. Also address interaction with memcg charging/reclaim (file LRU) so the lease doesn’t fight the reclaimers or break fairness.</li><li>Add x86/Xeon co-design leverage: specify how you use CXL characteristics discoverable via HMAT/CDAT (latency/bw classes) to set thresholds (refault distance, extent temperature) and how you keep the design robust across varying CXL latency domains (1-hop/2-hop, switch topologies).</li></ul>
+    </div>
+    <div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid #f59e0b;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <strong>Security Guardian</strong>
+        <span style="display:flex;gap:12px;align-items:center;">
+          <span class="pill" style="background:#f59e0b;color:#fff;border:none;">REVISE</span>
+          <span class="stars">★★★★★</span>
+          <span class="muted">YC: 0</span>
+        </span>
+      </div>
+      
+      <ul style="font-size:13px;margin-top:8px;"><li>Define a precise lifetime model for the “lease sidecar” metadata: it must not hold raw folio pointers across reclaim/truncate/invalidate; key it by (mapping, index) and explicitly handle invalidate_inode_pages2(), truncate_inode_pages_range(), and swapout/readahead races to prevent UAF/data corruption.</li><li>Specify the exact lock/atomicity rules: prove that no allocations or blocking operations occur under xa_lock or in atomic paths, and document lock ordering among xa_lock, folio_lock, lruvec locks, and writeback-related locks to avoid ABBA deadlocks during migration and writeback.</li><li>Tighten the dirty/journal coupling criteria: “pinning journal-coupled dirty extents in DRAM” needs an auditable predicate (e.g., folio dirty+writeback state plus filesystem/journal signals). Without a concrete, filesystem-verified signal, you risk migrating data that is latency-sensitive for commit or violating fsync ordering assumptions.</li><li>Bound worst-case memory and CPU overhead: sidecar metadata must be capped per-inode/per-mapping and reclaimable under pressure (mempool or shrinker integration). Without a shrinker/pressure path, the metadata plane can amplify memory pressure and trigger OOM or livelock.</li><li>Address side-channel/tenant risks: a placement policy driven by refault distance and extent topology can increase observability of access patterns via timing (DRAM vs CXL). Provide a hard disable + per-cgroup control, and ensure policy does not incorporate security-sensitive signals (e.g., file permissions or secret-dependent access patterns) in a way that changes timing across domains.</li></ul>
+    </div>
+      <h3>Chairman Synthesis</h3>
+      <div style="background:#f8f9fa;border:1px solid var(--line);border-radius:8px;padding:12px;">
+        <p><strong>Verdict:</strong> <span style="color:#f59e0b;font-weight:700;">REVISE</span></p>
+        <p><strong>Rule:</strong> revision_required</p>
+        <p><strong>Confidence:</strong> 0.7</p>
+        <p>Committee requested revision due to unresolved issues.</p>
+      </div>
+    </section>
+
+    <footer class="card muted" style="text-align:center;font-size:12px;">
+      Generated by DeepThought &mdash; Topological Void Discovery Engine<br/>
+      Hybrid Dense-Sparse Triad + SLERP Vacancy Probing + 4-Specialist Debate Panel
+    </footer>
+
+  </div>
+</body>
+</html>
