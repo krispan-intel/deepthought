@@ -264,10 +264,6 @@ class ClaudeAgentAutoWorkerV2:
             return False
 
         try:
-            # Format drafts into draft_blob string
-            draft_blob = self._format_draft_blob(drafts)
-
-            # 4 specialist definitions (from agents/debate_panel.py lines 53-81)
             specialists = [
                 {
                     "name": "kernel_hardliner",
@@ -294,46 +290,112 @@ class ClaudeAgentAutoWorkerV2:
                 },
             ]
 
-            # Run 4 specialist reviews (parallel simulation via sequential calls)
-            reports = {}
-            for spec in specialists:
-                try:
-                    review = self._specialist_review(
-                        role=spec["role"],
-                        system_prompt=spec["system_prompt"],
-                        draft_blob=draft_blob,
+            current_drafts = drafts
+            max_debate_revisions = 2
+            final_reports = {}
+            final_verdict_result = {}
+
+            for debate_round in range(max_debate_revisions + 1):
+                # Step 1: 4-specialist review
+                draft_blob = self._format_draft_blob(current_drafts)
+                reports = {}
+                for spec in specialists:
+                    try:
+                        review = self._specialist_review(
+                            role=spec["role"],
+                            system_prompt=spec["system_prompt"],
+                            draft_blob=draft_blob,
+                        )
+                        reports[spec["name"]] = review
+                    except Exception as exc:
+                        logger.warning(f"Specialist {spec['name']} failed for {run_id}: {exc}")
+                        reports[spec["name"]] = {
+                            "preferred_title": "",
+                            "status": "REVISE",
+                            "fatal_flaw": "",
+                            "score": 2,
+                            "issues": ["Specialist review failed - automated fallback"],
+                            "yellow_cards": 0,
+                            "fact_check_queries": [],
+                        }
+
+                # Step 2: Deterministic verdict
+                chairman_result = self._deterministic_verdict(reports)
+                verdict = chairman_result.get("final_verdict", "UNKNOWN")
+
+                logger.info(
+                    f"Debate round {debate_round + 1}/{max_debate_revisions + 1}: {run_id} | "
+                    f"verdict={verdict} | rule={chairman_result.get('rule_trigger','')}"
+                )
+
+                final_reports = reports
+                final_verdict_result = chairman_result
+
+                # APPROVE or REJECT → done
+                if verdict != "REVISE":
+                    break
+
+                # REVISE: if rounds left, revise drafts using specialist feedback
+                if debate_round >= max_debate_revisions:
+                    logger.info(f"Debate max revisions reached: {run_id}")
+                    break
+
+                # Collect all issues from specialists for revision
+                all_issues = []
+                for name, r in reports.items():
+                    for iss in r.get("issues", []):
+                        all_issues.append(f"[{name}] {iss}")
+                feedback_text = "\n".join(all_issues[:15])
+
+                # Revise drafts using feedback
+                revised_drafts = []
+                for draft in current_drafts:
+                    td = draft.get("tid_detail", {})
+                    system_prompt = (
+                        "You are an Elite System Architect revising a Technical Invention Disclosure "
+                        "based on expert committee feedback. Address every issue raised. "
+                        "Return the complete revised draft in the same JSON format."
                     )
-                    reports[spec["name"]] = review
-                except Exception as exc:
-                    logger.warning(f"Specialist {spec['name']} failed for {run_id}: {exc}")
-                    # Provide default review if specialist fails
-                    reports[spec["name"]] = {
-                        "preferred_title": "",
-                        "status": "REVISE",
-                        "fatal_flaw": "",
-                        "score": 2,
-                        "issues": ["Specialist review failed - automated fallback"],
-                        "yellow_cards": 0,
-                        "fact_check_queries": [],
-                    }
+                    user_prompt = (
+                        f"Original draft:\nTitle: {draft.get('title','')}\n"
+                        f"One-liner: {draft.get('one_liner','')}\n"
+                        f"Problem: {td.get('problem_statement','')}\n"
+                        f"Proposed Invention: {td.get('proposed_invention','')}\n"
+                        f"Architecture: {td.get('architecture_overview','')}\n"
+                        f"Implementation: {td.get('implementation_plan','')}\n"
+                        f"Claims: {td.get('draft_claims','')}\n\n"
+                        f"Committee feedback to address:\n{feedback_text}\n\n"
+                        "Return strict JSON with the same structure as the original draft, "
+                        "with all issues addressed."
+                    )
+                    response_text = self.llm.chat(
+                        model="claude-sonnet-4-5",
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        temperature=0.5,
+                    )
+                    revised = self._parse_json_response(response_text, "DebateRevision")
+                    revised_drafts.append(revised)
 
-            # Apply deterministic verdict rules
-            chairman_result = self._deterministic_verdict(reports)
+                current_drafts = revised_drafts
+                logger.info(f"Debate revised {len(revised_drafts)} drafts: {run_id} | round {debate_round + 1}")
 
-            # Build result
+            # Save result
             result = {
                 "run_id": run_id,
                 "timestamp": datetime.now().isoformat(),
-                "reviews": reports,
-                "chairman_result": chairman_result,
+                "reviews": final_reports,
+                "chairman_result": final_verdict_result,
+                "debate_rounds": debate_round + 1,
+                "final_drafts": current_drafts,
             }
 
             completed_file = self.completed_reviews / f"{run_id}.json"
             completed_file.write_text(json.dumps(result, indent=2, ensure_ascii=False))
             pending_file.unlink()
 
-            verdict = chairman_result.get("final_verdict", "UNKNOWN")
-            logger.info(f"Debate Panel task completed: {run_id} | verdict={verdict}")
+            verdict = final_verdict_result.get("final_verdict", "UNKNOWN")
+            logger.info(f"Debate Panel completed: {run_id} | verdict={verdict} | rounds={debate_round + 1}")
             return True
 
         except Exception as exc:
