@@ -188,8 +188,8 @@ class ClaudeAgentAutoWorkerV2:
 
                 # REVISE: if we have rounds left, revise and re-critique
                 if revision_round >= max_revisions:
-                    rc_status = "REJECT"
-                    logger.info(f"RC max revisions reached: {run_id} | rejecting")
+                    rc_status = "REVISE"
+                    logger.info(f"RC max revisions reached: {run_id} | passing to Debate Panel as REVISE")
                     break
 
                 # Step 2: Revise drafts based on critiques
