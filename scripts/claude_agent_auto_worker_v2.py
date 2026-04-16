@@ -728,14 +728,25 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
         scores = [float(r.get("score", 2.0) or 2.0) for r in reports.values()]
         yellow_cards = sum(int(r.get("yellow_cards", 0) or 0) for r in reports.values())
 
-        # Rule 1: Fatal flaw reject
-        if fatal:
+        # Rule 1: Fatal flaw → REVISE first (give revision a chance to fix it)
+        # Only hard-reject if ≥3 specialists all report fatal flaws (truly unfixable)
+        if len(fatal) >= 3:
             reason = "; ".join(fatal)
             return {
                 "final_verdict": "REJECT",
                 "synthesis": reason,
                 "confidence": 0.95,
                 "rule_trigger": "fatal_flaw_reject",
+                "reviewer_statuses": statuses,
+            }
+
+        if fatal:
+            reason = "; ".join(fatal)
+            return {
+                "final_verdict": "REVISE",
+                "synthesis": f"Fatal flaw(s) noted by {len(fatal)} specialist(s) — revision required: {reason}",
+                "confidence": 0.7,
+                "rule_trigger": "fatal_flaw_revise",
                 "reviewer_statuses": statuses,
             }
 
@@ -750,13 +761,23 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
                 "reviewer_statuses": statuses,
             }
 
-        # Rule 3: Yellow card reject (≥3 yellow cards)
-        if yellow_cards >= 3:
+        # Rule 3: Yellow card reject (≥5 yellow cards, relaxed from 3)
+        if yellow_cards >= 5:
             return {
                 "final_verdict": "REJECT",
                 "synthesis": f"Rejected by yellow-card rule (yellow_cards={yellow_cards})",
                 "confidence": 0.9,
                 "rule_trigger": "yellow_card_reject",
+                "reviewer_statuses": statuses,
+            }
+
+        # Rule 3b: Yellow card revise (3-4 yellow cards → give revision chance)
+        if yellow_cards >= 3:
+            return {
+                "final_verdict": "REVISE",
+                "synthesis": f"Yellow cards ({yellow_cards}) — revision required",
+                "confidence": 0.7,
+                "rule_trigger": "yellow_card_revise",
                 "reviewer_statuses": statuses,
             }
 
