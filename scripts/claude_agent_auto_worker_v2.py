@@ -149,6 +149,7 @@ class ClaudeAgentAutoWorkerV2:
         try:
             current_drafts = drafts
             all_critiques = []
+            revision_trace = []
 
             for revision_round in range(max_revisions + 1):
                 # Step 1: Critique current drafts
@@ -206,6 +207,25 @@ class ClaudeAgentAutoWorkerV2:
                     revised = self._parse_json_response(response_text, "RealityChecker")
                     revised_drafts.append(revised)
 
+                # Record revision trace
+                critique_feedback = []
+                for i, c in enumerate(result_critiques):
+                    issues = c.get("critical_issues", c.get("issues", c.get("hallucinations_found", [])))
+                    feedback = c.get("actionable_feedback", "")
+                    critique_feedback.append({
+                        "draft_index": i,
+                        "verdict": c.get("status", c.get("verdict", "?")),
+                        "issues": issues[:5] if isinstance(issues, list) else [],
+                        "feedback": str(feedback)[:300],
+                    })
+                revision_trace.append({
+                    "round": revision_round + 1,
+                    "statuses": statuses,
+                    "critique_feedback": critique_feedback,
+                    "drafts_before": [d.get("title", "") for d in current_drafts],
+                    "drafts_after": [d.get("title", "") for d in revised_drafts],
+                })
+
                 current_drafts = revised_drafts
                 logger.info(f"RC revised {len(revised_drafts)} drafts: {run_id} | round {revision_round + 1}")
 
@@ -217,6 +237,7 @@ class ClaudeAgentAutoWorkerV2:
                 "critiques": all_critiques,
                 "final_drafts": current_drafts,
                 "revision_rounds": revision_round + 1,
+                "revision_trace": revision_trace,
             }
 
             completed_file = self.completed_reality_checker / f"{run_id}.json"
@@ -294,6 +315,7 @@ class ClaudeAgentAutoWorkerV2:
             max_debate_revisions = 2
             final_reports = {}
             final_verdict_result = {}
+            revision_trace = []  # Track each round's feedback and changes
 
             for debate_round in range(max_debate_revisions + 1):
                 # Step 1: 4-specialist review
@@ -376,6 +398,16 @@ class ClaudeAgentAutoWorkerV2:
                     revised = self._parse_json_response(response_text, "DebateRevision")
                     revised_drafts.append(revised)
 
+                # Record revision trace
+                revision_trace.append({
+                    "round": debate_round + 1,
+                    "verdict": verdict,
+                    "rule_trigger": chairman_result.get("rule_trigger", ""),
+                    "specialist_feedback": all_issues,
+                    "drafts_before": [d.get("title", "") for d in current_drafts],
+                    "drafts_after": [d.get("title", "") for d in revised_drafts],
+                })
+
                 current_drafts = revised_drafts
                 logger.info(f"Debate revised {len(revised_drafts)} drafts: {run_id} | round {debate_round + 1}")
 
@@ -386,6 +418,7 @@ class ClaudeAgentAutoWorkerV2:
                 "reviews": final_reports,
                 "chairman_result": final_verdict_result,
                 "debate_rounds": debate_round + 1,
+                "revision_trace": revision_trace,
                 "final_drafts": current_drafts,
             }
 
