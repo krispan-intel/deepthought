@@ -347,29 +347,28 @@ class ClaudeAgentAutoWorkerV2:
                         all_issues.append(f"[{name}] {iss}")
                 feedback_text = "\n".join(all_issues[:15])
 
-                # Revise drafts using feedback
+                # Revise drafts using feedback (use gpt-5.4 to match Maverick quality)
+                void_context = request.get("void_context", "")[:2000]
+                target = request.get("target", "")
                 revised_drafts = []
                 for draft in current_drafts:
                     td = draft.get("tid_detail", {})
                     system_prompt = (
                         "You are an Elite System Architect revising a Technical Invention Disclosure "
                         "based on expert committee feedback. Address every issue raised. "
-                        "Return the complete revised draft in the same JSON format."
+                        "Preserve the overall structure. Strengthen weak areas with concrete kernel details. "
+                        "Return the COMPLETE revised draft as JSON with all fields."
                     )
                     user_prompt = (
-                        f"Original draft:\nTitle: {draft.get('title','')}\n"
-                        f"One-liner: {draft.get('one_liner','')}\n"
-                        f"Problem: {td.get('problem_statement','')}\n"
-                        f"Proposed Invention: {td.get('proposed_invention','')}\n"
-                        f"Architecture: {td.get('architecture_overview','')}\n"
-                        f"Implementation: {td.get('implementation_plan','')}\n"
-                        f"Claims: {td.get('draft_claims','')}\n\n"
+                        f"Target: {target}\n\n"
+                        f"Void context (supporting evidence):\n{void_context}\n\n"
+                        f"Original draft:\n{json.dumps(draft, indent=2, ensure_ascii=False)}\n\n"
                         f"Committee feedback to address:\n{feedback_text}\n\n"
                         "Return strict JSON with the same structure as the original draft, "
-                        "with all issues addressed."
+                        "with all issues addressed. Include tid_detail with all sub-fields."
                     )
                     response_text = self.llm.chat(
-                        model="claude-sonnet-4-5",
+                        model="claude-opus-4-6",
                         system_prompt=system_prompt,
                         user_prompt=user_prompt,
                         temperature=0.5,
