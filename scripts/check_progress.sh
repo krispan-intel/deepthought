@@ -181,12 +181,15 @@ fi
 echo "│                                                                      │"
 echo "│  Auto Worker Logs (latest per worker):                              │"
 FOUND_LOG=0
-for log_file in logs/auto_worker_w*.log; do
+for log_file in logs/auto_worker_w*.log logs/auto_worker_c*.log; do
     [ -f "$log_file" ] || continue
     FOUND_LOG=1
     wname=$(basename "$log_file" .log | sed 's/auto_worker_//')
-    last_line=$(tail -1 "$log_file" 2>/dev/null | cut -c 1-60)
-    printf "│    [%s] %-60s  │\n" "$wname" "$last_line"
+    # Detect backend from log
+    backend=$(grep -m1 "backend=" "$log_file" 2>/dev/null | grep -oP "backend=\K[a-z_]+" | head -1)
+    [ -z "$backend" ] && backend="?"
+    last_line=$(tail -1 "$log_file" 2>/dev/null | cut -c 1-52)
+    printf "│    [%s|%s] %-52s  │\n" "$wname" "$backend" "$last_line"
 done
 if [ "$FOUND_LOG" -eq 0 ]; then
     echo "│    (no worker logs)                                                  │"

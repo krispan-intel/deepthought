@@ -84,6 +84,14 @@ class LLMClient:
                 temperature=temperature,
             )
 
+        if self.backend == "claude_code_cli":
+            return self._chat_with_claude_code_cli(
+                model=model,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                temperature=temperature,
+            )
+
         model_candidates = self._build_model_candidates(model)
         final_error: RuntimeError | None = None
 
@@ -422,6 +430,87 @@ class LLMClient:
             return "gpt-4.1"
         # Default: use settings
         return settings.copilot_model or "gpt-5.4"
+
+    def _chat_with_claude_code_cli(self, model: str, system_prompt: str, user_prompt: str, temperature: float) -> str:
+        """Use 'claude -p' non-interactive mode as LLM backend."""
+        prompt = self._build_copilot_prompt(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+        )
+        if len(prompt) > self.copilot_prompt_max_chars:
+            prompt = self._smart_truncate(prompt, self.copilot_prompt_max_chars)
+
+        claude_model = self._resolve_claude_code_model(model)
+        effort = settings.copilot_effort or "high"
+
+        command = [
+            "claude",
+            "-p", prompt,
+            "--model", claude_model,
+            "--effort", effort,
+        ]
+        logger.info(
+            "LLM backend dispatch | backend=claude_code_cli | model={} | effort={} | prompt_len={}",
+            claude_model,
+            effort,
+            len(prompt),
+        )
+
+        last_error: RuntimeError | None = None
+        for attempt in range(1, self.max_attempts + 1):
+            try:
+                result = subprocess.run(
+                    command,
+                    capture_output=True,
+                    text=True,
+                    timeout=self.copilot_timeout_seconds,
+                    check=False,
+                )
+            except FileNotFoundError as exc:
+                raise RuntimeError(
+                    "claude_code_cli backend selected but 'claude' command not found. "
+                    f"Install Claude Code CLI. Details: {exc}"
+                ) from exc
+            except subprocess.TimeoutExpired:
+                last_error = RuntimeError(
+                    f"claude_code_cli timed out after {self.copilot_timeout_seconds}s"
+                )
+                if attempt < self.max_attempts:
+                    time.sleep(self.backoff_seconds * attempt)
+                    continue
+                raise last_error
+
+            if result.returncode == 0:
+                return (result.stdout or "").strip()
+
+            stderr = (result.stderr or "").strip()
+            stdout = (result.stdout or "").strip()
+            detail = stderr or stdout or f"exit_code={result.returncode}"
+            last_error = RuntimeError(f"claude_code_cli: {detail}")
+
+            if attempt < self.max_attempts and self._is_transient_error(detail):
+                time.sleep(self.backoff_seconds * attempt)
+                continue
+            break
+
+        raise last_error or RuntimeError("claude_code_cli failed")
+
+    @staticmethod
+    def _resolve_claude_code_model(pipeline_model: str) -> str:
+        """Map pipeline model names to claude CLI model aliases."""
+        m = (pipeline_model or "").lower().strip()
+        # GPT models → map to Claude equivalents
+        if "opus" in m or "gpt-5.4" in m or "gpt-5.1" in m or "gpt-5.2" in m:
+            return "claude-opus-4-6"
+        if "sonnet" in m or "gpt-5" in m or "gpt-4.1" in m:
+            return "claude-sonnet-4-6"
+        if "haiku" in m or "nano" in m or "mini" in m:
+            return "claude-haiku-4-5"
+        # Direct Claude model names pass through
+        if m.startswith("claude-"):
+            return pipeline_model
+        # Default
+        return "claude-sonnet-4-6"
 
     @staticmethod
     def _strip_copilot_footer(text: str) -> str:

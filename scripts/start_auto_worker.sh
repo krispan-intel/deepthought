@@ -1,8 +1,14 @@
 #!/bin/bash
 #
 # Start Claude Agent Auto Worker V2 in continuous mode
-# Supports multiple concurrent workers: ./start_auto_worker.sh [N]
-#   N = number of workers (default: 1)
+#
+# Usage:
+#   ./start_auto_worker.sh [N]              # N workers, all copilot_cli
+#   ./start_auto_worker.sh [N] [M]          # N copilot_cli + M claude_code_cli
+#
+# Examples:
+#   ./start_auto_worker.sh 4                # 4 copilot_cli workers
+#   ./start_auto_worker.sh 4 4             # 4 copilot_cli + 4 claude_code_cli
 #
 
 set -euo pipefail
@@ -10,7 +16,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 PID_DIR="$PROJECT_ROOT/logs"
-NUM_WORKERS="${1:-1}"
+NUM_COPILOT="${1:-1}"
+NUM_CLAUDE="${2:-0}"
+TOTAL=$((NUM_COPILOT + NUM_CLAUDE))
 
 cd "$PROJECT_ROOT"
 
@@ -31,29 +39,47 @@ if [ "$EXISTING" -gt 0 ]; then
     done
     if [ "$RUNNING" -gt 0 ]; then
         echo "$RUNNING worker(s) already running."
-        echo "To add more: stop first, then start with desired count."
         echo "To stop all: $SCRIPT_DIR/stop_auto_worker.sh"
         exit 1
     fi
 fi
 
-echo "Starting $NUM_WORKERS Auto Worker(s)..."
+echo "Starting $TOTAL Auto Worker(s): $NUM_COPILOT copilot_cli + $NUM_CLAUDE claude_code_cli"
 echo ""
 
-for i in $(seq 1 "$NUM_WORKERS"); do
+# Start copilot_cli workers
+for i in $(seq 1 "$NUM_COPILOT"); do
     WORKER_ID="w${i}"
     LOG_FILE="$PID_DIR/auto_worker_${WORKER_ID}.log"
     PID_FILE="$PID_DIR/auto_worker_${WORKER_ID}.pid"
 
-    nohup python "$SCRIPT_DIR/claude_agent_auto_worker_v2.py" --worker-id "$WORKER_ID" > "$LOG_FILE" 2>&1 &
+    nohup python "$SCRIPT_DIR/claude_agent_auto_worker_v2.py" \
+        --worker-id "$WORKER_ID" \
+        --backend copilot_cli \
+        > "$LOG_FILE" 2>&1 &
     WORKER_PID=$!
     echo "$WORKER_PID" > "$PID_FILE"
+    echo "  Worker $WORKER_ID [copilot_cli] started (PID: $WORKER_PID)"
+done
 
-    echo "  Worker $WORKER_ID started (PID: $WORKER_PID) → $LOG_FILE"
+# Start claude_code_cli workers (numbered after copilot workers)
+for i in $(seq 1 "$NUM_CLAUDE"); do
+    IDX=$((NUM_COPILOT + i))
+    WORKER_ID="c${i}"
+    LOG_FILE="$PID_DIR/auto_worker_${WORKER_ID}.log"
+    PID_FILE="$PID_DIR/auto_worker_${WORKER_ID}.pid"
+
+    nohup python "$SCRIPT_DIR/claude_agent_auto_worker_v2.py" \
+        --worker-id "$WORKER_ID" \
+        --backend claude_code_cli \
+        > "$LOG_FILE" 2>&1 &
+    WORKER_PID=$!
+    echo "$WORKER_PID" > "$PID_FILE"
+    echo "  Worker $WORKER_ID [claude_code_cli] started (PID: $WORKER_PID)"
 done
 
 echo ""
 echo "Commands:"
-echo "  View logs:  tail -f $PID_DIR/auto_worker_w*.log"
+echo "  View logs:  tail -f $PID_DIR/auto_worker_*.log"
 echo "  Stop all:   $SCRIPT_DIR/stop_auto_worker.sh"
 echo "  Status:     ps aux | grep auto_worker | grep -v grep"
