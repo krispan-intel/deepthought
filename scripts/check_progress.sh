@@ -47,7 +47,19 @@ done
 
 if [ "$WORKER_COUNT" -gt 0 ]; then
     COPILOT_ACTIVE=$(ps aux | grep "[g]h copilot" | wc -l)
-    printf "│  Auto Workers:      ✅ %d RUNNING (copilot calls: %d)                  │\n" "$WORKER_COUNT" "$COPILOT_ACTIVE"
+    CLAUDE_ACTIVE=$(ps aux | grep "[c]laude -p" | grep -v "claude_agent\|check_progress" | wc -l || true)
+    # Count w* vs c* workers from active pids
+    COPILOT_WORKERS=0
+    CLAUDE_WORKERS=0
+    for pid_file in logs/auto_worker_*.pid; do
+        [ -f "$pid_file" ] || continue
+        pid=$(cat "$pid_file")
+        ps -p "$pid" > /dev/null 2>&1 || continue
+        wname=$(basename "$pid_file" .pid | sed 's/auto_worker_//')
+        case "$wname" in c*) CLAUDE_WORKERS=$((CLAUDE_WORKERS+1)) ;; *) COPILOT_WORKERS=$((COPILOT_WORKERS+1)) ;; esac
+    done
+    printf "│  Auto Workers:      ✅ %d RUNNING (copilot: %d workers/%d calls | claude: %d workers/%d calls)  │\n" \
+        "$WORKER_COUNT" "$COPILOT_WORKERS" "$COPILOT_ACTIVE" "$CLAUDE_WORKERS" "$CLAUDE_ACTIVE"
 else
     echo "│  Auto Workers:      ❌ NOT RUNNING                                 │"
 fi
@@ -179,20 +191,27 @@ else
 fi
 
 echo "│                                                                      │"
-echo "│  Auto Worker Logs (latest per worker):                              │"
+echo "│  Auto Worker Logs (active workers only):                            │"
 FOUND_LOG=0
-for log_file in logs/auto_worker_w*.log logs/auto_worker_c*.log; do
+# Only show workers with active PID files
+for pid_file in logs/auto_worker_*.pid; do
+    [ -f "$pid_file" ] || continue
+    pid=$(cat "$pid_file")
+    ps -p "$pid" > /dev/null 2>&1 || continue  # skip dead workers
+    wname=$(basename "$pid_file" .pid | sed 's/auto_worker_//')
+    log_file="logs/auto_worker_${wname}.log"
     [ -f "$log_file" ] || continue
     FOUND_LOG=1
-    wname=$(basename "$log_file" .log | sed 's/auto_worker_//')
-    # Detect backend from log
-    backend=$(grep -m1 "backend=" "$log_file" 2>/dev/null | grep -oP "backend=\K[a-z_]+" | head -1)
-    [ -z "$backend" ] && backend="?"
+    # Detect backend from worker ID: c* = claude_code_cli, w* = copilot_cli
+    case "$wname" in
+        c*) backend="claude_code" ;;
+        *)  backend="copilot_cli" ;;
+    esac
     last_line=$(tail -1 "$log_file" 2>/dev/null | cut -c 1-52)
     printf "│    [%s|%s] %-52s  │\n" "$wname" "$backend" "$last_line"
 done
 if [ "$FOUND_LOG" -eq 0 ]; then
-    echo "│    (no worker logs)                                                  │"
+    echo "│    (no active workers)                                               │"
 fi
 
 echo "│                                                                      │"
