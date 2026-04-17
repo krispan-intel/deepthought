@@ -307,8 +307,15 @@ print(f"│  → Debate Panel        {bar(debate, base)} {debate:4d}  ({pct(deba
 if debate > 0:
     print(f"│    ├─ APPROVE: {db_approve}  REVISE: {db_revise}  REJECT: {db_reject}                          │")
 print(f"│  → APPROVED TID        {bar(approved, base)} {approved:4d}  ({pct(approved, maverick):>4s})       │")
+
+# Human review queue (survived all DP rounds)
+human_review = len(glob.glob('data/pending_human_review/*.json'))
+if human_review > 0:
+    print(f"│  → 🧑 PENDING HUMAN    {bar(human_review, base)} {human_review:4d}  ({pct(human_review, maverick):>4s})  ← Architect needed │")
 print(f"│                                                                      │")
 print(f"│  Jackpot Rate: {pct(approved, maverick):>4s}  ({approved}/{maverick})                                │")
+if human_review > 0:
+    print(f"│  🏆 Human Review Queue: {human_review} ideas survived all DP rounds           │")
 
 # Pending queue depth (shows backlog)
 pending_m = len(glob.glob('data/pending_maverick/*.json'))
