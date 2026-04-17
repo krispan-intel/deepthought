@@ -51,7 +51,11 @@ class LLMClient:
             try:
                 import anthropic
 
-                client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+                anthropic_base = getattr(settings, "anthropic_base_url", None) or None
+                client = anthropic.Anthropic(
+                    api_key=settings.anthropic_api_key,
+                    base_url=anthropic_base,
+                )
                 resp = client.messages.create(
                     model=model,
                     max_tokens=4096,
