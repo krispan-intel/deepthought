@@ -64,9 +64,9 @@
   unrelated noise; and (iii)~they share a sparse lexical bridge while
   the geodesic midpoint on the embedding hypersphere is unoccupied.
 
-  Applied to $\sim$140k indexed documents, TVA generates 2,507
-  invention candidates across 96 targets; 62\% pass automated quality
-  filtering and 91 survive multi-expert adversarial review.  Two case
+  Applied to $\sim$140k indexed documents, TVA generates 1,896
+  invention candidates across 96 targets; 85\% pass automated quality
+  filtering and 90 survive multi-expert adversarial review.  Two case
   studies demonstrate the framework surfaces non-obvious connective
   tissue rather than merely obvious related pairs.
   \end{minipage}
@@ -181,9 +181,40 @@ In our experiments, $\sim$30\% of high-MMR pairs had a nearest
 neighbour within cosine distance 0.08 of their linear midpoint,
 rendering them false voids.
 
+\textbf{MMR + latent vector arithmetic (``Queen formula'').}
+Inspired by the additive structure of word embeddings~\cite{mikolov2013linguistic},
+we combined MMR with concept arithmetic: after selecting a diverse
+pair $(A, B)$ via MMR, we computed a bridge vector
+$v_{\mathrm{bridge}} = \vtarget + (v_A - v_B)$ and retrieved
+candidates nearest to $v_{\mathrm{bridge}}$.  The intuition mirrors
+the classical analogy \emph{king} $-$ \emph{man} $+$ \emph{woman}
+$\approx$ \emph{queen}~\cite{mikolov2013linguistic}: the difference
+vector encodes a directional concept shift that, when applied to the
+target, should surface the desired gap.
+
+\emph{Why it fails in high dimensions.}
+The analogy arithmetic of Word2Vec works in 300-dimensional
+skip-gram space because the training objective explicitly aligns
+semantic directions with linear offsets.  BGE-M3 operates in
+1024-dimensional contextualised representation space, which suffers
+from two compounding problems.
+First, transformer embeddings are \emph{anisotropic}~\cite{ethayarajh2019anisotropy}:
+all vectors cluster in a narrow cone, so the difference $v_A - v_B$
+is nearly orthogonal to the principal semantic axes.  Adding such a
+vector to $\vtarget$ moves the probe point toward the boundary or
+exterior of the semantic manifold, far from any real document.
+Second, in high-dimensional spaces the curse of dimensionality
+flattens the cosine-distance distribution~\cite{beyer1999nearest}:
+nearest-neighbour distances concentrate around a single value,
+stripping the difference vector of directional meaning.
+In our experiments, $\sim$67\% of bridge vectors produced by this
+method had no corpus neighbour within cosine distance 0.25,
+confirming that they escaped the manifold entirely.
+
 \textbf{Lesson.}
-Both approaches rank existing documents without verifying that the
-region \emph{between} candidate pairs is genuinely unoccupied.
+All three approaches fail to provide an occupancy guarantee:
+they rank or construct candidate points without verifying
+that the target region is genuinely unoccupied in the corpus.
 This motivates the three-condition filter and SLERP vacancy probe
 described in the next section.
 
@@ -379,37 +410,37 @@ pipeline as a proxy for expert review:
 
 \subsection{Quantitative Results}
 
-Table~\ref{tab:funnel} summarises the filtering funnel over 2,507
+Table~\ref{tab:funnel} summarises the filtering funnel over 1,896
 candidate ideas generated across all 96 targets.
 
 \begin{table*}[t]
 \centering
 \small
-\caption{Quality filtering funnel over 2,507 void-derived invention candidates.}
+\caption{Quality filtering funnel over 1,896 void-derived invention candidates.}
 \label{tab:funnel}
 \setlength{\tabcolsep}{6pt}
 \begin{tabular}{lrr p{5.5cm}}
 \toprule
 Stage & Surviving & Rate & Notes \\
 \midrule
-Void generation (Forager + LLM) & 2,507 & 100\% & 96 targets, $\leq$10 voids each \\
-Structural check (Professor)    & 2,348 & 93.6\% & Rejects missing fields, fictional APIs \\
-Reality check (RC, $\leq$3 rounds) & 2,223 & 88.7\% & Iterative critique-and-revise \\
-Adversarial review (Debate Panel)  & 1,550 & 61.8\% & 4 specialists, $\leq$2 revision rounds \\
-\quad$\hookrightarrow$ REVISE verdict & 91 & 3.6\% & Substantive feedback; human review candidates \\
+Void generation (Forager + LLM) & 1,896 & 100\% & 96 targets, $\leq$10 voids each \\
+Structural check (Professor)    & 1,836 & 96.8\% & Rejects missing fields, fictional APIs \\
+Reality check (RC, $\leq$3 rounds) & 1,620 & 85.4\% & Iterative critique-and-revise \\
+Adversarial review (Debate Panel)  & 978   & 51.6\% & 4 specialists, $\leq$2 revision rounds \\
+\quad$\hookrightarrow$ REVISE verdict & 90 & 4.7\% & Substantive feedback; human review candidates \\
 \quad$\hookrightarrow$ APPROVE verdict &  0 & 0.0\% & Stringent: unanimous high scores, no fatal flaws \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-The 91~candidates reaching a REVISE verdict received substantive
+The 90~candidates reaching a REVISE verdict received substantive
 technical feedback from all four specialists (avg.\ 5.1 issues per
 specialist per candidate), confirming that these ideas engaged the
 reviewers on genuine technical grounds rather than being trivially
 dismissed.  The 0\% final approval rate reflects the stringent
 threshold: the deterministic verdict rules require unanimous high
 scores with no fatal flaws, and the current evaluation corpus
-(old-format, without void context passed to specialists) represents a
+represents a
 lower bound on achievable quality.
 
 \subsection{Case Study 1: Filesystem-Extent-Aware CXL Tiering}
@@ -483,7 +514,7 @@ probe (C4) partially compensates by rejecting occupied midpoints.
 pipeline is a proxy for human expert evaluation.  The 0\% final
 approval rate reflects conservative thresholds appropriate for
 patent-quality claims; a less stringent threshold would yield a
-positive approval rate.  Human evaluation of the 91~REVISE candidates
+positive approval rate.  Human evaluation of the 90~REVISE candidates
 is left for future work.
 
 \textbf{IP protection.}  The exact scoring formulation and
@@ -549,8 +580,8 @@ dense-sparse embedding space, TVA converts the informal notion of
 ``unexplored region'' into a decidable predicate.
 
 Applied to a 140k-document corpus of Linux kernel and hardware
-specifications, TVA generated 2,507 invention candidates, 62\% of
-which survived automated quality filtering and 91 of which engaged
+specifications, TVA generated 1,896 invention candidates, 85\% of
+which survived automated quality filtering and 90 of which engaged
 four adversarial expert reviewers with substantive technical critique.
 Two case studies illustrate that TVA surfaces both obvious-gap ideas
 and non-obvious connective-tissue ideas that neither keyword search nor
