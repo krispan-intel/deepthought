@@ -37,43 +37,43 @@
 \title{Topological Void Analysis: A Mathematical Framework\\
        for Systematic Technical Innovation Discovery\\
        in Knowledge Spaces}
-
-\begin{abstract}
-Identifying where to innovate in a dense technical domain---such as
-operating systems or hardware/software co-design---is fundamentally a
-search problem in a high-dimensional knowledge space.  Existing
-approaches rely on keyword search, citation proximity, or human
-intuition, none of which formalise the notion of an \emph{unexplored
-region} that is simultaneously relevant to a target goal and absent
-from prior art.
-
-We present \emph{Topological Void Analysis} (TVA), a mathematical
-framework that defines \emph{topological voids} as triads $(A, B, C)$
-in a dense-sparse hybrid embedding space.  A void requires
-three conditions: (i)~both concepts $A$ and $B$ are semantically
-cohesive with domain anchor $C$; (ii)~their pairwise similarity falls
-within a calibrated marginality band---avoiding both obvious
-combinations and unrelated noise; and (iii)~they share a sparse
-lexical bridge while the geodesic midpoint of $(A, B)$ on the
-embedding hypersphere is unoccupied by any existing document.
-
-We implement TVA in a prototype system and apply it to a corpus of
-Linux kernel source, hardware specifications, academic papers, and
-patents ($\sim$140k indexed documents).  Over 2,507 void-derived
-invention candidates, 62\% pass automated quality filtering, and
-91~candidates survive multi-expert adversarial review with substantive
-technical revision requests.  Two detailed case studies show that TVA
-identifies genuine architectural gaps---one from a strong void signal,
-one from a seemingly weak signal that nevertheless yields a novel
-kernel mechanism---demonstrating that the framework captures
-non-obvious connective tissue rather than merely surface similarity.
-\end{abstract}
-
-
-
 \author{Anonymous Submission --- Double-Blind Review}
 \date{}
-\maketitle
+
+% Abstract spans full width before two-column body
+\twocolumn[
+  \maketitle
+  \begin{@twocolumnfalse}
+  \begin{center}
+  \begin{minipage}{0.92\textwidth}
+  \textbf{Abstract.}
+  Identifying where to innovate in a dense technical domain---such as
+  operating systems or hardware/software co-design---is fundamentally a
+  search problem in a high-dimensional knowledge space.  Existing
+  approaches rely on keyword search, citation proximity, or human
+  intuition, none of which formalise the notion of an \emph{unexplored
+  region} that is simultaneously relevant to a target goal and absent
+  from prior art.
+
+  We present \emph{Topological Void Analysis} (TVA), a mathematical
+  framework that defines \emph{topological voids} as triads $(A, B, C)$
+  in a dense-sparse hybrid embedding space.  A void requires three
+  conditions: (i)~both concepts $A$ and $B$ are semantically cohesive
+  with domain anchor $C$; (ii)~their pairwise similarity falls within a
+  calibrated marginality band---avoiding both obvious combinations and
+  unrelated noise; and (iii)~they share a sparse lexical bridge while
+  the geodesic midpoint on the embedding hypersphere is unoccupied.
+
+  Applied to $\sim$140k indexed documents, TVA generates 2,507
+  invention candidates across 96 targets; 62\% pass automated quality
+  filtering and 91 survive multi-expert adversarial review.  Two case
+  studies demonstrate the framework surfaces non-obvious connective
+  tissue rather than merely obvious related pairs.
+  \end{minipage}
+  \end{center}
+  \vspace{1em}
+  \end{@twocolumnfalse}
+]
 
 % ================================================================
 \section{Introduction}
@@ -151,6 +151,55 @@ to be novel, close enough to the domain to be useful.  This is the
 informal basis for our formal marginality condition.
 
 % ================================================================
+\section{Why Standard Approaches Fail}
+\label{sec:motivation}
+
+Before presenting TVA, we trace the design evolution that motivated
+it.  Each prior approach solved part of the problem but broke down in
+a characteristic way.
+
+\textbf{Cosine similarity (top-$k$ retrieval).}
+The simplest baseline retrieves the $k$ documents closest to the
+target vector $\vtarget$.  The result is highly relevant but
+\emph{redundant}: the top-$k$ set is dominated by documents from the
+same well-covered subsystem, and the returned concepts are trivially
+related to each other.  Nothing in the ranking identifies a
+\emph{gap} between two concepts.
+
+\textbf{Maximum Marginal Relevance (MMR)~\cite{carbonell1998mmr}.}
+MMR extends top-$k$ retrieval by penalising similarity to already-selected
+items, trading off relevance against novelty:
+\[
+  \mathrm{MMR} = \arg\max_{d_i \in R \setminus S}
+    \bigl[\lambda\,\mathrm{cos}(d_i, q)
+    - (1-\lambda)\max_{d_j \in S}\mathrm{cos}(d_i, d_j)\bigr]
+\]
+MMR improves diversity but does not identify missing regions.
+A high-MMR pair $(A, B)$ is novel relative to already-selected
+documents, but nothing prevents an existing document from lying
+precisely at the midpoint of $A$ and $B$---exactly where an inventor
+would look for a gap.  In our experiments, $\sim$30\% of high-MMR
+pairs had a nearest neighbour within cosine distance 0.08 of their
+linear midpoint, rendering them false voids.
+
+\textbf{USL-based Q-Score.}
+We experimented with a dynamic friction score derived from the
+Universal Scalability Law~\cite{gunther2007scalability} to weight
+candidate pairs by their ``tension''---how much their semantic
+directions pull against each other relative to the target.  This
+produced intuitive rankings in domain-specific corpora but offered
+\emph{no occupancy guarantee}: two high-tension candidates could still
+have dense prior art exactly at their midpoint.  The score also
+required manual calibration of the concurrency and coherency
+parameters for each corpus, making it fragile across domains.
+
+\textbf{Lesson.}
+All three approaches share a fundamental limitation: they rank
+existing documents without verifying that the region \emph{between}
+candidate pairs is genuinely unoccupied.  This motivates the three-condition
+filter and the SLERP vacancy probe described in the next section.
+
+% ================================================================
 \section{The Topological Void Framework}
 \label{sec:framework}
 
@@ -179,11 +228,10 @@ $\vtarget \in S^{d-1}$ if all of the following hold:
 
 \medskip
 \noindent\textbf{C1 (Domain Cohesion).}
-\[
-  \mathrm{cos}(\mathrm{dense}(A),\, \vtarget) > \taudomain
-  \;\land\;
-  \mathrm{cos}(\mathrm{dense}(B),\, \vtarget) > \taudomain
-\]
+\begin{align*}
+  \mathrm{cos}(\mathrm{dense}(A), \vtarget) &> \taudomain \\
+  \mathrm{cos}(\mathrm{dense}(B), \vtarget) &> \taudomain
+\end{align*}
 
 \noindent\textbf{C2 (Calibrated Marginality).}
 \[
@@ -236,9 +284,8 @@ For unit vectors $u, v \in S^{d-1}$ with $\theta = \arccos(u^\top v)$,
 the SLERP midpoint is~\cite{shoemake1985slerp}:
 \[
   \mathrm{slerp}(u,v,\tfrac{1}{2}) =
-  \frac{\sin(\theta/2)}{\sin\theta}\,u
-  + \frac{\sin(\theta/2)}{\sin\theta}\,v
-  \quad (\theta \not\in \{0,\pi\})
+  \frac{\sin(\theta/2)}{\sin\theta}(u + v),
+  \quad \theta \not\in \{0,\pi\}
 \]
 with linear-interpolation fallback for near-parallel or antipodal
 vectors.
@@ -347,23 +394,23 @@ pipeline as a proxy for expert review:
 Table~\ref{tab:funnel} summarises the filtering funnel over 2,507
 candidate ideas generated across all 96 targets.
 
-\begin{table}[h]
+\begin{table*}[t]
 \centering
-\caption{Quality filtering funnel over 2,507 candidates.}
+\caption{Quality filtering funnel over 2,507 void-derived invention candidates.}
 \label{tab:funnel}
-\begin{tabular}{lrr}
+\begin{tabular}{lrrl}
 \toprule
-Stage & Surviving & Rate \\
+Stage & Surviving & Pass Rate & Notes \\
 \midrule
-Generated (Maverick) & 2,507 & 100\% \\
-Structural check (Professor) & 2,348 & 93.6\% \\
-Reality check (RC) & 2,223 & 88.7\% \\
-Adversarial review (Debate Panel) & 1,550 & 61.8\% \\
-\quad --- REVISE verdict & 91 & 3.6\% \\
-\quad --- APPROVE verdict & 0 & 0.0\% \\
+Void generation (Forager + LLM) & 2,507 & 100\% & 96 targets, up to 10 voids each \\
+Structural check (Professor) & 2,348 & 93.6\% & Rejects missing fields, fictional APIs \\
+Reality check (RC, up to 3 rounds) & 2,223 & 88.7\% & Iterative critique-and-revise \\
+Adversarial review (Debate Panel) & 1,550 & 61.8\% & 4 specialists, up to 2 revision rounds \\
+\quad$\hookrightarrow$ REVISE verdict & 91 & 3.6\% & Substantive feedback, human review candidate \\
+\quad$\hookrightarrow$ APPROVE verdict & 0 & 0.0\% & Stringent: unanimous high scores required \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 The 91~candidates reaching a REVISE verdict received substantive
 technical feedback from all four specialists (avg.\ 5.1 issues per
