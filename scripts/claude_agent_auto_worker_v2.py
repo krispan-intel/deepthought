@@ -427,7 +427,21 @@ class ClaudeAgentAutoWorkerV2:
             pending_file.unlink()
 
             verdict = final_verdict_result.get("final_verdict", "UNKNOWN")
-            logger.info(f"Debate Panel completed: {run_id} | verdict={verdict} | rounds={debate_round + 1}")
+            rounds_done = debate_round + 1
+
+            # Ideas that survive all debate rounds as REVISE are too complex for LLM alone.
+            # Mark for human review — these are the most promising candidates.
+            if verdict == "REVISE" and rounds_done >= max_debate_revisions + 1:
+                human_review_dir = Path("data/pending_human_review")
+                human_review_dir.mkdir(parents=True, exist_ok=True)
+                human_file = human_review_dir / f"{run_id}.json"
+                human_file.write_text(json.dumps(result, indent=2, ensure_ascii=False))
+                logger.info(
+                    f"Debate Panel → PENDING_HUMAN_REVIEW: {run_id} | "
+                    f"survived {rounds_done} rounds — human architect needed"
+                )
+            else:
+                logger.info(f"Debate Panel completed: {run_id} | verdict={verdict} | rounds={rounds_done}")
             return True
 
         except Exception as exc:
