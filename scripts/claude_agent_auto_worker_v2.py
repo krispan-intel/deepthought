@@ -1037,7 +1037,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Claude Agent Auto Worker V2")
     parser.add_argument("--batch", action="store_true", help="Process all pending tasks and exit")
     parser.add_argument("--worker-id", default=None, help="Worker ID for concurrent mode (default: w<PID>)")
+    parser.add_argument("--backend", default=None, choices=["copilot_cli", "claude_code_cli", "openai"],
+                        help="Override LLM backend for this worker")
     args = parser.parse_args()
+
+    # Set backend env var before LLMClient is initialized
+    if args.backend:
+        os.environ["LLM_BACKEND"] = args.backend
 
     worker = ClaudeAgentAutoWorkerV2(worker_id=args.worker_id)
 
