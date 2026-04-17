@@ -167,37 +167,25 @@ related to each other.  Nothing in the ranking identifies a
 \emph{gap} between two concepts.
 
 \textbf{Maximum Marginal Relevance (MMR)~\cite{carbonell1998mmr}.}
-MMR extends top-$k$ retrieval by penalising similarity to already-selected
-items, trading off relevance against novelty:
-\[
-  \mathrm{MMR} = \arg\max_{d_i \in R \setminus S}
-    \bigl[\lambda\,\mathrm{cos}(d_i, q)
-    - (1-\lambda)\max_{d_j \in S}\mathrm{cos}(d_i, d_j)\bigr]
-\]
+MMR extends top-$k$ retrieval by penalising similarity to
+already-selected items:
+\begin{align*}
+  \mathrm{MMR} = \arg\max_{d_i \in R \setminus S} \bigl[
+    &\lambda\,\mathrm{cos}(d_i, q) \\
+    &- (1{-}\lambda)\max_{d_j \in S}\mathrm{cos}(d_i, d_j)\bigr]
+\end{align*}
 MMR improves diversity but does not identify missing regions.
-A high-MMR pair $(A, B)$ is novel relative to already-selected
-documents, but nothing prevents an existing document from lying
-precisely at the midpoint of $A$ and $B$---exactly where an inventor
-would look for a gap.  In our experiments, $\sim$30\% of high-MMR
-pairs had a nearest neighbour within cosine distance 0.08 of their
-linear midpoint, rendering them false voids.
-
-\textbf{USL-based Q-Score.}
-We experimented with a dynamic friction score derived from the
-Universal Scalability Law~\cite{gunther2007scalability} to weight
-candidate pairs by their ``tension''---how much their semantic
-directions pull against each other relative to the target.  This
-produced intuitive rankings in domain-specific corpora but offered
-\emph{no occupancy guarantee}: two high-tension candidates could still
-have dense prior art exactly at their midpoint.  The score also
-required manual calibration of the concurrency and coherency
-parameters for each corpus, making it fragile across domains.
+A high-MMR pair $(A, B)$ may still have existing prior art at
+their midpoint---exactly where an inventor would look for a gap.
+In our experiments, $\sim$30\% of high-MMR pairs had a nearest
+neighbour within cosine distance 0.08 of their linear midpoint,
+rendering them false voids.
 
 \textbf{Lesson.}
-All three approaches share a fundamental limitation: they rank
-existing documents without verifying that the region \emph{between}
-candidate pairs is genuinely unoccupied.  This motivates the three-condition
-filter and the SLERP vacancy probe described in the next section.
+Both approaches rank existing documents without verifying that the
+region \emph{between} candidate pairs is genuinely unoccupied.
+This motivates the three-condition filter and SLERP vacancy probe
+described in the next section.
 
 % ================================================================
 \section{The Topological Void Framework}
@@ -396,18 +384,20 @@ candidate ideas generated across all 96 targets.
 
 \begin{table*}[t]
 \centering
+\small
 \caption{Quality filtering funnel over 2,507 void-derived invention candidates.}
 \label{tab:funnel}
-\begin{tabular}{lrrl}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lrr p{5.5cm}}
 \toprule
-Stage & Surviving & Pass Rate & Notes \\
+Stage & Surviving & Rate & Notes \\
 \midrule
-Void generation (Forager + LLM) & 2,507 & 100\% & 96 targets, up to 10 voids each \\
-Structural check (Professor) & 2,348 & 93.6\% & Rejects missing fields, fictional APIs \\
-Reality check (RC, up to 3 rounds) & 2,223 & 88.7\% & Iterative critique-and-revise \\
-Adversarial review (Debate Panel) & 1,550 & 61.8\% & 4 specialists, up to 2 revision rounds \\
-\quad$\hookrightarrow$ REVISE verdict & 91 & 3.6\% & Substantive feedback, human review candidate \\
-\quad$\hookrightarrow$ APPROVE verdict & 0 & 0.0\% & Stringent: unanimous high scores required \\
+Void generation (Forager + LLM) & 2,507 & 100\% & 96 targets, $\leq$10 voids each \\
+Structural check (Professor)    & 2,348 & 93.6\% & Rejects missing fields, fictional APIs \\
+Reality check (RC, $\leq$3 rounds) & 2,223 & 88.7\% & Iterative critique-and-revise \\
+Adversarial review (Debate Panel)  & 1,550 & 61.8\% & 4 specialists, $\leq$2 revision rounds \\
+\quad$\hookrightarrow$ REVISE verdict & 91 & 3.6\% & Substantive feedback; human review candidates \\
+\quad$\hookrightarrow$ APPROVE verdict &  0 & 0.0\% & Stringent: unanimous high scores, no fatal flaws \\
 \bottomrule
 \end{tabular}
 \end{table*}
