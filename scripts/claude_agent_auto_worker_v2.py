@@ -947,8 +947,19 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
                         f"DebatePanel={len(pending_files['debate_panel'])}"
                     )
 
-                # Process one task from each queue
-                for agent, files in pending_files.items():
+                # Priority scheduling: drain higher-value queues first.
+                # DP → RC → Professor → Maverick (skip lower queues when higher has work)
+                if pending_files["debate_panel"]:
+                    active_queues = {k: v for k, v in pending_files.items()
+                                     if k == "debate_panel"}
+                elif pending_files["reality_checker"] or pending_files["professor"]:
+                    active_queues = {k: v for k, v in pending_files.items()
+                                     if k in ("reality_checker", "professor", "debate_panel")}
+                else:
+                    active_queues = pending_files  # normal fair scheduling
+
+                # Process one task from each active queue
+                for agent, files in active_queues.items():
                     if not files:
                         continue
 
