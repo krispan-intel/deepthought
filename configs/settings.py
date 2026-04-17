@@ -95,6 +95,7 @@ class Settings(BaseSettings):
 
     # ── Claude (Reality Checker) ──────────────────────────────────
     anthropic_api_key: str = Field(default="")
+    anthropic_base_url: str = Field(default="")
     reality_checker_model: str = Field(
         default="claude-sonnet-4-6"
     )

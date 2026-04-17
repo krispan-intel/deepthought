@@ -390,7 +390,7 @@ class ClaudeAgentAutoWorkerV2:
                         "with all issues addressed. Include tid_detail with all sub-fields."
                     )
                     response_text = self.llm.chat(
-                        model="claude-opus-4-6",
+                        model="gpt-5.4",
                         system_prompt=system_prompt,
                         user_prompt=user_prompt,
                         temperature=0.5,
@@ -589,7 +589,7 @@ Revise the draft to address the feedback.
             "drafts": drafts,
             "system_prompt": system_prompt,
             "user_prompt": user_prompt,
-            "model": "claude-sonnet-4-5",
+            "model": "claude-haiku-4-5",
         }
 
         pending_file = self.pending_professor / f"{run_id}.json"
@@ -621,7 +621,7 @@ Revise the draft to address the feedback.
             "drafts": passed_drafts,
             "critiques": [],
             "revisions": 0,
-            "model": "claude-sonnet-4-5",
+            "model": "claude-sonnet-4-6",
         }
 
         pending_file = self.pending_reality_checker / f"{run_id}.json"
@@ -718,7 +718,7 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
 """.strip()
 
         raw = self.llm.chat(
-            model="claude-sonnet-4-5",
+            model="claude-sonnet-4-5",  # DP specialist: uses sonnet-4-5 to spread rate limit
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             temperature=0.5,
