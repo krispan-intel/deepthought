@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[2/4 ★ 3.0] EPT-Sampled Futex Contention Detection with PD-Granularity E</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-1123442f05bc &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 2/4 APPROVE &nbsp;|&nbsp; Avg 3.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — yellow_card_revise</div>
+</div>
+
+<section class="card">
+  <h1>EPT-Sampled Futex Contention Detection with PD-Granularity Epoch-Versioned CoW Roots and Dual-EPTP PTI Enforcement for Linux KVM</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux synchronization using x86 EPT microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>EPT Accessed/Dirty Contention Vector for Linux Lock Slowpath Arbitration</li><li style='font-size:13px;'>SRCU-Published EPT Epoch Roots for KVM MMU Synchronization Reduction</li><li style='font-size:13px;'>Dual-EPTP PTI Propagation Fence for Linux Guest Kernel Mapping Updates</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: GAPP: A Fast Profiler for Detecting Serialization Bottlenecks in   Parallel Linux Applications &lt;&gt; Overview and Applications of GPGPU Based Parallel Ant Colony   Optimization
+  MMR Score:    0.7651</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>KVM samples EPT accessed/dirty state on registered futex backing pages to classify contention zones, manages EPT root transitions via a four-state lifecycle (BUILD→ACTIVE→DRAIN→FREED) with PD-level (2 MB) copy-on-write sharing and overlapping-SRCU adoption that eliminates use-after-free windows, and enforces guest PTI correctness through dual-EPTP views published atomically via single-epoch two-phase commit with VMFUNC switching on privilege transitions.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The bridge is a three-layer EPT policy stack: (1) an EPT Futex Heat Layer where hardware EPT accessed/dirty deltas on explicitly registered futex backing pages are aggregated over millisecond epochs into zone-level conte</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux futex spin-before-park heuristics are tuned for bare metal and cannot observe host-side scheduling delays, nested page-walk costs, or cross-vCPU interference. Under vCPU oversubscription, futex code may spin wastefully when the lock holder is descheduled or may park prematurely when the holder is running but EPT pressure inflates unlock latency. pvqspinlock addresses kernel spinlocks but does not cover userspace futexes, which dominate serialization in database and storage workloads.
+
+Orthogonally, KVM&#x27;s EPT management suffers two structural problems: (a) mmu_lock serializes all EPT root mutations across vCPUs, creating a bottleneck under mmu_notifier-heavy workloads (live migration dirty logging, VFIO DMA map/unmap, transparent hugepage splitting)—note that while tdp_mmu.c introduced read-lock paths for fault handling, write-lock is still required for root allocation, zapping, and mmu_notifier invalidation, and the hold time scales with vCPU count during coordinated flushes; and (b) guest PTI correctness is trusted entirely to the guest kernel, meaning a single kernel bug (e.g., CVE-2017-5754 Meltdown-class transient execution, or implementation errors in PTI page table switching) can silently expose kernel mappings to userspace with no hypervisor-visible signal.
+
+No existing mechanism unifies EPT microarchitectural signals (accessed/dirty bits, page-walk metadata) into scheduling policy, reduced-contention root management, and security enforcement in a single coherent framework.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>pvqspinlock uses vCPU preemption state for kernel spinlocks but does not extend to userspace futexes. Futex adaptive spinning (kernel/futex/futex.h) uses fixed nanosecond budgets without host visibility. EPT accessed/dirty handling is used for KVM memory aging (kvm_age_gfn) and dirty logging (PML), not synchronization policy. No prior art defines a futex-specific EPT sampling layer that translates page heat into scheduling hints.
+
+For EPT root management: KVM&#x27;s current mmu_lock (a spinlock in kvm-&gt;mmu_lock) serializes all shadow/TDP page table mutations. The tdp_mmu.c rework introduced read-lock paths for page fault handling but still requires write-lock for root allocation, zapping, and mmu_notifier invalidation. RCU-based approaches to page table management exist in the Linux kernel (e.g., rcu_table_free for process page tables) but have not been applied to EPT roots where INVEPT coordination and VMX EPTP switching add hardware constraints absent from software page tables. Critically, no prior approach uses immutable epoch-versioned snapshots with PD-granularity CoW to reduce mmu_lock hold time while preserving correctness under concurrent mmu_notifier callbacks.
+
+For PTI enforcement: Intel SGX EPCM provides hardware-enforced per-page access controls within enclaves, but EPCM operates at enclave granularity with ring-3-only semantics and cannot express kernel/user page-table-level visibility policies across the full guest address space. Nested VMX (L0/L1) EPT switching separates L1-managed L2 address spaces but does not enforce intra-guest privilege separation within a single VM. AMD SEV-SNP RMP provides per-page ownership validation but at host/guest boundary, not kernel/user boundary within the guest. No prior art uses dual-EPTP views with VMFUNC switching to enforce PTI mapping correctness from the hypervisor layer, nor does any prior art address the consistency problem of updating two EPT views atomically under mmu_notifier invalidation.
+
+Comparison matrix:
+| Mechanism | Scope | Enforcement Point | Kernel/User Separation | Overhead Model |
+|-----------|-------|-------------------|----------------------|----------------|
+| SGX EPCM | Enclave pages | Hardware (CPU) | No (ring-3 only) | Per-enclave-entry |
+| SEV-SNP RMP | All guest pages | Hardware (CPU) | No (host/guest only) | Per-page-walk |
+| Nested EPT | L2 address spaces | L0 hypervisor | No (inter-VM only) | Per-L2-exit |
+| This invention | All guest pages | L0 hypervisor via dual-EPTP | Yes (kernel/user) | Per-privilege-transition (amortized via CR3-batch) |</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">2/4 APPROVE · Avg 3.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>The epoch-upgrade-on-EPT-violation mechanism lacks concrete race analysis: when a vCPU checks its per-vCPU generation snapshot against the published generation during fault handling, the published generation can advance between the check and SRCU read-lock acquisition, potentially causing adoption of generation N+2 when the fault occurred under N. The &#x27;generation-pinned SRCU transition&#x27; must specify exact memory ordering—whether rcu_dereference() with implied smp_read_barrier_depends() suffices or requires explicit smp_rmb() after generation load—and define the pinning protocol to guarantee the checked generation remains dereferenceable throughout adoption.</li><li style='font-size:13px;margin-bottom:4px;'>Memory overhead is claimed &#x27;bounded&#x27; but no concrete upper bound or reclamation guarantee is provided. With PD-level (2 MB) CoW, a 64 GB VM has ~32,768 PD entries; if three concurrent generations are live and worst-case invalidation patterns prevent sharing, the metadata overhead scales as 3 × 32,768 × sizeof(ept_pd_entry). You must define maximum memory footprint as a function of guest physical address space size and maximum concurrent generation count, specify the SRCU grace period convergence guarantee that bounds live generations (e.g., &#x27;RECLAIM begins within K SRCU grace periods after DRAIN entry&#x27;), and describe the fallback mechanism if memory pressure prevents new epoch allocation.</li><li style='font-size:13px;margin-bottom:4px;'>The interaction with transparent huge pages (2 MB/1 GB EPT entries) is completely undefined. When mmu_notifier invalidates a range spanning a transparent huge page, does BUILD-phase construction pre-split the huge SPTE into 4 KB entries in the successor root, or does the new root inherit the huge mapping and defer splitting until a subsequent write fault? If huge pages are pre-split, the &#x27;zero SPTE repopulation&#x27; claim is misleading (you populated 512 × 4 KB SPTEs during BUILD). If huge pages are inherited and split on-demand post-adoption, those post-adoption splits require mmu_lock, violating the &#x27;vCPU-side adoption is mmu_lock-free&#x27; claim. Specify the huge-page policy and its locking implications.</li><li style='font-size:13px;margin-bottom:4px;'>The handling of mmu_notifier callbacks concurrent with ACTIVE-phase roots is critically underspecified and likely violates either performance claims or Linux MM correctness. If mmu_notifier_invalidate_range_start() arrives while an epoch is ACTIVE, you must either (a) immediately zap affected SPTEs in the live ACTIVE root under mmu_lock, which contradicts &#x27;mmu_lock hold time confined to epoch construction,&#x27; or (b) defer invalidation visibility until the next epoch BUILD, which violates the Linux MM requirement that invalidation is visible before mmu_notifier_invalidate_range_start() returns. A third option—forcing immediate ACTIVE → DRAIN transition and starting a new BUILD that reflects the invalidation—might be correct, but this must be explicitly specified with proof that no vCPU can fault on stale translations between invalidate_range_start() and the new epoch&#x27;s PUBLISH.</li><li style='font-size:13px;margin-bottom:4px;'>The four-state lifecycle transition conditions and invariants are underspecified. What event triggers BUILD → PUBLISH: is it time-based (periodic epoch tick), threshold-based (N mmu_notifier events accumulated), or on-demand (first EPT violation after invalidation)? If time-based, short epochs waste memory on idle VMs; long epochs delay invalidation visibility. If threshold-based, define the threshold and analyze its interaction with SRCU grace period duration (if grace periods are slower than invalidation arrival rate, generation count grows unbounded). The state machine must specify: (1) the invariant for each state (e.g., &#x27;ACTIVE: exactly one root in ACTIVE state, all vCPUs&#x27; generations ≤ ACTIVE generation&#x27;), (2) which operations are permitted concurrently in each state (can BUILD and DRAIN overlap?), and (3) the failure-mode abort path if SRCU grace periods stall or memory allocation fails during BUILD.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Memory overhead multiplier needs quantification: draft claims &#x27;bounded to at most three concurrent generations&#x27; but worst-case memory footprint under slow vCPU adoption (e.g., vCPU blocked in guest userspace during DRAIN) is not explicit—clarify whether 3× peak memory is per-VM or per-NUMA-node, and define the backpressure mechanism if DRAIN stalls exceed a bounded timeout.</li><li style='font-size:13px;margin-bottom:4px;'>SRCU grace period latency under sustained mmu_notifier invalidation churn (e.g., host memory pressure, THP collapses, guest fork workloads) may accumulate BUILD→PUBLISH transitions faster than DRAIN→RECLAIM retirement—define maximum pending epochs and a throttling policy to prevent unbounded generation queue growth.</li><li style='font-size:13px;margin-bottom:4px;'>Generation-checked EPT violation upgrade cost for broad-access workloads (in-memory databases scanning large heaps, fork bombs touching entire address space) could trigger O(modified_PD_count) EPT exits per vCPU per epoch—quantify the violation storm magnitude for representative workloads and consider eager adoption hints or partial pre-warming to amortize exits.</li><li style='font-size:13px;margin-bottom:4px;'>PD-level CoW fan-out bookkeeping scales to ~262,144 PD entries for a 512 GB VM—clarify the data structure for tracking modified PDs during BUILD phase (bitmap, radix tree, mmu_notifier range-based hints) to avoid O(all_PDs) scans, and define the CoW metadata overhead per PD entry.</li><li style='font-size:13px;margin-bottom:4px;'>INVEPT folded into DRAIN completion defers TLB invalidation until SRCU grace period converges—if DRAIN is delayed by slow vCPU adoption, stale EPT translations persist beyond mmu_notifier invalidation callback return, potentially violating Linux MM&#x27;s invalidation contract; prove that SRCU convergence implies all vCPUs have executed INVEPT or exited, or define a bounded DRAIN timeout with explicit INVEPT broadcast fallback.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Draft #2 is the strongest technical contribution but remains incomplete—Feasibility, Market, Problem, Architecture, Implementation Plan, and Claims sections are all empty placeholders that must be filled with concrete technical detail before patent submission.</li><li style='font-size:13px;margin-bottom:4px;'>The novelty section claims &#x27;epoch-upgrade on EPT violation&#x27; eliminates stale-translation repopulation but does not specify how the generation-pinned SRCU transition prevents race conditions when multiple vCPUs simultaneously detect stale roots during the BUILD→PUBLISH window—the handoff protocol and memory ordering guarantees must be explicitly defined.</li><li style='font-size:13px;margin-bottom:4px;'>PD-level (2 MB) CoW granularity is justified by avoiding 4KB metadata explosion, but the draft does not quantify worst-case memory overhead: you must specify the maximum number of concurrent BUILD/PUBLISH/DRAIN generations allowed (claimed as &#x27;bounded to at most three&#x27; in Draft #1 but absent here), the reclamation policy when mmu_notifier invalidation rate exceeds SRCU grace period convergence, and whether CoW subtree refcounting scales under pathological fork-bomb or MADV_DONTNEED workloads.</li><li style='font-size:13px;margin-bottom:4px;'>The prior art differentiation mentions VMware ESX TLB patents (US 9,785,567 B2, US 10,241,819 B2) but does not explain how your four-state lifecycle differs from their deferred invalidation batching—specifically, do their patents permit immutable roots, and if so, what prevents them from reading on your claims?</li><li style='font-size:13px;margin-bottom:4px;'>Implementation feasibility requires concrete KVM integration points: which mmu_notifier callbacks trigger BUILD-phase construction (mmu_notifier_invalidate_range_start vs _end), whether kvm_flush_remote_tlbs() is eliminated or repurposed for intra-epoch SPTE modifications, and how the mechanism interacts with nested virtualization (L1 managing L2 EPT under L0&#x27;s epoch regime).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Memory exhaustion risk if SRCU grace periods are indefinitely delayed by long-running vCPU operations—recommend bounded reclamation with emergency compaction at 3-epoch threshold</li><li style='font-size:13px;margin-bottom:4px;'>PD-granularity CoW could create deterministic fragmentation patterns observable via cache timing; consider randomized PD selection order during BUILD phase</li><li style='font-size:13px;margin-bottom:4px;'>Generation-checked EPT violation path must validate epoch ID bounds before array indexing to prevent out-of-bounds access if racing with RECLAIM</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] mmu_notifier-&gt;invalidate_range_end() must complete invalidation before returning to prevent host kernel use-after-free. Copy-on-write EPT root publication defers invalidation visibi</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Memory overhead is underspecified and potentially unbounded. Each mmu_notifier invalidation publishes a new immutable EPT root with copy-on-write subtree sharing, but high-frequency</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The &#x27;drains old roots through explicit lifecycle state machine&#x27; is vague. How does the state machine coordinate with concurrent vCPU page faults, nested EPT violations, and host mem</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] No analysis of INVEPT scaling implications. Publishing immutable roots implies delayed INVEPT broadcast to vCPUs, but VMX INVEPT costs increase with vCPU count. Batching INVEPT acro</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The proposal claims &#x27;copy-on-write subtree sharing&#x27; but does not define the granularity of sharing (per-SPTE, per-page-table-page, per-directory level) or how shared subtrees are re</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">revision_required</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The VMFUNC-on-privilege-transition mechanism is ambiguous and likely catastrophic for performance. Text claims &#x27;VMFUNC-switched EPT views&#x27; on privilege transitions but also mentions</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The hypervisor cannot reliably infer &#x27;declared PTI visibility policy&#x27; without guest kernel cooperation. PTI isolation uses separate CR3-switched page tables, but there is no archite</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] PML4-entry (512 GB) copy-on-write granularity is far too coarse for practical subtree sharing. Most VMs use under 100 GB of memory and populate 1-2 PML4 entries. At 512 GB granulari</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The &#x27;lock-free&#x27; EPT management claim is technically incorrect. KVM&#x27;s mmu_lock protects: (a) EPT structure modification during SPTE walks, (b) atomic SPTE read-modify-write, (c) coor</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Missing synchronization model for dual-EPTP updates under mmu_notifier invalidation. You maintain two EPT roots (user-view, kernel-view) per epoch. When a host invalidation occurs, </li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux synchronization using x86 EPT microarchitecture features
+</footer>
+</div></body></html>

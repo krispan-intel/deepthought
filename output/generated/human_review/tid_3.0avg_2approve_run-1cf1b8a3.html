@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[2/4 ★ 3.0] Epoch-Tagged Fabric Locality Classes for CXL-Aware Linux Dem</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-1cf1b8a3e859 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 2/4 APPROVE &nbsp;|&nbsp; Avg 3.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — revision_required</div>
+</div>
+
+<section class="card">
+  <h1>Epoch-Tagged Fabric Locality Classes for CXL-Aware Linux Demotion</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux memory management using x86 CXL microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Epoch-Tagged Fabric Locality Classes for CXL-Aware Linux Demotion</li><li style='font-size:13px;'>PEBS Heat Mailbox for CXL Folio Promotion</li><li style='font-size:13px;'>HDM-Stripe-Aware Folio Repacking for Interleaved CXL Memory</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: Demystifying CXL Memory with Genuine CXL-Ready Systems and Devices &lt;&gt; A Case for CXL-Centric Server Processors
+  MMR Score:    0.8127</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A kernel translation layer converts CXL HDM decoder topology and x86 socket locality into stable memory-tier classes consumed by Linux reclaim, demotion, and allocation policy, with PEBS-driven promotion and stripe-aware folio repacking.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The invention defines an epoch-tagged Fabric Locality Class (FLC) abstraction that translates fixed x86 host-bridge placement plus mutable CXL region composition into allocator-stable policy objects, allowing Linux mm to</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux memory tiering reduces heterogeneous memory to node distance and demotion targets. That flattening loses CXL-specific facts such as HDM decoder interleave width (1/2/4/8/16-way), switch depth (0–4 hops), host-bridge attachment socket, and cross-socket asymmetry. As a result, the demotion path in shrink_folio_list() (mm/vmscan.c) can demote a folio from local DRAM into a technically slower CXL tier that is a poor choice relative to another CXL region with lower latency or fewer switch hops, increasing refaults measured via workingset_refault() and remote reads visible in uncore CHA counters.
+
+Additionally, Linux lacks a mechanism to translate x86 PEBS load-latency samples (MSR_PEBS_LD_LAT_THRESHOLD filtered by data_src.mem_lvl == REMOTE_CCE or data_src.mem_snoop == MISS for CXL address ranges) into direct folio promotion decisions. Hot CXL folios remain trapped in high-latency memory until coarse PTE-scanning in task_numa_work() or refault heuristics in workingset_activation() eventually detect them — a latency of seconds to minutes versus the sub-millisecond detection possible with PEBS at 10K sample/s.
+
+Furthermore, large folios (order-9 PMD folios = 2MB on x86) that cross multiple HDM interleave stripes (typical stripe width: 256B–4KB granularity, meaning a single 2MB folio spans 512–8192 stripes across N devices) amplify LLC misses due to non-uniform access latency across stripes, increase CXL link queue depth on multi-device interleaves, and degrade tail latency. Current transparent hugepage (THP) policy in hugepage_vma_check(), compaction in compact_zone(), and folio allocation in __alloc_pages() are entirely unaware of CXL stripe boundaries — creating a tension between TLB reach optimization and fabric-local data placement that no existing kernel subsystem resolves.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>**Topology exposure without mm integration.** HMAT (ACPI 6.5 §5.2.27) and CDAT (CXL 3.1 §8.1.11) expose latency and bandwidth attributes, and the CXL core (drivers/cxl/) knows region and decoder topology via struct cxl_region and struct cxl_decoder. However, Linux mm does not preserve that information as a first-class policy object in struct memory_tier (mm/memory-tiers.c), struct pglist_data, or the demotion graph built by migrate_demote_mapping_update(). The memory_tier framework classifies nodes by abstract latency buckets but does not encode switch depth, interleave width, host-bridge socket affinity, or decoder geometry.
+
+**Coarse NUMA balancing without PEBS-CXL bridge.** NUMA balancing (kernel/sched/fair.c: task_numa_work) relies on hinting faults from PTE protection downgrades and scans page tables at configurable intervals (numa_balancing_scan_delay_ms). DAMON (mm/damon/) observes access frequency at region granularity (minimum 4KB, typically larger). Neither converts x86 PEBS load-latency samples — specifically the data_src field encoding memory hierarchy level and snoop result — for CXL-backed PFNs into direct folio-migration policy compatible with existing mm locking rules (folio_lock, lru_lock, migrate_folio). The perf subsystem can record these samples to userspace ring buffers but provides no kernel-internal state machine for mm consumption.
+
+**Folio management blind to stripe geometry.** THP (mm/huge_memory.c), compaction (mm/compaction.c), and folio management (mm/filemap.c, mm/page_alloc.c) reason about contiguity, refaults, and generic NUMA locality but not decoder stripe boundaries. The CXL subsystem (drivers/cxl/core/region.c) manages region creation and decoder programming (cxl_decoder_commit) without providing an mm-facing abstraction that classifies PFN ranges by stripe residency. No existing work addresses the interaction of folio order heuristics (THP policy via /sys/kernel/mm/transparent_hugepage, madvise MADV_HUGEPAGE, compaction watermarks, __GFP_COMP semantics) with CXL interleave geometry, nor defines precedence when multiple policies demand conflicting folio orders.
+
+**No prior art bridges all three gaps.** CXLMemUring proposes asynchronous CXL pool access but operates at device-driver level without kernel mm integration. TPP (Transparent Page Placement) adds tiered placement heuristics but lacks CXL topology awareness. MEMTIS profiles memory access but targets offline analysis rather than online kernel policy. No published work or kernel patchset combines fabric-topology-derived allocation classes, PEBS-to-mm promotion pipelines, and stripe-aware folio order capping in a unified framework.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>Introduce three tightly integrated kernel abstractions that bridge CXL fabric topology into Linux mm policy:
+
+**1. Fabric Locality Class (FLC).** An FLC is a kernel object (struct flc, embedded in struct memory_tier) derived from CXL HDM decoder geometry, region membership, host-bridge attachment, x86 socket proximity, and measured latency bands. Each FLC is published with an epoch number (monotonically increasing u64, incremented on any topology change) and a deterministic class_id computed as:
+
+```
+class_id = (socket_local_flag &lt;&lt; 16) | (switch_depth_inverse &lt;&lt; 12) | (interleave_width_log2 &lt;&lt; 8) | latency_bucket
+```
+
+where socket_local_flag is 1 when the CXL root port&#x27;s PCIE segment matches the CPU socket&#x27;s root complex (determined via ACPI _PXM → NUMA node → socket mapping), switch_depth_inverse is (MAX_SWITCH_DEPTH(4) − observed_depth) to prefer direct-attached regions (value 4 for direct, 3 for single-switch, etc.), interleave_width_log2 is ilog2(HDM decoder interleave ways) to favor striped bandwidth (0 for ×1, 1 for ×2, 2 for ×4, 3 for ×8), and latency_bucket is a 4-bit quantized band (0–15) derived from CDAT DSLBIS read latency entries at region-commit time (see §3 for calibration details).
+
+FLCs are RCU-published via rcu_assign_pointer() on struct memory_tier, allowing lockless reads in demotion and allocation hot paths. On topology change (CXL region create/destroy via /sys/bus/cxl or hot-plug events), the CXL driver calls flc_topology_update() which: (a) allocates a new FLC set via kmalloc(GFP_KERNEL), (b) populates class_ids from current decoder state, (c) publishes via rcu_assign_pointer(), (d) calls synchronize_rcu() before kfree(old_flc) to ensure no in-flight readers reference stale data. In-flight allocations during the RCU grace period observe either the old or new FLC atomically — both are valid — and the epoch number lets slow paths detect staleness and retry.
+
+**2. PEBS-to-MM Promotion Mailbox.** A per-CPU NMI-safe ring buffer (struct pebs_mm_mailbox, 4096 entries × 16 bytes = 64KB per CPU) receives CXL-relevant PEBS samples from the PMU NMI handler. Each entry contains: {pfn: u64, latency_cycles: u16, data_src: u16} extracted from the PEBS record&#x27;s data_src and latency fields. The NMI handler filters samples where data_src.mem_lvl indicates CXL/remote and latency exceeds a configurable threshold (default: 500 cycles, tunable via /sys/kernel/mm/flc/pebs_latency_threshold_cycles).
+
+A per-CPU kthread (flc_pebs_promoter, running at SCHED_IDLE priority) drains the mailbox every flc_pebs_scan_interval_ms (default: 100ms). For each PFN, the kthread: (a) looks up the folio via pfn_to_folio(), (b) checks folio_test_lru() and folio_trylock(), (c) if the folio&#x27;s current FLC class_id is worse (numerically lower) than the best available DRAM tier, queues it on a per-node promotion list, (d) calls migrate_pages(&amp;promote_list, alloc_promotion_target, ...) with the target node selected by highest class_id. Overflow semantics: when the ring buffer is full, the NMI handler increments a per-CPU overflow counter (exported via debugfs) and drops the sample — acceptable because PEBS is statistical and individual sample loss does not affect convergence.
+
+The mailbox uses a lock-free SPSC (single-producer/single-consumer) ring with atomic head/tail indices. The NMI handler is the sole producer; the kthread is the sole consumer. No spinlocks are taken in NMI context. The kthread acquires folio_lock() and lru_lock only outside NMI, following existing mm locking conventions.
+
+**3. Stripe Residency Descriptor (SRD) and Folio Order Cap.** For each CXL region, at region-commit time (cxl_region_commit → flc_srd_build), the kernel constructs an SRD table: a flat array of struct srd entries indexed by region-relative stripe index. The PFN-to-SRD-index mapping is:
+
+```
+srd_index = (pfn - region_base_pfn) &gt;&gt; stripe_order
+```
+
+where stripe_order = ilog2(stripe_granularity &gt;&gt; PAGE_SHIFT). For a 256B stripe granularity with 4KB pages, stripe_order = 0 and every page is its own stripe — but the SRD aggregates into stripe groups of 2^stripe_order pages. For the common case of 256B granularity on a 4-way interleave across a 1TB region, the SRD array contains (1TB / 256B) / 4 = ~1 billion entries — far too large. Therefore, the SRD uses a two-level scheme: a top-level array of SRD group descriptors (one per 2MB = PMD-size region, ~512K entries for 1TB), each containing {device_bitmap: u16, max_safe_order: u8, stripe_latency_penalty_ns: u16}. The device_bitmap encodes which CXL devices are touched by a PMD-aligned folio at this offset; max_safe_order is the largest folio order where all pages land on a single device; stripe_latency_penalty_ns is the measured cross-device penalty.
+
+The SRD group array occupies 5 bytes × 512K = 2.5MB per TB of CXL region — acceptable overhead for server-class systems.
+
+**Folio order cap integration points.** The max_safe_order from SRD lookup is applied as a folio order ceiling at the following specific call sites:
+
+(a) **Demotion path — demote_folio_list() in mm/vmscan.c:** Before calling alloc_demote_folio() which invokes __alloc_pages(), the demotion logic calls flc_max_order(target_nid, folio_pfn(folio)) to obtain the SRD-derived order cap. If the current folio order exceeds the cap, the folio is split via split_folio_to_order(folio, max_safe_order) before migration.
+
+(b) **Compaction path — compact_zone() in mm/compaction.c:** In the isolate_migratepages_block() scanner, when a candidate folio resides in a CXL-backed PFN range (detected via flc_is_cxl_pfn(pfn) — a static branch enabled only when CXL regions are active), the migration target order is clamped to flc_max_order().
+
+(c) **Anonymous fault path — do_anonymous_page() and do_huge_pmd_anonymous_page() in mm/memory.c:** When the fault target VMA&#x27;s backing node is CXL-backed, the THP order decision in thp_vma_allowable_orders() is intersected with the SRD order cap via flc_max_order(nid, fault_pfn). This prevents allocation of PMD-size folios that would span multiple devices.
+
+(d) **User-initiated migration — migrate_pages() syscall in mm/migrate.c:** The move_pages_to_node() helper applies flc_max_order() capping identically to path (a).
+
+(e) **Explicit exclusion — NUMA balancing in kernel/sched/fair.c:** The NUMA balancing migration path (migrate_misplaced_folio) is NOT capped by SRD because it operates on DRAM-to-DRAM migrations where stripe geometry is irrelevant. This is enforced by checking flc_is_cxl_pfn(target_pfn) before applying the cap.
+
+**Cost-benefit decision function.** The folio order cap is not applied unconditionally — a cost-benefit gate determines whether capping (and potential splitting) is worthwhile:
+
+```
+should_cap = (stripe_latency_penalty_ns &gt; tlb_miss_cost_ns × (current_order - max_safe_order))
+```
+
+where stripe_latency_penalty_ns is from the SRD group descriptor (calibrated at region-commit time from CDAT DSLBIS read-latency entries for cross-device access; if CDAT is unavailable, derived from HMAT initiator-target latency differences; if neither is available, a conservative static default of 150ns is used — representing typical CXL 2.0 added latency over DDR5), tlb_miss_cost_ns is a per-architecture constant (x86: 7ns for L2 TLB miss + page walk, from Intel optimization manual §2.1.3; configurable via /sys/kernel/mm/flc/tlb_miss_cost_ns for platforms with profiled values), and current_order minus max_safe_order represents the number of additional TLB entries needed after splitting.
+
+This threshold is evaluated at region-commit time (not in the hot path): the SRD group descriptor stores a precomputed should_cap boolean for each PMD-aligned group, so the hot-path check is a single byte load from the SRD array — O(1) with no runtime sampling, no side-channel risk, and no allocation-path variability.
+
+**RCU lifecycle for SRD.** The SRD table is allocated at cxl_region_commit time and freed at cxl_region_destroy time. During the region&#x27;s lifetime, the SRD is immutable — no hot-plug updates modify stripe geometry because CXL spec §8.2.9 requires region destruction and re-creation to change interleave settings. The RCU publication is therefore one-shot: rcu_assign_pointer(region→srd, new_srd) at commit, rcu_dereference(region→srd) in hot paths, kfree_rcu(old_srd, rcu) at destroy. Concurrent readers during region destruction observe either the valid SRD or NULL (triggering fallback to uncapped folio order), both safe. There is no concurrent mutation case to synchronize because CXL region reconfiguration inherently serializes through cxl_region_rwsem.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>The system comprises three subsystems layered between the CXL driver stack (drivers/cxl/) and the Linux mm core (mm/):
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    User / Kernel Policy                  │
+│   /sys/kernel/mm/flc/*  (sysfs tunables)                │
+│   debugfs: /sys/kernel/debug/flc/ (stats, overflow)     │
+├─────────────────────────────────────────────────────────┤
+│              Fabric Locality Class (FLC) Manager         │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐  │
+│  │ struct flc   │  │ epoch counter│  │ class_id      │  │
+│  │ (per-tier)   │  │ (global u64) │  │ ranking fn    │  │
+│  └──────┬───────┘  └──────┬───────┘  └───────┬───────┘  │
+│         │    RCU publish   │                  │          │
+│         ▼                  ▼                  ▼          │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │         struct memory_tier (mm/memory-tiers.c)    │   │
+│  │         extended with flc pointer + epoch         │   │
+│  └──────────────────────────────────────────────────┘   │
+├─────────────────────────────────────────────────────────┤
+│            PEBS-to-MM Promotion Mailbox                  │
+│  ┌────────────┐    ┌─────────────┐   ┌──────────────┐   │
+│  │ NMI handler│───▶│ SPSC ring   │──▶│ kthread      │   │
+│  │ (producer) │    │ (per-CPU,   │   │ (consumer,   │   │
+│  │ filter:    │    │  64KB)      │   │  SCHED_IDLE) │   │
+│  │ CXL PFN +  │    └─────────────┘   │ migrate_pages│   │
+│  │ latency    │                      └──────────────┘   │
+│  └────────────┘                                         │
+├─────────────────────────────────────────────────────────┤
+│         Stripe Residency Descriptor (SRD) Engine        │
+│  ┌──────────────────────┐  ┌─────────────────────────┐  │
+│  │ SRD group array      │  │ Folio order cap logic   │  │
+│  │ (per-region,         │  │                         │  │
+│  │  PMD-aligned groups) │  │ Call sites:             │  │
+│  │                      │  │  demote_folio_list()    │  │
+│  │ Fields per group:    │  │  compact_zone()         │  │
+│  │  device_bitmap: u16  │  │  do_anonymous_page()    │  │
+│  │  max_safe_order: u8  │  │  do_huge_pmd_anonymous_ │  │
+│  │  penalty_ns: u16     │  │    page()               │  │
+│  │  should_cap: bool    │  │  migrate_pages() syscall│  │
+│  └──────────┬───────────┘  └────────────┬────────────┘  │
+│             │     O(1) lookup            │              │
+│             └───────────────────────────-┘              │
+├─────────────────────────────────────────────────────────┤
+│              CXL Driver Stack (existing)                 │
+│  cxl_region_commit() ──▶ flc_srd_build()               │
+│  cxl_region_destroy() ──▶ kfree_rcu(srd)               │
+│  cxl_decoder (HDM geometry, interleave config)          │
+│  CDAT parser (latency, bandwidth tables)                 │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Data flow:** (1) At region-commit, the CXL driver calls flc_topology_update() which reads decoder geometry and CDAT/HMAT tables, computes FLC class_ids, builds the SRD group array with precomputed should_cap flags, and RCU-publishes both. (2) During steady-state operation, demotion/compaction/fault paths perform O(1) SRD lookups (array index from PFN) and O(1) FLC reads (rcu_dereference on memory_tier) with no locks in the fast path. (3) Concurrently, the PMU NMI handler deposits PEBS samples into per-CPU SPSC rings; kthreads drain these and issue migrate_pages() calls for promotion. (4) On topology change, new FLC/SRD are published via RCU; old structures are freed after a grace period.
+
+**Locking hierarchy:** flc_topology_update() holds cxl_region_rwsem (existing) → mem_tier_lock (new, mutex) for publication. Hot-path readers use rcu_read_lock() only. PEBS kthread acquires folio_lock() → lru_lock in standard mm order. No new lock inversions are introduced.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>**Phase 1: FLC Core (weeks 1–4).** (a) Define struct flc in include/linux/memory-tiers.h with class_id, epoch, socket_local, switch_depth, interleave_width, latency_bucket fields. (b) Extend struct memory_tier with struct flc __rcu *flc pointer. (c) Implement flc_topology_update() in mm/memory-tiers.c: enumerate CXL regions via cxl_region_for_each(), read decoder geometry from struct cxl_decoder, parse CDAT DSLBIS entries via existing cxl_cdat_read_table(), compute class_ids, RCU-publish. (d) Wire flc_topology_update() into cxl_region_commit() and cxl_region_destroy() in drivers/cxl/core/region.c. (e) Expose /sys/kernel/mm/flc/epoch and per-tier class_id via sysfs. (f) Unit test: verify class_id ordering matches expected topology ranking for synthetic decoder configs via kunit.
+
+**Phase 2: SRD Engine (weeks 5–8).** (a) Define struct srd_group {u16 device_bitmap; u8 max_safe_order; u16 stripe_latency_penalty_ns; u8 should_cap;} in include/linux/flc_srd.h. (b) Implement flc_srd_build() called from cxl_region_commit(): allocate SRD group array sized (region_size &gt;&gt; PMD_SHIFT) × sizeof(struct srd_group), iterate PMD-aligned chunks computing device_bitmap from HDM interleave geometry, derive max_safe_order as ilog2(stripe_granularity × interleave_ways / PAGE_SIZE) capped at PMD_ORDER, compute should_cap via the cost-benefit formula. (c) Implement flc_max_order(nid, pfn) and flc_is_cxl_pfn(pfn) as inline helpers with static_branch guards (disabled when no CXL regions exist, eliminating overhead on non-CXL systems). (d) Integrate into the five call sites: demote_folio_list(), compact_zone()/isolate_migratepages_block(), do_anonymous_page(), do_huge_pmd_anonymous_page(), move_pages_to_node(). Each integration is a 5–15 line patch adding an flc_max_order() check and conditional split_folio_to_order(). (e) Kunit tests: verify SRD indexing arithmetic, order capping at each call site with mock CXL regions.
+
+**Phase 3: PEBS Mailbox (weeks 9–12).** (a) Define struct pebs_mm_mailbox as a per-CPU SPSC ring in include/linux/flc_pebs.h. (b) Hook into the existing PEBS NMI handler (arch/x86/events/intel/ds.c: intel_pmu_drain_pebs_nhm or equivalent) to filter CXL-relevant samples and deposit into the ring. (c) Implement flc_pebs_promoter kthread: per-CPU, SCHED_IDLE, drains ring at configurable interval, calls migrate_pages() for qualifying folios. (d) Expose tunables via /sys/kernel/mm/flc/pebs_latency_threshold_cycles and pebs_scan_interval_ms. (e) Expose overflow counters via debugfs. (f) Test: synthetic PEBS injection via kunit, verify folio migration from CXL tier to DRAM tier.
+
+**Phase 4: Integration and Hardening (weeks 13–16).** (a) Stress test with MGLRU enabled/disabled, THP always/madvise/never, compaction on/off. (b) Verify no lock inversions via lockdep annotations. (c) Performance benchmarks: Redis latency percentiles, stream bandwidth, graph500 on emulated CXL (QEMU CXL or e820-reserved DRAM). (d) Measure overhead on non-CXL systems (static_branch should yield zero overhead). (e) Document sysfs ABI in Documentation/admin-guide/mm/flc.rst.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>**Functional validation:** (1) Kunit test suite (mm/flc_test.c): verify FLC class_id ranking for 12 synthetic topologies (direct-attach ×1, switch ×2/4, dual-socket cross-attach, mixed latency), SRD indexing correctness for 256B/4KB/64KB stripe granularities, folio order capping at all five call sites using mock_cxl_region() helpers. (2) QEMU CXL type-3 device emulation: configure 2-socket system with 4× CXL memory expanders, 2-way and 4-way interleave, verify demotion selects optimal FLC tier, verify folio order never exceeds SRD max_safe_order after demotion. (3) PEBS injection test: use perf_event_open() from userspace to trigger PEBS sampling on synthetic CXL-backed allocations, verify kthread promotes hot folios within 2× scan_interval_ms.
+
+**Performance validation:** (4) Redis memtier benchmark (80/20 read/write, 1KB values) with 50% working set on CXL-emulated DRAM: measure p99 latency reduction from stripe-aware demotion versus baseline kernel (target: ≥15% p99 improvement). (5) STREAM bandwidth with interleaved CXL: verify no regression from FLC overhead on non-CXL NUMA nodes (target: &lt;0.5% overhead, enforced by static_branch). (6) Micro-benchmark: measure flc_max_order() hot-path latency via ktime_get_ns() instrumentation (target: &lt;50ns per call, dominated by single cache-line SRD array load).
+
+**Safety validation:** (7) Lockdep: enable CONFIG_PROVE_LOCKING, run all benchmarks, verify no new lock dependency warnings. (8) KASAN + KMSAN: run kunit and QEMU tests under sanitizers to detect use-after-free in RCU lifecycle and uninitialized SRD reads. (9) Hot-plug stress test: repeatedly create/destroy CXL regions while running Redis workload, verify no crashes, no stale SRD references (monitored via RCU stall warnings), and correct FLC epoch advancement. (10) Fault injection: use CONFIG_FAIL_PAGE_ALLOC to verify graceful degradation when promotion target allocation fails (folio stays in CXL tier, no crash).</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>1. A method for managing memory in a computing system having a processor with one or more CPU sockets, local DRAM, and one or more CXL-attached memory devices, the method comprising: (a) at CXL region commit time, constructing a Fabric Locality Class object for each memory tier by reading HDM decoder interleave geometry, CXL switch depth, host-bridge-to-socket attachment, and CDAT or HMAT latency data, and computing a deterministic class identifier encoding socket locality, switch depth inverse, interleave width, and quantized latency bucket in defined bit positions; (b) publishing said Fabric Locality Class objects via read-copy-update to an extended memory tier structure, with an epoch counter incremented on each topology change; (c) in a kernel memory demotion path, reading the Fabric Locality Class of candidate target tiers via RCU-protected dereference without acquiring additional locks, and selecting the target tier with the highest class identifier as the demotion destination; (d) constructing a Stripe Residency Descriptor table for each CXL region as a flat array of group descriptors indexed at PMD-aligned granularity, each group descriptor storing a device bitmap, a maximum safe folio order, a cross-stripe latency penalty, and a precomputed should-cap flag derived from a cost-benefit comparison of cross-stripe latency penalty against TLB-miss cost scaled by folio order reduction; and (e) at each of a plurality of kernel memory management call sites including demotion, compaction, anonymous page fault, and user-initiated migration paths, performing an O(1) lookup into said Stripe Residency Descriptor table using the folio&#x27;s page frame number, and when the should-cap flag is set and the current folio order exceeds the maximum safe order, splitting the folio to the maximum safe order before proceeding with allocation or migration.</li><li style='margin-bottom:8px;'>2. The method of claim 1, further comprising: (f) configuring a per-CPU NMI-safe single-producer single-consumer ring buffer to receive filtered PEBS load-latency samples from CXL-backed page frame number ranges, where filtering selects samples whose data source field indicates remote or CXL memory access and whose latency exceeds a configurable threshold; (g) draining said ring buffer from a per-CPU kernel thread running at idle scheduling priority at a configurable scan interval; (h) for each drained sample, looking up the corresponding folio, determining whether the folio&#x27;s current Fabric Locality Class has a lower class identifier than an available DRAM tier, and if so, queuing the folio for promotion via the kernel migrate_pages interface with a target node selected by highest class identifier; and (i) on ring buffer overflow in NMI context, discarding the sample and incrementing a per-CPU overflow counter without acquiring any spinlock.</li><li style='margin-bottom:8px;'>3. The method of claim 1, wherein the cross-stripe latency penalty stored in each Stripe Residency Descriptor group descriptor is determined at region commit time by: first attempting to read CDAT DSLBIS entries for cross-device access latency; if CDAT data is unavailable, falling back to HMAT initiator-to-target latency differences; and if neither CDAT nor HMAT data is available, applying a static conservative default latency penalty value; and wherein the TLB-miss cost used in the cost-benefit comparison is a per-architecture constant derived from documented processor page-walk latency, configurable via a kernel sysfs tunable.</li><li style='margin-bottom:8px;'>4. The method of claim 1, wherein the Stripe Residency Descriptor table is immutable during the lifetime of a CXL region, published via a single rcu_assign_pointer at region commit time and freed via kfree_rcu at region destruction time, and wherein concurrent readers during region destruction observe either the valid descriptor table or a null pointer that triggers fallback to uncapped folio order, such that no synchronization beyond RCU is required between descriptor lookup and region lifecycle operations.</li><li style='margin-bottom:8px;'>5. A system comprising: a multi-socket x86 processor; local DRAM attached to each socket; one or more CXL memory expanders connected via CXL host bridges; and a Linux-based operating system kernel implementing the method of claim 1, wherein the kernel further includes static branch guards that disable all Fabric Locality Class and Stripe Residency Descriptor lookups when no CXL regions are active, yielding zero overhead on systems without CXL memory.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>**Risk: SRD memory overhead for very large CXL regions.** A 4TB CXL region requires ~10MB for the SRD group array (5 bytes × 2M PMD-aligned groups). **Mitigation:** This is acceptable for server-class systems with hundreds of GB of DRAM. For extreme cases, the SRD group size can be increased from PMD (2MB) to PUD (1GB) alignment, reducing the array by 512×, at the cost of coarser order capping. A sysfs tunable (/sys/kernel/mm/flc/srd_group_shift) controls this trade-off.</li><li style='margin-bottom:6px;'>**Risk: PEBS sampling rate may be insufficient for rapidly changing access patterns.** At 10K samples/s with a 100ms drain interval, the mailbox processes ~1000 samples per interval per CPU. For workloads with millions of active CXL folios, convergence to optimal placement may take tens of seconds. **Mitigation:** The scan interval and PEBS threshold are tunable. For latency-critical workloads, operators can increase PEBS frequency (accepting higher PMU overhead) or decrease the scan interval. The system degrades gracefully — slower convergence, not incorrect placement.</li><li style='margin-bottom:6px;'>**Risk: FLC class_id ranking may not reflect actual performance for all workloads.** The deterministic ranking function prioritizes socket locality &gt; switch depth &gt; interleave width &gt; latency, which may not be optimal for bandwidth-bound workloads that prefer wider interleave over lower latency. **Mitigation:** The bit-field positions in the class_id formula are chosen for the common latency-sensitive case. A future extension can add a sysfs-configurable weight vector, but the initial implementation targets the dominant use case. Operators can override tier ordering via existing memory_tier sysfs interfaces.</li><li style='margin-bottom:6px;'>**Risk: Interaction with MGLRU and future mm changes.** MGLRU (Multi-Gen LRU) in mm/vmscan.c has its own folio aging and eviction logic that may conflict with FLC-directed demotion. **Mitigation:** The FLC order cap is applied at the folio allocation/migration boundary, below MGLRU&#x27;s policy decisions. MGLRU decides *what* to demote; FLC decides *where* and *at what order*. The integration point (demote_folio_list) is shared by both classic LRU and MGLRU paths, ensuring uniform behavior.</li><li style='margin-bottom:6px;'>**Risk: CDAT/HMAT data may be inaccurate or absent on early CXL platforms.** Some CXL 1.1 devices or prototype hardware may not provide CDAT tables, and BIOS HMAT entries may not reflect actual CXL latency. **Mitigation:** The three-tier fallback (CDAT → HMAT → static default of 150ns) ensures the system always has a latency estimate. The static default is conservative (higher than typical DDR latency, lower than worst-case CXL), biasing toward splitting when uncertain — a safe default that trades some TLB efficiency for stripe-correct placement. Boot-time dmesg warnings indicate which latency source was used.</li><li style='margin-bottom:6px;'>**Risk: Security — PEBS mailbox as a side channel.** The per-CPU ring buffer contains PFNs and latency data that could theoretically leak information about memory access patterns. **Mitigation:** The mailbox is kernel-internal with no userspace-readable interface (only aggregate overflow counters via debugfs, not individual samples). The kthread runs in kernel context. No new attack surface is exposed beyond what perf_event_open with CAP_PERFMON already provides.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>CXL Specification 3.1, §8.1.11 (CDAT), §8.2.9 (HDM Decoder), §9.13 (Memory Interleave) — Compute Express Link Consortium, 2023</li><li>ACPI Specification 6.5, §5.2.27 (HMAT — Heterogeneous Memory Attribute Table) — UEFI Forum, 2022</li><li>Intel 64 and IA-32 Architectures Optimization Reference Manual, §2.1.3 (TLB and Page Walk), §18.9 (PEBS) — Intel Corporation, Order Number 248966-046, 2024</li><li>Linux kernel mm/memory-tiers.c, mm/vmscan.c (demote_folio_list), mm/compaction.c (compact_zone), mm/huge_memory.c — kernel.org, v6.8+</li><li>Linux kernel drivers/cxl/core/region.c (cxl_region_commit, cxl_region_for_each), drivers/cxl/core/cdat.c — kernel.org, v6.8+</li><li>Wahlgren et al., &#x27;TPP: Transparent Page Placement for CXL-Enabled Tiered-Memory&#x27;, ASPLOS 2023</li><li>Sun et al., &#x27;Demystifying CXL Memory with Genuine CXL-Ready Systems and Devices&#x27;, MICRO 2023</li><li>Berger et al., &#x27;CXLMemUring: A Hardware-Software Co-design Paradigm for Asynchronous and Flexible Parallel CXL Memory Pool Access&#x27;, HPCA 2024</li><li>Lagar-Cavilla et al., &#x27;Software-Defined Far Memory in Warehouse-Scale Computers&#x27;, ASPLOS 2019 — foundational work on tiered memory management at scale</li><li>Yu et al., &#x27;MEMTIS: Efficient Memory Tiering with Dynamic Page Classification&#x27;, SOSP 2023</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">2/4 APPROVE · Avg 3.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>The function kernel_migrate_pages() does not exist in mm/migrate.c; the correct call site is likely migrate_pages() or do_migrate_pages(). Verify the exact migration entry point that controls folio order selection.</li><li style='font-size:13px;margin-bottom:4px;'>The cost-benefit threshold using HMAT latency ratio needs defense against pathological BIOS reporting. Add explicit bounds checking (e.g., clamp ratio to [1.0, 10.0]) and document fallback behavior when HMAT tables contain zero or malformed latency values.</li><li style='font-size:13px;margin-bottom:4px;'>The SRD lookup formula (pfn - region-&gt;base_pfn) &gt;&gt; stripe_shift must handle PFN ranges that span multiple CXL regions on the same NUMA node. Clarify whether one SRD covers all regions on a node or if per-region lookup dispatch is required, and document the failure mode when a PFN maps to no SRD.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Verify that node_is_toptier() is the correct API for identifying CXL-backed nodes in current kernel; memory_tier_rank() or cxl_region_match() might be more direct</li><li style='font-size:13px;margin-bottom:4px;'>Consider whether do_anonymous_page is the right insertion point vs. __handle_mm_fault or alloc_zeroed_user_highpage_movable where order decisions occur earlier</li><li style='font-size:13px;margin-bottom:4px;'>Clarify fallback behavior when both HMAT and CDAT are absent - the 1.5x compile-time constant needs empirical justification or cite to measured cross-stripe penalty data</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>The invention combines two loosely-coupled mechanisms (PEBS-driven promotion and stripe-aware allocation) that address different problems and operate on different time scales. The promotion path uses asynchronous hardware sampling to identify hot pages, while the allocation path applies static geometry constraints at allocation time. Consider splitting into two focused inventions: (1) x86 PEBS-to-folio heat bridge for CXL promotion, and (2) stripe-aware allocation geometry for CXL interleaved regions. This improves both patentability (two distinct claims sets) and implementation planning (orthogonal kernel subsystems).</li><li style='font-size:13px;margin-bottom:4px;'>The NMI-safe mailbox &#x27;bounded overflow back-pressure&#x27; mechanism lacks concrete specification. Define: (a) mailbox capacity (number of PFN entries per CPU, e.g., ring buffer size), (b) overflow policy (drop oldest, newest, or probabilistic sampling), (c) back-pressure signaling path to PEBS hardware (which MSRs, PEBS_ENABLE bit manipulation, or counter reset), and (d) proof of NMI-safety under concurrent overflow from multiple PEBS interrupts on the same CPU during the mailbox update window. Without these details, the bounded-overflow claim is not implementable.</li><li style='font-size:13px;margin-bottom:4px;'>The five enumerated kernel call sites require verification against current Linux mm/ source (6.8+). Specifically: (a) confirm alloc_migration_target() exists and accepts folio-order clamping (or if alloc_migration_target_by_mpol is the correct hook), (b) verify __alloc_pages_bulk() signature supports order constraints (current API is order-agnostic), (c) check if do_anonymous_page() is the right hook for THP allocation or if do_huge_pmd_anonymous_page() in mm/huge_memory.c is the actual path, and (d) validate these are not bypassed by per-CPU page caches or memory-policy fast paths that skip the proposed hooks.</li><li style='font-size:13px;margin-bottom:4px;'>The folio-keyed radix tree for persistent heat state needs scalability and synchronization specification. Quantify: (a) memory overhead per tracked folio (at scale of 128 GB CXL region = 32M folios), (b) synchronization mechanism (RCU for lockless read vs spinlock for PEBS-handler updates), (c) eviction policy when radix tree grows unbounded (LRU, random, or coupled to folio reclaim), and (d) heat-state transfer protocol during folio migration to avoid race between old-PFN and new-PFN keys where PEBS samples arrive mid-migration. The current description implies unbounded memory growth and undefined concurrent-access semantics.</li><li style='font-size:13px;margin-bottom:4px;'>The cost-benefit threshold formula &#x27;(stripe_latency_penalty_ns &gt; page_walk_latency_ns × (PMD_ORDER - capped_order))&#x27; assumes linear TLB-miss cost scaling, but page-walk latency is non-linear: depends on TLB hierarchy hits (STLB, L1/L2 TLB), cache state of page-table entries (L1/L2 cache), and CPU speculative page-walk prefetching. Provide calibration data from Xeon Sapphire Rapids or Granite Rapids with measured page-walk costs for 4K vs 2M folios under cold-TLB and cold-cache conditions, or replace with a conservative compile-time threshold (e.g., 2.0x) backed by worst-case analysis that accounts for no TLB or cache assistance.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>The SRD lookup formula &#x27;(pfn - region_base_pfn) &gt;&gt; stripe_shift&#x27; lacks bounds checking. If pfn &lt; region_base_pfn or pfn &gt;= region_end_pfn, unsigned underflow or out-of-bounds array access will occur. Must add explicit &#x27;if (pfn &lt; region-&gt;base_pfn || pfn &gt;= region-&gt;end_pfn) return MAX_ORDER;&#x27; guard before indexing.</li><li style='font-size:13px;margin-bottom:4px;'>Region teardown race: cxl_region_detach() tears down the SRD, but an in-flight allocation on another CPU may dereference the SRD pointer after rcu_assign_pointer(NULL). Must use call_rcu() to defer SRD kfree until all readers exit, not just synchronize_rcu_expedited which only waits for RCU read-side critical sections but not the allocation functions themselves if they aren&#x27;t wrapped in rcu_read_lock().</li><li style='font-size:13px;margin-bottom:4px;'>Multi-region disambiguation is undefined. When a NUMA node contains multiple non-overlapping CXL regions with different stripe geometries, the proposal does not specify how the correct SRD is selected given only a PFN and node ID. Must define a per-node radix tree (pgoff_t → srd*) or linear search of node-&gt;regions[] with explicit overlap-detection during region commit to reject conflicting geometries.</li><li style='font-size:13px;margin-bottom:4px;'>The five enumerated call sites (demote_folio_list, compact_zone, do_anonymous_page, kernel_migrate_pages, numa_migrate_preferred) are not verified to be architecturally safe for external order clamping. Specifically, compact_zone() in mm/compaction.c operates on free-page lists and expects order &lt;= MAX_ORDER - 1; clamping the scan order without validating that the target order is available in the free list may cause infinite loops or allocation failures. Must audit each call site for order-clamp compatibility or restrict hooks to allocation entry points only (do_anonymous_page, alloc_pages variants).</li><li style='font-size:13px;margin-bottom:4px;'>The node_is_toptier() check races with memory-tier reconfiguration. If userspace changes /sys/devices/virtual/memory_tiering/ between the toptier check and SRD lookup, the SRD may be dereferenced for a node that has been promoted to top-tier, or skipped for a node that has been demoted. Must either hold memory_tier_lock during the check+lookup sequence or key SRD presence on the immutable cxl_region association rather than the mutable tier assignment.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">revision_required</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The draft does not define concrete data structures for the stripe-residency descriptor: what is the memory footprint per PFN range? Is it a bitmap, a radix tree, or embedded in stru</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Integration with existing folio order selection is underspecified and risks conflicts: the kernel already considers THP eligibility, memory pressure, fragmentation avoidance, and NU</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The claim that HDM decoder geometry is &#x27;immutable&#x27; ignores CXL region hot-add, device removal, and dynamic region reconfiguration. The descriptor must either prevent these operation</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Biasing folio order downward to avoid cross-stripe fanout contradicts the kernel&#x27;s preference for large folios to reduce TLB misses and page-table overhead. The draft must quantify </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The draft does not specify how stripe-residency classification interacts with memory compaction and page migration: when the kernel migrates a folio to defragment memory or satisfy </li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">revision_required</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The per-PFN Stripe Residency Descriptor array scales poorly: at 1 byte per PFN, a 1 TB CXL region requires 256 MB of descriptor memory. You must specify either a compressed represen</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The RCU-guarded update protocol for hot-plug topology changes is underspecified: when a CXL region is destroyed, in-flight __alloc_pages callers may hold stale RCU read locks spanni</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The integration point &#x27;before __alloc_pages is invoked&#x27; is too vague: the kernel has multiple allocation entry points (alloc_pages, alloc_pages_vma, alloc_pages_bulk, demotion-speci</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The cost-benefit gate comparing cross-stripe latency penalty versus TLB-miss cost lacks a concrete decision function: you reference &#x27;measured or architectural cross-stripe latency&#x27; </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Draft sections Feasibility, Market, Problem, Architecture, Implementation Plan, and Claims are empty: without architectural diagrams showing data structures (the SRD layout, RCU pub</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux memory management using x86 CXL microarchitecture features
+</footer>
+</div></body></html>
