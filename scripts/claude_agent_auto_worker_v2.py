@@ -206,6 +206,16 @@ class ClaudeAgentAutoWorkerV2:
                         temperature=0.5
                     )
                     revised = self._parse_json_response(response_text, "RealityChecker")
+                    # Safety net: fill missing tid_detail fields from original
+                    orig_td = draft.get("tid_detail", {})
+                    rev_td = revised.get("tid_detail", {})
+                    for field in ("problem_statement", "prior_art_gap", "proposed_invention",
+                                  "architecture_overview", "implementation_plan", "validation_plan",
+                                  "draft_claims", "risks_and_mitigations", "references"):
+                        if not rev_td.get(field) and orig_td.get(field):
+                            rev_td[field] = orig_td[field]
+                    if rev_td:
+                        revised["tid_detail"] = rev_td
                     revised_drafts.append(revised)
 
                 # Record revision trace
@@ -380,15 +390,21 @@ class ClaudeAgentAutoWorkerV2:
                         "You are an Elite System Architect revising a Technical Invention Disclosure "
                         "based on expert committee feedback. Address every issue raised. "
                         "Preserve the overall structure. Strengthen weak areas with concrete kernel details. "
-                        "Return the COMPLETE revised draft as JSON with all fields."
+                        "Return the COMPLETE revised draft as JSON.\n\n"
+                        "CRITICAL: You MUST preserve ALL tid_detail sub-fields in your response:\n"
+                        "problem_statement, prior_art_gap, proposed_invention, architecture_overview,\n"
+                        "implementation_plan, validation_plan, draft_claims (list), risks_and_mitigations (list),\n"
+                        "references (list). Never omit or empty these fields. If a field was provided, keep it\n"
+                        "and improve it. draft_claims must have at least 2 claim strings."
                     )
                     user_prompt = (
                         f"Target: {target}\n\n"
                         f"Void context (supporting evidence):\n{void_context}\n\n"
                         f"Original draft:\n{json.dumps(draft, indent=2, ensure_ascii=False)}\n\n"
                         f"Committee feedback to address:\n{feedback_text}\n\n"
-                        "Return strict JSON with the same structure as the original draft, "
-                        "with all issues addressed. Include tid_detail with all sub-fields."
+                        "Return strict JSON with EXACTLY the same top-level keys and tid_detail sub-keys "
+                        "as the original draft. All tid_detail fields must be non-empty strings/lists. "
+                        "Improve every section based on the feedback."
                     )
                     response_text = self.llm.chat(
                         model="gpt-5.4",
@@ -397,6 +413,22 @@ class ClaudeAgentAutoWorkerV2:
                         temperature=0.5,
                     )
                     revised = self._parse_json_response(response_text, "DebateRevision")
+
+                    # Safety net: merge back any missing tid_detail fields from original
+                    orig_td = draft.get("tid_detail", {})
+                    rev_td = revised.get("tid_detail", {})
+                    for field in ("problem_statement", "prior_art_gap", "proposed_invention",
+                                  "architecture_overview", "implementation_plan", "validation_plan",
+                                  "draft_claims", "risks_and_mitigations", "references"):
+                        if not rev_td.get(field) and orig_td.get(field):
+                            rev_td[field] = orig_td[field]
+                    if rev_td:
+                        revised["tid_detail"] = rev_td
+                    # Also preserve top-level fields if lost
+                    for field in ("scores", "why_now", "novelty_thesis", "feasibility_thesis", "market_thesis"):
+                        if not revised.get(field) and draft.get(field):
+                            revised[field] = draft[field]
+
                     revised_drafts.append(revised)
 
                 # Record revision trace
