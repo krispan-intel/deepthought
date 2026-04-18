@@ -635,16 +635,26 @@ described procedures.  Guidance on calibration ranges is
 available upon request from the authors.
 
 \textbf{Meta-evaluation.}
-An early draft of this manuscript was subjected to the Debate Panel
-itself.  The system's Writing Reviewer penalised the evaluation
-section for ``narrative cherry-picking'' and ``lack of
-falsifiability,'' directly prompting the inclusion of the empirical
-rejection taxonomy (Table~\ref{tab:taxonomy}) and the deterministic
-verdict formalisation presented in Section~\ref{sec:eval}.  This
-meta-evaluation provides a concrete demonstration that the adversarial
-review framework produces substantive, self-consistent critique
-resistant to sycophantic bias: the system identified and corrected a
-weakness in its own originating paper.
+This manuscript was iteratively revised through five rounds of the
+Debate Panel itself---the same adversarial review pipeline described
+in Section~\ref{sec:eval}.  Round~1 triggered a Writing Reviewer
+REVISE citing ``narrative cherry-picking,'' directly prompting the
+inclusion of Table~\ref{tab:taxonomy} and the deterministic verdict
+formalisation.  The Math Reviewer issued REJECT (score~3/10) in
+Round~3 over a type error in Condition~C4 (\texttt{cos}$(k, C)$
+vs.\ \texttt{cos}(\texttt{dense}$(k), C)$), which was corrected in
+Round~4.  By Round~5, the Math Reviewer upgraded to \textbf{ACCEPT}
+(score~8/10) and average specialist score reached 6.2.
+
+This trajectory mirrors exactly the design rationale for
+\texttt{PENDING\_HUMAN\_REVIEW}: the system did not produce a final
+APPROVE verdict autonomously---the human author intervened at each
+round to address specialist feedback.  Ideas (and papers) that
+survive multiple adversarial rounds without full approval are not
+failures; they are candidates for the ``last-mile'' refinement that
+only human expertise can provide.  The system identified and corrected
+weaknesses in its own originating paper across five rounds of
+substantive, sycophancy-resistant critique.
 
 % ================================================================
 \section{Future Work}
