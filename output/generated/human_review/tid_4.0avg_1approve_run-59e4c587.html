@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 4.0] Mode-Qualified APIC ISR-Clear Commit Ledger for Exactly-Once</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-59e4c587c51a &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Mode-Qualified APIC ISR-Clear Commit Ledger for Exactly-Once Level-Interrupt Completion in Linux KVM on x86 VMX/APICv</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux virtualization using x86 APIC microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Virtual ISR Retirement Bridge for APICv-Aware KVM</li><li style='font-size:13px;'>Legacy Timer to APIC-Access Translation Contract for Linux Hypervisors</li><li style='font-size:13px;'>PMU-Governed APICv Mode Governor for Virtualized HPC and Low-Jitter Workloads</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: X86_FEATURE_APIC &lt;&gt; apic_clear_isr
+  MMR Score:    0.7704</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A Linux KVM mechanism that records a source-qualified delivery instance per destination vCPU/vector, commits Linux-visible completion exactly once only when host VMX code running with the intended loaded VMCS current observes an authoritative, mode-specific proof that the guest-visible APIC ISR bit for that instance is cleared, and preserves correctness across APICv transitions, nested virtualization, route churn, and source teardown by using stable source references, generation-checked SRCU revalidation, and a drain/flush lattice for PIR, IRR, ISR, and posted-interrupt descriptor state.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The patentable core is a correctness contract, not a telemetry governor: a delivery-instance ledger keyed by stable source identity plus destination vCPU/vector plus instance generation is coupled to an authoritative ISR</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Intel VMX and APIC virtualization let a Linux KVM guest accept interrupts without frequent exits, but several Linux-visible interrupt sources still need a host-side completion point with level semantics. For IOAPIC level pins, irqfd or VFIO INTx resamplers, and other EOI-sensitive routes, completing too early can deassert or resample a source before the guest has actually retired the in-service vector, while completing too late can stall a still-asserted device or trap the system into unnecessary exits. Existing hardware features expose ingredients such as posted interrupts, virtual-APIC register virtualization, x2APIC virtualization, and optional EOI-induced exits, but they do not define a single end-to-end rule for when Linux may fire a source-specific completion action that remains correct across xAPIC, x2APIC, APICv enable/disable transitions, nested VMX, shared vectors, route updates, vCPU migration, or endpoint teardown. The disclosure solves that by tying completion to a host-readable, mode-qualified proof of ISR retirement at a defined VMX coherence boundary and by making that proof usable only together with a delivery-instance ledger, source-lifetime pinning, and transition-safe drain rules.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Prior art covers virtual-APIC pages, posted-interrupt descriptors, EOI-exit bitmaps, APIC-access traps, x2APIC MSR virtualization, route updates under SRCU, and generic interrupt coalescing. What is absent is a concrete correctness protocol that simultaneously answers seven questions: which exact delivery instance is awaiting completion, which host-readable state is authoritative for proving that the guest-visible ISR bit for that instance has cleared, which host boundaries are coherent enough to read that state, which Linux completion side effect is legal for the source class involved, which route and endpoint metadata must still match before committing, which loaded-VMCS and nested-VMX invariants must hold so the read belongs to the intended guest context, and how APICv mode transitions drain PIR, IRR, ISR, notification, and pending requests without lost or duplicate delivery. The gap is therefore not another APIC feature or another tuning heuristic, but an exact-once host commit discipline spanning KVM interrupt delivery, APIC state observation, route lifetime, and VMX mode transitions.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention introduces a per-vCPU APIC completion ledger plus a mode-qualified reconciliation engine in KVM. When KVM injects or posts a level-semantic interrupt that may require a later Linux-visible completion side effect, the delivery path allocates a delivery-instance record and attempts to arm it as the sole owner of the destination vCPU/vector slot. The record key is {source_cookie, destination_vcpu_id, vector, delivery_seq}; the stored validation tuple additionally includes {route_gen, source_gen, trigger_mode, dest_mode, apic_mode_epoch, nested_level, completion_kind}. source_cookie is a stable source identity obtained from the endpoint that will later receive completion, such as an IOAPIC pin cookie or an irqfd/VFIO INTx resampler cookie. delivery_seq is a monotonic 64-bit per-source sequence that never reuses an in-flight value; wrap is handled by refusing new arm operations if the next value would alias an outstanding record, which in practice requires quiescing and draining long before arithmetic wrap. Each destination vCPU owns (i) vector_owner[256], an array of owner tokens published with release semantics, (ii) vector_waitq[256], a bounded FIFO or intrusive list for same-vector contenders, and (iii) an xarray or rhashtable of live delivery records keyed by owner token. At most one record may be ARMED for a given destination vCPU/vector at a time. If the same source re-asserts while its record is already armed, the delivery is coalesced onto that record; if a different source targets the same vector while another owner is armed, the new record is parked in the vector wait queue and cannot commit until it is later promoted to owner by a new delivery or a retry after the current owner retires. Reconciliation runs only in host VMX code, reads an authoritative ISR-clear proof for the specific APIC mode and nested level, revalidates route and endpoint lifetime under SRCU and stable references, and then performs exactly one source-specific completion side effect by atomically changing the record state from ARMED to COMMITTED. If any proof or validation fails, the record remains pending, is retried, or is retired without side effect according to explicit mismatch rules.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>The architecture is a four-stage data path with explicit coherence boundaries.
+
+ASCII overview:
+
+[Source endpoint]
+    |  (IOAPIC pin / irqfd resampler / VFIO INTx)
+    v
+[Delivery classifier]
+    - derives source_cookie
+    - tags completion_kind
+    - snapshots route_gen/source_gen/trigger mode/dest mode
+    v
+[Per-vCPU ledger]
+    vector_owner[vector] -&gt; owner_token
+    live_records[owner_token] = {state, source_cookie, route tuple, mode epoch, nested level}
+    vector_waitq[vector] -&gt; queued contenders for shared vectors
+    v
+[Guest delivery path]
+    - software IRR injection, APICv virtual delivery, or posted interrupt
+    v
+==== VMX coherence boundary ====
+    VM exit OR pre-entry slow path while intended loaded VMCS is current
+    v
+[Authoritative ISR-clear observer]
+    - non-APICv/xAPIC or x2APIC emulation: KVM LAPIC shadow ISR after exit
+    - APICv virtual-APIC mode: vAPIC page or synchronized KVM shadow after VM-exit serialization
+    - nested L2: observe the state corresponding to vmcs02-owned guest APIC context before switching back to vmcs01
+    v
+[SRCU + lifetime revalidation]
+    - compare route_gen/source_gen/trigger/dest/mask
+    - confirm endpoint ref still alive and not DYING
+    v
+[Commit map]
+    - IOAPIC level -&gt; EOI notifier path
+    - irqfd/VFIO INTx -&gt; resample callback/eventfd signal
+    - MSI/MSI-X -&gt; no completion side effect
+
+The observer is intentionally decoupled from policy. A selective EOI-exit bitmap, posted-interrupt notification, or preemption timer may mark a candidate for early reevaluation, but no such event by itself proves retirement. The proof is always the mode-qualified ISR-cleared observation plus ledger ownership and revalidation.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Extend KVM interrupt routing for completion-capable sources so each eligible route exposes a stable source_cookie, source_gen, completion_kind, and ref/notifier hooks. 2. Add per-vCPU ledger state: vector_owner[256], vector_waitq[256], live record store, apic_mode_epoch, and transition bookkeeping for posted interrupts. 3. Instrument the delivery path for IOAPIC level and irqfd/VFIO INTx sources so arming a record happens before delivery publication and coalesces or queues correctly on shared vectors. 4. Add host-side reconciliation hooks in the post-VM-exit path and optional pre-entry slow path, with strict predicates that the intended VMCS context is current and that the record&#x27;s nested_level and apic_mode_epoch match. 5. Implement authoritative ISR observers for software LAPIC, APICv virtual-APIC, and nested L1/L2 contexts, including any required synchronization from the vAPIC page into a KVM shadow before reading. 6. Implement SRCU revalidation and stable-reference retirement rules, then the source-specific completion map for IOAPIC level and irqfd/VFIO INTx. 7. Implement APICv transition handling that quiesces posted interrupts, performs PIR-to-IRR synchronization, rewrites controls, rechecks for arrivals during transition, and retries when necessary. 8. Add diagnostics tracepoints for record creation, proof success/failure, commit, retire, route mismatch, and transition retries; these support validation but are not required by the claims.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Validation covers correctness first and performance second. Correctness tests include: (a) single-vCPU IOAPIC level interrupt retirement with and without selective EOI exits; (b) same-vector shared-source scenarios proving that only the owner_token&#x27;s source receives completion; (c) concurrent route changes, masking, and teardown while armed records exist, verifying no use-after-free and no completion against stale route generations; (d) nested VMX tests with L2-targeted interrupts proving that vmcs02-scoped records do not commit from vmcs01-visible state; (e) APICv enable/disable, posted-interrupt enable/disable, x2APIC virtualization toggles, and EOI-bitmap updates under load, verifying no lost or double-injected interrupts and correct PIR -&gt; IRR transfer ordering; and (f) migration or CPU-preemption scenarios showing commit executes only with the intended loaded VMCS current. Performance tests measure reduced always-on exit pressure versus unconditional EOI trapping on representative Linux workloads, including interrupt-heavy network/storage virtualization and host-resampler workloads, while optional PMU or trace data are used only to quantify benefits rather than define correctness.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A virtualization method for Linux KVM on x86 processors, comprising: recording, for a guest interrupt delivery that may require host-visible completion, a delivery-instance record keyed by stable source identity, destination virtual CPU, destination vector, and delivery sequence; publishing at most one armed owner for each destination virtual CPU and vector; after a VMX host regain-of-control boundary, reading a mode-specific authoritative representation of guest-visible APIC in-service state; and committing exactly one source-specific completion action only when the authoritative representation proves that the in-service state for the armed owner is cleared and route and endpoint revalidation succeed.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the delivery-instance record further stores route generation, source generation, trigger mode, destination mode, APIC mode epoch, and nested virtualization level, and a completion action is suppressed when any stored value mismatches a corresponding live value during host-side revalidation.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein a software-emulated xAPIC or x2APIC mode uses a host-maintained LAPIC shadow ISR bitmap as the authoritative representation, and an APICv mode uses a virtual-APIC page or a host shadow synchronized from the virtual-APIC page only at a VM-exit coherence boundary.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein posted-interrupt descriptor state, including pending-request or notification state, is expressly excluded as sufficient proof of interrupt retirement and is used only for delivery management or transition quiescing.</li><li style='margin-bottom:8px;'>The method of claim 1, further comprising an APIC virtualization transition protocol that, before disabling or enabling posted interrupts or changing APIC virtualization mode, blocks guest entry, synchronizes posted-interrupt request bits into a canonical interrupt request representation, rewrites virtualization controls, rechecks for interrupts arriving during the transition, and retries or reinjects without double delivery.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein source-specific completion actions comprise: invoking an IOAPIC level-interrupt EOI notifier or deassert path for a recorded pin or GSI, signaling an irqfd or VFIO INTx resample endpoint exactly once, and omitting a completion side effect for MSI or MSI-X sources.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein nested virtualization records are bound to a guest level and VMCS epoch, and a record targeting an L2 guest is reconciled only while the VMCS context corresponding to the L2 guest remains current after exit from the L2 guest.</li><li style='margin-bottom:8px;'>A virtual machine monitor apparatus comprising memory storing per-vCPU vector-owner slots, queued contender lists for shared vectors, live delivery-instance records, and APIC mode transition state, and processor-executable instructions that perform the method of any preceding claim.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: stale or incoherent reads of hardware-updated APIC state. Mitigation: bind every proof read to a VMX coherence boundary and, for APICv, require explicit synchronization from the vAPIC page to a host shadow when direct exit-time coherence is not guaranteed.</li><li style='margin-bottom:6px;'>Risk: double completion on shared vectors or repeated exits. Mitigation: exactly-once gating through owner_token plus atomic ARMED -&gt; COMMITTING transition and queued contenders for same-vector nonowners.</li><li style='margin-bottom:6px;'>Risk: use-after-free or semantic misdirection after route churn. Mitigation: stable endpoint references or teardown notifiers plus route_gen and source_gen comparison under SRCU before commit.</li><li style='margin-bottom:6px;'>Risk: lost or duplicate interrupts during APICv mode changes. Mitigation: transition_in_progress gating, suppress-notification or equivalent quiesce, mandatory PIR -&gt; IRR synchronization, barriers around control rewrites, and retry on arrivals during transition.</li><li style='margin-bottom:6px;'>Risk: nested VMX commits against the wrong guest context. Mitigation: per-record nested_level and vmcs_epoch checks, with vmcs12 excluded as an authoritative proof source.</li><li style='margin-bottom:6px;'>Risk: unbounded completion latency if no helpful exits occur. Mitigation: allow optional selective EOI-exit trapping, timer-based reevaluation, or forced exits as latency policy accelerators without changing the correctness criterion.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual, volumes covering VMX, APIC, x2APIC, APIC-register virtualization, virtual interrupt delivery, and posted interrupts.</li><li>Linux KVM and x86 LAPIC implementation paths for interrupt injection, nested VMX, and IOAPIC EOI handling, including concepts represented by vmx_vcpu_load, loaded VMCS management, virtual APIC state synchronization, and kvm_ioapic_update_eoi-style notifier flow.</li><li>VT-d posted interrupt descriptor behavior and notification semantics as relevant to PIR, outstanding notification, and suppress-notification-style transition quiescing.</li><li>Linux irqfd and VFIO INTx resample models for level-sensitive host endpoint completion semantics.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define a *real* ISR-clear proof mechanism per mode that matches KVM’s actual observability: in APICv/posted-interrupt modes you generally do not get an exit when ISR clears unless you program EOI-exit (eoi_exit_bitmap) or trap; “read hardware-updated virtual APIC state at VM-exit/pre-entry points” is not sufficient for exactly-once completion without specifying how you force/receive the EOI event.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the concurrency/locking model for the delivery ledger and completion map: which lock (per-vCPU spinlock vs srcu vs atomic) protects insert/lookup/retire, how you avoid ABA on vector reuse, and how you prevent double-commit when multiple host paths can process EOI/exit (e.g., nested VM-exit paths, vCPU kick paths, IRQ routing updates).</li><li style='font-size:13px;margin-bottom:4px;'>Clarify VMCS-current safety rules concretely: what exact invariant you rely on (e.g., loaded_vmcs-&gt;cpu == smp_processor_id() &amp;&amp; vmcs_is_current()), and how you avoid preemption/migration races (need preempt_disable()/local_irq_save() style constraints around vmx_vcpu_load()/vmx_vcpu_run() windows).</li><li style='font-size:13px;margin-bottom:4px;'>The APICv transition “drain/flush lattice” must be tied to existing primitives and ordering guarantees (PIR-&gt;IRR sync, pi_desc.on/in-progress handling, posted-interrupt notification vector semantics) and include required memory barriers; otherwise arrivals during transition can be dropped or replayed.</li><li style='font-size:13px;margin-bottom:4px;'>You must explicitly integrate source-specific completion with existing KVM mechanisms: IOAPIC level deassert is driven by kvm_ioapic_update_eoi() (EOI-based), irqfd/VFIO INTx uses resamplefd semantics, and MSI/MSI-X has no completion—your ledger must not invent a completion point that conflicts with these established hooks.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the “authoritative ISR-clear observation” primitive concretely per mode with exact kernel-readable signals and their validity windows (e.g., software vAPIC ISR bitmap vs. hardware virtual-APIC page vs. posted-interrupt state); as written, “proof that ISR bit is cleared” is vulnerable because APICv often decouples guest-visible EOI semantics from host-observable state, and you must specify *what* is read, *when*, and *why it is coherent*.</li><li style='font-size:13px;margin-bottom:4px;'>Narrow and formalize the “VMCS-current commit” rule into an implementable invariant tied to specific VMX code paths (e.g., after vmx_vcpu_load()/vmx_prepare_switch_to_guest(), before vmlaunch/vmresume) and explicitly handle nested VMCS switching (vmcs01/vmcs02) so the claim cannot be rejected as an obvious restatement of “do it at a safe point.”</li><li style='font-size:13px;margin-bottom:4px;'>Map “stable source identity + generation-checked SRCU revalidation” onto real KVM source objects and lifetimes (irqfd, IOAPIC pin, VFIO INTx, routing entries). You need a precise data model: what pointer/ID is stable, what generation is monotonic, where it is incremented, and which teardown paths must mark instances invalid to avoid use-after-free or completing the wrong source after route churn.</li><li style='font-size:13px;margin-bottom:4px;'>Show exactly-once completion is *new* versus existing KVM mechanisms (EOI exit handling, resamplefd, kvm_notify_acked_irq, irq routing generation checks). Add a prior-art comparison table and articulate the delta: what correctness bug class remains in today’s code and how the ledger+mode-proof eliminates it without regressions.</li><li style='font-size:13px;margin-bottom:4px;'>The APICv transition “drain/flush lattice” needs an explicit state machine (states, allowed transitions, required drains: PIR→IRR sync, IRR/ISR reconciliation, pi_desc quiesce, retry rules for arrivals during transition). Without a machine-checkable ordering, this risks being treated as a non-enabling design objective rather than a patentable mechanism.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Clarify the exact “ISR-clear proof” sources per mode (software LAPIC vs virtual-APIC/x2AVIC vs posted-interrupts): name the exact registers/bitmaps/shadows read and the required VMX/APICv coherence points so the proof is objectively checkable.</li><li style='font-size:13px;margin-bottom:4px;'>Define the delivery-ledger key/data structure precisely (stable source identity type, generation counters, destination vCPU/vector scoping, and eviction/GC rules) and show how it avoids unbounded growth under high-rate IRQ sources.</li><li style='font-size:13px;margin-bottom:4px;'>Spell out nested virtualization rules: when vmcs01 vs vmcs02 is “intended/current,” what happens on nested state switches, and how the commit rule avoids completing against the wrong VMCS context.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft relies on several undefined or potentially non-existent kernel hooks/symbols (e.g., “apic_clear_isr”), and leaves key safety invariants (memory bounds, locking, and exact ISR-clear proof mechanisms per mode) unspecified, which is a stability and correctness risk in KVM’s interrupt hot paths.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the ISR-clear proof primitive per APIC mode using *actual* KVM/VMX data sources and coherence rules (e.g., what exact structure/register/page is read; when it is valid relative to VM-exit/VM-entry; how to handle APIC-access page vs virtual-APIC page vs posted-interrupt PIR). Right now “mode-specific ISR-clear proof” is conceptually strong but technically under-specified and may be impossible in some modes without forcing additional exits.</li><li style='font-size:13px;margin-bottom:4px;'>Bound the delivery-instance ledger strictly (time and space): specify fixed-size indexing (e.g., per-vCPU per-vector arrays with generation counters) and an overflow policy. Without hard bounds, an attacker-controlled interrupt storm (irqfd/VFIO or emulated devices) can cause memory growth or excessive per-interrupt work → host DoS / latency collapse.</li><li style='font-size:13px;margin-bottom:4px;'>Make lifetime/locking rules explicit for “stable source references” + SRCU: identify the exact object being referenced (irqfd, routing entry, ioeventfd, VFIO INTx, ioapic pin, etc.), its refcounting model, and when synchronize_srcu() (or equivalent) is required. SRCU revalidation alone does not prevent use-after-free if the referenced endpoint is freed concurrently.</li><li style='font-size:13px;margin-bottom:4px;'>Specify precisely where the “VMCS-current commit rule” executes and prove it cannot run with the wrong VMCS under nested VMX (vmcs01/vmcs02) or with preemption/CPU migration. If you rely on vmx_vcpu_load()/VMCS load, you must state the required preemption disable / CPU pinning / loaded_vmcs semantics and what happens on failure paths.</li><li style='font-size:13px;margin-bottom:4px;'>Transition-lattice drains must be mapped to concrete steps with ordering and atomicity guarantees (PIR→IRR sync, pi_desc modifications, posted-interrupt notification vector handling, EOI-exit bitmap changes). Without a concrete sequence and lock context (what can sleep, what is under spinlock), this risks missed interrupts, double-injection, or deadlocks.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact locking/serialization for the decision token vs commit (e.g., per-vCPU mutex/spinlock or vcpu-&gt;arch.apicv state under kvm_vcpu-&gt;mutex), and prove the token can’t be</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify precisely which APICv knobs are in-scope (virtualize apic accesses, EOI exiting, TPR shadow, etc.) and require a single “commit bundle” so coupled VMCS controls + software b</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Document how nested virtualization and vmcs12/vmcs02 transitions are handled: ensure the governor never writes controls that L1 disallows, and that “VMCS-current” is unambiguous und</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Define the delivery-instance ledger precisely: how instance_id is generated (monotonic per (vcpu,vector)? per source-irq?), how wraparound is handled, what constitutes “same instance</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Specify the ISR-cleared observation primitive per mode with concrete read sources and validation rules: APICv (VMCS virtual-APIC page? posted-interrupt descriptor? PIR-&gt;IRR sync boun</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact concurrency/locking model for the per-vCPU delivery ledger (writers in irqfd wakeups, ioapic emulation, posted-interrupt paths; readers on VM-exit/pre-entry). Speci</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Your core correctness condition (“commit only after host observes guest-visible ISR cleared on a VM-exit”) is not self-sufficient unless you also guarantee liveness of that observat</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make the “authoritative ISR-clear observation” concrete per mode: (a) legacy vAPIC page vs (b) x2APIC virtualization vs (c) APICv posted interrupts. State exactly which memory/VMCS-</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] APICv enable/disable transitions are extremely loss-prone without a precise drain/flush sequence. You must specify how PIR/IRR synchronization is handled (e.g., sync PIR→IRR orderin</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] SRCU “revalidation” is underspecified: you need an explicit object-lifetime plan so a late completion cannot target freed irq routing/irqfd/ioapic state. That typically means genera</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux virtualization using x86 APIC microarchitecture features
+</footer>
+</div></body></html>

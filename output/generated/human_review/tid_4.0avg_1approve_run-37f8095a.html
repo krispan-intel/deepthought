@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 4.0] Virtualization-Aware Conservative Package Energy Attribution</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-37f8095a4dd4 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — yellow_card_revise</div>
+</div>
+
+<section class="card">
+  <h1>Virtualization-Aware Conservative Package Energy Attribution and Confidence-Gated Package Powercap Control for KVM Using x86 RAPL</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux virtualization using x86 RAPL microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>VMX-to-RAPL Epoch Broker for Per-VM Package Energy Control</li><li style='font-size:13px;'>Paravirtual Phase-Descriptor Contract Translating Guest HPC Epochs into x86 RAPL Policy</li><li style='font-size:13px;'>EPT Dirty-Logging Energy Governor for Migration and Checkpoint Epochs</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: CVA6 RISC-V Virtualization: Architecture, Microarchitecture, and Design   Space Exploration &lt;&gt; X86_CR4_VMXE_BIT
+  MMR Score:    0.7693</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A host-resident KVM/x86 estimator computes auditable per-VM package-energy ledgers by combining x86 RAPL PKG energy deltas with package-stamped guest-entry/exit runtime slices and securely tagged one-VM host-assist slices weighted by core capacity, frequency invariance, and SMT sharing, always preserving an explicit unattributed residual bucket, and exports confidence telemetry that an optional privileged userspace governor may use to adjust existing package powercaps within bounded safety rules.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The claimable core is not generic VM power estimation; it is a kernel-derived, package-faithful, migration-correct attribution method tied to x86 KVM execution boundaries and x86 RAPL package semantics. The invention spe</div>
+    <div class="pill"><strong>Feasibility:</strong> The design uses observables that already exist on modern x86 Linux hosts: KVM x86 guest entry/exit transitions, scheduler CPU-to-core-to-package topology, cgroup v2 task identity, </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Intel x86 RAPL exposes energy and power limit control at processor-package scope, but Linux virtualization schedules KVM vCPU threads and related helper tasks as ordinary host tasks that can migrate across logical CPUs, cores, and packages. Operators therefore observe only shared package energy even though they need a host-trustworthy answer to three distinct questions: how much of a package&#x27;s measured energy can be conservatively credited to a VM&#x27;s actual guest execution; how much additional package energy can be conservatively credited to host-side work performed specifically on behalf of that VM; and under what tightly bounded conditions is it safe to tune the package powercap without fighting hardware enforcement, thermal control, HWP/P-state logic, or an external policy daemon. The challenge is amplified by SMT, turbo, heterogeneous core capacity, multi-socket migration, shared helpers, RAPL counter rollover, unsupported/offline domains, and the fact that package energy includes baseline and uncore components that no honest VM estimator can fully explain from guest CPU time alone.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Known RAPL-based VM energy estimation approaches generally infer per-VM energy from userspace-observed CPU time, performance counters, or heuristic proportional models and then tend to force or imply near-complete attribution. They do not crisply claim a host-kernel method that derives guest runtime from actual guest-entry/guest-exit boundaries, preserves physical package identity across vCPU migration, and mandates an explicit residual bucket for baseline, shared-system, idle, and otherwise untracked package energy. They also do not define an enforceable host-assist qualification rule that excludes ambiguous shared helpers by default. This draft further narrows away overlap from the earlier, broader version: there is no guest hint channel, no VM-fd hint cache, no guest memory descriptor path, no guest-triggerable notification mechanism, and no new guest-facing ioctl control plane. The invention is instead limited to host-only KVM/RAPL accounting plus an optional userspace governor that uses the existing powercap ABI.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention introduces a conservative package-energy ledger for x86 KVM hosts and an optional confidence-gated package-cap policy loop.
+
+1. Sampling and RAPL semantics
+A per-package host worker samples only the RAPL PKG domain at a fixed host interval, preferably 250 ms to 1000 ms. For package p it reads the current package energy value and the domain&#x27;s maximum energy range from the existing Intel RAPL backend. The package energy delta is computed as modular arithmetic:
+ΔE_pkg[p] = (Ecur[p] - Eprev[p] + Range[p]) mod Range[p].
+If the elapsed interval is long enough that more than one wrap could have physically occurred at the administrator-declared maximum package power, the interval is marked ambiguous, confidence is forced to zero for that interval, and no per-VM energy is assigned from that sample. If the package domain is offline, unsupported, or the read fails, the interval is invalid for attribution and the optional controller is frozen.
+
+2. Guest-runtime segmentation from KVM execution boundaries
+For each vCPU thread, the host stamps a guest slice when the thread enters guest mode and closes that slice when it exits guest mode, is preempted, or otherwise returns to host mode. Each slice records start time, end time, logical CPU, core, and package. Because a task executes on only one logical CPU at a time, a package migration naturally terminates one slice and begins another on the destination package; thus a VM spanning packages accumulates distinct per-package ledgers instead of being flattened into one host-wide estimate.
+
+3. Secure host-assist qualification and tagging
+Host-assist runtime is counted only for work that is both host-visible and uniquely bindable to one VM. The enforceable rule is a cgroup-v2-based one-VM assist subtree created by host administration in the initial namespace. A VM receives an immutable VM cookie at launch, and an assist cgroup is bound to that cookie by a privileged host operation. Eligible host-assist tasks are: the VM&#x27;s vCPU thread while outside guest mode; emulator and I/O threads of the corresponding VMM process; and helper threads such as vhost or irq threads only if they are dedicated to that VM and placed in the VM&#x27;s assist cgroup. Shared helpers, including ksmd, kswapd, ksoftirqd, shared vhost backends, or any task that services multiple VMs or general system work, are never force-attributed and always remain residual. If a task is retagged, migrated between assist cgroups, or observed in an ambiguous binding state, only already-closed slices remain valid and subsequent time is treated as residual until the binding is again unique. This prevents manipulation and double counting.
+
+4. Exact normalization model
+Attribution uses weighted capacity-time, not raw wall time. For a runtime slice s on physical core c in package p:
+W(s) = Δt(s) × Cap_core(c) × Freq(c, interval) ÷ ActiveSMT(c, s).
+Cap_core(c) is the scheduler-visible architectural capacity of that core, normalized to a fixed scale, so hybrid-capacity x86 systems are handled without pretending all cores are equal. Freq(c, interval) is the scheduler frequency-invariance factor for that core during the interval; if that factor is not available, the host may substitute a clamped APERF/MPERF ratio for the same interval, and if neither source is trustworthy the package is marked unsupported for attribution. ActiveSMT(c, s) is the number of simultaneously active SMT siblings on that physical core during the slice, so one active sibling receives full core weight and two active siblings each receive half, preventing logical-thread double inflation.
+
+For VM v on package p over interval k:
+W_guest[v,p,k] = sum of W(s) over that VM&#x27;s guest slices on package p.
+W_assist[v,p,k] = sum of W(s) over that VM&#x27;s qualified host-assist slices on package p.
+W_vm[v,p,k] = W_guest[v,p,k] + W_assist[v,p,k].
+
+The package denominator is computed at the core level:
+W_pkg[p,k] = sum over online physical cores in package p of OnlineTime(core,k) × Cap_core(core) × Freq(core,k).
+
+Energy is assigned conservatively:
+E_guest[v,p,k] = ΔE_pkg[p,k] × W_guest[v,p,k] / W_pkg[p,k].
+E_assist[v,p,k] = ΔE_pkg[p,k] × W_assist[v,p,k] / W_pkg[p,k].
+E_residual[p,k] = ΔE_pkg[p,k] - sum over all VMs of (E_guest + E_assist).
+
+If accounting error would make the assigned sum exceed ΔE_pkg, the interval is invalidated, confidence is forced low, and the full interval remains unattributed rather than clipped into a false exact answer. This explicit residual ledger is mandatory, not optional.
+
+5. Multi-socket and migration behavior
+Each package maintains its own RAPL delta, denominator, confidence score, and VM sub-ledgers. A VM that runs on multiple packages accumulates one ledger entry per package and a VM-total is obtained only by summing package entries after sampling, not by collapsing runtime before attribution. Automatic NUMA balancing, scheduler migration, and vCPU roaming are therefore handled by slice stamping. For policy use, a stricter actuation eligibility rule may be applied: a package-level controller may operate only if the target VM or VM set is dominantly resident on that package over a recent horizon; otherwise the system remains observe-only.
+
+6. Confidence metric and freeze logic
+Each package interval carries a confidence score C in the range 0 to 100, computed as a deterministic penalty model over observable failure modes, including ambiguous wrap risk, read failures, sampling jitter, high migration churn, missing frequency invariance, assist-tag ambiguity, low-attribution regimes, and external powercap writer detection. Example form:
+C = 100 - Pwrap - Pread - Pjitter - Pmigrate - Pfreq - Ptag - Plowutil - Pextwrite.
+The system freezes control eligibility whenever C falls below a threshold such as 80, when residual fraction exceeds an administrator threshold such as 35%, when package thermal or power-limit status is already asserted, when a counter read fails, or when an external actor modifies the powercap between control windows.
+
+7. ABI and trust boundary
+No guest-visible hint ABI is claimed. No VM-fd hint cache, pollable notification fd, or guest-triggerable event path is required. The kernel claim core ends at internal ledgers and confidence generation. Export may be through host-only tracepoints, debugfs, or another non-guest, host-privileged diagnostic interface. If a production deployment wants a stable operator-facing API, that can be implemented in host userspace by consuming the diagnostic stream and re-exposing it, leaving the upstream kernel claim core independent of a new stable UAPI.
+
+8. Optional powercap control in privileged userspace only
+The kernel does not write package caps. A separate host userspace governor, running with host privilege and using the existing powercap sysfs interface, may read the confidence and ledger telemetry and adjust only the shared package cap. The governor uses a non-obvious safety invariant: it is permitted to change the cap only when confidence is high, residual is low, package residency is stable, and the measured efficiency metric GuestWeightedWorkPerJoule = sum(W_guest over control window) / sum(ΔE_pkg over control window) remains monotonic across several dwell windows. A cap decrease is allowed only after, for example, three consecutive 10-second windows with C &gt;= 80, residual &lt;= 25%, no external writer, and no worsening of the efficiency metric beyond a 1% tolerance; each decrease is bounded to the smaller of 1 W or 2% of the current cap and may occur no more often than every 30 seconds. A cap increase is allowed only when efficiency or backlog degrades beyond a threshold, or when power-limit/latency symptoms persist, and it is likewise step-bounded. Any external write, thermal event, low-confidence interval, or ambiguous wrap forces a freeze period, e.g. 120 seconds, before control can resume. This creates a bounded, confidence-aware supervisor instead of a generic hysteresis loop.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>The architecture is intentionally split between a host-kernel telemetry path and an optional userspace actuation path.
+
+```text
++--------------------------------------------------------------------------------+
+|                           Host x86 Linux / KVM Node                            |
++--------------------------------------------------------------------------------+
+| Package P0                         | Package P1                                |
+| +-------------------------------+  | +-------------------------------+         |
+| | RAPL PKG energy_uj, range_uj  |  | | RAPL PKG energy_uj, range_uj  |         |
+| | core topology, freq factor    |  | | core topology, freq factor    |         |
+| +---------------+---------------+  | +---------------+---------------+         |
+|                 |                                  |                            |
+|                 v                                  v                            |
+|      +----------------------- per-package workers -----------------------+      |
+|      | read ΔE_pkg | compute W_pkg | score confidence | maintain ledgers |      |
+|      +-------------------+----------------------+------------------------+      |
+|                          |                      |                               |
+|                          |                      +--&gt; residual/unattributed       |
+|                          |                                                      |
+|   KVM vCPU thread        v                                                      |
+| +----------------+  guest_entry/exit slices  +-------------------------------+ |
+| | vcpu0 / vcpu1  |--------------------------&gt;| guest slice accumulator       | |
+| | package-stamped|                           | per VM, per package           | |
+| +----------------+                           +-------------------------------+ |
+|                                                                               |
+|  VM assist cgroup (host-admin bound, one VM cookie)                           |
+| +----------------+   sched in/out host slices   +---------------------------+ |
+| | qemu I/O       |-----------------------------&gt;| assist slice accumulator   | |
+| | vhost-dedicated|                              | only if uniquely bound     | |
+| +----------------+                              +---------------------------+ |
+|         |                                                                         
+|         +--&gt; shared/ambiguous helpers ---------------------------------------&gt; residual |
++--------------------------------------------------------------------------------+
+                                |
+                                | host-only telemetry
+                                v
+                 +----------------------------------------------+
+                 | tracepoints / debugfs / host daemon input    |
+                 +----------------------------------------------+
+                                |
+                                | optional, privileged, observe-then-act
+                                v
+                 +----------------------------------------------+
+                 | userspace governor using existing powercap   |
+                 | sysfs: bounded writes, dwell, freeze, audit  |
+                 +----------------------------------------------+
+```
+
+Key trust boundary: guests provide no hints and cannot trigger attribution or actuation. Only the host kernel observes execution boundaries, only host-admin-defined cgroups can qualify assist tasks, and only privileged host userspace may write existing package powercap files.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Read-only kernel attribution core
+Implement a per-package sampler that reads PKG-domain energy and range metadata through the existing Intel RAPL path, computes modular deltas, rejects ambiguous-wrap intervals, and tracks package online/offline state.
+
+2. KVM x86 guest slice instrumentation
+At KVM x86 guest-entry and guest-exit boundaries, stamp per-vCPU guest slices with time, logical CPU, core, and package. Store closed slices in per-package, per-VM accumulators so migration across packages creates distinct charge records instead of blended runtime.
+
+3. Core-level normalization
+Derive Cap_core from scheduler architectural capacity and Freq from scheduler frequency invariance, with APERF/MPERF fallback only when reliable. Track active SMT sibling count so slice weight is divided by simultaneous sibling occupancy.
+
+4. Assist-tagging subsystem
+Define a host-admin-only cgroup v2 binding from a VM cookie to a one-VM assist subtree. Count host-assist runtime only for tasks in that subtree while they are uniquely bound and while the vCPU thread is not in guest mode. Hard-code exclusions for shared kernel workers and ambiguous helpers so they always land in residual.
+
+5. Ledger math and confidence engine
+For every package interval compute W_guest, W_assist, W_pkg, E_guest, E_assist, and E_residual. Add confidence penalties for wrap ambiguity, read failures, missing frequency invariance, jitter, migration churn, assist-tag ambiguity, low-utilization regimes, and external-writer detection.
+
+6. Export strategy
+Keep the kernel claim core independent of a new stable UAPI. Export telemetry through host-only diagnostics such as tracepoints or debugfs for development and through a host daemon for production packaging if desired. No guest-facing ioctl, no VM-fd hint cache, and no notification plane are introduced.
+
+7. Optional userspace governor
+Build a separate privileged daemon that reads the telemetry, aggregates 10-second control windows, detects external writers by comparing the current powercap value against its last commanded value, and applies bounded writes through the existing powercap sysfs files only when the confidence and monotonic-efficiency invariants are satisfied.
+
+8. Deployment modes
+Support observe-only mode as the default. Enable control mode only when the administrator opts in, specifies min/max package-cap bounds, and accepts the freeze-on-low-confidence policy.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Package-faithful attribution sanity tests
+Pin a single VM to one package with all other packages idle, run CPU-bound workloads, and verify that most explainable package energy lands in that VM&#x27;s guest ledger while a bounded residual remains for package baseline. Repeat with a VM spanning two packages and verify that the per-package ledgers follow actual execution placement.
+
+2. Migration correctness
+Force periodic vCPU migration across packages and compare slice-stamped attribution against known scheduler placement. Verify that no interval claims energy from a package on which the VM did not execute during that interval.
+
+3. Assist-tag qualification tests
+Run dedicated QEMU I/O threads and dedicated vhost threads inside the VM assist cgroup and confirm that their host-mode runtime appears in the assist ledger. Then repeat with shared vhost, ksoftirqd, ksmd, and kswapd activity and verify those cycles remain residual rather than being force-assigned.
+
+4. Counter and failure semantics
+Inject read failures, offline-package transitions, artificially shortened wrap ranges in a test harness, and sample-jitter spikes. Confirm that ambiguous or failed intervals produce low confidence, no false precise attribution, and control freeze behavior.
+
+5. Normalization accuracy under SMT, turbo, and hybrid capacity
+Compare weighted-capacity attribution against raw wall-time attribution on SMT on/off systems, turbo-enabled vs capped-frequency runs, and heterogeneous-core hosts where scheduler architectural capacity differs. Demonstrate that weighted slices materially reduce error relative to raw runtime.
+
+6. Prior-art boundary validation
+Benchmark against a Joulemeter/vmPower-style proportional model and show the difference in behavior under baseline-heavy, shared-helper, or migration-heavy conditions: the proposed method should preserve residual instead of forcing a misleading full split.
+
+7. Control-loop safety evaluation
+In observe-only mode, replay recorded telemetry to confirm that the governor would have remained frozen during thermal assertion, external powercap writes, low-confidence windows, and multi-package instability. In control mode, run bounded package-cap experiments on representative virtualized CPU-bound and mixed I/O workloads, including Linpack-like HPC VMs and consolidation workloads, and verify monotonic efficiency checks, 30-second minimum write spacing, step bounds, and 120-second freeze after anomalies.
+
+8. Security and leakage review
+Validate that guests cannot read per-VM ledgers directly, cannot spoof assist tags, and cannot induce notification storms because there is no guest-triggerable notification path. Confirm that only host-root or equivalent host-privileged operators can bind assist cgroups and enable actuation.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A computer-implemented method on an x86 Linux host running KVM, comprising: reading a package-scoped RAPL PKG energy counter for each physical processor package over successive intervals; deriving, from host-observed guest-entry and guest-exit boundaries, runtime slices for each virtual machine; stamping each runtime slice with the physical package on which the slice executed; computing a weighted runtime for each slice using physical-core architectural capacity, frequency-invariance information, and simultaneous SMT sibling activity; assigning to each virtual machine, for each package, only a proportional share of the measured package energy corresponding to the weighted runtime of that virtual machine&#x27;s guest slices; and recording an explicit unattributed residual energy ledger for package energy not assigned to any virtual machine.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the weighted runtime further includes host-assist slices only for helper tasks that are uniquely bound to exactly one virtual machine by a host-admin-defined cgroup binding, and excludes shared or ambiguously bound helper tasks from attribution.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein a vCPU migration between packages is represented by closing a first runtime slice on a first package and opening a second runtime slice on a second package, such that energy attribution is accumulated separately per package and only later aggregated at the virtual-machine level.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the package energy delta is computed by modular arithmetic using a maximum energy range associated with the package domain, and an interval is invalidated when multiple counter wraps are physically possible within that interval.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the package denominator is computed at a physical-core level rather than a logical-thread level, and the weighted runtime of a slice is divided by the number of simultaneously active SMT siblings on the physical core during the slice.</li><li style='margin-bottom:8px;'>The method of claim 1, further comprising generating a confidence score based on at least wrap ambiguity, counter read failure, sampling jitter, migration churn, missing frequency-invariance information, assist-tag ambiguity, and low-attribution utilization, and suppressing control eligibility when the confidence score falls below a threshold.</li><li style='margin-bottom:8px;'>A host power-management system comprising the method of claim 1 and a separate privileged userspace governor that writes only existing package powercap controls, wherein the governor changes a package cap only after multiple consecutive control windows satisfy a confidence threshold, a residual-energy threshold, and a monotonic guest-weighted-work-per-joule condition, and otherwise freezes actuation.</li><li style='margin-bottom:8px;'>A non-transitory machine-readable medium storing instructions that cause a host system to maintain, for each package, separate guest-energy, host-assist-energy, and residual-energy ledgers for each virtual machine using the method of claim 1 without requiring any guest-supplied energy hints, guest memory descriptors, or guest-triggerable notifications.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Kernel upstreamability risk: keep the kernel-side invention telemetry-only and rely on the existing powercap ABI for any actuation in privileged userspace, avoiding a new in-kernel control writer and avoiding a new guest-facing UAPI.</li><li style='margin-bottom:6px;'>Assist-tag ambiguity risk: qualify host-assist time only for tasks uniquely bound to one VM by a host-admin-controlled cgroup-v2 mapping; force all shared or ambiguous helpers into the residual bucket.</li><li style='margin-bottom:6px;'>Prior-art overlap risk: claim the combination of KVM guest-entry/exit segmentation, package-faithful migration stamping, exact weighted-capacity normalization, and mandatory residual ledgering, while explicitly disclaiming guest hint channels and full-attribution heuristics.</li><li style='margin-bottom:6px;'>Normalization accuracy risk on systems lacking reliable frequency invariance: use APERF/MPERF only as an explicit fallback and otherwise mark the package unsupported or low confidence rather than silently reverting to raw wall time.</li><li style='margin-bottom:6px;'>Counter rollover and read-failure risk: use modular delta computation with max-energy-range checks, invalidate ambiguous intervals, and freeze control on any read failure or multi-wrap possibility.</li><li style='margin-bottom:6px;'>Cross-tenant information leakage risk: expose telemetry only to host-privileged contexts, avoid guest-readable notification paths, aggregate at conservative sampling intervals, and make enablement opt-in for operators.</li><li style='margin-bottom:6px;'>Controller conflict risk with thermal management or another power governor: detect external writes to the package cap, treat thermal or power-limit assertion as immediate freeze conditions, and require long dwell times plus bounded step sizes before any new write.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual, volumes covering VMX and RAPL-related MSR semantics.</li><li>Linux kernel powercap and Intel RAPL subsystem documentation for package-domain energy and power-limit interfaces.</li><li>Linux KVM x86 execution-path documentation and source paths covering guest entry/exit accounting concepts.</li><li>Amit Kansal et al., Joulemeter: Fine-Grained Energy Accounting for Data Centers.</li><li>A. Bohra and V. Chaudhary, VMeter: Power Modelling for Virtualized Clouds.</li><li>Linux cgroup v2 documentation for task delegation and resource-domain binding semantics.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define a kernel-correct sampling model: you cannot read RAPL PKG energy MSRs on every guest-entry/exit without unacceptable overhead and without creating IRQ/preempt corner cases. Use periodic per-package sampling (timer/workqueue) and attribute deltas to accumulated per-VM per-package runtime, rather than MSR reads on the vmentry/vmexit hot path.</li><li style='font-size:13px;margin-bottom:4px;'>Specify concurrency/locking for slice accounting: guest-entry/exit events occur on different CPUs as vCPUs migrate. Per-VM updates must avoid global locks in the fast path; use per-CPU/per-vCPU accumulators plus seqcount/u64_stats_sync-style readers to export consistent snapshots.</li><li style='font-size:13px;margin-bottom:4px;'>Handle CPU hotplug and topology changes correctly: package IDs and cpu_online_mask can change. Any package-stamping or CPU→package mapping must be protected (RCU or cpuhp read-side rules) and must define behavior when CPUs go offline mid-interval.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify what is being attributed: RAPL PKG includes uncore and sometimes DRAM/platform domains depending on SKU. Your weighting by “core capacity/frequency/SMT sharing” must not imply causal accounting of uncore; keep it strictly as a proportional allocator for the portion you choose to allocate, with residual explicitly including uncore/idle.</li><li style='font-size:13px;margin-bottom:4px;'>Host-assist attribution needs a hard kernel-verifiable rule: “securely tagged one-VM host-assist slices” is underspecified. If you rely on cgroup v2, define exactly which threads are eligible and how you prevent shared subsystems (e.g., vhost, kswapd, irq threads) from being mis-attributed; otherwise those must always fall into residual.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Prior-art overlap risk is high unless you sharply narrow the claims to *kernel-observed KVM entry/exit slice boundaries + per-slice physical package stamping + mandatory residual ledger*. Many academic and vendor works already do RAPL-based VM attribution via proportional CPU-time (and sometimes perf counters). Add an explicit claim boundary: attribution is computed only from KVM-run context switches (host-side) and never from userspace polling cadence or guest-reported time, and the residual bucket is a first-class output that can dominate.</li><li style='font-size:13px;margin-bottom:4px;'>The weighting model (“core capacity, frequency invariance, SMT sharing”) is underspecified and could be deemed obvious without a concrete formula and data sources. Specify: exact normalization terms (e.g., arch_scale_cpu_capacity() × (APERF/MPERF) × SMT-sibling factor), the sampling window alignment to slice boundaries, and how you prevent double-counting when vCPU migrates mid-interval or when APERF/MPERF is unavailable.</li><li style='font-size:13px;margin-bottom:4px;'>You need a precise definition of “host-assist slices securely tagged to one VM.” Today KVM has vCPU threads, but many helpers are shared (IO threads, vhost, qemu, kernel threads). To avoid ‘aspirational tagging’ prior art, constrain to a verifiable mechanism (e.g., dedicated cgroup subtree and explicit inclusion rules) and define what happens when an assist thread touches multiple VMs (must go to residual).</li><li style='font-size:13px;margin-bottom:4px;'>RAPL semantics: package energy includes uncore/DRAM (platform-dependent) and background activity. Without an explicit per-package baseline treatment, reviewers may argue your residual bucket is just an admission of inaccuracy (and thus obvious). Turn this into novelty: require an auditable residual decomposition (idle vs shared vs invalidated) and define wraparound/read-failure rules (max_energy_range_uj handling, monotonicity checks, read jitter bounds).</li><li style='font-size:13px;margin-bottom:4px;'>Concurrency and overhead: capturing per-entry/exit slices in the hot path risks being rejected upstream and also undermines feasibility claims. You should specify the minimal instrumentation points (tracepoints vs direct accounting), per-CPU buffering strategy, and locking model (RCU/SRCU vs raw per-CPU) to show it’s implementable without regressing KVM performance.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact slice-to-energy reconciliation algorithm: how RAPL PKG energy deltas are sampled (per-package cadence, lockless vs serialized reads), how deltas are mapped onto per-VM slices when multiple vCPUs run concurrently on the same package, and how you prevent double-counting across overlapping slices.</li><li style='font-size:13px;margin-bottom:4px;'>Make the weighting model concrete and implementable: specify formulas for (a) arch capacity normalization (arch_scale_cpu_capacity), (b) frequency invariance (schedutil invariance vs APERF/MPERF), and (c) SMT sharing (per-core runnable sibling occupancy). Right now “weighted by capacity/freq/SMT” is underspecified and will be challenged upstream.</li><li style='font-size:13px;margin-bottom:4px;'>Nail down what is and is not attributable vs residual: explicitly enumerate which energy domains are in-scope (RAPL PKG only? DRAM?) and how uncore/idle/baseline is treated. On modern Xeon, PKG includes large uncore components; you need a crisp statement that residual is expected to dominate in some regimes and how to interpret that operationally.</li><li style='font-size:13px;margin-bottom:4px;'>Specify a production-grade export interface and stability story: tracepoints/debugfs are fine for prototyping, but the draft needs a concrete plan (e.g., perf events, cgroup v2 stats, or a documented trace ABI) plus backpressure/overhead bounds so operators can rely on it at scale.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify the “securely tagged one-VM host-assist slices” mechanism: define how helper threads are bound to a VM (cgroup subtree, kthread tagging, vhost, I/O threads, vsock, page-fault workers), what happens on shared helpers, and how you avoid tenant-to-tenant attribution spoofing.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Side-channel/TAA risk: exporting high-rate, per-VM energy/time slices can become a co-tenancy inference channel; require privileged access only (e.g., CAP_SYS_ADMIN), coarse rate limiting/aggregation windows, and avoid providing per-vCPU or sub-ms timestamps to unprivileged readers.</li><li style='font-size:13px;margin-bottom:4px;'>Crash/robustness: RAPL PKG counter wrap and read failures must be handled with strict max_energy_range_uj-based wrap math, monotonicity checks, and CPU hotplug/package offline handling; on ambiguity, force residual/invalidate interval (never attribute negative/implausible deltas).</li><li style='font-size:13px;margin-bottom:4px;'>Compatibility: clearly gate on availability of intel_rapl/powercap and topology package IDs; specify behavior on non-Intel, disabled RAPL, VM migration across packages, or hosts lacking reliable freq invariance/APERF-MPERF access (fall back to time-only weighting + increased residual).</li><li style='font-size:13px;margin-bottom:4px;'>Concurrency correctness: ensure slice stamping and per-VM ledger updates are lock-safe on vCPU migration/preemption (per-CPU buffering + aggregation, or seqcount/RCU patterns) to avoid torn reads and accounting corruption.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact UAPI surface and lifetime rules: add a versioned struct in include/uapi/linux/kvm.h, specify endianness/packing, and make cached-hint reads deterministic (explicit </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make the guest-memory access unquestionably safe: require memslot-stable validation under KVM memslots SRCU (or equivalent), use the gfn_to_hva cache helpers for repeated reads, and</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Rate-limit and coalesce in a way that cannot be used for host-CPU DoS: implement a per-VM token bucket (or min-interval) with bounded queued notifications; if using eventfd/signalfd</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Define the concrete UAPI surface: exact ioctl(s) (VM-fd vs vCPU-fd), struct layout (including __u32 size/version, flags, descriptor GPA/GFN, TTL/expiry, monotonic seqno), and the ret</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Specify the memory-validation and cache-invalidation model in KVM terms: how you translate/validate guest memory safely (e.g., gfn_to_hva_cache + kvm_read_guest), how you handle mems</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define a concrete locking/CPU-hotplug model for per-package attribution state: package topology can change (CPU offline/online), vCPUs migrate, and you must not take sleeping locks </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Capacity-normalized guest runtime is not a sound proxy for package energy without careful treatment: RAPL PKG includes uncore (LLC, IMC, ring) and frequency/idle effects. You must s</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify how you attribute energy when a VM executes on multiple packages within a sampling window (NUMA drift, scheduler migration, vCPU pin changes). You need per-vCPU per-package </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] RAPL counters wrap and can be read with different units/availability across platforms. The design must explicitly handle wraparound, unit scaling, and offline/unsupported domains; a</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The optional kernel-side powercap controller needs a strict safety contract with the powercap framework: ensure writes are privilege-gated, rate-limited, and do not fight existing u</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux virtualization using x86 RAPL microarchitecture features
+</footer>
+</div></body></html>

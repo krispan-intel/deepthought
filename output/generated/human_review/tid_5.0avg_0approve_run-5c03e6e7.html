@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 5.0] Intel RAPL Lease Compiler with Encoded-Window Hysteresis, PM</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-5c03e6e75332 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 5.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Intel RAPL Lease Compiler with Encoded-Window Hysteresis, PMU-Quality Gating, and Deterministic Writer Coexistence</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux power management using x86 RAPL microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Energy Contract Compiler for PM QoS to RAPL Translation</li><li style='font-size:13px;'>PMU Phase Descriptor Bridge for RAPL Window Control</li><li style='font-size:13px;'>NUMA Energy Directory for DRAM RAPL and Memory Pressure Arbitration</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: Towards Energy-Proportional Computing Using Subsystem-Level Power   Management &lt;&gt; ITG3200_REG_POWER_MANAGEMENT
+  MMR Score:    0.7913</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>An intel_rapl-local Linux kernel policy represents subsystem power and performance demands as expiring per-domain leases, compiles a hotplug-safe snapshot plus PMU-quality-gated package telemetry into quantized PL1, PL2, clamp, and encoded time-window targets for package, die, and DRAM domains, and applies serialized, rate-bounded commits with verification readback, deterministic external-writer inhibition, and hardware-derived safe fallback behavior.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The invention is not a generic governor, PID loop, or QoS aggregator. It is a driver-local intent compiler for Intel RAPL domains that is explicitly differentiated from existing Linux powercap and thermal control loops b</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Intel RAPL exposes a small, quantized actuator space per domain rather than a continuous power-control plane. For a given package, die, or DRAM domain, the writable controls are typically a subset of PL1, PL2, clamp, and an encoded averaging window, subject to presence bits, lock bits, unit scaling, and platform-specific min and max bounds. Linux already has multiple subsystem-level signals that imply different preferred envelopes, including scheduler urgency, PM QoS latency pressure, memory PSI, reclaim intensity, and microarchitectural phase signals observable through Intel PMU counters. Existing practice is fragmented: static caps ignore phase changes, userspace daemons react slowly and race with firmware or sysfs writers, and generic governors reason in abstract watts or errors without treating the encoded RAPL window as a direct actuator dimension. The result is oscillation, undefined coexistence, poor hotplug behavior, and ambiguous failure handling. A kernel-resident policy local to intel_rapl is needed to fuse subsystem intents and PMU-qualified telemetry into deterministic, bounded, package-scope decisions that respect lock bits, coexist with other writers, avoid atomic-context work, and remain stable across Xeon generations.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Implementation proceeds in five increments. First, add the local lease store, snapshot compiler, and encoded-unit tuple representation to the intel_rapl driver without enabling PMU input. Second, add domain-specific capability discovery, baseline tuple capture, and the serialized commit worker with readback verification and guard-tuple semantics. Third, add writer-coexistence detection and inhibit-shadow state machines using normalized encoded readback. Fourth, add owner-CPU perf sampling with per-CPU sample slots, package coverage accounting, and PMU-quality-gated advisory lease emission. Fifth, populate a model table for event selection and platform policy mapping on selected Xeon families, while keeping the PMU channel disabled on unsupported models rather than guessing. At no step does the design require a new userspace ABI or changes to generic mm or scheduler hot paths.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Validate correctness and stability on at least one recent Xeon server platform with package and, where available, die or DRAM domains. Compare against stock intel_rapl plus userspace powercap control under bursty web, mixed latency-sensitive, and Linpack-like compute phases. Measure tuple oscillation rate, time spent in inhibit or shadow mode, PMU quality-pass rate, powercap write frequency, readback mismatch frequency, and workload throughput-per-joule. Inject CPU hotplug, perf multiplexing, counter resets, sysfs writer races, and artificial out-of-band MSR changes to confirm deterministic backoff. Verify that no advisory lease is emitted when enabled-running coverage falls below threshold and that fallback reversion never exceeds hardware or administrator bounds.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A Linux kernel method for Intel x86 RAPL control comprising storing subsystem power-management intents as expiring leases scoped to individual package, die, or DRAM domains of an intel_rapl-local policy instance, wherein each lease contains explicit floor, ceiling, encoded-window, clamp, expiration, and producer-class fields, and wherein only non-expired leases participate in a deterministic snapshot compiler.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the snapshot compiler performs order-independent aggregation using min and max operators on the active lease set to form a feasible encoded RAPL region, and then selects a target tuple by quantizing in hardware units and applying hysteresis directly in encoded time-window space rather than in floating-point time units.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein PMU-derived input is admitted only through CPU-local kernel perf events sampled on the owning CPUs, aggregated into package telemetry by stable sample buffers, and converted into advisory leases only when enabled-running ratios, minimum interval, delta sanity, and package-coverage criteria satisfy predetermined quality thresholds.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein hardware commits are serialized per domain, verified by normalized encoded readback after each write group, and suppressed by a deterministic coexistence state machine that detects external writers by encoded readback deltas and enters inhibit or shadow observe-only modes without livelock.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein failure recovery uses a baseline tuple derived from previously verified readback tuples intersected with current hardware capability bits, lock bits, and administrator bounds, thereby avoiding hard-coded fallback values.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: PMU event portability varies across Xeon generations. Mitigation: use a CPU-model table, require explicit event support, and disable the PMU advisory channel entirely on unqualified models.</li><li style='margin-bottom:6px;'>Risk: frequent userspace or firmware writes can starve the local governor. Mitigation: deterministic INHIBIT and SHADOW modes make the policy observe-only rather than oscillatory, while still maintaining shadow targets for later re-entry.</li><li style='margin-bottom:6px;'>Risk: hotplug or perf teardown could race policy compilation. Mitigation: compile from per-CPU sample buffers only, never from live perf_event pointers, and sequence offline through cancel_delayed_work_sync before event release.</li><li style='margin-bottom:6px;'>Risk: encoded-window tuning could still oscillate on marginal workloads. Mitigation: encoded-space vote counters, one-step-per-interval movement, and asymmetric tighten-versus-relax thresholds bound churn.</li><li style='margin-bottom:6px;'>Risk: overlapping with prior art could be alleged as generic governor logic. Mitigation: claim language and specification are narrowed to encoded-window-first compilation, PMU-quality-gated advisory leases, and deterministic readback-based writer coexistence.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Linux kernel Documentation for powercap and Intel RAPL driver behavior</li><li>Linux perf kernel counter APIs including perf_event_create_kernel_counter and perf_event_read_value</li><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual sections describing RAPL units, constraint fields, and lock semantics</li><li>Linux thermal power_allocator governor documentation and source as closest prior art for package power budgeting</li><li>Intel optimization guidance for fixed counters, IPC, and memory-miss telemetry relevant to phase detection in compute workloads</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 5.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Concurrency/lifetime model is underspecified around CPU hotplug and perf_event teardown; without a concrete refcount/RCU+cancel_work_sync scheme, the design risks UAF or accidental remote PMU reads.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Specify the exact CPU-hotplug state machine: when owner_cpu goes offline you must (a) stop queue_delayed_work_on() scheduling, (b) cancel/synchronize the worker (cancel_delayed_work_sync), (c) detach/free per-CPU perf events safely, and (d) select and rebind a new owner CPU without races. Spell out which locks protect owner_cpu changes and sampling/commit overlap.</li><li style='font-size:13px;margin-bottom:4px;'>Define the snapshot publication pattern precisely: if using seqcount for cached owner-CPU snapshots, ensure writers never sleep while holding the write side, readers handle retry loops correctly, and—critically—ensure object lifetime (what the snapshot points to) is protected (refcount or RCU). Seqcount alone does not prevent UAF.</li><li style='font-size:13px;margin-bottom:4px;'>Prove the &#x27;local-only perf reads&#x27; invariant: queue_delayed_work_on(owner_cpu) is not sufficient if the workqueue isn’t strictly per-cpu/bound or if CPU affinity can change; document whether you use a per-cpu workqueue, WQ_CPU_INTENSIVE/WQ_UNBOUND settings, and whether you need get_cpu()/migrate_disable() or raw_smp_processor_id() assertions to guarantee perf_event_read_local() is executed on the event’s CPU.</li><li style='font-size:13px;margin-bottom:4px;'>External-writer inhibition must be made deadlock- and livelock-safe: define lock ordering between your per-scope mutex and any intel_rapl/powercap internal locks, and ensure inhibit/backoff cannot starve commits indefinitely under periodic out-of-band writes (bounded retries, monotonic quiet-window logic, and a clear &#x27;give up&#x27; policy).</li><li style='font-size:13px;margin-bottom:4px;'>Partial-write rollback semantics need a concrete transaction boundary: RAPL MSR writes across (power, clamp, time-window) are not atomic; you must define which tuple components are written first, how you detect partial acceptance (lock bits, clamping, rounding), and what constitutes a safe rollback that won’t oscillate under concurrent firmware updates.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Novelty hinge is under-specified: you must explicitly distinguish your “lease” mechanism from existing Linux request/constraint frameworks (pm_qos/dev_pm_qos/freq_qos and their timeout/update patterns). Add a crisp mapping of fields (scope, TTL, refresh, conflict) and explain what behavior cannot be achieved with existing QoS + a conventional governor.</li><li style='font-size:13px;margin-bottom:4px;'>Your key differentiator (encoded time-window hysteresis in ordinal/encoding space) risks being seen as an implementation detail. You need a claimable, testable rule (e.g., thresholding, monotone step constraints, asymmetric up/down transitions) and show why doing hysteresis in decoded seconds is materially worse/incorrect vs. encoding-space for RAPL’s non-linear window grid.</li><li style='font-size:13px;margin-bottom:4px;'>Deterministic “commutative join” is asserted but not defined. Specify the algebra precisely (operator, identity, tie-breaks, handling of expirations/refresh races, admissible tuple constraints across PL1 power + window + clamp, plus PL2 if present). Without this, the compiler looks like obvious “min/max of requests”.</li><li style='font-size:13px;margin-bottom:4px;'>PMU “quality gating” overlaps with standard perf enabled/running checks; as written it may be obvious. You must define concrete gate conditions (min interval, delta sanity bounds, reset detection, coverage requirements, per-package attribution rules) and explain why these gates enable a new capability (bounded advisory leases) rather than merely improving robustness.</li><li style='font-size:13px;margin-bottom:4px;'>External-writer inhibition is plausible novelty but currently reads like generic “detect drift, back off”. You need a concrete arbitration state machine (states, timers/quiet windows, normalized delta calculation, backoff schedule, exit conditions) and explicitly contrast with existing powercap/thermal loops that simply overwrite targets periodically.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the lease schema precisely (fields, units, scope hierarchy: package/die/DRAM, TTL/refresh semantics, conflict resolution) and specify the commutative/associative join rules on the *encoded* RAPL grid (including clamp behavior, min/max admissibility, and how multiple subsystems’ PL1/window requests are reconciled deterministically).</li><li style='font-size:13px;margin-bottom:4px;'>Specify the PMU signal set and the data-quality gate thresholds as enforceable kernel invariants (enabled/running ratio cutoffs, minimum sampling interval, delta-sanity bounds, counter reset detection) and document exact fallback behavior when gates fail (e.g., hold-last-good vs revert-to-baseline vs degrade to non-PMU heuristics).</li><li style='font-size:13px;margin-bottom:4px;'>Make external-writer arbitration concrete: define normalized readback delta metrics, what constitutes an out-of-band writer vs benign quantization drift, quiet-window timing, bounded backoff schedule, and the precise rule for when the governor may resume writes without livelock or oscillation with userspace/BMC/firmware.</li><li style='font-size:13px;margin-bottom:4px;'>Detail concurrency/hotplug safety: show how seqcount-protected snapshots are built and consumed without use-after-free across CPUHP offline/online; define event lifetime rules for per-CPU perf events; and ensure all perf reads occur on the owning CPU without relying on undefined contexts (workqueue affinity + migrate_disable correctness).</li><li style='font-size:13px;margin-bottom:4px;'>Clarify integration points with existing intel_rapl/powercap plumbing (where the governor lives, how it is enabled/disabled, sysfs ABI impact, lock-bit handling, and partial-write rollback semantics if package PL1 and window updates cannot be committed atomically on a given platform generation).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Side-channel/TAA posture is underspecified: explicitly constrain perf_event_attr (e.g., exclude_guest/exclude_hv as appropriate, pinning, precise_ip=0) and document that no raw PMU samples are exposed via tracepoints/debugfs/sysfs; otherwise kernel-only PMU telemetry can still become an information amplifier.</li><li style='font-size:13px;margin-bottom:4px;'>Local-only PMU read correctness needs a hard guarantee: queue_delayed_work_on(owner_cpu) is not, by itself, a proof that perf_event_read_local() executes on the event’s CPU under all workqueue configurations—use a per-CPU bound workqueue and/or bracket reads with migrate_disable()/preempt_disable() (and validate against perf’s requirements).</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug and lifetime rules must be made crash-proof: specify the exact CPUHP state used for perf_event_create_kernel_counter(), teardown ordering (cancel_delayed_work_sync before event release), and snapshot synchronization (seqcount readers/writers) to avoid UAF when CPUs go offline mid-sample.</li><li style='font-size:13px;margin-bottom:4px;'>External-writer inhibition needs compatibility guarantees: define normalization/epsilon in encoded units to avoid false positives from rounding, and ensure the inhibit/backoff state machine is bounded and cannot starve legitimate kernel updates under frequent benign drift.</li><li style='font-size:13px;margin-bottom:4px;'>Fallback behavior must be explicitly safe across SKUs: derive baseline tuples from discovered min/max, lock bits, and power/time units per domain; never assume DRAM domain exists; define behavior when MSRs are locked or when powercap backend returns -EACCES/-EPERM.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact PMU collection mechanism and context rules: if you use perf kernel counters, specify perf_event_create_kernel_counter() lifecycle, ensure reads use perf_event_read_</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make CPU/package aggregation hotplug-safe: explicitly describe how CPUs are mapped to packages (topology_physical_package_id + per-package cpumask), how you handle CPU online/offlin</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Provide a strict locking and ordering model between perf core locks and intel_rapl/powercap locks: ensure your worker never takes locks in an order that can deadlock against sysfs w</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the RAPL time-window programming/quantization details and bounds checking: time window encoding is non-linear and platform-limited; you must clamp to constraint min/max and </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Coexistence with userspace/out-of-band writers needs a concrete policy: define whether the governor is inhibited when userspace changes constraints, how you detect external writes (</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact locking model across (a) per-CPU sampling work, (b) global aggregation, and (c) intel_rapl/powercap setters. In particular, document which mutex/spinlocks (zone/dom</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] CPU hotplug correctness: per-CPU delayed_work must be cancelled synchronously on CPU offline (cancel_delayed_work_sync()) before tearing down perf events, and teardown must be order</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] perf/PMU sampling API details are underspecified: if you rely on perf_event_read_local(), ensure it is only used for the local CPU event and clarify preemption/CPU affinity requirem</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] External-writer inhibition needs a measurable mechanism: specify how you detect out-of-band writes (MSR readback vs cached last-write, handling quantization/rounding), define a grac</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] RAPL commit atomicity/failure semantics: power limit and time-window are separate encoded fields and may require multiple writes; define what happens on partial failure (including v</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux power management using x86 RAPL microarchitecture features
+</footer>
+</div></body></html>

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 3.0] RCU-Published Ordered Byte-Major Candidate Epochs for cls_fl</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-43615f8c12bb &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 3.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>RCU-Published Ordered Byte-Major Candidate Epochs for cls_flower with Optional Threaded-NAPI AMX Reduction</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux networking using x86 AMX microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>AMX Flower Tile Epoch for Threaded-NAPI Ingress Classification</li><li style='font-size:13px;'>AMX GRO Signature Matrix for Merge-Candidate Partitioning</li><li style='font-size:13px;'>AMX BF16 Steering Epoch Solver for RPS and RFS</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: ALX: Large Scale Matrix Factorization on TPUs &lt;&gt; intel_opt_manual | INTEL® ADVANCED MATRIX EXTENSIONS (INTEL® AMX)
+  MMR Score:    0.7790</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>Compile an ordered cls_flower chain into an immutable RCU-published epoch of stable rule slots and byte-position-major value/mask windows; when ingress classification is already running on a threaded-NAPI poll kthread, extract a bounded canonical flower key for a small packet microbatch, generate an exact conservative candidate bitmap by evaluating masked-equality necessary conditions across many masks at once using integer SIMD and optionally x86 AMX tile reduction, then invoke the unchanged scalar cls_flower priority walk and tc actions only for surviving candidates.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The inventive step is not &quot;use AMX/SIMD for networking&quot;. It is a semantics-preserving bridge that turns an ordered heterogeneous cls_flower chain into immutable epoch data where selected canonical key bytes are laid out </div>
+    <div class="pill"><strong>Feasibility:</strong> The design is implementable because it reuses cls_flower&#x27;s existing field semantics and confirmation path, pushes heavy epoch compilation entirely off the fast path under RTNL, pub</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>cls_flower software classification becomes expensive when many priority-ordered rules carry diverse masks across L2, L3, L4, tunnel, conntrack, and skb metadata fields. Existing mask-sharing and hash-based lookups help when masks cluster, but they still require per-mask lookup paths and scalar confirmation under original priority semantics. The bottleneck is especially visible in software ingress paths where operators need exact tc behavior but cannot assume NIC offload or reauthor policy in another framework.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>{&#x27;correctness&#x27;: [&#x27;Differential test the accelerated path against the existing scalar cls_flower implementation across randomized rule sets, packet corpora, insert/delete races, and mixed IPv4, IPv6, tunnel, conntrack, and metadata cases.&#x27;, &quot;Verify that every packet reaches the same winning rule, action sequence, and return code as today&#x27;s scalar classifier.&quot;, &#x27;Exercise epoch replacement, per-netns teardown, and concurrent reads to confirm absence of stale-candidate and use-after-free behavior.&#x27;], &#x27;performance&#x27;: [&#x27;Measure packets per second, cycles per packet, candidate density, and L1/L2/LLC behavior on AVX2, AVX-512, and AMX-capable Xeon platforms.&#x27;, &#x27;Report the crossover points where scalar_only, AVX2, AVX-512, and AMX are best as a function of rule count, selected-byte count, and survivor density.&#x27;, &#x27;Measure added latency inside threaded-NAPI poll loops to confirm bounded dwell time and safe fallback under low remaining budget.&#x27;]}</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 3.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>RCU + lifetime model is underspecified: you must spell out exactly what is pinned in an epoch (tcf_proto? cls_flower filters? mask objects? action extensions) and how you prevent UAF while the rebuild worker snapshots and while classify dereferences. Concretely: define refcounting/locking for filter objects during epoch build, use rcu_assign_pointer() for publishing, and free epochs via call_rcu(); do not rely on RTNL alone for reader safety.</li><li style='font-size:13px;margin-bottom:4px;'>Threaded-NAPI confinement is not a correctness proof: you need to document the exact calling contexts that can hit cls_flower (clsact ingress/egress, TCX/BPF hooks, netfilter interactions, qdisc paths) and enforce gating in code so the prefilter never runs from softirq/atomic contexts. Add an explicit runtime check (e.g., napi_threaded context or task flag) and a hard fallback to scalar to avoid accidental FPU/large bitmap work in non-sleepable contexts.</li><li style='font-size:13px;margin-bottom:4px;'>Packet byte extraction rules need hard guarantees to avoid out-of-bounds reads and semantic drift versus flower’s actual dissector usage. ‘skb linear head only’ is not enough: you must define which headers/offsets are safe without pskb_may_pull()/skb_header_pointer(), how VLAN/tunnel/IPv6 extension headers are handled, and how you represent “unknown/not-present” bytes so the prefilter cannot create false negatives (unknown must map to all-candidates for that window).</li><li style='font-size:13px;margin-bottom:4px;'>Priority/chain semantics are not fully addressed: cls_flower can involve chains and goto actions; the scalar walk order may cross chains or depend on chain priorities. Your epoch slotting must preserve the exact evaluation order across chain boundaries (or restrict the feature to a single chain and document it), otherwise you risk changing first-match behavior.</li><li style='font-size:13px;margin-bottom:4px;'>Stats/side effects parity must be proven: even if actions only run on confirmed matches, tc filters maintain per-filter counters (hits/bytes/lastuse) and may have side effects on match evaluation paths. If the scalar path increments or touches state during non-matching evaluations (or during mask lookups), your prefilter changes observability. You need to verify and document exactly what state is touched in cls_flower during classify and ensure skipped rules remain semantically invisible (or explicitly accept/guard the difference).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The novelty hinges on a formally conservative (no-false-negative) prefilter plus an ordered/RCU epoch bridge, but the drafts don’t yet specify the exact implication proof, canonical-key construction, and skb-access constraints tightly enough to distinguish from well-known bitmap/tuple/megaflow-style prefilters and to make claims enforceable.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the conservative-implication contract precisely: specify the exact per-byte predicate(s) (e.g., (pkt_byte &amp; mask)==value) and show why your window/byte-position-major bitmap test is a necessary condition for a true cls_flower match across all supported flower keys (including encap/metadata). Include an explicit statement of allowed false positives and prove absence of false negatives under stated extraction rules.</li><li style='font-size:13px;margin-bottom:4px;'>Nail down canonical-key extraction and safety: enumerate which bytes/fields are read (skb linear head only? metadata only?) and provide a deterministic rule for ‘unknown/unavailable’ bytes (e.g., force candidate bits to 1 for any rule that depends on an unavailable byte). Without this, skb_copy_bits/pskb_may_pull/header_pointer corner cases can silently introduce false negatives or unsafe memory access.</li><li style='font-size:13px;margin-bottom:4px;'>Prior-art differentiation is currently mostly rhetorical (“not generic SIMD/AMX”): you must contrast against classic tuple-space search + bit-vectors, ACL bitmap engines, and OVS/megaflow caching by claiming specific kernel- and cls_flower-specific constraints (priority stability, unchanged tc actions/side effects, RCU epoch publication, stable slot mapping) and by showing why these constraints make the bridge non-obvious rather than a routine optimization.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the epoch data structures concretely (layout, alignment, memory growth): number of windows, bytes per window, bitmap word size, per-mask-family organization, and the exact runtime intersection algorithm (AND cascade, popcnt/ctz iteration). Without concrete bounds, the design risks trading branch misses for cache-thrash and loses feasibility/enablement.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify update/RCU semantics and slot stability: describe how rule add/del/replace interacts with epoch rebuild, how you prevent use-after-free of rule pointers during scalar confirmation/actions, and how you handle priority ties and handle ordering deterministically so the ‘reduced candidate set preserves original walk order’ is actually guaranteed.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact canonical byte-row schema (which cls_flower keys map to which byte offsets) and the extraction rules for each: VLAN/QinQ, IPv4/IPv6(+ext hdr), UDP/TCP ports, tunnels (VXLAN/Geneve), and metadata (skb-&gt;mark, ifindex, tc index, ct fields). Right now it asserts “flow_dissector-compatible bytes” but doesn’t specify coverage or corner cases.</li><li style='font-size:13px;margin-bottom:4px;'>Make the no-false-negative argument explicit and checkable: for each byte-window test, specify the implication form (e.g., (pkt_valid &amp;&amp; (pkt_byte^val)&amp;mask==0) =&gt; rule_possible) and how unknown/unreadable bytes force a SAFE outcome (e.g., treat as wildcard/‘allow all’ or bypass that mask family). This proof is the core semantic bridge—spell it out.</li><li style='font-size:13px;margin-bottom:4px;'>Threaded-NAPI confinement needs a concrete enforcement mechanism: identify the exact hook point(s) in cls_flower/tc ingress where you can guarantee process context, and add runtime gating (e.g., current-&gt;flags, in_serving_softirq(), preempt_count()) plus a deterministic fallback. Without this, reviewers will reject it as “context-unsafe by assumption.”</li><li style='font-size:13px;margin-bottom:4px;'>RCU epoch lifecycle and memory bounds are underspecified: provide a precise update protocol (snapshot under RTNL, rule refcount/pinning strategy, epoch publish with rcu_assign_pointer, old-epoch reclaim via call_rcu) and hard caps for windows/bitmaps to avoid unbounded per-block memory growth on large rule sets.</li><li style='font-size:13px;margin-bottom:4px;'>AMX positioning is good (rebuild-only), but you must tighten the kernel feasibility story: cite the exact in-kernel x86 tile-state save/restore API you rely on (or explicitly state “no AMX in-kernel until upstream provides X”), otherwise it reads speculative and weakens the Xeon value thesis. Also clarify whether AMX acceleration is for transpose/build only (preferred) vs any packet-path microbatching (risky).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten the context contract: explicitly document/enforce that the fast-path prefilter runs only in threaded-NAPI process context (not softirq) and aborts if BH/IRQ state, preempt state, or lockdep indicates an unsafe context; otherwise you risk kernel_fpu_begin()/SIMD usage in the wrong context and hard-to-debug corruption.</li><li style='font-size:13px;margin-bottom:4px;'>Define a hard non-faulting data-access rule for canonical row extraction (skb-&gt;data linear head only + already-materialized metadata) and require compile-time/static assertions or runtime bounds checks so no path can fall back to skb_copy_bits()/pskb_may_pull()/option walking; any such fallback must force scalar-only classification for that packet.</li><li style='font-size:13px;margin-bottom:4px;'>RCU epoch publication must include a full memory-ordering story (rcu_assign_pointer()/smp_store_release + readers with rcu_dereference()) and an explicit lifetime model for referenced cls_flower filters/actions so you cannot observe partially-built epochs or freed rule objects under concurrent RTNL updates.</li><li style='font-size:13px;margin-bottom:4px;'>AMX gating needs an upstream-realistic kernel interface: require a concrete x86 helper that saves/restores XTILE state safely (beyond generic kernel_fpu_begin()) and clearly state that AMX is rebuild-only; otherwise reviewers will reject on xstate/XSAVE size, latency, and context-switch overhead risk.</li><li style='font-size:13px;margin-bottom:4px;'>Bound worst-case CPU time per packet and per rebuild: specify maximum windows/bytes/microbatch size and include need_resched()/cond_resched() placement (rebuild side) plus a fast-path escape hatch (per-block disable, rule-count thresholds) to avoid p99 latency regressions and starvation.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] RCU publishing must be specified precisely: allocate a new `struct rps_map`, publish with `rcu_assign_pointer(rxq-&gt;rps_map, new)`, and retire the old map only after `synchronize_rcu</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Netdevice/queue lifetime coordination is underspecified and is a correctness requirement: the worker must not touch `net_device`/`netdev_rx_queue` after unregister or after queue re</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] “Lockless RX telemetry” needs concrete, correct read patterns: per-CPU 64-bit counters require `u64_stats_sync` (e.g., `u64_stats_fetch_begin_irq()` / retry loops) or equivalent; bl</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Budgeting must be implemented in a preemptible-safe way: do not rely on long non-preemptible sections or extended preemption-disable to hit deadlines. Use incremental work (bounded </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] RPS functional constraints need to be nailed down: `get_rps_cpu()` behavior depends on skb hash, queue settings, and `rps_map-&gt;len`. If you change map sizing/CPU sets, you must ensu</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">yellow_card_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] You must precisely define the update-side serialization and snapshot model: which locks (e.g., fl_lock, tcf_chain lock, rtnl?) are held to copy the authoritative rule set, how you a</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] RCU publication needs a complete lifetime scheme: epoch struct ownership, rcu_assign_pointer() + rcu_dereference() usage in classify, and call_rcu() teardown that also covers any em</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The “canonical flower key extraction” must be proven bit-for-bit equivalent to cls_flower’s authoritative match semantics for all supported keys, including variable/optional fields </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Packet-path safety constraints must be spelled out: the classify fast path may run in softirq and must not sleep, allocate, or invoke anything that can fault. If your key extraction</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] AMX-in-kernel feasibility is currently the riskiest part: kernel use of AMX tile state implies heavyweight XSAVE management, preemption/RCU implications, and upstream acceptability </li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux networking using x86 AMX microarchitecture features
+</footer>
+</div></body></html>

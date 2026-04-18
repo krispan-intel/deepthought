@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] Kernel-Internal TDX Time/Event Reentry-Locality Hint Snapsho</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-6e6b5fb95394 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Kernel-Internal TDX Time/Event Reentry-Locality Hint Snapshot for FAIR/EEVDF vCPU Wake Placement</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux scheduler using x86 TDX microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>EEVDF TDX Exit-Markov Bridge for KVM vCPU Placement</li><li style='font-size:13px;'>mm-to-sched TDX Acceptance Epoch Bridge for Private Memory Phases</li><li style='font-size:13px;'>TDX Trust-Domain Core-Sched Cookie Bridge for SMT Consolidation</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: Joint Time-and Event-Triggered Scheduling in the Linux Kernel &lt;&gt; Exploiting the Past to Reduce Delay in CSMA Scheduling: A High-order   Markov Chain Approach
+  MMR Score:    0.7877</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>KVM/x86 derives a coarse, rate-limited, time-and-event-triggered TDX reentry-locality hint for a confidential-VM vCPU task, publishes it through a lockless per-vCPU snapshot, and lets FAIR/EEVDF consult only the derived snapshot only at two already-legal equal-choice wake-placement branches, solely to break a cross-LLC tie or defer one otherwise unnecessary cross-LLC wake migration for at most 64 microseconds, without changing eligibility, vruntime/deadline ordering, core-scheduling constraints, cpuset/affinity legality, capacity/asym-packing decisions, or energy-model outcomes.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The inventive step is a narrowly-scoped kernel bridge from KVM-private TDX boundary behavior to scheduler tie-break logic. Existing Linux scheduling signals observe runnable history, utilization, wake affinity, cache hot</div>
+    <div class="pill"><strong>Feasibility:</strong> The mechanism is upstream-feasible because the writer is a single vCPU-thread-owned KVM sidecar updated only in normal KVM_RUN process context, the estimator uses constant-time int</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>On Intel TDX hosts, a KVM vCPU task repeatedly crosses the guest-host boundary, but the cost of the next guest reentry is not uniform. A fast interrupt bounce back into the guest, a short host assist, and a heavier private-memory/MMU/coherency service leave different near-term locality footprints and different sensitivity to cross-LLC migration. Linux FAIR/EEVDF sees generic runnable state, util_est/util_avg, wake affinity, cache hotness, capacity fit, asymmetry, and NUMA effects, but it does not see the TDX-private boundary pattern that predicts whether an immediate cross-LLC move is likely to amplify the next reentry cost. The result is avoidable cross-LLC wake migrations of TDX vCPU tasks that increase LLC disruption and p99 latency without materially improving fairness or throughput.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>[{&#x27;phase&#x27;: 1, &#x27;name&#x27;: &#x27;Sidecar and binding&#x27;, &#x27;work&#x27;: &#x27;Add struct tdx_sched_hint_ctx to KVM x86 vCPU arch state, add task_struct-&gt;tdx_sched_hint_ctx as an RCU pointer, implement bind, rebind, clear, and call_rcu() free paths.&#x27;}, {&#x27;phase&#x27;: 2, &#x27;name&#x27;: &#x27;Estimator and publisher&#x27;, &#x27;work&#x27;: &#x27;Classify TDX exit completion into four coarse classes, implement the 16-case transition LUT, 32-microsecond decay, 8-microsecond publication rate limit, and odd/even snapshot publication with explicit memory ordering.&#x27;}, {&#x27;phase&#x27;: 3, &#x27;name&#x27;: &#x27;Scheduler read helper&#x27;, &#x27;work&#x27;: &#x27;Implement an O(1) FAIR-only helper that creates its own RCU critical section, safely copies the snapshot, validates topology, TTL, LLC, and legality preconditions, and returns either baseline or no-op.&#x27;}, {&#x27;phase&#x27;: 4, &#x27;name&#x27;: &#x27;Integration points&#x27;, &#x27;work&#x27;: &#x27;Insert the helper only at the final equal-choice wake-affine branch and the existing cross-LLC hotness/locality gate, preserving all earlier early-exit branches and baseline filters.&#x27;}, {&#x27;phase&#x27;: 5, &#x27;name&#x27;: &#x27;Tracing and proof&#x27;, &#x27;work&#x27;: &#x27;Add internal kernel tracepoints or counters for accepted and rejected hint reads, equal-choice tiebreak use, invalidation causes, and avoided cross-LLC moves, without exposing raw TDX classes.&#x27;}, {&#x27;phase&#x27;: 6, &#x27;name&#x27;: &#x27;Benchmarking&#x27;, &#x27;work&#x27;: &#x27;Measure confidential-VM wake placement, p99 wake-to-run latency, cross-LLC migration rate, and exit-path overhead on TDX hosts; verify no measurable effect on non-TDX tasks with the static key off.&#x27;}]</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Object lifetime and dereference safety are underspecified: the scheduler must not chase a KVM/vCPU pointer whose lifetime is not strictly pinned across wakeup/select_task_rq_fair(). Define an explicit ownership model (e.g., store the snapshot in task_struct, or use a refcounted/RCU-protected object with clear grace-period rules) and prove it cannot become UAF during vCPU thread teardown, exec, cgroup migration, or task exit.</li><li style='font-size:13px;margin-bottom:4px;'>The proposed “odd/even generation protocol” needs concrete memory-ordering rules and types. Specify exact primitives (READ_ONCE/WRITE_ONCE + smp_store_release/smp_load_acquire, or a seqlock-style seqcount) and ensure all snapshot fields are read consistently on all supported architectures (incl. 32-bit, unaligned 64-bit loads, and potential tearing). Also document cacheline alignment/padding to avoid false sharing between writer and scheduler read-mostly paths.</li><li style='font-size:13px;margin-bottom:4px;'>Topology/LLC identity is not a stable contract unless you pin it to existing scheduler topology mechanisms. Define exactly how you compute and validate the LLC token (which kernel topology ID, what happens under CPU hotplug, SMT on/off, rescan, or sched domain rebuild). A “topology generation” must be tied to an existing monotonically changing kernel counter, with well-defined update points and ordering versus snapshot publication.</li><li style='font-size:13px;margin-bottom:4px;'>The claim that FAIR/EEVDF consults the hint only at “already-legal equal-choice branches” is not upstream-stable unless you anchor it to specific, reviewable call sites and invariants. Identify the exact decision points (e.g., wake_affine() tie-break, select_idle_*(), or later equal-cost CPU choice) and prove the hint cannot bypass cpuset/affinity, sched_core cookie constraints, uclamp/capacity filters, or alter EEVDF ordering semantics even indirectly via different rq selection under contention.</li><li style='font-size:13px;margin-bottom:4px;'>Time base and TTL handling need kernel-appropriate timekeeping: using TSC for TTL must explicitly require constant_tsc/nonstop_tsc (and handle migration between CPUs with unsynchronized TSC on some systems). If you instead use sched_clock()/local_clock()/ktime_get_*(), quantify overhead in KVM exit-heavy workloads and ensure the writer path remains strictly non-sleeping and bounded.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: As written, the draft’s inventive boundary vs existing wake-affinity/LLC-locality heuristics is asserted but not pinned to concrete scheduler decision points and claim language, creating high overlap risk with known “prefer prev/LLC” wake placement plus generic hysteresis/TTL ideas.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Nail down the exact scheduler hook points: name the precise FAIR/EEVDF functions/branches where the hint is consulted (e.g., the final equal-rank CPU tie-break inside select_task_rq_fair()/wake_affine paths), and formally state the preconditions that must already be satisfied (affinity/cpuset, sched_core cookie, capacity/uclamp, NUMA/EAS pruning). Without this, it can be read as a generic wake_affine tweak.</li><li style='font-size:13px;margin-bottom:4px;'>Differentiate explicitly from prior art: document how existing signals (prev_cpu, SD_SHARE_PKG_RESOURCES/LLC domains, cache_hot/wake_affine, NUMA, util_est, EAS) fail specifically for TDX reentry phases, and why KVM-private TDX exit/reentry behavior provides non-obvious predictive power. Include at least one concrete counterexample where baseline would migrate cross-LLC but the hint correctly defers and improves tail latency.</li><li style='font-size:13px;margin-bottom:4px;'>Security/side-channel analysis is missing: even “coarsened” hints can encode sensitive phase/timing information via observable placement/migration effects. Add a threat model (multi-tenant host, attacker tasks observing migration/IPI/cache contention), mitigation (rate limiting already helps), and a hard policy gate (sysctl/cgroup/VM opt-in) plus auditing that no guest-private semantics or fine-grained timing are inferable.</li><li style='font-size:13px;margin-bottom:4px;'>Define the data contract precisely: snapshot fields, bit widths, quantization buckets, TTL encoding, and the topology-stamp semantics (what ‘LLC token’ is, how it maps to sched_domain/CPU IDs, how mismatches invalidate). This is required to make claims enforceably narrow and to avoid being recharacterized as a generic ‘locality score’.</li><li style='font-size:13px;margin-bottom:4px;'>Prove scheduler correctness invariants: show that the hint cannot change eligibility, ordering, or violate fairness under EEVDF (no vruntime/deadline perturbation), and that it is only applied when CPUs are truly equal under the existing scoring. Add reasoning for corner cases: RT/DL classes present, idle vs busy CPUs, SMT/core scheduling constraints, and CPU hotplug.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Fill the empty core sections (Problem / Proposed Invention / Architecture / Implementation Plan / Claims) with concrete, kernel-accurate details: exactly which scheduler decision points will consult the hint (function names + conditions) and which KVM/TDX points will publish it (call sites) so reviewers can validate the “only equal-choice tie-break” guarantee.</li><li style='font-size:13px;margin-bottom:4px;'>Define the precise task↔vCPU binding and lifetime rules for reading the per-vCPU snapshot (e.g., how a waking task identifies it is a current TDX vCPU thread, how you avoid stale pointers across vCPU teardown, and how you avoid false positives when a thread stops running KVM_RUN). Include the exact synchronization/RCU scheme and what happens on migration or vCPU thread reuse.</li><li style='font-size:13px;margin-bottom:4px;'>Prove scheduler correctness boundaries: specify the invariant that the hint can only choose between CPUs already equal-ranked by existing policy, and list every gating check that must run first (cpuset/affinity, sched_core cookie, capacity/uclamp/asym, NUMA/EAS pruning). Include a negative test matrix showing the hint is ignored when any gate fails.</li><li style='font-size:13px;margin-bottom:4px;'>Quantify and hard-cap security risk: even “coarse” TDX exit/reentry propensity can become a cross-tenant host-side signal. Specify bucketization, rate limits, TTL, and whether the hint is disabled under certain threat models (multi-tenant noisy neighbors) or requires a kernel param/static_key; add an explicit argument for why this does not materially increase side-channel surface.</li><li style='font-size:13px;margin-bottom:4px;'>Topology handling is underspecified: define what the LLC token is (pkg/LLC id mapping), how topology generation is computed/validated, and how CPU hotplug, SMT/core scheduling changes, and microcode/topology quirks invalidate the hint to prevent misplacement on heterogeneous Xeon SKUs.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Side-channel/TAA risk: even a coarse “reentry propensity” that biases wake placement can become an observable cross-tenant signal via contention and placement-induced latency. You need an explicit threat analysis and a hard mitigation plan (e.g., default-off behind admin control, disable under shared-host policies, or prove the hint is not correlated with guest-secret-dependent events).</li><li style='font-size:13px;margin-bottom:4px;'>Crash/UAF risk: the scheduler must not follow a lockless task→vCPU/sidecar pointer without a rigorously defined lifetime model. Specify how the pointer is published/cleared (RCU-protected pointer in task_struct or kvm_vcpu), how teardown synchronizes (call_rcu/synchronize_rcu), and how you avoid use-after-free during vCPU thread exit, VM destroy, and CPU hotplug.</li><li style='font-size:13px;margin-bottom:4px;'>Memory-ordering correctness: “odd/even generation” needs a precise, kernel-idiomatic scheme (e.g., seqcount_latch/seqcount, or explicit WRITE_ONCE/READ_ONCE + smp_store_release/smp_load_acquire + retry loop) and a guarantee against torn multiword reads. Document which fields are read atomically, alignment requirements, and 32-bit compatibility behavior even if x86_64 is primary.</li><li style='font-size:13px;margin-bottom:4px;'>Scheduler fast-path overhead: reading invariant TSC (or equivalent) in wake placement can be expensive and can itself amplify timing observability. Consider representing TTL without rdtsc in the wake path (e.g., compare against rq-&gt;clock/sched_clock that is already maintained, or store an rq-clock deadline), and quantify overhead with static key on/off microbenchmarks.</li><li style='font-size:13px;margin-bottom:4px;'>Compatibility guarantees are asserted but not mechanically enforced: you must explicitly show the exact hook points in kernel/sched/fair.c and demonstrate that the hint is applied only after all legality filters (cpuset, affinity, sched_core cookies, uclamp/capacity/asym, NUMA, EAS) and only between CPUs with identical computed score. Add a clear “no-change” proof argument tied to those branches.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact storage and lifetime model for the hints. The scheduler must not chase pointers into KVM objects (vcpu/kvm) that can be freed/reused; prefer per-task (task_struct) </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify and prove the concurrency contract for the “generation-based lockless snapshot”. If using seqcount/seqlock, document single-writer vs multi-writer, preemption rules, and rea</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Ensure the writer-side update path cannot take scheduler locks or sleep and cannot be invoked from contexts that would make seqcount writer-side unsafe. KVM exit/entry paths can run</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Abuse-resistance needs a tighter argument than “bounded scalars”. A guest can influence exit frequency/patterns; even tie-break-only bias can create a covert mechanism to preferenti</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify exactly where in select_task_rq_fair()/wake_affine the hint is consulted and show it cannot perturb primary CPU eligibility filters (capacity, cpuset, allowed masks, asym pa</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact object-lifetime + association model between a schedulable task_struct and a KVM TDX vCPU. You cannot assume “single-writer per-vCPU sidecar” maps 1:1 to a stable ho</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The proposed odd/even generation snapshot needs a concrete memory-ordering contract. Specify which fields are written, in what order, and which barriers are used (e.g., smp_store_re</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] RCU usage is currently hand-wavy. If the scheduler “discovers” the hint via RCU from task_struct, you must specify: (a) which pointer is RCU-protected, (b) who owns/free’s the point</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] You must prove the scheduler integration point is actually a pure tie-break and cannot perturb primary policy or violate core scheduling constraints. In practice, select_task_rq_fai</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Address locking context explicitly: which scheduler locks are held when reading (rq-&gt;lock? p-&gt;pi_lock? none?), and guarantee the read is non-faulting, O(1), and does not call anythi</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux scheduler using x86 TDX microarchitecture features
+</footer>
+</div></body></html>

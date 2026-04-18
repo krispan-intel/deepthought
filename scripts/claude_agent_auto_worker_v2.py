@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from agents.llm_client import LLMClient
 from agents.json_parser import robust_json_parse
+from scripts.generate_tid_html import generate_tid_html
 
 logger.add("logs/claude_agent_auto_worker.log", rotation="100 MB", retention="7 days")
 
@@ -440,6 +441,23 @@ class ClaudeAgentAutoWorkerV2:
                     f"Debate Panel → PENDING_HUMAN_REVIEW: {run_id} | "
                     f"survived {rounds_done} rounds — human architect needed"
                 )
+                # Auto-generate HTML for human review
+                try:
+                    mav_file = Path("data/completed_maverick") / f"{run_id}.json"
+                    if mav_file.exists():
+                        mav_data = json.loads(mav_file.read_text())
+                        reviews = result.get("reviews", {})
+                        all_scores = [float(r.get("score", 0)) for r in reviews.values()]
+                        avg = sum(all_scores) / len(all_scores) if all_scores else 0
+                        approves = sum(1 for r in reviews.values() if r.get("status") == "APPROVE")
+                        html_dir = Path("output/generated/human_review")
+                        html_dir.mkdir(parents=True, exist_ok=True)
+                        fname = f"tid_{avg:.1f}avg_{approves}approve_{run_id[:12]}.html"
+                        html = generate_tid_html(run_id, result, mav_data)
+                        (html_dir / fname).write_text(html)
+                        logger.info(f"Generated HTML: {fname}")
+                except Exception as exc:
+                    logger.warning(f"HTML generation failed for {run_id}: {exc}")
             else:
                 logger.info(f"Debate Panel completed: {run_id} | verdict={verdict} | rounds={rounds_done}")
             return True

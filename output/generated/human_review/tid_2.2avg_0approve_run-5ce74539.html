@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 2.2] RQ-Safe LLC Hint Publication with Offline-Mined Miss Sensiti</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-5ce74539f7fb &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 2.2/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>RQ-Safe LLC Hint Publication with Offline-Mined Miss Sensitivity and RAPL-Derived Capacity Pressure for Fair Scheduling</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux scheduler using x86 RAPL microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Energy-Signature Translation Layer for LLC-Aware Fair Scheduling</li><li style='font-size:13px;'>RAPL Headroom Capacity Layer for Pre-Clamp Scheduler Invariance</li><li style='font-size:13px;'>RAPL Window Lease State Machine for cgroup Batch Phase Admission</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: Use of Data Mining in Scheduler Optimization &lt;&gt; intel_opt_manual | 22.8.5.3 L2 Cache Misses . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+  MMR Score:    0.7778</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A dual-plane Linux scheduler extension in which a per-task packed u32 LLC-pressure hint is published only at rq-serialized touch points through a seqcount-protected 64-bit snapshot, while a separate package worker converts wrap-safe x86 RAPL energy deltas, active PL1/PL2 clamp state, and an offline-mined per-SKU sensitivity table into a bounded package capacity_pressure source merged with thermal pressure by max(), so wake-up and balancing code consume only cached acquire-safe state and never read PMU or RAPL telemetry in hot paths.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is a scheduler-native bridge contract, not per-task joule accounting and not generic power management. Plane A defines an rq-safe publication contract for cache interference: a task&#x27;s last-proven-run interval</div>
+    <div class="pill"><strong>Feasibility:</strong> The design is implementable with existing x86/Linux primitives: topology_physical_package_id()-based package grouping, cpuhp online/offline callbacks, delayed_work queued on a pack</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux scheduling on LLC-sharing Intel systems faces two separate but interacting problems. First, task-level cache interference matters for placement, but the scheduler lacks a lifetime-safe and rq-safe way to consume observed cache-miss behavior in wake-up and balancing code. Second, package-level power limits observed through x86 RAPL reduce effective compute capacity for all CPUs in a package, but RAPL is package-scoped, asynchronous, and vulnerable to wrap, suspend, firmware reset, and hotplug races. Existing scheduler hot paths cannot sleep, cannot take powercap locks, and cannot legitimately perform PMU or RAPL reads. Existing per-CPU capacity reduction mechanisms also do not define how package-scope RAPL evidence should be transformed into a non-thermal capacity signal, how topology changes are handled, or how stale pressure is prevented. The kernel therefore lacks a precise bridge that converts asynchronous microarchitectural telemetry into scheduler-consumable state without violating locking, lifetime, fairness, hotplug, or tracing semantics.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Thermal pressure and related hardware pressure mechanisms already reduce effective CPU capacity, but they do not provide a scheduler contract for publishing task-scoped cache interference hints and they generally assume a thermal or firmware source rather than a package-scope RAPL bridge with explicit clamp semantics. uclamp expresses policy intent, not observed cache or power behavior. EAS and schedutil consume capacity signals, but they do not specify how noisy PMU plus RAPL observables become safe scheduler metadata, and using them as a cpufreq control-loop extension would look obvious and high-risk. perf_event can observe misses, but prior art does not define a low-overhead scheduler-specific publication contract in which only the last proven run interval is summarized into a packed hint and published through seqcount-protected state. Likewise, prior art around thermal pressure or power limits does not describe a generic capacity_pressure source that remains semantically distinct from thermal pressure, is published to every CPU in a package under explicit hotplug lifecycle rules, and is driven by a bounded mapping from wrap-safe DeltaE/DeltaT plus active PL1/PL2 state and an offline-mined per-SKU sensitivity table. The gap is therefore the bridge layer itself: publication contract, topology lifecycle, mapping function, and bounded scheduler consumption rules.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention introduces a split bridge between x86 microarchitectural telemetry and the Linux scheduler.
+
+Plane A - rq-safe LLC-pressure hint publication:
+1. Each CPU optionally owns one pinned, non-overflow PMU miss counter chosen from a per-SKU selector table. Preferred events are architectural LLC or longest-latency-cache miss counters; if the SKU lacks a reliable architectural event, the table may select a model-specific L2/LLC proxy that best predicts slowdown on that SKU.
+2. The counter is configured once when the feature is enabled. It is never created per task and never armed for sampling interrupts. The scheduler reads the current per-CPU count only at rq-serialized accounting points where the running task is already known: context-switch-out, dequeue-to-sleep, and periodic scheduler tick for the currently running task. If fast counter read is unsupported, multiplexed, virtualized, or otherwise unreliable, the task hint is published as class=unknown with confidence=0.
+3. For the just-finished run interval, the writer computes delta_miss and delta_exec_ns, converts to a miss-rate bucket, combines it with runnable co-runner count on the shared LLC domain and an offline-mined per-SKU slowdown table, and produces a packed u32 hint: bits[1:0]=class {0 unknown, 1 low, 2 medium, 3 high}; bits[7:2]=confidence 0..63; bits[15:8]=miss_bucket; bits[23:16]=slowdown_bucket; bits[31:24]=flags {multiplexed, virtualized, reset, aged, table_defaulted, reserved}.
+4. Publication uses a seqcount-protected 64-bit snapshot stored in task_struct scheduler state. The low 32 bits contain the packed hint, bits[47:32] contain an epoch that increments on reset/discontinuity, and bits[63:48] contain an age/version field. Writers execute write_seqcount_begin/end around the snapshot store at rq-serialized points. Readers in wake_affine, select_task_rq_fair tie-breaks, and load-balance tie-breaks perform read_seqcount_begin/retry and consume only a fully consistent snapshot. This prevents torn or mismatched reads on 32-bit or weakly ordered systems without adding locks to hot paths.
+5. Consumption is bounded. The hint may only break ties when utilization, affinity, and capacity decisions are otherwise within a narrow threshold, for example within 3 percent of each other. It must not modify vruntime, EEVDF lag, deadlines, or entity ordering.
+
+Plane B - RAPL-derived package capacity_pressure:
+1. CPUs are grouped by topology_physical_package_id(). For each package, the kernel maintains pkg_state {state, topo_gen, leader_cpu, online_mask, last_energy_uj, last_time_ns, sample_epoch, saturation_count, ewma_pressure, confidence, power_ref_table_ptr}. The package state machine is OFFLINE -&gt; DISCOVERED -&gt; BASELINING -&gt; ACTIVE or DEGRADED. OFFLINE means no online CPUs and published pressure=0. DISCOVERED means topology and RAPL capability were found. BASELINING means the worker is collecting the first two good samples after enable, resume, or discontinuity. ACTIVE means pressure may be published. DEGRADED means telemetry exists but confidence is capped or zero because of virtualization, clamp-state absence, missing table, or read error.
+2. Leader election is explicit. On each cpuhp online or offline transition, the package callback increments topo_gen, recomputes the stable online_mask, chooses the package leader as the lowest online housekeeping CPU in the package if one exists, otherwise the lowest online CPU, clears pressure on CPUs leaving the package mask, and queues delayed work on the new leader. If the last CPU in the package goes offline, delayed work is canceled and all package pressure is cleared.
+3. The worker runs only in process context, default period 20 ms, min 10 ms, max 100 ms. It never executes in scheduler hot paths. It first acquires cpus_read_lock() only long enough to snapshot topo_gen, leader_cpu, and online_mask, then drops the lock before calling powercap or RAPL internals. After reading telemetry it reacquires cpus_read_lock(), verifies topo_gen and leader_cpu are unchanged, and publishes only if the snapshot still matches. If not, it discards the sample, increments sample_epoch, sets confidence=0, and reschedules on the new leader.
+4. Wrap-safe power estimation is explicit. Let range_uj be the package domain max_energy_range_uj from powercap. If there is no prior valid sample, if delta_t is outside [5 ms, 200 ms], if suspend or firmware reset is detected, if energy decreases by more than range_uj, or if the powercap domain was re-enabled or re-bound, the worker treats this as a discontinuity: sample_epoch++, ewma_pressure=0, confidence=0, BASELINING state, and no pressure publication beyond zero. Otherwise dE_uj = (E_now &gt;= E_prev) ? (E_now - E_prev) : (E_now + range_uj - E_prev), P_obs_mW = dE_uj * 1000 / delta_t_us.
+5. The active package power cap is concrete. If both PL1 and PL2 are visible and enabled, P_cap_mW is the smaller currently enforcing limit; if a clamp-status bit indicates short-term PL2 clamp is active, PL2 wins for that sample. If clamp state is not visible, P_cap_mW is min(enabled limits) and confidence is capped at 32. If no package power limit is readable, package_pressure=0.
+6. A per-SKU offline-mined table supplies power_ref_mW and slowdown sensitivity. Table schema: header {magic, version, x86 family-model-stepping mask, table_crc}; active_cpu_buckets[8]; miss_buckets[8]; power_ref_mW[8]; slowdown_permille[8][8]; max_derate_permille[8]. The table is loaded at boot from firmware or a distro-shipped binary under /lib/firmware and is read-only at runtime except for privileged replacement. Validation rejects family-model mismatch or CRC failure. If absent, a conservative built-in default table is used and confidence is capped.
+7. The raw capacity-loss scalar is bounded and stable. For the current active_cpu_bucket b, let Pref = power_ref_mW[b]. Compute limit_frac = clamp((Pref - P_cap_mW) / max(Pref, 1), 0, 1). Compute sat_frac = 1 when clamp status is asserted; otherwise sat_frac = clamp((P_obs_mW - 0.97 * P_cap_mW) / max(0.03 * P_cap_mW, 1), 0, 1) only after three consecutive saturated samples with package runnable utilization above 80 percent. Compute table_cap = max_derate_permille[b] / 1000. Compute raw_loss = min(table_cap, limit_frac * sat_frac). Convert to scheduler units raw_pressure = round(raw_loss * SCHED_CAPACITY_SCALE).
+8. Smoothing and hysteresis prevent thrash. ewma_pressure uses alpha_up=1/4 and alpha_down=1/16. Publication occurs only when confidence &gt;= 32 and absolute change exceeds 2 percent of SCHED_CAPACITY_SCALE, except during a discontinuity reset, which forces immediate publication of zero. Pressure is cleared only after four consecutive unsaturated samples or any discontinuity.
+9. Publication semantics are separate from thermal pressure. The invention introduces or uses a generic capacity_pressure source with source tags {thermal, rapl_pkg}. Effective pressure for a CPU is max(thermal_pressure, rapl_pkg_pressure), not a sum, to avoid double-counting and to preserve existing cpufreq and thermal tooling semantics. Tracing exposes rapl_pkg_pressure separately.
+10. Scheduler consumers remain bounded. Effective capacity uses the aggregated pressure through existing capacity-reduction math. Task LLC hints are consumed only as bounded tie-breakers. No cpufreq governor logic, HWP requests, or thermal control loops are modified by the inventive core.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>ASCII architecture:
+
+```text
+                   +----------------------------------------------+
+                   | Offline-mined per-SKU table                  |
+                   | family/model match, miss buckets,            |
+                   | power_ref_mW, slowdown_permille, max_derate  |
+                   +----------------------+-----------------------+
+                                          |
+                                          v
++----------------------+      +-----------+------------+
+| per-CPU PMU miss     |      | per-package RAPL worker|
+| counter, pinned,     |      | leader CPU only        |
+| no overflow/NMI      |      | delayed_work @ 20 ms   |
++----------+-----------+      +-----------+------------+
+           |                                  |
+           | rq-serialized accounting points   | process context only
+           v                                  v
++----------+----------------------------------+--------------------+
+| Scheduler bridge layer                                           |
+|                                                                  |
+| Plane A: task LLC hint publication                               |
+|   delta_miss + delta_exec + co-runner count + SKU table          |
+|   -&gt; packed u32 hint                                              |
+|   -&gt; seqcount-protected 64-bit snapshot {hint, epoch, version}   |
+|                                                                  |
+| Plane B: package power-pressure publication                       |
+|   wrap-safe DeltaE/DeltaT + PL1/PL2 + clamp state + SKU table    |
+|   -&gt; raw_loss -&gt; EWMA/hysteresis -&gt; rapl_pkg capacity_pressure   |
++----------+----------------------------------+--------------------+
+           |                                  |
+           | lockless readers                 | cpus_read_lock only
+           v                                  v
++----------+-------------+        +-----------+--------------------+
+| wake_affine /          |        | per-CPU effective capacity     |
+| select_task_rq_fair    |        | max(thermal_pressure,          |
+| load_balance tie-break |        |     rapl_pkg_pressure)         |
++------------------------+        +--------------------------------+
+
+Package lifecycle state machine:
+
+OFFLINE -&gt; DISCOVERED -&gt; BASELINING -&gt; ACTIVE
+   ^            |             |           |
+   |            |             v           v
+   +------------+--------- DEGRADED &lt;-----+
+
+Transitions:
+- cpuhp online: OFFLINE/DISCOVERED -&gt; BASELINING
+- 2 good samples: BASELINING -&gt; ACTIVE
+- virtualization, read error, missing cap info, multiplexed PMU: -&gt; DEGRADED
+- suspend/resume, firmware reset, counter discontinuity, leader/topology change: ACTIVE/DEGRADED -&gt; BASELINING
+- last CPU offline: any state -&gt; OFFLINE and publish zero
+```</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Add configuration and capability discovery.
+- Introduce CONFIG_SCHED_RAPL_PRESSURE and a static key disabled by default.
+- At init, enumerate packages by topology_physical_package_id(). For each package, allocate pkg_state, register cpuhp callbacks, and probe powercap/intel_rapl package domain for energy_uj, max_energy_range_uj, power limit visibility, and clamp-status support.
+- Load the read-only per-SKU table by family/model/stepping. Accept only a matching table with valid CRC. If the table is absent or mismatched, install a conservative default and cap confidence.
+
+2. Implement package lifecycle and leader election.
+- cpuhp online callback: acquire package mutex, recompute online_mask, increment topo_gen, elect leader as first online housekeeping CPU else first online CPU, queue delayed work on leader, and transition to BASELINING.
+- cpuhp offline callback: increment topo_gen, clear rapl_pkg_pressure on CPUs leaving the package, re-elect leader if any CPU remains, otherwise cancel work and transition to OFFLINE.
+- Suspend/resume and package rebind paths: mark discontinuity, sample_epoch++, ewma_pressure=0, confidence=0, BASELINING.
+
+3. Implement the worker with explicit lock ordering.
+- Worker lock order is: (a) cpus_read_lock only to snapshot topo_gen and online_mask, (b) drop cpus_read_lock, (c) perform powercap/RAPL reads, which may take driver mutexes or sleep, (d) reacquire cpus_read_lock to verify topo_gen and publish.
+- Never call powercap or RAPL reads while holding rq locks, raw spinlocks, or cpus_read_lock across the read.
+- If topology changed during the read, discard the sample and reschedule without publishing nonzero pressure.
+
+4. Implement wrap-safe DeltaE/DeltaT and pressure mapping.
+- Maintain last_energy_uj, last_time_ns, valid_sample, sample_epoch, saturation_count.
+- On each worker iteration, compute discontinuity conditions exactly: no prior sample, dt too small or too large, energy wrap beyond max range, read failure, enable/disable transition, suspend/resume, topology generation change, or powercap domain reset.
+- Only after two consecutive good samples enter ACTIVE. Then compute P_obs_mW, P_cap_mW, limit_frac, sat_frac, raw_loss, ewma_pressure, and publish rapl_pkg_pressure per CPU in the verified online_mask.
+- Add tracepoints exposing {package_id, topo_gen, P_obs_mW, P_cap_mW, raw_pressure, ewma_pressure, confidence, reason_flags}.
+
+5. Add a generic capacity_pressure source rather than overloading thermal_pressure.
+- Extend scheduler capacity-pressure plumbing to track pressure by source and export rapl_pkg_pressure separately.
+- Effective pressure is max of existing thermal pressure and rapl_pkg_pressure, preserving consumer expectations and avoiding double counting.
+- Audit EAS, load balancing, and schedutil interaction to confirm they only observe effective capacity and never receive a bogus thermal source label.
+
+6. Implement non-intrusive PMU miss accounting.
+- Configure one pinned per-CPU miss counter, no sampling period, no overflow interrupt, static-key gated.
+- Read only on scheduler accounting points for the currently running task. Attribute only the delta since the previous accounting boundary on that CPU.
+- If perf indicates multiplexing, virtualization, disabled PMU, or failed pinning, force confidence=0 and class=unknown for that interval.
+- Convert delta_miss and delta_exec to a miss_bucket, combine with runnable LLC-domain co-runner count and the table slowdown_permille to generate the packed u32 hint.
+
+7. Implement the publication contract.
+- Add to task scheduler state: seqcount_t llc_hint_seq; u64 llc_hint_snapshot.
+- Writer format: snapshot = ((u64)version &lt;&lt; 48) | ((u64)epoch &lt;&lt; 32) | packed_hint.
+- Writers update only at rq-serialized points with write_seqcount_begin/end.
+- Readers in wake-up and balancing tie-breaks use read_seqcount_begin/retry until a stable snapshot is obtained. If age/version exceeds a configurable staleness window, treat the hint as unknown.
+
+8. Bound scheduler consumption.
+- Add tie-break helpers that consult the hint only when base policy has already narrowed the choice to near-equal CPUs or domains.
+- Never change vruntime, lag, or deadline computations.
+- Apply rapl_pkg_pressure only through effective capacity, not via any cpufreq or HWP actuation.
+
+9. Add observability and admin controls.
+- Provide read-only debugfs or tracepoints for package state, topo_gen, hint buckets, table version, and confidence statistics; do not expose per-task cache history in a stable ABI by default.
+- Provide privileged sysfs knobs only for enable, worker period bounds, and table override selection.
+
+10. Upstreaming posture.
+- Keep the claims and implementation narrowly focused on the scheduler bridge, publication contract, mapping function, and lifecycle correctness rather than on generic power management or frequency control.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Correctness and concurrency validation.
+- CPU hotplug torture: repeatedly online/offline CPUs within and across packages while the worker is active; verify no stale rapl_pkg_pressure persists on offlined CPUs and leader migration always converges.
+- Suspend/resume and firmware-reset simulation: force RAPL counter discontinuities and confirm sample_epoch increments, confidence resets to zero, and published pressure drops to zero until two good samples occur.
+- Weak-order/torn-read validation: stress seqcount readers and writers with lockdep and kernel concurrency instrumentation to confirm readers never observe mismatched hint payload and epoch.
+- Virtualization and PMU multiplexing validation: run under guests and under deliberate perf multiplexing; verify class=unknown and pressure=0 fallback.
+
+2. Stability validation.
+- Use controlled package power limits to create bursty and sustained clamp conditions. Verify the mapping function, EWMA, and hysteresis avoid oscillation in effective capacity and do not cause load-balancer ping-pong.
+- Sweep worker period from 10 ms to 100 ms and confirm stability envelope and convergence time.
+
+3. Performance validation.
+- LLC contention suites: STREAM plus SPEC-like memory-sensitive mixes, memcached/Redis plus build jobs, and synthetic co-runner interference tests. Measure p99 latency, throughput, migration rate, and cache-miss slowdown versus baseline.
+- Power-clamp suites: package-limited CPU stress with and without background cache pressure; compare throughput-per-watt and latency under baseline scheduling versus the invention.
+- Heterogeneous and HPC-adjacent suites: HPL or HPL-AI style feeder-thread workloads, OpenMP plus GPU offload feeder threads, and MPI communication plus computation mixes. Measure whether CPU feeder threads avoid co-location under cache pressure and whether package clamps are reflected in more stable placement.
+
+4. Fairness and regression validation.
+- Confirm vruntime, lag, and deadline ordering are unchanged except for tie-break placement decisions.
+- Measure starvation freedom, wakeup latency, and migration count on vanilla desktop, server, and NO_HZ isolated setups.
+- Confirm schedutil and thermal tooling still report thermal pressure separately from rapl_pkg_pressure.
+
+5. Table validation.
+- Validate per-SKU table selection by family/model/stepping and CRC.
+- Compare default conservative table versus calibrated table on at least three Xeon or Core SKUs; require calibrated tables to outperform default without increasing oscillation or fairness regressions.
+- Add self-test traces showing power_ref_mW bucket chosen, miss_bucket chosen, and slowdown_permille used for each published hint.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A computer-implemented scheduler method comprising: maintaining, for each task, a seqcount-protected snapshot that includes a packed cache-pressure hint and epoch metadata; updating the snapshot only at scheduler points where the task is provably the last running task on a CPU; and consulting the snapshot only through lockless stable-read retry logic in scheduler placement tie-break paths.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the packed cache-pressure hint is a 32-bit value comprising at least a cache-pressure class, a confidence field, a miss-rate bucket, a slowdown bucket, and flags indicating reset, virtualization, multiplexing, or fallback-table use.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the cache-pressure hint is derived from a pinned per-CPU PMU miss counter that is configured without overflow sampling interrupts and is read only at rq-serialized accounting boundaries.</li><li style='margin-bottom:8px;'>A package-scoped scheduler-capacity method comprising: grouping CPUs by physical package topology; electing a package leader CPU; executing a worker on the leader outside scheduler hot paths; reading package RAPL energy and package power-limit state; computing a wrap-safe power estimate from DeltaE and DeltaT with discontinuity detection; and publishing to each CPU in the package a bounded non-thermal capacity_pressure value.</li><li style='margin-bottom:8px;'>The method of claim 4, wherein the worker snapshots package topology under cpus_read_lock, performs powercap or RAPL reads after dropping the lock, then revalidates a topology generation before publication, discarding the sample when the generation changed.</li><li style='margin-bottom:8px;'>The method of claim 4, wherein the bounded capacity_pressure value is computed from an active package power cap, an observed package power estimate, and a per-SKU table containing power reference values and maximum derate bounds, and is smoothed using asymmetric EWMA and hysteresis before publication.</li><li style='margin-bottom:8px;'>The method of claim 4, wherein effective scheduler pressure is obtained by aggregating a thermal pressure source and a package RAPL pressure source using a max operator, thereby preserving thermal tracing semantics while exposing package-power-derived capacity loss through existing scheduler capacity-reduction plumbing.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the scheduler consumes the task cache-pressure hint only as a bounded tie-breaker when competing placement options are already near-equal under baseline policy, and wherein vruntime, lag, deadline, slice length, and entity ordering remain unmodified.</li><li style='margin-bottom:8px;'>A system comprising a read-only per-SKU calibration table whose schema includes CPU model identification, cache-miss buckets, active-CPU-count buckets, reference package power values, slowdown values, and maximum derate bounds, the table being used both to translate observed miss behavior into task cache-pressure classes and to translate package power limits into scheduler-capacity derates.</li><li style='margin-bottom:8px;'>A lifecycle management method for the package-scoped scheduler-capacity system, comprising: maintaining OFFLINE, DISCOVERED, BASELINING, ACTIVE, and DEGRADED package states; incrementing an epoch on hotplug, suspend/resume, firmware reset, or counter discontinuity; forcing confidence to zero and published pressure to zero on such events; and requiring at least two valid samples before returning to ACTIVE publication.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Prior-art overlap with thermal pressure or hardware pressure: mitigate by claiming the bridge contract narrowly, using a distinct rapl_pkg capacity_pressure source, and emphasizing seqcount publication, topology lifecycle, and offline-mined mapping rather than generic capacity scaling.</li><li style='margin-bottom:6px;'>Oscillation or negative interaction with cpufreq/HWP: mitigate by keeping the invention out of cpufreq control loops, using max() aggregation rather than additive pressure, applying asymmetric EWMA plus 2 percent hysteresis, and gating publication on sustained clamp evidence.</li><li style='margin-bottom:6px;'>RAPL counter discontinuity, wrap, suspend, or firmware reset causing bogus power estimates: mitigate with explicit discontinuity detection, sample_epoch increments, forced confidence=0, and zero publication until two good samples are observed.</li><li style='margin-bottom:6px;'>CPU hotplug race or stale pressure propagation: mitigate with package topo_gen versioning, explicit leader election, cpuhp callbacks that clear leaving CPUs, and publish-only-after-revalidation semantics.</li><li style='margin-bottom:6px;'>PMU enablement overhead or NMI cost: mitigate by using one pinned per-CPU miss counter with no overflow interrupts, reading only at existing scheduler accounting boundaries, and disabling the feature entirely when fast reads or pinning are unavailable.</li><li style='margin-bottom:6px;'>Virtualization, perf multiplexing, or noisy telemetry corrupting hint quality: mitigate by forcing class=unknown and package_pressure=0 or capping confidence whenever the PMU or RAPL source is not trustworthy.</li><li style='margin-bottom:6px;'>Calibration-table drift or wrong SKU match: mitigate with family-model-stepping match, CRC validation, conservative default tables, privileged override only, and trace visibility into which table and bucket were used.</li><li style='margin-bottom:6px;'>Potential side-channel concerns from exposing per-task cache behavior: mitigate by keeping hints internal to the scheduler, avoiding stable per-task user ABI by default, and exposing only aggregated or privileged diagnostics.</li><li style='margin-bottom:6px;'>Implementation complexity across scheduler, perf, and powercap subsystems: mitigate by keeping subsystem boundaries explicit, performing all cross-subsystem calls in worker or rq-serialized contexts only, and tracing every publication reason for diagnosability.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual, volumes covering IA32_PKG_ENERGY_STATUS and RAPL power-limit interfaces.</li><li>Intel 64 and IA-32 Architectures Optimization Reference Manual, including cache-miss behavior guidance and miss-rate interpretation for performance tuning.</li><li>Linux kernel scheduler capacity-scaling and pressure infrastructure, including EEVDF/CFS effective capacity handling.</li><li>Linux powercap and intel_rapl subsystem documentation and source, including energy_uj, max_energy_range_uj, and package power-limit controls.</li><li>Linux perf_event and x86 PMU infrastructure documentation relevant to pinned counters, multiplexing, and non-sampling reads.</li><li>Linux CPU hotplug and topology APIs, including cpuhp states, cpus_read_lock(), and package topology identifiers.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 2.2/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft relies on a seqcount-protected 64-bit snapshot; seqcount does not by itself prevent torn 64-bit loads/stores on 32-bit, so you must use a u64-safe publication scheme (e.g., seqcount + struct copy, or u64_stats_sync/atomic64) or readers can observe corrupted derate/epoch.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Publication correctness: if you publish a packed u64 (epoch|flags|ratio) you MUST handle 32-bit tearing. Use seqcount with a struct payload copied under read_seqcount_retry(), or use u64_stats_sync/atomic64; do not assume READ_ONCE(u64) is atomic on all builds.</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug/locking: cpuhp callbacks cannot safely do blocking teardown that waits on work potentially running on the hotplugging CPU. Avoid cancel_delayed_work_sync()/flush patterns under hotplug locks; design explicit ordering (e.g., mark disabled + bump epoch in cpuhp, then stop worker from a safe context) to prevent deadlocks and use-after-free.</li><li style='font-size:13px;margin-bottom:4px;'>Scheduler integration contract is underspecified: define exactly where the new non-thermal capacity_pressure is consumed (which helper(s)), how it composes with thermal_pressure (order, saturation, units), and ensure the effective-capacity math cannot go negative or oscillate under concurrent updates (WRITE_ONCE/READ_ONCE and bounded rate-of-change).</li><li style='font-size:13px;margin-bottom:4px;'>Cross-subsystem dependency: the scheduler cannot casually reach into powercap/intel_rapl internals; you need a concrete in-kernel API boundary (exported, non-sleeping vs sleeping contexts, lifetime rules) or place the bridge outside core scheduler code and only publish a per-cpu scalar into sched.</li><li style='font-size:13px;margin-bottom:4px;'>Epoch/confidence state machine needs kernel-grade detail: specify how you detect RAPL discontinuity vs wrap, how you clamp dt (ktime source) to avoid divide-by-zero/huge spikes, and how you handle suspend/resume and microcode updates so stale pressure does not persist across topology/power events.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The claimable novelty depends on a clearly-defined kernel integration point and mapping contract (units, bounds, composition with thermal pressure); the drafts describe the idea but not the concrete scheduler hook/invariants, making it vulnerable to obviousness over existing thermal_pressure, EAS, and generic capacity scaling mechanisms.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact in-kernel interface for a new non-thermal capacity-pressure source: where is it stored (per-cpu vs per-package), how it is applied (which function computes effective capacity/util), and how it composes with arch_scale_thermal_pressure (max vs additive vs multiplicative) without double-derating or breaking PELT/util invariants.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the mapping function from RAPL observables to derate ratio in scheduler units (range, monotonicity, rate limiting, hysteresis). Include explicit handling for DeltaE/DeltaT noise, Tau windows, PL1 vs PL2 clamp evidence, and how confidence transitions gate the contribution to prevent oscillation-induced load-balance thrash.</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug/topology correctness needs a concrete proof obligation: show how you guarantee a 1:1 mapping between topology_physical_package_id() CPU groups and a RAPL PKG domain on systems with multiple dies/tiles, SNC/sub-NUMA clustering, or heterogeneous RAPL zones; otherwise the ‘per-package’ signal risks being misattributed and harming placement.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify the publication mechanism: seqcount snapshot structure layout, 32-bit safety, ordering (smp_store_release/smp_load_acquire vs raw seqcount helpers), and which readers are allowed (scheduler fast paths, idle/balance paths). Ensure readers never spin indefinitely under preemption/IRQ contexts and that writers cannot deadlock with powercap locks.</li><li style='font-size:13px;margin-bottom:4px;'>Prior-art overlap risk: as written, this can be argued as an obvious extension of existing scheduler capacity scaling via thermal pressure/cpufreq signals. Strengthen non-obviousness by explicitly claiming (a) RAPL-specific discontinuity/wrap handling + epoch/confidence state machine, (b) strict prohibition of MSR/powercap reads in rq/scheduler paths, and (c) source-distinct composition semantics (not rebranding thermal_pressure).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact kernel-facing interface and data model for the new non-thermal capacity_pressure source (enum/source ID, units, clamping/rate-limit rules, and where it plugs into effective_capacity); today it’s described conceptually but not concretely enough to implement without bikeshedding.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the mapping function from RAPL observables to derate (inputs, filtering window, PI/EMA constants, saturation behavior, and hysteresis) and prove it is stable under short clamp bursts; otherwise the scheduler may oscillate capacity and increase migration churn.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify how you detect and read &#x27;enabled package power limits&#x27; and clamp state across Intel generations (RAPL MSRs vs powercap sysfs vs intel_rapl_common internals) and how you gate support under virtualization/containers where those signals are absent or misleading.</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug/topology correctness needs a precise state machine: package leader election, work cancellation, epoch bump rules, and per-CPU fanout update ordering so that no CPU reads a mixed-epoch (old leader/new mask) snapshot during concurrent hotplug and load balancing.</li><li style='font-size:13px;margin-bottom:4px;'>Quantify overhead and lockless read semantics: seqcount reader usage inside scheduler paths must be bounded and non-preemptible-safe; document where you read (rq lock held vs lockless) and which barriers you rely on for 32-bit and weakly ordered builds.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Specialist review failed - automated fallback</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact shared state and publication primitive: if readers are in scheduler hot paths, use a strictly O(1) snapshot with explicit ordering (e.g., seqcount_latch + READ_ONCE</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] RAPL/MSR access constraints must be addressed: reads may need to execute on a CPU in the target package (and must handle CPU offline/online). Specify how the per-package worker sele</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Handle counter math rigorously: RAPL energy counters wrap; Δt can be small/zero; frequency of sampling affects noise. Specify wrap-safe delta computation, bounding/clamping rules, u</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Integrate with existing scheduler capacity-reduction plumbing instead of inventing a parallel signal path. If this is effectively “pressure reduces capacity”, consider mapping into </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define consumption points and invariants: exactly which scheduler decisions can consult the scalar (select_task_rq, load balance, wake-affine, cpu_util/fits_capacity checks), and ex</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the precise publication/consumption contract: use a single 64-bit packed snapshot with version+confidence+value, written with smp_store_release() and read with smp_load_acqui</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify how the per-package signal becomes per-CPU effective capacity: you must update every CPU in the package (iterating a stable cpumask) and ensure this cannot race CPU hotplug;</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prove wrap-safe ΔE/Δt is correct under concurrent enable/disable and counter discontinuities: RAPL PKG energy counters can reset across suspend/firmware events; you need an epoch re</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Avoid sleeping/lock inversion via powercap/rapl internals: sampling must not take locks that can deadlock with CPU hotplug or scheduler code paths; keep all RAPL/powercap reads stri</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Do not repurpose thermal_pressure blindly: if you inject non-thermal pressure into thermal_pressure, you risk breaking tooling/trace semantics and policy layers; either introduce a </li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux scheduler using x86 RAPL microarchitecture features
+</footer>
+</div></body></html>

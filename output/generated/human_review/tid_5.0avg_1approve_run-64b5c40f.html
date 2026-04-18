@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 5.0] Legality-Gated AVX-512 Lane Snapshot with MUST-SPLIT Prefilt</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-64b5c40f3076 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 5.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Legality-Gated AVX-512 Lane Snapshot with MUST-SPLIT Prefilter and Identity-Writeback Gate for Correct Linux Block-Layer Segment Mapping</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux block I/O using x86 AVX-512 microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Lane-Packed bio_vec Canonicalizer for blk-mq Scatterlist Emission</li><li style='font-size:13px;'>Zero-Extent Translation Layer for AVX-512-Assisted Writeback Conversion</li><li style='font-size:13px;'>Plug Vector Dispatch Matrix for AVX-512-Assisted blk_plug Reordering</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | CHAPTER 15 &lt;&gt; intel_opt_manual | SOFTWARE OPTIMIZATION FOR INTEL® AVX-512 INSTRUCTIONS
+  MMR Score:    0.7909</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>Copy each immutable bio_vec window into a submitter-owned bounded lane snapshot, derive only one-sided MUST-SPLIT evidence with AVX-512 mask compares when kernel SIMD use is both legal and profitable, always rerun the unchanged scalar Linux block-layer merge and limit predicates as the sole authority for segment formation, and optionally substitute a stable all-zero data-writeback span with REQ_OP_WRITE_ZEROES | REQ_NOUNMAP only when filesystem and effective-target predicates prove byte-preserving identity writeback and semantics-equivalent completion.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is not generic SIMD scanning and not merely scan-for-zero then issue WRITE ZEROES. The novelty is a kernel-enforceable contract with six coupled parts: (1) a bounded extent window snapshot whose ownership, li</div>
+    <div class="pill"><strong>Feasibility:</strong> The first embodiment is feasible as an incremental block-layer optimization because it does not replace the authoritative scalar logic; it only narrows candidate boundaries before </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux block-I/O request preparation is often bottlenecked by metadata handling rather than media bandwidth. The kernel must walk pointer-rich bio_vec streams, test contiguity, respect queue limits, account for bounce and highmem behavior, honor DMA and virtual boundary restrictions, handle integrity and zone constraints, and update segment accounting in a branch-heavy scalar loop before request submission. On modern x86 servers with fast NVMe and fragmented bios, this scalar metadata path can dominate CPU time. A related inefficiency exists in data writeback: some spans are entirely zero, but the kernel cannot safely replace a normal WRITE with WRITE ZEROES unless it can prove that the bytes are stable from folio scan to submission, that the writeback path is byte-preserving from folio to media, that REQ_NOUNMAP semantics survive every stacked device, and that completion and retry behavior remain semantics-equivalent to ordinary writes.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Known optimizations for this area typically use scalar unrolling, prefetch, wider batching, or generic SIMD comparisons, but they do not define a semantics-tight contract that separates copied metadata collection from authoritative merge decisions. They generally lack: an explicit ownership and invalidation model for any copied bio_vec snapshot; a one-sided proof system in which the fast path is allowed to prove only non-mergeability; mandatory re-entry into the unchanged scalar Linux predicate chain as the only source of truth for boundaries, bounce, DMA handling, and side effects; and a concrete legality model for in-kernel AVX-512 use, including may_use_simd(), kernel_fpu_begin/end, preemption and IRQ constraints, and anti-regression heuristics for AVX-512 downclock behavior. Likewise, existing zeroing pathways such as REQ_OP_WRITE_ZEROES, blkdev_issue_zeroout, filesystem hole and unwritten-extent handling, or simplistic zero-page scans do not provide an enforceable identity-writeback gate, a stable-bytes proof from scan through bio construction, or an end-to-end effective-target NOUNMAP and strict-completion contract across dm, md, and other stacking layers. The gap identified by the Intel AVX-512 optimization void is therefore not merely to use wider instructions, but to bind AVX-512 mask-first classification to Linux block-layer legality and writeback semantics in a way that remains correct under real kernel races and stacked-device behaviors.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention introduces a Bounded Extent Window, or BEW, with fixed lane count N and a formal proof contract.
+
+1. Snapshot ownership and lifetime. At a point where a bio is fully constructed for submission and before lower-layer split or scatterlist emission, the submit path enters the queue and allocates a short-lived blk_bew_window on the stack or in per-CPU scratch. The window copies only immutable or already-authoritative fields needed for conservative reasoning: starting sector, length in bytes and sectors, offset, merge-relevant op class, selected bio and request flags, integrity and zone markers, and optionally a bounce-resolved page or physical identity token only when that token is already authoritative in the current path. The snapshot also stores a cookie composed of the bio pointer, bi_vcnt, starting sector, relevant bi_opf bits, and a request-queue limits generation value qlim_gen. The snapshot never escapes the current submit call, is never attached to the bio, and is discarded immediately after scalar revalidation. If any cookie component or qlim_gen changes before or during use, the BEW is invalidated and the code falls back to the pure baseline scalar path.
+
+2. One-sided MUST-SPLIT proof. The prefilter computes a boundary mask where bit i corresponds to the boundary between lane i and lane i+1. A bit may be set only when the implementation can prove that the adjacent descriptors cannot legally co-reside in one emitted segment under the baseline Linux predicates. Proof sources include non-contiguous sectors; op-class or merge-flag mismatch; integrity or zone constraints; impossible offset or page continuity; lower-bound segment size overflow relative to queue limits; and DMA or virtual boundary impossibility when an authoritative physical token is available. If bounce, DMA, or physical identity information is not authoritative, the prefilter must leave the boundary as unknown rather than infer mergeability. An unset bit always means unknown, never safe-to-merge.
+
+3. AVX-512 embodiment. On x86, the same lane arrays are optionally evaluated with AVX-512F/BW/VL compare, add, mask, shift, and mask-extract operations. Representative work includes vector computation of end sectors, adjacent-lane contiguity checks, equality-class masks for op and flag groups, lane-wise overflow tests against conservative queue-limit bounds, and kmov extraction of the MUST-SPLIT bitmask. The vector code does not emit requests, does not update accounting, and does not override a scalar merge predicate; it only produces one-sided evidence. If the vector backend is unavailable or disallowed, the identical lane format is executed with scalar integer and bitmask operations.
+
+4. Scalar revalidation as sole authority. After prefiltering, the kernel walks the same descriptors in original order and re-invokes the unchanged scalar merge, queue-limit, bounce, DMA-boundary, integrity, and request-emission logic. MUST-SPLIT bits may prune impossible adjacency tests and shorten candidate runs, but the scalar logic remains the only authority for extending a segment, creating a new scatterlist element, splitting a bio, updating nr_phys_segments, and handling any side effect. The emitted result must therefore match baseline semantics exactly.
+
+5. SIMD legality and profitability gate. The AVX-512 backend is entered only when all of the following are true: the global and per-queue policy is not off; the CPU advertises the required AVX-512 feature subset; may_use_simd() is true; the caller is in task context with IRQs enabled and not in NMI, hardirq, or softirq context; the path is not holding a lock class that forbids kernel FPU use; and the workload passes a conservative profitability filter. The profitability filter defaults to auto mode and requires at least two full windows of bio_vec entries, a queue type where metadata cost is material, and a per-CPU exponentially weighted moving average showing recent win over scalar. The implementation exposes a hard global boot parameter and a per-queue sysfs knob with off, auto, and force modes. Auto mode also disables itself for a cooling period after observed frequency-capacity drop or negative cycle delta on the current CPU model.
+
+6. Optional identity-writeback zero substitution. A second embodiment reuses the same proof-only discipline for all-zero data-writeback spans, but only under a narrower contract. The integration point is a filesystem data-writeback hook, such as an iomap-style writepages stage or filesystem-specific equivalent, that runs on a locked folio or extent range before bio construction. The filesystem must provide an identity_writeback predicate for the exact span to be substituted. That predicate returns false unless the span is regular file data, fully backed by allocated blocks, fully covered by the current writeback operation, and guaranteed byte-preserving from folio bytes to lower block I/O. Explicit disqualifiers include metadata, journal, log, or allocator writes; fscrypt; fsverity; inline encryption; compression; reflink, copy-on-write, or dedupe; data-transforming checksums; dm-crypt; dm-integrity; RAID personalities that transform or reconstruct data; verity targets; and any other target or filesystem mode that can alter bytes or allocation semantics.
+
+7. Stable-bytes and effective-target gates. The zero scan is valid only while the folio remains locked and under writeback control across scan through bio-build decision, with the filesystem&#x27;s extent-mapping stability mechanism held for the covered range. If truncate, invalidation, partial-writeback change, redirty, or remap can occur for the span in that window, substitution is rejected. Even if the bytes are stably zero, the block layer must additionally prove effective-target support for REQ_OP_WRITE_ZEROES | REQ_NOUNMAP through the entire stack. The invention therefore requires an effective_write_zeroes capability descriptor propagated from leaves through dm and md. Required fields include nounmap_preserves_allocation, strict_completion, no_emulated_discard, max_write_zeroes_sectors, max_sectors, alignment, granularity, and boundary constraints. Substitution is allowed only when all layers preserve NOUNMAP allocation semantics, the range satisfies every size and alignment limit, and strict_completion guarantees full-range success-or-fail with retry and errno classification equivalent to a normal write for the covered span. Otherwise the kernel emits an ordinary WRITE bio and does not substitute.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>submit_bio path
+  |
+  +-- blk_queue_enter(q) and capture qlim_gen
+  |
+  +-- build blk_bew_window in stack or per-CPU scratch
+  |      lanes: sector[], len_bytes[], len_sectors[], offset[], op_class[], merge_flags[]
+  |      optional authoritative tokens: page_id[] or phys_id[]
+  |      cookie: bio ptr + bi_vcnt + start sector + relevant bi_opf + qlim_gen
+  |
+  +-- legality and profitability gate
+  |      if x86 AVX-512 legal and profitable:
+  |          kernel_fpu_begin()
+  |          avx512_prefilter(window) -&gt; MUST_SPLIT mask
+  |          kernel_fpu_end()
+  |      else:
+  |          scalar_prefilter(window) -&gt; MUST_SPLIT mask
+  |
+  +-- MUST_SPLIT meaning
+  |      1 = proven non-merge boundary
+  |      0 = unknown, never safe-to-merge proof
+  |
+  +-- unchanged scalar revalidate over original order
+  |      existing merge predicates
+  |      existing queue-limit checks
+  |      existing bounce and DMA-boundary handling
+  |      existing integrity and zone logic
+  |      existing sg and request emission
+  |
+  +-- if cookie or qlim_gen changed at any point -&gt; discard window and run pure baseline
+  |
+  `-- submission result and accounting remain baseline-correct
+
+optional data-writeback embodiment
+  |
+  +-- filesystem data-writeback hook on locked folio or exact extent range
+  |      identity_writeback(span)?
+  |      false if metadata, journal, fscrypt, fsverity, inline crypto,
+  |      compression, reflink/COW, dedupe, transforming checksum,
+  |      dm-crypt, dm-integrity, RAID transform, verity target, or unknown mode
+  |
+  +-- hold stable-bytes contract across scan -&gt; bio build decision
+  |      folio lock held
+  |      writeback state held
+  |      filesystem extent-map stability held
+  |      abort on truncate, invalidate, redirty, remap, or partial-span mismatch
+  |
+  +-- zero scan on exact writeback span
+  |
+  +-- blk_queue_effective_write_zeroes(q, caps)
+  |      caps.nounmap_preserves_allocation == true
+  |      caps.strict_completion == true
+  |      caps.no_emulated_discard == true
+  |      size, alignment, granularity, max_sectors, and boundary rules all pass
+  |
+  +-- if every gate passes: issue REQ_OP_WRITE_ZEROES | REQ_NOUNMAP
+  `-- else: issue ordinary WRITE bio</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Add a blk_bew_window helper and lane format shared by scalar and AVX-512 backends. The helper is invoked from the same submit context that already performs block-layer split and segment calculations, after the bio is fully built but before lower-layer request emission. Add a request-queue limits generation counter qlim_gen that increments when queue-limit state relevant to mergeability changes or when the queue is reconfigured, and store that value in each window cookie.
+
+2. Implement the scalar BEW prefilter first. It computes only MUST-SPLIT proofs using copied lane metadata and never emits a merge decision. Wire the unchanged scalar merge and queue-limit helpers immediately after it so the result is identical to baseline. Add tracepoints and counters for windows processed, boundaries proven, cookie-invalidated fallbacks, and full fallbacks.
+
+3. Add the x86 AVX-512 backend under a dedicated configuration option. The entry predicate is: policy not off, required AVX-512 feature subset present, may_use_simd() true, task context with IRQs enabled, no forbidden lock held, and profitability filter passed. Bracket only the vector compare region with kernel_fpu_begin/end. Provide a global boot parameter blk.avx512_prefilter=off|auto|force and a per-queue sysfs control queue/avx512_prefilter with the same modes. Auto mode initially enables only for allowlisted CPU models and only when bio_vec count exceeds a conservative threshold such as 2N; it disables itself temporarily after measured regression.
+
+4. Keep physical and DMA-derived proofs optional and authoritative only. If the current submit path already has a reliable bounce-resolved page identity or DMA-relevant physical token, copy it into the window and allow MUST-SPLIT proofs from it. If not, leave those boundaries unknown and rely on scalar revalidation. This avoids making speculative physical assumptions from raw page metadata.
+
+5. Introduce the optional identity-writeback embodiment as an explicit opt-in API, not a generic heuristic. Add a filesystem hook such as identity_writeback_ok(inode, folio, start, len) that returns true only for exact data spans whose bytes are known to reach the block layer unchanged. Initial enablement should be limited to filesystems and modes that can make that proof precisely, for example regular data extents in an opt-in non-transforming writeback path, and should exclude metadata, journal, fscrypt, fsverity, compression, reflink, COW, dedupe, inline encryption, and any data-transforming checksum mode.
+
+6. Add blk_effective_write_zeroes_caps and require stacking layers to propagate it conservatively. dm and md may set nounmap_preserves_allocation and strict_completion only when every child path and target behavior preserve REQ_NOUNMAP allocation semantics and full-range WRITE ZEROES completion semantics. If any target can emulate with discard, deallocate blocks, transform data, or return non-equivalent completion behavior, the effective capability is cleared and substitution is unavailable.
+
+7. Integrate the zero scan at the filesystem writeback hook while the folio lock, writeback state, and extent-map stability lock for the exact span are all held across scan through bio-build decision. The default scan may be scalar; an AVX-512 zero scan may be enabled only under the same legality gate as the segment prefilter and only when the filesystem hook runs in a permitted task context. If stability is lost or the exact span changes, abort substitution and emit a normal write.
+
+8. Route completion of substituted WRITE ZEROES bios through the same writeback accounting object used by ordinary writes. Because substitution is gated on strict_completion, the completion path can preserve the same success, retry, and error propagation model for the span. If strict completion cannot be guaranteed by the effective target, substitution is not attempted.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Differential correctness for segment mapping. Generate randomized bios spanning contiguous and fragmented bio_vec sequences, mixed offsets, zone and integrity cases, highmem and bounce candidates, and varying queue limits. Compare baseline scalar output versus BEW scalar-prefilter output versus AVX-512-prefilter output. The emitted boundaries, scatterlist layout, nr_phys_segments, bounce decisions, DMA-boundary handling, and error behavior must match exactly.
+
+2. Race and invalidation tests. Inject qlim_gen changes between snapshot and revalidate, mutate merge-relevant bio fields through fault-injection hooks before submission, and verify that cookie mismatch forces immediate fallback to the pure baseline path. Validate that the window never survives beyond the submit call and cannot be dereferenced after the bio is completed.
+
+3. Legality tests for SIMD use. Exercise task context, IRQ-disabled context, softirq, hardirq, NMI, direct reclaim, and generic writeback worker paths. Confirm that AVX-512 runs only when may_use_simd() and policy gates pass, and that all excluded contexts automatically use the scalar backend without functional change.
+
+4. Anti-regression performance tests. Benchmark fragmented-read and fragmented-write submission on AVX-512-capable Xeon systems, on CPUs known to show AVX-512 downclock sensitivity, and on non-AVX-512 systems. Validate that off mode is neutral, auto mode only enables above the configured vector-worth threshold, and the cooling heuristic disables the vector path after measured regression.
+
+5. Positive and negative identity-writeback tests. Positive cases should include only explicitly supported regular-data writeback paths on non-transforming filesystems and leaf or stacked targets that advertise effective strict WRITE ZEROES with NOUNMAP preservation. Negative cases must include metadata and journal writes, fscrypt, fsverity, inline encryption, compression, reflink/COW, dedupe, dm-crypt, dm-integrity, md RAID personalities that transform data, thin provisioning that can deallocate on zero, and any target lacking strict completion or NOUNMAP guarantees. Every negative case must fall back to ordinary WRITE.
+
+6. Stable-bytes race tests. Force truncate, invalidate, remap, partial writeback, and redirty events against candidate all-zero folios while the feature is enabled. Verify that any loss of span stability aborts substitution before submission. Confirm that only the exact covered span may be substituted and that partial-last-block or partial-folio edge cases fall back unless fully proven safe.
+
+7. WRITE ZEROES semantic tests. Fault-inject unsupported, emulated, partial, and transport-error behaviors in leaf and stacked targets. Confirm that substitution is rejected unless strict_completion and no_emulated_discard are true. Where substitution is allowed, verify that writeback error accounting, retry classification, and completion semantics match ordinary WRITE for the same span.
+
+8. Prior-art differentiation package. Document that the fast path never proves mergeability, never bypasses the scalar Linux authority, and never substitutes zero-writeback without explicit identity and effective-target proofs. This establishes the novelty boundary against generic SIMD scans and existing zeroout pathways.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A computer-implemented method for Linux block-I/O request preparation comprising: copying a fixed-size ordered window of bio_vec metadata into a short-lived bounded lane snapshot owned by the current submit path; computing, from the snapshot, a MUST-SPLIT boundary mask whose set bits represent only proven non-mergeable adjacent descriptor pairs; and thereafter invoking the unchanged scalar Linux merge and queue-limit predicate chain as the sole authority for emitted segment boundaries, scatterlist entries, and request accounting, wherein an unset MUST-SPLIT bit is interpreted only as unknown and never as mergeable.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the bounded lane snapshot stores a validity cookie including at least a bio identity component and a request-queue limit generation value, and wherein any cookie mismatch before or during scalar revalidation invalidates the snapshot and causes immediate fallback to the pure baseline scalar path.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein computing the MUST-SPLIT boundary mask is performed on x86 with AVX-512 compare, add, mask, shift, and mask-extract operations only when a legality predicate comprising processor feature presence, may_use_simd(), permitted execution context, and policy gating is satisfied, and otherwise is performed with a scalar backend over the same lane format.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein proofs contributing to MUST-SPLIT are limited to conditions that cannot create false merges, including sector discontinuity, merge-flag mismatch, zone or integrity incompatibility, lower-bound queue-limit overflow, and DMA or virtual boundary impossibility only when a bounce-resolved or otherwise authoritative physical identity token is present in the snapshot.</li><li style='margin-bottom:8px;'>A computer-implemented method for zero-data writeback substitution comprising: scanning an exact writeback span while the corresponding folio bytes are held stable from scan through bio-build decision; determining that the span is all zero; verifying, via a filesystem identity-writeback predicate, that the span is regular data and byte-preserving from folio to block layer; verifying, via an effective-target capability propagated through stacked block devices, that REQ_OP_WRITE_ZEROES with REQ_NOUNMAP preserves allocation and exposes strict completion semantics equivalent to ordinary WRITE; and only then issuing a substituted WRITE ZEROES request for the span.</li><li style='margin-bottom:8px;'>The method of claim 5, wherein the filesystem identity-writeback predicate rejects substitution for metadata, journal, log, fscrypt, fsverity, inline encryption, compression, reflink, copy-on-write, dedupe, data-transforming checksum, and any writeback mode that cannot prove byte preservation for the entire span.</li><li style='margin-bottom:8px;'>The method of claim 5, wherein the effective-target capability is cleared by any stacked block layer that can emulate WRITE ZEROES with discard or unmap semantics, can deallocate on zero, can transform bytes, or cannot guarantee full-range success-or-fail and ordinary-write-equivalent retry and errno semantics, such that substitution is prevented before submission.</li></ol>
+  <h3>Claim Confidence</h3><ul><li style='margin-bottom:6px;'>Claim 1: confidence=0.86; strongest novelty hook is the one-sided MUST-SPLIT proof coupled to mandatory unchanged scalar revalidation.</li><li style='margin-bottom:6px;'>Claim 2: confidence=0.82; the explicit snapshot lifetime and queue-limit generation invalidation materially sharpen correctness over generic copied-metadata fast paths.</li><li style='margin-bottom:6px;'>Claim 3: confidence=0.78; AVX-512 legality gating is concrete and tied to kernel SIMD constraints, but SIMD acceleration alone is not the core novelty.</li><li style='margin-bottom:6px;'>Claim 4: confidence=0.80; limiting physical and DMA proofs to already-authoritative tokens cleanly distinguishes the method from speculative vector heuristics.</li><li style='margin-bottom:6px;'>Claim 5: confidence=0.84; the identity-writeback plus effective-target gate is specific and materially different from generic zero-scan plus WRITE ZEROES schemes.</li><li style='margin-bottom:6px;'>Claim 6: confidence=0.79; explicit filesystem-mode disqualifiers make the claim enforceable and reduce enablement ambiguity.</li><li style='margin-bottom:6px;'>Claim 7: confidence=0.77; strict-completion propagation through stacked devices is strong but may require careful drafting around target-reported semantics.</li></ul>
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: a copied metadata window diverges from live queue limits or bio state before submission. Mitigation: include qlim_gen and bio identity in the window cookie; invalidate on any mismatch and fall back to the pure scalar path.</li><li style='margin-bottom:6px;'>Risk: AVX-512 causes latency regressions from frequency throttling or power cost. Mitigation: expose hard off control, default to auto mode, require conservative size thresholds and positive EWMA win, and cool off automatically after detected regression.</li><li style='margin-bottom:6px;'>Risk: illegal kernel SIMD use in IRQ, reclaim, or lock-sensitive contexts. Mitigation: enter the vector backend only when may_use_simd() and execution-context gates pass and only around a tiny kernel_fpu_begin/end region; otherwise use the scalar backend.</li><li style='margin-bottom:6px;'>Risk: false assumptions about bounce or DMA-relevant physical identity. Mitigation: allow physical or DMA-based MUST-SPLIT proofs only when the token is already authoritative in the current path; otherwise mark the boundary unknown.</li><li style='margin-bottom:6px;'>Risk: all-zero writeback substitution changes semantics on transformed filesystems or targets. Mitigation: require an explicit filesystem identity-writeback predicate and enumerate hard disqualifiers including encryption, compression, checksumming transforms, reflink/COW, dm-crypt, dm-integrity, RAID transforms, and verity.</li><li style='margin-bottom:6px;'>Risk: REQ_NOUNMAP is not actually preserved through stacking layers. Mitigation: require a conservatively propagated effective_write_zeroes capability and disable substitution unless every layer asserts nounmap_preserves_allocation.</li><li style='margin-bottom:6px;'>Risk: WRITE ZEROES completion or retry behavior differs from ordinary WRITE. Mitigation: require strict_completion and no_emulated_discard in the effective capability; without those guarantees, do not substitute.</li><li style='margin-bottom:6px;'>Risk: scanned folio bytes change between zero detection and I/O submission. Mitigation: hold folio lock, writeback state, and filesystem extent-map stability across scan through bio-build decision, and abort substitution on truncate, invalidate, redirty, remap, or partial-span mismatch.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Intel 64 and IA-32 Architectures Optimization Reference Manual, chapter on software optimization for Intel AVX-512 instructions.</li><li>Linux kernel block layer documentation and request queue limit APIs.</li><li>Linux x86 kernel SIMD and FPU usage primitives, including may_use_simd() and kernel_fpu_begin/end conventions.</li><li>Linux REQ_OP_WRITE_ZEROES and blkdev_issue_zeroout related block-layer interfaces.</li><li>Linux iomap and filesystem writeback integration documentation for stable folio and extent mapping behavior.</li><li>Linux device-mapper and md stacking behavior relevant to propagated queue capabilities and semantic restrictions.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 5.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft asserts “stable folio bytes” and “identity-writeback” but does not define a kernel-verifiable locking + invalidation model that guarantees the scanned bytes, the iomap extent state, and the eventual bio submission all refer to the same immutable snapshot under truncate/punch-hole/COW/redirty concurrency.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact data-stability contract in writeback: when you scan vs when you clear dirty/set writeback vs when you unlock the folio, and how you prevent concurrent writers (or redirty) from making the WRITE_ZEROES cover bytes that were not proven-zero at the moment the kernel commits the I/O. Spell out required waits (e.g., wait_on_folio_writeback) and ordering relative to folio lock and writeback bit.</li><li style='font-size:13px;margin-bottom:4px;'>Specify how “refcounted extent snapshots” are made concurrency-correct against iomap remaps (truncate, punch hole, reflink/COW, delalloc conversion). You need a concrete invalidation/revalidation mechanism (sequence counter / mapping generation / i_rwsem coverage / per-inode writeback coordination) that is checked immediately before issuing WRITE_ZEROES.</li><li style='font-size:13px;margin-bottom:4px;'>The block-stack “zeroes-equivalence contract” must explicitly cover integrity/crypto/transforming targets (dm-integrity, dm-crypt, dm-verity, md RAID, zoned emulation) and must prove that REQ_NOUNMAP and allocation-preservation semantics cannot be dropped or altered by stacking. Today, REQ_NOUNMAP is not an end-to-end guarantee; you must define propagation, enforcement points, and failure behavior.</li><li style='font-size:13px;margin-bottom:4px;'>WRITE vs WRITE_ZEROES completion semantics: document how you preserve writeback accounting and error semantics (wbc, iostat, end_page_writeback/folio_end_writeback, redirty-on-error). You must ensure partial completion, requeue, or driver-specific semantics cannot cause silent data loss or pages incorrectly marked clean.</li><li style='font-size:13px;margin-bottom:4px;'>SIMD legality: may_use_simd()+kernel_fpu_begin/end is necessary but not sufficient without bounding non-preemptible time. Provide hard upper bounds for FPU-disabled regions and a design that cannot stall reclaim/writeback under memory pressure; consider chunking and avoiding long AVX-512 loops while preemption is disabled.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft’s novelty hinges on two “proof” predicates (FS identity-writeback and block-stack zeroes-equivalence), but neither is specified as a concrete kernel interface with precise invariants, propagation rules, and TOCTOU safety—so the claims currently read like an obvious “scan-for-zeros then WRITE ZEROES” optimization with hand-waved gating.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact kernel interface for the filesystem identity-writeback predicate: where it is computed (iomap layer vs fs-specific), what inputs it takes (inode flags, extent state, folio state, range), and a normative MUST/SHALL list of disqualifiers (fscrypt, compression, verity, reflink/CoW, checksumming/journal data transforms, delayed allocation/unwritten extents, dedupe, inline encryption, metadata coupling). Without a crisp contract, prior art on “don’t do it when encrypted/compressed” makes this look routine.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the block-stack “zeroes-equivalence contract” data structure and recursion rules through DM/MD: how to represent ‘native vs emulated’ WRITE ZEROES, NOUNMAP preservation, alignment/granularity, max sectors, and completion semantics; how DM targets compose these attributes; and what happens on mixed paths (e.g., dm-crypt + dm-thin). If you can’t formally exclude emulation/alloc-changing behavior, the substitution is not defensible on correctness or novelty.</li><li style='font-size:13px;margin-bottom:4px;'>Address TOCTOU and stability rigorously: folio lock/writeback tagging alone may not guarantee the exact bytes submitted remain unchanged until BIO construction/submission across all paths. You need an explicit lifecycle for the “refcounted extent snapshot,” rules for invalidation on redirty/truncation/mapping changes, and a mandatory final scalar verification point (or checksum/dirty-tracking mechanism) that is realistically implementable without doubling cost.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify where the “one-sided proofs” plug into the existing Linux writeback + block stack without accidentally becoming authoritative: identify the exact insertion point (e.g., iomap writeback path) and explicitly guarantee that final segmentation, queue limits, bounce/DMA mapping, integrity/PI, and accounting are still decided by the unchanged scalar path. State what metadata (if any) is carried in bio-&gt;bi_opf / bio vecs and how it is ignored unless revalidated.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten the non-obviousness story vs known art: prior art already combines zero detection with device offloads (SCSI WRITE SAME/WRITE ZEROES, NVMe write zeroes) and common gating (alignment, device capability, encryption/compression exclusions). Your differentiator must be claimed as the *proof-carrying, end-to-end* correctness contract (FS + stacking + non-authority boundary). Write claims that are explicitly about these coupled predicates and their enforcement, not about AVX-512 scanning.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten the block-stack “zeroes-equivalence contract” into explicit, checkable invariants (native vs emulated WRITE ZEROES, NOUNMAP propagation, alignment/size, and completion semantics) and define where it is cached/invalidated to avoid TOCTOU across DM/MD reconfiguration.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the exact stability model for “folio-locked stable bytes” (e.g., which locks/tags, how redirty/writeback races are excluded, and how you detect mapping/extent changes between scan and submit) and document the fallback triggers precisely.</li><li style='font-size:13px;margin-bottom:4px;'>Define a concrete profitability gate for Xeon (size thresholds, cacheline/folio batching, AVX-512 frequency/turbo impact, per-CPU FPU state costs) and require perf regression detection hooks so AVX-512 helps IOPS-per-core rather than hurting tail latency.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>SIMD legality is underspecified: you must hard-require a safe context (process context, preemption enabled or explicitly managed) and explicitly ban irq-disabled/atomic regions. Document and enforce the exact gate sequence (may_use_simd()/irq_fpu_usable()/kernel_fpu_begin-end) and ensure no nested FPU usage or preemption window violates x86 FPU state rules.</li><li style='font-size:13px;margin-bottom:4px;'>TOCTOU on data stability: “folio-locked stable bytes” is not sufficient by itself for writeback because bytes can change via concurrent writers, redirty, or writeback requeue. You need a concrete stability model (e.g., lock + writeback marking + mapping state + generation checks) and a mandatory revalidation step that re-reads the exact bytes and re-checks mapping/extent identity immediately before bio submission.</li><li style='font-size:13px;margin-bottom:4px;'>Allocation/semantic equivalence for REQ_NOUNMAP is risky: the draft must define what “allocation preservation” means for each filesystem (iomap) and must explicitly prohibit spans where zeroing changes unwritten extent semantics, delalloc conversion, reflink/CoW sharing, or metadata accounting. Without a precise exclusion list tied to iomap state/extent flags, this can corrupt logical allocation semantics even if bytes remain zero.</li><li style='font-size:13px;margin-bottom:4px;'>Block-stack contract needs a verifiable mechanism: “recursively aggregated zeroes-equivalence contract” must map to real kernel-visible capabilities and must be invalidated on reconfiguration (dm/md table reload, multipath changes). Otherwise you risk issuing WRITE ZEROES through layers that silently emulate, drop NOUNMAP, or have partial completion semantics.</li><li style='font-size:13px;margin-bottom:4px;'>Side-channel / timing risk: AVX-512 zero scanning introduces data-dependent execution time in kernel writeback workers. If any unprivileged actor can influence writeback timing (shared host, cgroups, noisy neighbors), this can become a cross-tenant side channel. Mitigate by gating to privileged/opt-in, using coarse thresholds, and avoiding per-cacheline early-exit behavior that amplifies data dependence.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] You must precisely define the MUST-SPLIT proof set: enumerate every condition you’ll mark as a definite boundary (e.g., max_segment_size, segment_boundary_mask/virt_boundary_mask, b</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The “bit-identical segmentation” claim requires that the scalar revalidation path be *literally* the same authority as today: same helper functions, same call order, and no skipped </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify lifetime/locking assumptions for the lane snapshot: copying page pointers/offsets/lengths is only safe if the bio_vec array and referenced pages are stable for the entire ma</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Account for bounce/DMA mapping realities: IOMMU/DMA mapping and blk_queue_bounce can change mergeability and impose splits not derivable from pre-snapshot physical properties. Eithe</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define strict applicability/fallback triggers for non-standard bios and constraints: zoned writes (zone append), integrity payloads, special ops (DISCARD/WRITE_ZEROES), and any case</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define a concrete SIMD legality model: AVX-512 use in the kernel must be wrapped in kernel_fpu_begin()/kernel_fpu_end() (or equivalent), must not run in NMI/IRQ/softirq contexts, an</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify folio stability and mapping requirements for zero detection: you must guarantee the bytes scanned are stable (e.g., folio locked, fully uptodate for the range, no concurrent</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make the identity-writeback gate real: enumerate disqualifiers (fscrypt, inline encryption, compression, fs-level checksums, CoW/dedupe, dm-crypt/dm-integrity, RAID parity transform</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] REQ_OP_WRITE_ZEROES|REQ_NOUNMAP correctness must be verified end-to-end: check queue limits (max_write_zeroes_sectors, alignment/granularity, max_sectors, boundary constraints), and</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Do not assume block-layer scalar revalidation alone preserves writeback semantics: WRITE ZEROES can have different completion/error behavior than WRITE (partial success, fallback to</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux block I/O using x86 AVX-512 microarchitecture features
+</footer>
+</div></body></html>

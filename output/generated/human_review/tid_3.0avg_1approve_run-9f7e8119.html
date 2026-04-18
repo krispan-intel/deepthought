@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 3.0] Trusted-Domain LLC-Scoped CFS Tie-Breaker from Materialized </title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-9f7e81197dfa &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 3.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — yellow_card_revise</div>
+</div>
+
+<section class="card">
+  <h1>Trusted-Domain LLC-Scoped CFS Tie-Breaker from Materialized XSAVE XTILEDATA and Sanitized XTILECFG Buckets</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux scheduler using x86 AMX microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Tile Residency Domain Admission Layer for CFS</li><li style='font-size:13px;'>XTILECFG Signature Cohort Scheduling</li><li style='font-size:13px;'>AMX Capacity Pressure Translator for Scheduler Capacity Invariance</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | INTEL® 64 AND IA-32 PROCESSOR ARCHITECTURES &lt;&gt; A Disk Scheduling Algorithm Based on ANT Colony Optimization
+  MMR Score:    0.7748</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A Linux CFS enhancement for x86 AMX systems that marks a fair-class task as AMX-costly only after a legal save or validated xstate import has materialized a stable software fpstate whose XSAVE header xfeatures bitmap shows XTILEDATA present, optionally derives a 4-way boot-keyed bucket from validated XTILECFG fields, caches the result with explicit invalidation and trusted-domain tokening, and applies only a hard-capped same-LLC/same-domain tie-breaker plus local per-rq decaying history, with deterministic fallback to baseline CFS whenever any prerequisite is absent.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is not generic cache affinity for AMX workloads, and not merely detecting that AMX is enabled. The claimed mechanism derives its primary scheduler-visible cost signal only from an already-materialized, archit</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Intel AMX makes context handoff materially more expensive when a task&#x27;s saved architectural state contains non-init XTILEDATA, because preserving and restoring tile payload is substantially heavier than ordinary vector state and is often coupled to matrix-heavy cache footprints. Baseline Linux CFS understands generic locality, idle CPU selection, load, capacity, and cache-hot heuristics, but it does not have a scheduler-safe, low-overhead indicator of the narrower fact that matters here: the task&#x27;s last authoritative saved software fpstate actually contained XTILEDATA, and therefore future migration or cross-LLC wake placement is likely to incur extra xstate restore and locality cost. Permission-oriented signals such as XCR0 bits, AMX enablement, or XFD state are too broad because many tasks are AMX-eligible yet never materialize tile state. Conversely, reading live registers or forcing XSAVE from the scheduler would be architecturally unsafe and too expensive. The problem is therefore to expose a precise AMX handoff-cost hint to CFS using only xstate images that the kernel has already legally materialized, and then to consume that hint only as a bounded tie-breaker that does not override feasibility, fairness, isolation, or capacity rules.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>The gap over prior art is the conjunction of five elements that existing Linux and x86 mechanisms do not provide together. First, existing scheduler heuristics such as wake_affine, select_idle_sibling, cache-hot checks, last_cpu preference, util_est, and generic load balancing reason about recency and load, not about whether a saved architectural image actually contains XTILEDATA. Second, x86 AMX permission and trap machinery such as XCR0/XSS enablement, arch_prctl permission state, and XFD describe eligibility or first-use policy, not authoritative saved payload presence; they cannot safely distinguish a task that is AMX-enabled but tile-unused from one whose last saved image truly contains XTILEDATA. Third, existing FPU bookkeeping and lazy/optimized save machinery are correctness and performance mechanisms for state management, not scheduler inputs with explicit invalidation, isolation scoping, and hot-path bounds. Fourth, XSAVEOPT and XSAVES reduce save/restore work but do not teach the scheduler when to prefer same-LLC placement or how to do so without parsing live state. Fifth, no known prior art combines a saved-image-derived XTILEDATA bit, a masked and quantized XTILECFG bucket, a formally defined isolation-domain token, a per-rq decaying history keyed by that token, and a hard-capped near-tie-only LLC-local CFS bias with deterministic fallback. This is why the proposal is not an obvious variant of cache-hot or recent-CPU bias: it uses a different underlying fact, gathered at different kernel hook points, with different correctness and security constraints.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention introduces two new scheduler data structures and updates them only on existing xstate transition paths. Each task gains an `amx_sched_meta` record stored in `task_struct-&gt;thread` adjacent to `thread.fpu`, containing at least: `flags` (`VALID`, `COSTLY`, `BUCKET_VALID`, `TRUSTED_DOMAIN`), `bucket` (2 bits plus valid flag), `iso_token` (64-bit hashed isolation-domain token), `iso_gen` (generation for domain changes), and `publish_seq` or equivalent release-published versioning. Each runqueue gains a small `amx_rq_hist` record containing `seqcount_t seq`, `u64 iso_token`, `u32 last_epoch`, `u8 bucket`, and `u8 strength`; this is about one cacheline fraction per CPU and is local to the owning CPU.
+
+Primary signal derivation is tightly constrained. The scheduler never inspects live tile registers and never forces XSAVE. Instead, metadata is refreshed only after the kernel has already materialized a stable software fpstate for correctness reasons. There are three writer classes. (1) Save-path writers: immediately after the x86 save helper has stored a task&#x27;s user xstate into `task-&gt;thread.fpu.fpstate` during context-switch or other existing save points, while the task&#x27;s state is serialized and before the metadata is published. (2) Import-path writers: immediately after a successful ptrace/regset write, sigreturn restore, or other xstate import path has validated user input, handled standard versus compacted format, and normalized the result into the task&#x27;s software fpstate. (3) Reset/invalidation writers: execve, any helper that reinitializes fpstate, AMX permission disable, XFD/XCOMP/XCR0 policy changes affecting user AMX state, and explicit xstate-clearing paths. Fork/clone is handled conservatively: the child starts with `VALID=0`, `COSTLY=0`, and `BUCKET_VALID=0` even if fpstate bytes were copied, so a parent&#x27;s historical hint is never inherited as a scheduler fact until the child itself reaches a legal save or import point.
+
+At those save/import hooks, the code reads the normalized software XSAVE header&#x27;s `xfeatures` bitmap, not a raw user buffer and not merely `xcomp_bv`. `xcomp_bv` is consulted only by the existing import validator to determine whether incoming state was in compacted format and to normalize offsets; the scheduler hint is derived afterward from the normalized header. The primary bit is `XTILEDATA_PRESENT = header.xfeatures &amp; XFEATURE_MASK_XTILEDATA`, additionally masked by the task&#x27;s currently permitted user xfeature mask so that stale pre-disable bits cannot survive an AMX permission change. If the bit is absent, `COSTLY` is cleared. If present, `COSTLY` is set. Optional bucket derivation occurs only when `header.xfeatures` also contains `XFEATURE_MASK_XTILECFG` and the XTILECFG payload has already passed the kernel&#x27;s normal validation rules.
+
+Bucketization is deliberately coarse to reduce fingerprinting. The implementation reads only validated XTILECFG fields needed for broad footprint classes: whether a non-init palette is selected, the number of active tiles (rows[i] and colsb[i] both non-zero), and aggregate configured tile bytes `sum(rows[i] * colsb[i])`. It then quantizes those into a tiny tuple such as `{palette_nonzero, active_tiles_bin in [0-2,3-8], bytes_bin in [&lt;=256,257-1024,&gt;1024]}` and hashes that tuple with a per-boot secret before truncating to a 4-way bucket. Raw rows/colsb arrays are never retained in scheduler metadata, the bucket label changes every boot, and `BUCKET_VALID` is clear if any field is unavailable or validation failed. This keeps the information content intentionally low while still distinguishing small, medium, and large AMX footprints.
+
+The isolation-domain token is defined formally as `iso_token = siphash_3u64(core_sched_cookie_or_0, effective_cpuset_partition_seq, cpu_cgroup_css_serial_or_0, boot_secret_domain)`. The token is computed only in slow paths where those identities are already stable under existing cgroup/cpuset/core-sched synchronization, then cached in the task metadata. Hot scheduler paths never walk cgroup state; they only read the cached token with `READ_ONCE()` or load-acquire semantics. Any change to effective core-sched cookie, cpuset partition, or CPU cgroup membership increments `iso_gen`, clears `TRUSTED_DOMAIN`, `VALID`, and `BUCKET_VALID`, and republishes the metadata. Because runqueue history requires exact `iso_token` equality and short expiry, old-domain history becomes unusable immediately after a token change and ages out without any cross-domain reuse. Full shared-history matching is enabled only when a trusted domain can be formed, i.e., when core scheduling is active and the token incorporates a non-zero effective cookie plus stable cpuset/cgroup identities. Otherwise the design falls back to per-task same-LLC bias only, with no shared per-rq history at all.
+
+Per-rq decaying history is implemented in a way that is safe under rq-locking and cheap under contention. `rq-&gt;amx_rq_hist` is written only by the CPU that owns that runqueue, under `rq-&gt;lock`, and only on events that already touch scheduling state locally: a costly fair-class task switching out, being dequeued after a minimum runtime slice, or completing a migration onto that CPU. There are no remote writes on wakeup, so there is no cross-CPU cacheline bouncing from the mechanism itself. Decay is mostly read-side, not write-side: the history stores `last_epoch` and a small saturating `strength` counter, and readers compute `effective_strength = max(0, strength - floor((now_epoch - last_epoch) / half_life_epochs))`. A practical configuration is a 2 ms half-life with 8 ms maximum lifetime. Readers in wakeup placement and periodic balance use `read_seqcount_begin/retry` around lockless reads of the remote CPU&#x27;s history; if a read races, the hint is simply treated as absent. Because the history is only advisory, the correctness rule is fail-open to baseline CFS, never stall or spin.
+
+Tie-breaker math is explicit and bounded. In `select_task_rq_fair`, the mechanism is entered only if a static key is enabled, the task is fair-class, `VALID &amp;&amp; COSTLY` is true, and baseline CFS has already produced a feasible candidate set after cpuset, affinity, uclamp, asym-capacity, core-sched, SMT, and wake-affine checks. Let `best_base` be the baseline best score already computed by CFS. Only candidate CPUs in the same LLC as the task&#x27;s current LLC or previous CPU&#x27;s LLC, and only those with `base_delta &lt;= near_tie`, are eligible. A concrete bound is `near_tie = max(8, capacity_orig_of(best_cpu) / 64)` on the standard 1024 util scale. The AMX bonus is then capped at 6 util points total: `+4` for same LLC as the task&#x27;s last CPU, `+2` if the candidate runqueue&#x27;s trusted-domain history matches both `iso_token` and `bucket` with non-zero effective strength. The total bonus is always less than the near-tie window, so it cannot overturn a clearly better baseline placement. If any precondition fails, or if no same-LLC candidate remains within the near-tie window, the scheduler returns the unmodified baseline choice. Under asymmetric capacity the bonus is applied only after `fits_capacity()` and capacity-pressure rules succeed; under SMT/core-sched it is applied only among candidates already admissible under existing cookie checks.
+
+In periodic or active load balance, the design never invents a new imbalance metric. It is used only after the existing balancer has already determined that migration is permitted and multiple destination CPUs are otherwise near-equivalent within the same LLC scheduling domain. The same bonus cap is then used only to choose among those already-legal destinations. It cannot block a required migration, cannot pull a task into a forbidden CPU set, and cannot move RT/DL tasks because the mechanism is fair-class-only.
+
+Ordering and race rules are explicit. Writer paths first complete the fpstate save/import/reset, then derive the AMX metadata, then publish metadata with store-release. Scheduler readers use load-acquire or `READ_ONCE()` on the published fields and never dereference the fpstate itself. Therefore the scheduler cannot observe `COSTLY=1` before the corresponding saved image exists, and it cannot race a live FPU state transition because it consumes only cached metadata. This directly addresses the materialization/stability requirement.
+
+The side-channel model is similarly explicit. The shared-history path is restricted to trusted domains only. Bucket cardinality is intentionally tiny, bucket labels are per-boot keyed, history is keyed by hashed domain token, history expires quickly, and untrusted tasks get at most their own same-LLC bias or no bonus at all. Because one isolation domain never matches another domain&#x27;s token, scheduler placement differences caused by one tenant&#x27;s AMX footprint are not reused for another tenant. For stronger deployments, the bucket/history subfeature can be disabled and the invention still retains the core novelty of XTILEDATA-derived same-task LLC bias.
+
+Hot-path cost is bounded. With the static key disabled, non-AMX workloads pay one predicted-false branch. With the key enabled but the task not `VALID &amp;&amp; COSTLY`, the extra work is a few cached loads and branches. Only for costly tasks already being considered within an LLC domain does the scheduler perform O(1) seqcount reads of tiny per-rq history records for candidate CPUs it was already scanning. The invention therefore converts real x86 xstate facts into a scheduler hint with explicit correctness, fairness, and isolation bounds instead of a speculative heuristic.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>Architecture overview:
+
+User task using AMX tiles
+        |
+        | existing x86 save/import/reset paths only
+        v
++----------------------------------------------+
+| Normalized software fpstate                  |
+| task-&gt;thread.fpu.fpstate                     |
+| - xsave header.xfeatures                     |
+| - validated XTILECFG payload if present      |
++----------------------------------------------+
+        |
+        | derive only after save/import completes
+        v
++----------------------------------------------+
+| task-&gt;thread.amx_sched_meta                  |
+| flags: VALID/COSTLY/BUCKET_VALID/TRUSTED     |
+| bucket: 4-way boot-keyed coarse class        |
+| iso_token: hash(cookie, cpuset, cgroup)      |
+| iso_gen: incremented on domain change        |
++----------------------------------------------+
+        |
+        | publish with store-release
+        v
++-------------------+         +-------------------------+
+| select_task_rq_fair|&lt;------&gt;| per-CPU rq-&gt;amx_rq_hist |
+| / load balance     |  read   | seqcount, token, bucket |
+| near-tie only      | lockless| strength, last_epoch    |
++-------------------+         +-------------------------+
+        |
+        | if same LLC, same trusted domain,
+        | and base scores are already near-equal
+        v
+ bounded AMX bonus (&lt;= 6 util points)
+        |
+        v
+ baseline CFS result or bounded LLC-local preference
+
+Key kernel placement principles:
+1. The scheduler consumes only cached metadata, never live registers.
+2. The XTILEDATA fact comes from normalized header.xfeatures after a legal save/import.
+3. Shared history is per-rq, local-write-only under rq-&gt;lock, and token-matched.
+4. Any missing prerequisite yields immediate fallback to baseline CFS.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Add `struct amx_sched_meta` to x86 task state near `thread.fpu` and add `struct amx_rq_hist` plus a static key to scheduler state.
+2. Instrument x86 FPU/xstate save helpers to refresh AMX metadata immediately after software fpstate materialization; instrument xstate import/regset/sigreturn paths to refresh metadata only after validation and normalization succeed.
+3. Implement reset/invalidation hooks for execve, fpstate reinit, AMX enable/disable policy changes, ptrace/regset replacement, sigreturn restore, and fork/clone child initialization; add slow-path token recomputation hooks for core-sched cookie changes, cpuset partition changes, and CPU cgroup migration.
+4. Implement XTILECFG quantization using only validated fields, 4-way boot-keyed hashing, and explicit `BUCKET_VALID` publication; never store raw XTILECFG arrays in scheduler metadata.
+5. Implement per-rq history update under `rq-&gt;lock` on costly fair-task switch-out/dequeue/migration-in, using seqcount-protected lockless reads and read-side time decay; do not write remote runqueues from wakeup placement.
+6. Modify `select_task_rq_fair` and same-LLC load-balance destination choice so the AMX bonus is considered only after baseline feasibility checks and only within the explicit near-tie window; cap the total bonus below the near-tie threshold.
+7. Gate the entire feature behind a static key and x86 feature checks so systems without AMX, or systems where operators disable the feature, retain exact baseline behavior.
+8. Expose tracepoints or schedstat counters for `amx_costly_set`, `amx_bucket_valid`, `amx_bias_applied`, `amx_bias_skipped_no_domain`, and `amx_history_match` to support evaluation without exposing raw per-task bucket values to user space.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>The evaluation plan is kernel-realistic and measures both benefit and cost.
+
+1. Correctness validation:
+- Unit-test the metadata transitions for save, import, execve, fork/clone, ptrace xstate write, sigreturn restore, AMX permission disable, cpuset move, CPU cgroup attach, and core-sched cookie change.
+- Verify that `COSTLY` tracks only materialized `header.xfeatures &amp; XTILEDATA` and is cleared on every invalidation event.
+- Verify that compacted XSAVES user buffers do not affect scheduling until the import path normalizes them.
+
+2. Hot-path overhead:
+- Measure instruction count and branch count in `select_task_rq_fair` with static key off, with key on but non-costly tasks, and with costly tasks inside an LLC domain.
+- Measure rq-lock hold time deltas and seqcount retry rates on large Xeon systems.
+- Confirm there are no remote wakeup writes to other CPUs&#x27; history records.
+
+3. Performance benefit:
+- Run AMX-heavy GEMM/BF16 and matrix-factorization workloads, including mixed AMX and non-AMX colocations.
+- Measure cross-LLC migration count, XTILEDATA restore count, throughput, tail latency, and LLC miss rate.
+- Compare baseline CFS, same-task-only LLC bias, and full trusted-domain history mode.
+
+4. Fairness and scheduler health:
+- Measure vruntime skew, runnable latency, starvation indicators, and load-balance convergence under mixed workloads.
+- Stress asymmetric-capacity, SMT/core-sched, and cpuset-isolated configurations to ensure the feature never overrides existing admissibility checks.
+
+5. Security and leakage:
+- In multi-tenant experiments, verify that tasks in different tokens never receive history matches from one another, that bucket labels change after reboot, and that disabling trusted-domain formation eliminates shared-history effects.
+
+Success criteria are: statistically significant reduction in cross-LLC migrations and AMX restore-heavy handoffs for AMX-costly workloads, no measurable regression for non-AMX workloads with static key off or on, bounded rq-lock overhead, and no cross-token history reuse.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A computer-implemented scheduling method for Linux fair-class tasks on x86 AMX hardware, wherein a task is marked AMX-costly only after a legal xstate save or validated xstate import has materialized a software fpstate whose normalized XSAVE header xfeatures bitmap indicates XTILEDATA presence, and wherein the scheduler thereafter uses that mark only as a bounded placement hint.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the scheduler-visible AMX-costly mark is derived from the normalized XSAVE header xfeatures bitmap and not from AMX permission state, XFD state, live register inspection, TIF flags, or generic FPU ownership flags.</li><li style='margin-bottom:8px;'>The method of claim 1, further comprising deriving an optional scheduler bucket from validated XTILECFG fields by quantizing active-tile count and aggregate configured tile bytes into a coarse tuple and hashing the tuple with a per-boot secret to obtain one of a fixed small number of bucket classes.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein shared placement history is enabled only for tasks whose cached isolation-domain token matches a runqueue history token, the isolation-domain token being composed from an effective core-scheduling cookie, cpuset-partition identity, and CPU-cgroup identity, and being invalidated when any of those identities changes.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein each runqueue maintains a local decaying history record updated only under that runqueue&#x27;s lock on local switch-out, dequeue, or migration-in of an AMX-costly fair-class task, and read locklessly by candidate selectors using seqcount or equivalent retry logic.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the AMX-based placement effect is limited to candidate CPUs already deemed feasible by baseline CFS and only when the baseline candidate scores are within an explicit near-tie threshold, the AMX bonus being numerically capped below that threshold so that the feature cannot overturn a clearly superior baseline placement.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein invalidation semantics clear or suppress the scheduler-visible AMX metadata on execve, child creation, fpstate reinitialization, ptrace/regset xstate replacement, sigreturn restore, AMX enable/disable policy change, XFD/XCOMP-related policy change, cpuset membership change, CPU-cgroup membership change, or core-scheduling cookie change.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: incorrect interpretation of XSAVE/XSAVES layout could create false positives. Mitigation: derive the scheduling signal only from the normalized software fpstate after the existing import/save code has handled compacted-vs-standard format, and consult `header.xfeatures` rather than raw user offsets.</li><li style='margin-bottom:6px;'>Risk: stale metadata could survive task lifecycle or isolation changes. Mitigation: use exhaustive invalidation on execve, fork/clone child start, ptrace/regset replacement, sigreturn restore, AMX policy changes, fpstate resets, cpuset/cgroup migration, and core-sched cookie changes, with release-published metadata and generation increments.</li><li style='margin-bottom:6px;'>Risk: per-rq history could add contention or cacheline bouncing. Mitigation: make writes local-only under `rq-&gt;lock`, avoid remote writes on wakeup, use static-key gating, and use read-side decay plus seqcount lockless reads.</li><li style='margin-bottom:6px;'>Risk: fairness regressions from an oversized bias. Mitigation: apply the feature only inside the baseline feasible set, only within an explicit near-tie window, and cap the total bonus below that window with immediate fallback to baseline CFS otherwise.</li><li style='margin-bottom:6px;'>Risk: scheduler-visible differences could leak cross-tenant information. Mitigation: restrict shared history to trusted domains only, hash the isolation token, use a tiny boot-keyed bucket space, expire history quickly, and allow operators to disable bucket/history mode while retaining same-task LLC bias only.</li><li style='margin-bottom:6px;'>Risk: bucketization could be either too coarse to help or too fine to be safe. Mitigation: start with a fixed 4-way bucket based on validated XTILECFG aggregate classes, measure benefit in AMX-heavy workloads, and keep raw XTILECFG detail out of scheduler metadata.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual, XSAVE/XRSTOR state-management chapters and Intel AMX programming model sections.</li><li>Linux x86 FPU/xstate management code paths governing software fpstate save, restore, validation, and regset import/export.</li><li>Linux scheduler fair-class placement and load-balance paths, including `select_task_rq_fair`, wake-affine logic, LLC scheduling domains, and rq locking rules.</li><li>Linux core scheduling design and effective cookie semantics for SMT isolation.</li><li>Linux cpuset and CPU-cgroup partitioning mechanisms that define effective CPU-placement domains.</li><li>Representative AMX-heavy workloads such as tiled GEMM, BF16 inference, and large-scale matrix factorization that make XTILEDATA save/restore cost scheduler-relevant.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 3.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define a concrete synchronization + memory-ordering contract for per-task metadata written in x86 FPU/xstate paths and read in the scheduler: rq-&gt;lock does not automatically order against fpregs_lock/XSAVE paths. Use an explicit seqcount/atomic versioning scheme (e.g., seqcount_latch_t or u32 seq with store-release/load-acquire) so select_task_rq_fair() never observes torn/partially-updated restore-class/bucket fields.</li><li style='font-size:13px;margin-bottom:4px;'>Be precise about when the “authoritative materialized XSAVE image” is guaranteed to exist. Lazy-FPU and XSAVE optimizations can defer/skip saving; relying on “switch-out save has written the outgoing task’s XSAVE image” is not universally true across configurations/paths. Specify the exact hook points where XTILEDATA presence is known-valid (e.g., immediately after the kernel actually performed an XSAVE of the task’s state, and after validated user xstate import), and define what metadata must be cleared when state is not materialized.</li><li style='font-size:13px;margin-bottom:4px;'>Token composition must use stable, non-recycled identifiers with explicit generation tracking. cpuset partitions, CPU-cgroup partitions, and core-sched cookies can change dynamically; naive hashing risks cross-contamination (wrong domain sharing) and potential side channels if IDs recycle. You need a well-defined, lifetime-safe domain key (e.g., stable cgroup inode id + generation, cpuset effective partition generation) and hard invalidation on domain transitions.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify and harden invalidation semantics: the list must include all transitions that can change AMX permission/restore cost or xstate contents (XFD state changes, XFEATURE permission toggles via prctl/arch_prctl or XCR0 changes, ptrace writes, sigreturn, execve, fork/clone fpstate inheritance rules, and any kernel path that clears/overwrites xfeatures bits). Invalidation must be atomic with respect to scheduler reads (ties back to seq/versioning).</li><li style='font-size:13px;margin-bottom:4px;'>The “near-tie” condition and +/-32 util cap must be defined relative to existing CFS decision thresholds to avoid fairness regressions and oscillation. Specify exactly which comparator(s) it plugs into (wakeup placement vs periodic balance), the numeric tie window, and prove the bias cannot flip a non-tie into a tie or cause repeated ping-pong under load balance.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten the novelty boundary vs existing CFS placement heuristics (wake_affine, cache-hot/last_cpu bias, SIS_UTIL/near-tie logic, util_est, asymmetric packing) by specifying an exact decision rule: where in select_task_rq_fair()/find_idlest_cpu()/load-balance the bias is applied, what constitutes a “near tie” numerically, and proving the cap is always strictly below existing tie-break margins so it cannot dominate fairness/load signals.</li><li style='font-size:13px;margin-bottom:4px;'>Validate the “authoritative AMX pending-restore cost” signal: xstate_header.xfeatures presence of XFEATURE_XTILEDATA may not perfectly correspond to restore work under XSAVES/compacted formats, dynamic permission (XFD/XCR0), or kernel’s ‘init state’ optimizations. Define precisely which save/import points qualify, how you handle xcomp_bv vs xfeatures, and list all invalidation triggers (exec, clone init, sigreturn, ptrace writes, prctl permissions, XFD changes, xstate size/layout changes).</li><li style='font-size:13px;margin-bottom:4px;'>The isolation-domain token construction (core-sched cookie + cpuset partition + cpu-cgroup partition) needs a rigorous threat model and update semantics: these identifiers can change at runtime; specify how token changes are detected, how per-rq history entries are purged/aged safely, and why timing effects from history-influenced placement do not reintroduce cross-tenant side channels.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify “same LLC” gating across modern topologies (hybrid/NUMA/sub-NUMA clusters/AMD CCX-like groupings) and how you map ‘LLC’ in code (sched_domain flags, cache_id, DIE/LLC IDs). Without a concrete mapping, prior art on cache-affine clustering could swallow the claim.</li><li style='font-size:13px;margin-bottom:4px;'>Prior-art risk: per-CPU/per-rq ‘pheromone’ history tables and hashed domain keys resemble known scheduler patterns (per-CPU locality history, cookie-based partitioning, EAS biasing). Strengthen non-obviousness by demonstrating that the combination of (XSAVE-validated AMX class + quantized XTILECFG bucket + isolation-scoped per-rq history + bounded near-tie only) yields measurable benefit where each individual component (AMX present flag alone, core-sched cookie alone, wake_affine alone) fails.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Clarify the exact hook points and ordering: which x86 FPU paths set/clear the per-task AMX metadata (e.g., switch-out save, sigreturn restore, ptrace writeback) and which scheduler paths consume it (select_task_rq_fair vs wake_affine vs load_balance).</li><li style='font-size:13px;margin-bottom:4px;'>Tighten the isolation-domain token definition so it is stable under container churn yet cannot cross-tenant: specify which identifiers are used (core-sched cookie, cpuset effective partition, cpu-cgroup) and what happens on transitions (explicit seq/invalidation).</li><li style='font-size:13px;margin-bottom:4px;'>Quantify the worst-case overhead and guardrails on Xeon: per-rq history update frequency, static-key gating criteria, and how +/-32 util interacts with EAS/asym_capacity/SMT and core scheduling.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define and prove isolation-domain boundaries: ensure the SipHash token key is per-boot secret and that inputs (core-sched cookie, cpuset partition, cpu-cgroup partition) cannot let tasks influence or observe history across domains; document what happens when any component is unset/zero.</li><li style='font-size:13px;margin-bottom:4px;'>Handle dynamic domain changes safely: explicitly invalidate per-task cached bucket and per-rq history contributions on cpuset membership changes, CPU cgroup changes, core-sched cookie changes, and task migration between rq’s, otherwise stale metadata can create cross-tenant leakage or misplacement.</li><li style='font-size:13px;margin-bottom:4px;'>Avoid scheduler side-channel amplification: even with same-LLC gating, a deterministic +/-32 util bias can become an oracle; add jitter/quantization or require an additional in-domain capability bit, and ensure history is not updated on behalf of tasks outside the current domain.</li><li style='font-size:13px;margin-bottom:4px;'>Locking/RCU correctness: specify exact locking for reading per-task bucket (READ_ONCE is not enough if writers run outside rq-&gt;lock); require ordering guarantees between fpu/xstate writers and scheduler readers (e.g., seqcount or atomic versioning).</li><li style='font-size:13px;margin-bottom:4px;'>xstate validity contract must be concrete: enumerate the exact arch/x86 FPU save/import points that qualify as &#x27;authoritative&#x27;, and ensure no paths can mark XTILEDATA present based on untrusted user-provided images (sigreturn/ptrace) without full kernel validation under current XFD/permission state.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] You must precisely specify the *only* safe update points for the cached per-task AMX-cost signal (e.g., in existing x86 FPU/xstate save paths) and the required locking/preemption ru</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define exact semantics of the XSAVE header bits you consume: distinguish xstate_bv “component present in image” vs “non-init/dirty” optimizations (XSAVEOPT/compaction). You need a c</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Handle state invalidation explicitly: clear/refresh the cached classification on exec, fork/clone, ptrace-induced state changes, and especially on AMX permission transitions (XCOMP </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Bound the scheduler integration to a true tie-breaker: document where in select_task_rq_fair / wakeup placement / migration it applies, and require strict gating so it cannot overri</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Even a 1-bit “AMX-costly” signal can be a cross-domain side channel via placement. You should scope the hint to an isolation domain (at minimum core-sched cookie and cgroup/cpuset) </li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define an explicit locking/ownership model for reading and updating the per-task “AMX restore class” metadata: the scheduler hot path cannot safely peek at fpstate/xsave header with</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify exactly which “authoritative materialization points” you will hook to compute/invalidate the hint. Many x86 FPU paths are conditional (lazy vs eager, kernel_fpu_begin/end, s</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Your “isolation domain token” needs a kernel-correct stability story: core-sched cookie changes, cpuset migration, and cgroup reparenting can occur concurrently with wakeup and load</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Per-runqueue decaying history (“pheromone”) must be proven safe and cheap under rq lock contention: define data structure size, update frequency, and exact locking (rq-&gt;lock) for bo</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The xstate interpretation details are underspecified and can be wrong on real machines: you must state whether you read xstate_header::xfeatures/xcomp_bv, handle XSAVES compacted fo</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux scheduler using x86 AMX microarchitecture features
+</footer>
+</div></body></html>

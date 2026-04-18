@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 5.0] Memcg-Scoped Filemap Hazard Maps with PEBS-Gated Stall Reinf</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-4a0d4d9a5fe1 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 5.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Memcg-Scoped Filemap Hazard Maps with PEBS-Gated Stall Reinforcement and Layout-Sequence-Safe Advisory Control for Readahead, Folio Order, and Writeback Chunking</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux file system using x86 PEBS microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>PEBS-to-Folio Translation Layer for Inode-Scoped Readahead and Large-Folio Control</li><li style='font-size:13px;'>Directory Replica Vector Layer for PEBS-Guided tmpfs and dcache Lookup Locality</li><li style='font-size:13px;'>Extent Hazard Translation Layer for PEBS-Guided ext4/XFS I/O Amplification Suppression</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: Reconstruct the Directories for In-Memory File Systems &lt;&gt; Scalable constructions of fractional repetition codes in distributed   storage systems
+  MMR Score:    0.7639</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A bounded Linux kernel facility that records strictly attributable filemap stall events into non-sleeping per-CPU rings, reinforces those inode-range buckets with gated Intel x86 PEBS weight and data_src samples without reverse-mapping sampled addresses, and publishes memcg-scoped, layout-sequence-safe advisory hazard maps that conservatively bias readahead depth, folio order, and writeback chunking with mandatory fallback to existing heuristics.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is a single shared kernel feedback object that safely bridges microarchitectural evidence and file-offset-exact kernel stall evidence without unsafe attribution. The invention combines: (i) a file-backed haza</div>
+    <div class="pill"><strong>Feasibility:</strong> The design stays within realistic Linux and x86 implementation boundaries. All producer hooks run in existing task-context paths where inode, mapping, and page index are already kn</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux today makes readahead sizing, folio-order selection, and writeback clustering decisions primarily from access-pattern history, refault distance, and generic locality heuristics. Those signals do not directly capture whether a particular file offset repeatedly causes expensive synchronous read misses, folio lock waits, folio writeback waits, or long-latency Intel memory accesses. Raw PEBS samples are not safe to translate into file offsets by walking VMAs or page tables in interrupt context, and using sampled address or sampled IP as a reverse-mapping source would create correctness, complexity, and prior-art overlap risk. At the same time, page-cache state is shared across tenants, so any feedback system that is not memcg-scoped can leak behavior or let one cgroup bias another cgroup&#x27;s I/O pattern. The disclosed system solves these issues by using only strictly attributable kernel stall producers to define file-offset buckets, using PEBS only as gated reinforcement for already-attributed buckets, maintaining a separate per-mapping layout sequence for mutation safety, and limiting all actuation to bounded advisory clamps that never violate existing mm or writeback semantics.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>[{&#x27;phase&#x27;: 1, &#x27;name&#x27;: &#x27;Core object model&#x27;, &#x27;details&#x27;: &#x27;Add fs_hazard_root, memcg submap, bucket schema, global file-cookie index, layout_seq field, RCU publication, and shrinker plumbing. Add CONFIG_FS_HAZARD_MAP and a static key defaulting off.&#x27;}, {&#x27;phase&#x27;: 2, &#x27;name&#x27;: &#x27;Strict producer hooks&#x27;, &#x27;details&#x27;: &#x27;Instrument synchronous read-miss wait completion, folio lock wait completion, and folio writeback wait completion with non-allocating per-CPU ring writes and recursion guards. Add corroborating workingset_refault hook with reduced authority.&#x27;}, {&#x27;phase&#x27;: 3, &#x27;name&#x27;: &#x27;Deferred aggregation&#x27;, &#x27;details&#x27;: &#x27;Implement kworker draining, css_tryget and css_put lifecycle, bucket aging, overflow epoch handling, and memory caps. Validate layout_seq at update time.&#x27;}, {&#x27;phase&#x27;: 4, &#x27;name&#x27;: &#x27;Intel PEBS reinforcement&#x27;, &#x27;details&#x27;: &#x27;Enable optional PEBS sampling using precise_ip, weight, and data_src only. Add per-task hazard gates keyed by file_cookie and bucket_idx. Reject any sample without a valid gate or required PMU fields.&#x27;}, {&#x27;phase&#x27;: 5, &#x27;name&#x27;: &#x27;Consumer integration&#x27;, &#x27;details&#x27;: &#x27;Wire query helpers into ondemand readahead and generic writeback chunk selection. Enforce hard clamps and no-op fallback. Restrict writeback use to paths with valid cgroup writeback memcg identity.&#x27;}, {&#x27;phase&#x27;: 6, &#x27;name&#x27;: &#x27;Hardening and tuning&#x27;, &#x27;details&#x27;: &#x27;Add tracepoints and aggregate-only stats, validate mutation coverage for truncate and range-remap operations, tune default bucket size and thresholds on Intel Xeon benchmarks, and verify that overflow and reclaim paths fail closed.&#x27;}]</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 5.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft does not yet specify a concrete, verifiable concurrency/lifetime model for (a) RCU-published hazard snapshots tied to address_space/inode lifetime and (b) PEBS/perf sampling context safety (NMI/IRQ/task context), creating high UAF and locking-safety risk if implemented as written.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact lifetime and teardown rules for the per-address_space hazard root: when it is created, how it is attached (pointer location), how inode eviction/address_space destruction detaches it, and how readers are protected from UAF (RCU pointer + call_rcu free, or refcount + RCU). Include what prevents file_cookie/layout_seq reuse across inode reuse and what happens on mapping re-use.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the layout-sequence contract precisely: which kernel operations increment it, which locks serialize increments (i_rwsem? mapping-&gt;invalidate_lock? filesystem-specific locks?), and how readers validate it (read-once + seqcount/atomic). Ensure it covers invalidate_inode_pages2(), truncate_inode_pages_range(), hole-punch/collapse/insert-range, reflink dest updates, and pagecache invalidation paths so stale buckets cannot survive structural layout change.</li><li style='font-size:13px;margin-bottom:4px;'>Make the producer contexts explicit and safe: list the exact hook sites (functions) for &#x27;strictly attributable&#x27; stalls and prove they cannot sleep/allocate when emitting to per-CPU rings. If any hook can run with preemption enabled, address migration (task moves CPUs) so the bucket attribution cookie and per-CPU ring write remain consistent (preempt_disable or migrate_disable boundaries).</li><li style='font-size:13px;margin-bottom:4px;'>PEBS/perf integration must be NMI/IRQ-safe: if reinforcement consumes PEBS samples in perf&#x27;s sampling callback, you cannot take normal locks, cannot touch sleeping locks, and must treat task/memcg pointers as unstable. Define an NMI-safe cookie storage (per-cpu, READ_ONCE/WRITE_ONCE) and a deferred-only path that translates cookie→bucket updates in process context.</li><li style='font-size:13px;margin-bottom:4px;'>Memcg scoping needs a correct authority source per consumer: readahead should use current task&#x27;s memcg (or faulting mm) only if that is stable for the IO, and writeback must use wb/memcg identity (wbc-&gt;wb, wb_memcg) under cgroup writeback rules. Specify behavior when cgroup writeback is disabled, when writeback is from kswapd, and when IO is initiated by one cgroup but writeback is performed in another context.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: All drafts omit the core patent deliverables (Problem/Architecture/Implementation Plan/Claims). Without concrete claim language, defined data structures, and exact kernel integration points, the novelty/non-obviousness boundary vs existing Linux feedback mechanisms cannot be defensibly established.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact advisory outputs and clamps: specify what the consumer API returns (e.g., max_ra_pages, folio_order_cap, wb_chunk_split_points) and the hard safety bounds/minimums; otherwise it reads like a broad &#x27;tune heuristics&#x27; concept that risks obviousness over existing adaptive readahead/writeback tuning.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten and operationalize the layout-generation invalidation contract: enumerate precisely which kernel paths increment the mapping layout sequence (truncate, punch, collapse/insert range, remap, reflink, iomap updates, swapfile activation, etc.), and explain how you guarantee consumers never apply stale buckets under concurrent invalidation (memory ordering + seqcount/RCU rules).</li><li style='font-size:13px;margin-bottom:4px;'>Clarify memcg scoping semantics for shared page cache: for readahead you mention &#x27;current task memcg&#x27; and for writeback &#x27;wb memcg&#x27;—you must specify the exact mapping from events→memcg shard and from consumer→memcg shard, and prove you don’t create cross-cgroup steering or accounting inconsistencies (especially under cgroup writeback, direct reclaim, and inherited IO contexts).</li><li style='font-size:13px;margin-bottom:4px;'>Differentiate sharply from prior art in Linux (workingset/refault, multigen LRU feedback, PSI stall signals, readahead adaptive heuristics, writeback throttling, and existing per-inode readahead state): add a prior-art table and state what those mechanisms cannot do that your strict-attribution + layout-gen + shared-object contract enables.</li><li style='font-size:13px;margin-bottom:4px;'>PEBS gating needs a concrete, non-obvious kernel mechanism: specify how the &#x27;active attribution cookie&#x27; is set/cleared across preemption/interrupts, which contexts are allowed (NMI/perf overflow), and how you prevent misattribution (task migration, nested stalls, recursion). Without this, PEBS use looks either unsafe or an obvious &#x27;use PEBS to weight stalls&#x27; add-on.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten the producer contract by naming the exact stall-hook sites and their invariants (which locks/refs are held, availability of mapping+index, and whether the path can sleep) to make “strictly attributable” auditable.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the layout-sequence authority: enumerate which logical-layout mutations must advance it (truncate, punch, collapse/insert-range, remap/reflink destination, etc.) and where the increments live to avoid silent stale advisory use.</li><li style='font-size:13px;margin-bottom:4px;'>Define the PEBS gating mechanism concretely (how the “active single-bucket filemap context/cookie” is set/cleared, nesting rules, preemption/IRQ behavior, and fail-closed semantics under imprecise/virtual PMU).</li><li style='font-size:13px;margin-bottom:4px;'>Clarify memcg isolation in shared page cache: which memcg identity is consulted for readahead vs cgroup writeback, and how you avoid steering cross-cgroup behavior when the same inode mapping is shared.</li><li style='font-size:13px;margin-bottom:4px;'>Quantify safety clamps (max readahead shrink/expand, min writeback chunk, split budgets, aging/decay) so the advisory cannot destabilize throughput under bursty IO or heavy writeback congestion.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact lockless publication + lifetime model: how the hazard-map snapshot is RCU-published, how layout-seq/generation is read (seqcount vs atomic64), and how readers avoid UAF while allowing shrinker reclamation. Include required memory-ordering (e.g., rcu_assign_pointer/smp_store_release and rcu_dereference/smp_load_acquire).</li><li style='font-size:13px;margin-bottom:4px;'>Specify the memcg identity and refcounting rules precisely. If keys include memcg, you must guarantee css lifetime across deferred aggregation and shrinker (css_get/css_put placement), and clarify which memcg is used on read side (current task vs wb memcg) without cross-cgroup leakage when page cache is shared.</li><li style='font-size:13px;margin-bottom:4px;'>Harden against side-channel and policy-manipulation risk: the advisory must be privileged/opt-in (sysctl + cgroup knob), rate-limited, and must not allow an unprivileged tenant to influence global IO patterns via intentionally induced stalls. Document how hazard signals are capped per-memcg and how writeback splitting avoids starving other workloads.</li><li style='font-size:13px;margin-bottom:4px;'>Make the producer contract explicit for sleep/atomic contexts. Several “stall sites” can occur under locks, reclaim, or writeback paths; you must prove the per-CPU ring write is always non-sleeping, NMI/IRQ-safe if applicable, and does not take locks that can deadlock with folio/inode locks. Include overflow semantics and ensure overflow cannot cause pathological CPU burn.</li><li style='font-size:13px;margin-bottom:4px;'>PEBS integration needs a concrete safety/compat plan: how you gate on precise_ip availability, how you handle virtualization/guest PMU quirks, and how you avoid reintroducing unsafe attribution (even via indirect correlations). Also state how you prevent perf_event permission model bypass (kernel sampling must not expose extra info to unprivileged userspace).</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define *exactly* which kernel events count as “always-attributable page-cache stall events” and prove they always have a stable (mapping,inode,index) at the capture point. If you sa</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the concurrency model for the per-inode hazard map: what lock protects updates, what readers hold (RCU vs seqlock vs spinlock), and the lock-order constraints relative to ex</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Handle truncation, hole-punch, and inode reuse semantics. Offset-bucket metadata must be invalidated or version-checked against i_size/i_version (or an explicit generation counter) </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make the bounding and reclamation story kernel-real: define max buckets per inode, global memory cap, and integration with reclaim (shrinker or per-superblock LRU). Otherwise you ri</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] If writeback consumes the same hazard map as readahead, define how hazards influence writeback clustering without violating writeback correctness/throughput guarantees (e.g., avoid </li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">yellow_card_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the “kernel attribution cookie” precisely (who sets/clears it, nesting rules, preempt/irq safety, lifetime/teardown). If perf/PEBS callbacks can run in NMI/irq context, the c</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Spell out the exact keying and invalidation model for layout mutation: which generation is checked (inode-&gt;i_generation is not a layout sequence), what increments it, and how you co</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Provide a concrete locking/non-sleeping producer design for stall events taken under folio/mapping/writeback locks. Producers must not allocate, take sleeping locks, or contend on g</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify object lifetime/ownership: where the per-inode map lives (mapping vs inode), how it is freed on inode eviction/unmount, and how memcg scoping is referenced safely (css_get/p</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Consumption contracts need sharper correctness bounds: precisely where readahead and writeback consult the advisory, how clamping/splitting cannot violate writeback semantics (WB_SY</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux file system using x86 PEBS microarchitecture features
+</footer>
+</div></body></html>

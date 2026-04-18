@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.2] Topology-Bound Host-Power-Domain Contract for CXL-to-x86 Pac</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-1707adf09377 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.2/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Topology-Bound Host-Power-Domain Contract for CXL-to-x86 Package Power and Package-Idle Arbitration</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux power management using x86 CXL microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Package-Scoped CXL Fabric Idle Contract for Deep x86 C-State Admission</li><li style='font-size:13px;'>RDT-to-CXL QoS Energy Domain for Page Demotion Under Cache Partitioning Constraints</li><li style='font-size:13px;'>x86 Power-Limit Notification to CXL Maintenance Window Arbiter</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | POWER OPTIMIZATION FOR MOBILE USAGES &lt;&gt; SM501_POWERMODE_P2X_SRC
+  MMR Score:    0.7742</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A Linux-kernel `cxl_host_power_domain` contract that binds a CXL root complex to one x86 package when topology confidence is strong, publishes a seqcount-protected self-expiring snapshot of CXL activity and cached package-power-limit assertion for lockless `intel_idle` readers, and class-schedules serialized CXL mailbox traffic so urgent RAS bypasses while best-effort maintenance is deferred only within bounded deadlines during package power pressure.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is not generic power capping, not generic `pm_qos`, not workqueue tuning, and not runtime PM autosuspend. The invention is a topology-bound in-kernel contract that bridges asynchronous CXL producer state into</div>
+    <div class="pill"><strong>Feasibility:</strong> The design is implementable with standard Linux/x86 patterns and existing hardware surfaces. `struct cxl_host_power_domain` uses RCU/refcount lifetime management, atomic producer c</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>On x86 servers with CXL Type-3 memory, Linux package-idle selection and package-power mitigation are largely driven by CPU-local or package-local signals, while important CXL activity is discovered asynchronously in probe, event-log servicing, poison list retrieval/clear, sanitize, health polling, region reconfiguration, reset recovery, and hotplug workqueues. This creates three concrete gaps.
+1. `intel_idle` / cpuidle cannot cheaply determine whether a package-local CXL host path is in a fresh non-quiescent interval without calling into CXL code or taking sleeping locks, both of which are unacceptable in the idle path.
+2. When a package is actively power-limited, background CXL mailbox traffic continues to consume package power even though much of that traffic is best-effort maintenance rather than urgent RAS or recovery.
+3. Existing kernel mechanisms do not provide a topology-safe way to bind a given CXL memdev path to exactly one x86 package only when the mapping is trustworthy, nor a rule for what happens when the path is behind a switch, a shared I/O die, a virtualized root complex, or ambiguous ACPI proximity.
+The practical failure case is a multi-socket platform where a Type-3 memdev hangs from the root complex nearest package 1. A background poison-list walk or event-log refresh on that path may keep consuming package 1 power during PL1/PL2 assertion while `intel_idle` on package 1 has no lockless evidence that the domain is active. Simultaneously, socket 0 should not be penalized, and urgent CXL RAS traffic must still progress. The invention solves precisely that scoped problem.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>The topological void is the absence of a per-host-domain kernel contract that spans CXL producer state, x86 package power-pressure, and package-scope idle arbitration.
+1. Contrast to `powercap` / Intel RAPL control loops: RAPL can program or observe package power limits, but it cannot identify which serialized CXL mailbox command on which root-complex path is safe to defer. Failure case: package 1 enters active power limitation while an event-log scan and poison-list walk are queued on one CXL mailbox; RAPL may lower available power, but it cannot express &#x27;defer only the best-effort scan for this host domain while still allowing fatal error recovery.&#x27;
+2. Contrast to `pm_qos` and cpuidle governors: latency QoS is global or per-CPU policy, not a root-complex-scoped transient derived from asynchronous CXL activity. Failure case: using `pm_qos` to protect one CXL path would over-constrain unrelated CPUs or both sockets, and governors still lack a lockless producer snapshot tied to that host domain.
+3. Contrast to workqueue power-efficient mode and freezer behavior: those mechanisms alter worker placement or suspend semantics, not per-mailbox class arbitration under package power pressure. Failure case: power-efficient workqueues still execute best-effort CXL maintenance during PL1 assertion, and freezer semantics are suspend-oriented rather than domain-local power arbitration.
+4. Contrast to runtime PM autosuspend: runtime PM reasons about device power state, not class-aware serialization of mailbox traffic while the CXL memory device remains online and serving memory. Failure case: a Type-3 memory device backing active regions cannot be autosuspended, yet the kernel still needs to defer only low-value mailbox maintenance during package power pressure.
+5. Contrast to generic mailbox prioritization: existing serialized mailbox locking does not incorporate root-complex-&gt;package binding, cached package power-limit-active state, or claimable fairness guarantees for urgent versus deferred maintenance.
+The non-obviousness therefore lies in combining a root-complex-anchored topology binding, a cached and epoch-stamped package power-pressure signal, a lockless self-expiring activity snapshot for package-idle readers, and a bounded-deferral mailbox scheduler with explicit ambiguity fallback.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention introduces a new in-kernel object, `struct cxl_host_power_domain`, and a narrow contract surface between the CXL core and x86 package power/idle logic.
+
+A. Exact contract surface
+- Domain identity: `segment`, `root_bus`, `host_bridge_uid`, and `root_port_bdf` (or host-bridge key for RCiEP paths) form the stable host-domain key.
+- Binding result: `package_id`, `package_cpumask`, `bind_confidence` in `{STRONG, WEAK, AMBIGUOUS, UNKNOWN}`, and `topology_epoch`.
+- Cached snapshot fields published under seqcount: `active`, `active_expires_ns`, `package_power_limit_active`, `power_sample_ns`, `power_epoch`, `valid`, and `bind_confidence`.
+- Scheduling API exported to CXL producers: `enqueue_best_effort(cmd, deadline_ns)` and `enqueue_urgent(cmd, deadline_ns)`.
+- Read API exported to x86 idle logic: `cxl_hpd_read_snapshot(domain, &amp;snap)` returning a lockless copy suitable for `intel_idle` package-state pruning.
+
+B. Deterministic topology binding algorithm
+1. For each CXL memdev, walk PCI ancestry to the nearest upstream root port; if the device is RCiEP or the path lacks a root port, use the owning PCI host bridge as the anchor.
+2. If the memdev is behind a CXL switch, all downstream ports that converge on the same upstream root port / host bridge share the same host-power-domain key.
+3. Resolve candidate package ownership in order: (i) host bridge or root-port ACPI `_PXM`; (ii) SRAT/HMAT proximity of the attached memory target intersected with online CPU packages; (iii) unique package inferred from the online CPUs associated with that root-complex locality.
+4. If the resolution yields exactly one online package, set `bind_confidence=STRONG` and bind. If multiple packages remain plausible, if a shared I/O die makes ownership non-unique, if virtualization hides trustworthy locality, or if ACPI proximity is missing/contradictory, set `bind_confidence=AMBIGUOUS` or `UNKNOWN` and do not enable package-coupled idle gating or package-power-driven deferral.
+5. CPU hotplug, ACPI reconfiguration, PCI removal, or reprobe increments `topology_epoch`, RCU-swaps the domain pointer on affected memdevs, and re-runs the binding algorithm.
+
+C. Package-power-pressure backend
+- The backend samples the package-level power-limitation status in `IA32_PACKAGE_THERM_STATUS` on one housekeeping CPU selected from the bound `package_cpumask` (lowest-numbered online housekeeping CPU for that package).
+- Validity is correlated with enabled package power limits from `MSR_PKG_POWER_LIMIT`; if package limits are disabled or the package is unbound, `valid=false`.
+- Sampling is event-driven: delayed work is armed only while a domain has deferred best-effort work, while `package_power_limit_active` remains asserted, or immediately after a package-limit reprogramming event. There is no always-on periodic polling and no wakeup on isolated CPUs.
+- Sampling cadence is capped at once every 2 ms while active. Clearing `package_power_limit_active` requires two consecutive inactive samples separated by at least 500 us to avoid oscillation livelock. Assertion is immediate on the first active sample.
+- Staleness rule: if `now - power_sample_ns &gt; 4 ms`, the cached power signal is treated as invalid and maintenance deferral fails open, i.e. best-effort work is no longer deferred solely on that stale sample.
+
+D. Lockless package-idle gating
+- CXL producers increment an atomic domain-active counter on entry to mailbox-using or topology-mutating work and decrement it on exit.
+- On the first increment from zero, the writer publishes `active=true` and `active_expires_ns=now + hold_ns`, where `hold_ns` is a conservative class constant (for example 250 us for mailbox follow-up and 2 ms for reset-recovery work), not a computed device-specific exit-latency budget.
+- While activity continues, writers refresh `active_expires_ns`; when the counter reaches zero, writers publish `active=false`.
+- `intel_idle` only consults this snapshot for candidate package-scope idle states. If `bind_confidence!=STRONG`, package-coupled gating is disabled. If `active=true`, or if a previously asserted active snapshot has gone stale without a clearing update, the package-deep state is pruned for that bound package only. Core-only idle states are untouched.
+
+E. Mailbox arbiter and fairness guarantees
+- All mailbox-using CXL maintenance calls are funneled through a per-domain scheduler layered above the per-device mailbox mutex.
+- Urgent lane: fatal event handling, recovery-critical state fetches, and RAS-required commands use `enqueue_urgent()` and bypass queued best-effort work.
+- Best-effort lane: health refresh, background event-log scan, background poison-list walk, and similar maintenance use `enqueue_best_effort()` with explicit deadlines. Default class bounds are 10 ms for short recovery-follow-up metadata refresh, 25 ms for poison/background scrub maintenance, and 100 ms for telemetry/event scanning.
+- Dispatch order is `urgent &gt; aged_best_effort &gt; best_effort`, where a best-effort command whose deadline expires is promoted to `aged_best_effort`.
+- Quantitative invariant: a newly arrived urgent command never sits behind queued best-effort commands and can be delayed only by the single mailbox command already in flight. When package pressure is inactive and best-effort work exists, the arbiter grants at least one best-effort command or 2 ms of best-effort service in every 10 ms clear window. This gives a claimable starvation bound without sacrificing urgent priority.
+
+F. Context and lifecycle rules
+- `cxl_mbox_send_cmd()` / `cxl_internal_send_cmd()` remain callable only from sleepable process or workqueue context. Submission sites reached from notifier, AER, or other atomic contexts may only queue work into the urgent lane.
+- The mailbox scheduler enforces `WARN_ON_ONCE(in_atomic() || irqs_disabled())` on direct submission paths.
+- Device removal and suspend freeze the domain, call `cancel_delayed_work_sync()` on power-refresh and drain workers, RCU-detach memdev-&gt;domain pointers, wait for outstanding refs, and only then free the domain. Resume and reprobe rebuild the mapping and increment `topology_epoch`.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>The architecture is a three-bridge path: `CXL producers -&gt; cxl_host_power_domain -&gt; x86 package idle/power consumers`.
+
+1. Producer side
+- CXL call paths that ultimately funnel into `cxl_mbox_send_cmd()` or `cxl_internal_send_cmd()` are classified as urgent or best-effort before they contend on the mailbox mutex.
+- Representative sites include identify/init refresh, event-record retrieval, poison list get/clear, health/status queries, sanitize progress, and reset recovery.
+- Atomic/notifier call sites never touch the mailbox directly; they raise a bit and queue urgent work.
+
+2. Host-power-domain core
+- One `cxl_host_power_domain` exists per unique root-complex/host-bridge key.
+- Data members: identity tuple, bound package metadata, `seqcount_t snapshot_seq`, atomic active counter, `power_epoch`, `topology_epoch`, `refcount_t`, RCU-protected memdev links, `delayed_work power_refresh_work`, `delayed_work be_drain_work`, and scheduler queues.
+- Lock ordering is fixed: `bind_mutex -&gt; sched_lock -&gt; (drop sched_lock) -&gt; device mailbox mutex`. The mailbox mutex is never held while taking `bind_mutex`, and seqcount write-side publication happens while holding only the scheduler state lock.
+
+3. x86 package consumer side
+- A per-package backend chooses one housekeeping CPU to read package power-limitation status and publish `package_power_limit_active` plus `power_epoch` into all strongly bound domains for that package.
+- `intel_idle` performs a seqcount read of the snapshot, checks `bind_confidence`, and prunes only candidate package-scope states for the affected package.
+
+4. Failure semantics
+- Strong bind + fresh active snapshot -&gt; prune package-deep idle.
+- Strong bind + fresh power-limit-active snapshot -&gt; defer best-effort mailbox work until deadline or clear window.
+- Stale or invalid power signal -&gt; fail open for maintenance deferral.
+- Ambiguous/untrusted topology -&gt; disable package-coupled gating and package-coupled power deferral; local urgent-vs-best-effort queueing may still be used, but no package-specific idle or power claim is made.
+
+5. Suspend/hotplug/reconfiguration
+- On suspend or PCI removal, the domain enters `FROZEN`, queued delayed work is synchronously cancelled, memdev links are RCU-cleared, and any pending best-effort queue is either drained before suspend or replayed after resume according to command class.
+- On CPU hotplug or ACPI topology change, the package housekeeping CPU and `package_cpumask` are recalculated under `bind_mutex`, `topology_epoch` increments, and the bind confidence may degrade to `AMBIGUOUS`, which immediately disables idle gating and package-pressure deferral.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Phase 1 - Contract and domain object
+- Add `drivers/cxl/core/host_power_domain.c` and a matching internal header that defines `struct cxl_host_power_domain`, snapshot fields, bind-confidence enum, and the APIs `enqueue_best_effort(cmd, deadline_ns)`, `enqueue_urgent(cmd, deadline_ns)`, and `cxl_hpd_read_snapshot()`.
+- Add RCU/refcount lifetime handling and a per-domain seqcount snapshot.
+
+Phase 2 - Topology binding
+- During memdev discovery and reprobe, walk PCI ancestry to determine the root port / host bridge anchor.
+- Resolve package ownership using `_PXM`, SRAT/HMAT, and online-package intersection in the exact priority order described above.
+- Store `bind_confidence`, `package_id`, `package_cpumask`, and `topology_epoch`.
+
+Phase 3 - Package power backend
+- Add an x86 helper that schedules per-package delayed work on a housekeeping CPU to read `IA32_PACKAGE_THERM_STATUS` and correlate validity with `MSR_PKG_POWER_LIMIT` enable state.
+- Publish `package_power_limit_active`, `power_sample_ns`, and `power_epoch` into strongly bound domains; implement the 2 ms cadence, 500 us clear debounce, and 4 ms staleness rule.
+
+Phase 4 - Mailbox scheduler interposition
+- Funnel current CXL mailbox submission sites through the domain scheduler above the per-device mailbox mutex.
+- Audit and classify the current major mailbox users: identify/init refresh, event-log retrieval, poison get/clear, health/status, sanitize, and reset recovery.
+- Add direct-path assertions so any process/workqueue caller may submit, but atomic/notifier/AER callers must queue urgent work only.
+
+Phase 5 - Idle integration
+- Add a read-only helper callable from `intel_idle` package-state selection to fetch the seqcount snapshot for the package-local domains.
+- Only package-scope candidate states are pruned; core-only states and unrelated sockets remain untouched.
+
+Phase 6 - Lifecycle hardening
+- Implement suspend, resume, PCI removal, and CPU hotplug handling with `cancel_delayed_work_sync()`, RCU pointer swaps, refcount drains, and `topology_epoch` increments.
+- Add tracepoints for domain binding changes, power-pressure transitions, deadline promotion, urgent bypass, and idle-state pruning decisions.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Topology correctness
+- Test single-socket, dual-socket, multi-root-complex, RCiEP, CXL-switch, and intentionally ambiguous/shared-I/O-die platforms.
+- Verify that only strongly bound domains enable package-coupled gating and that ambiguous or virtualized topologies fall back to `UNKNOWN` without use-after-free during hotplug or reprobe.
+
+2. Context correctness
+- Exercise all audited mailbox submission paths and confirm direct submission only occurs in sleepable process/workqueue context.
+- Trigger notifier/AER-style paths and verify they only queue urgent work; the direct funnel must trip `WARN_ON_ONCE` if reached from atomic context.
+
+3. Power-pressure correctness
+- Under synthetic PL1/PL2 assertion, verify that `package_power_limit_active` is published by the housekeeping CPU at the specified cadence, clears only after debounce, and ages out after 4 ms.
+- Confirm that stale power samples fail open for maintenance deferral.
+
+4. Idle-path safety and benefit
+- Measure package C-state residency and wake/exit latency with and without active CXL work on the bound package.
+- Verify that only package-scope states are pruned and that unrelated sockets preserve their normal idle residency.
+
+5. Mailbox fairness and starvation
+- Generate urgent storms plus sustained best-effort queues and confirm the invariant: urgent traffic may wait only for the single in-flight command; once pressure clears, the arbiter grants at least one best-effort command or 2 ms of best-effort service per 10 ms clear window.
+- Verify deadline promotion for 10 ms, 25 ms, and 100 ms best-effort classes.
+
+6. Lifecycle robustness
+- Repeatedly run suspend/resume, PCI hot-remove/hot-add, CPU hotplug, and ACPI reconfiguration while best-effort work is queued.
+- Confirm `cancel_delayed_work_sync()`, RCU swaps, and refcount drains prevent stale pointers, missed rebinds, or work-after-free.
+
+7. End-to-end system value
+- On Xeon+CXL testbeds, measure package energy, deep package-idle residency, CXL urgent-command latency, and tail latency of workloads using CXL memory under normal and power-limited conditions.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>1. A Linux kernel method for coordinating CXL memory-subsystem activity with x86 package power management, comprising: identifying, for a CXL memory device, an upstream root-complex or host-bridge path; creating a host-power-domain object keyed by that path; binding the host-power-domain object to exactly one processor package only when topology evidence resolves to a unique package; publishing, under a lockless sequence-counted snapshot, (i) a CXL activity state and (ii) a cached package-power-limit-active state for the bound package; consulting the snapshot from a package-idle selection path to inhibit entry into package-scope idle states when the activity state indicates active or stale-unresolved CXL work; and scheduling CXL mailbox commands by class such that urgent commands bypass queued best-effort commands while best-effort commands are deferred only up to bounded deadlines during package-power-limit assertion.</li><li style='margin-bottom:8px;'>2. The method of claim 1, wherein the host-power-domain key comprises PCI segment, root bus, and host-bridge identity, and wherein devices behind a CXL switch share the host-power-domain of the common upstream root port or host bridge.</li><li style='margin-bottom:8px;'>3. The method of claim 1, wherein topology binding resolves package ownership by evaluating, in order, host-bridge or root-port ACPI proximity, SRAT/HMAT memory proximity intersected with online processor packages, and a unique package locality inference; and wherein ambiguous, contradictory, or virtualized topology causes the host-power-domain to enter an unknown-binding state that disables package-coupled idle gating and package-power-driven mailbox deferral.</li><li style='margin-bottom:8px;'>4. The method of claim 1, wherein the cached package-power-limit-active state is sampled by a housekeeping CPU of the bound package from the package-level power-limitation status of `IA32_PACKAGE_THERM_STATUS`, is validity-gated by enabled package power limits in `MSR_PKG_POWER_LIMIT`, is published with an epoch and timestamp, and is treated as invalid when older than a predefined staleness bound.</li><li style='margin-bottom:8px;'>5. The method of claim 1, wherein best-effort mailbox commands are enqueued with class-bounded deadlines and are promoted to an aged-best-effort class upon deadline expiration, and wherein, after package power pressure clears, at least one best-effort command or a minimum duration of best-effort mailbox service is granted within each bounded clear window while best-effort work remains queued.</li><li style='margin-bottom:8px;'>6. The method of claim 1, wherein urgent commands are accepted only from sleepable process or workqueue context for direct mailbox submission, while any notifier or atomic-context source is restricted to queueing urgent work for later execution, and wherein the direct submission funnel asserts on atomic or interrupt-disabled entry.</li><li style='margin-bottom:8px;'>7. The method of claim 1, wherein the host-power-domain object is updated and retired under a fixed lock order and RCU/refcount lifetime discipline, and wherein suspend, resume, CPU hotplug, and device removal synchronously cancel deferred work, increment a topology epoch, and prevent mailbox or topology work from dereferencing a freed domain or memory device.</li></ol>
+  <h3>Claim Confidence</h3><ul><li style='margin-bottom:6px;'>Claim 1: confidence=0.84, conflict_score=0.23</li><li style='margin-bottom:6px;'>Claim 2: confidence=0.81, conflict_score=0.20</li><li style='margin-bottom:6px;'>Claim 3: confidence=0.86, conflict_score=0.18</li><li style='margin-bottom:6px;'>Claim 4: confidence=0.79, conflict_score=0.27</li><li style='margin-bottom:6px;'>Claim 5: confidence=0.82, conflict_score=0.24</li><li style='margin-bottom:6px;'>Claim 6: confidence=0.80, conflict_score=0.19</li><li style='margin-bottom:6px;'>Claim 7: confidence=0.78, conflict_score=0.21</li></ul>
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: topology false positives on shared I/O dies or virtualized CXL paths. Mitigation: require unique-package resolution for `STRONG` binding and fall back to `UNKNOWN` otherwise.</li><li style='margin-bottom:6px;'>Risk: power-limit signal oscillation causes repeated defer/run transitions. Mitigation: immediate assert, debounced clear using two inactive samples separated by at least 500 us, and epoch tracking.</li><li style='margin-bottom:6px;'>Risk: urgent storms starve best-effort maintenance. Mitigation: deadline promotion to aged-best-effort plus a guaranteed best-effort slice after pressure clears.</li><li style='margin-bottom:6px;'>Risk: direct mailbox submission from atomic context deadlocks or sleeps illegally. Mitigation: queue-only atomic shims and `WARN_ON_ONCE(in_atomic() || irqs_disabled())` at the direct submission funnel.</li><li style='margin-bottom:6px;'>Risk: hot-remove or suspend races with queued delayed work. Mitigation: `cancel_delayed_work_sync()`, RCU pointer swaps, refcount drains, and topology epochs before free.</li><li style='margin-bottom:6px;'>Risk: idle-path regressions from over-broad gating. Mitigation: consult the snapshot only for package-scope idle candidates and only for domains with `STRONG` binding confidence.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Linux `intel_idle` / cpuidle package-state selection design</li><li>Linux CXL mailbox core (`cxl_mbox_send_cmd()` / `cxl_internal_send_cmd()`), event, poison, health, sanitize, and reset-recovery flows</li><li>PCI ancestry and host-bridge discovery for root-port / RCiEP path resolution</li><li>ACPI SRAT and HMAT proximity data for memory and CPU locality</li><li>Intel package thermal-status and package power-limit MSRs, including `IA32_PACKAGE_THERM_STATUS` and `MSR_PKG_POWER_LIMIT`</li><li>Linux workqueue, RCU, seqcount, and CPU hotplug lifetime-management patterns</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.2/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define and document strict lock ordering between (a) host-domain queue lock, (b) per-memdev mailbox mutex, and (c) workqueue cancel/flush paths; without an explicit ordering + teardown protocol, hot-unplug + queued work risks deadlock or use-after-free.</li><li style='font-size:13px;margin-bottom:4px;'>Make atomic-context exclusion airtight: any path that can run in IRQ/NMI/atomic (AER/notifiers) must never touch the scheduler/mbox path directly. Require it to enqueue work (and prove no sleeping locks or MSR reads occur in atomic context).</li><li style='font-size:13px;margin-bottom:4px;'>Topology-to-package binding needs a concrete, verifiable algorithm and failure mode: how you map memdev→PCIe hierarchy→host bridge/root port→CPU package, and when you refuse to bind (multi-socket ambiguity, PCIe switches spanning sockets, ACPI quirks). Wrong binding is correctness-breaking (gating the wrong package).</li><li style='font-size:13px;margin-bottom:4px;'>Verify MSR choice/bit semantics across Intel generations: IA32_PACKAGE_THERM_STATUS fields related to power limitation must be the ones you intend (vs thermal/prochot). Also specify how you cross-check MSR_PKG_POWER_LIMIT enable state and how you handle virtualization/rdmsr faults.</li><li style='font-size:13px;margin-bottom:4px;'>Specify sampling CPU selection and lifetime: queue_delayed_work_on() must target an online CPU in the same physical package; handle CPU hotplug (migration to another CPU in-package) and ensure you never read a package MSR from the wrong package due to scheduler migration.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: As written, the draft lacks concrete claim boundaries (empty Problem/Architecture/Claims) and a precise topology-binding + scheduling specification, making the core idea vulnerable to being characterized as an obvious combination of (a) existing CXL mailbox serialization/workqueues and (b) existing x86 package power/thermal telemetry used to throttle background work.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define a non-obvious, checkable topology-binding algorithm and its “confidence” threshold: exactly which PCI/ACPI signals (host bridge, root port, SRAT/HMAT proximity, CPU package IDs) are used, how conflicts are resolved (multi-root, NUMA remaps, IO-die separation), and the required fallback semantics when mapping is ambiguous.</li><li style='font-size:13px;margin-bottom:4px;'>Nail down the scheduling contract: explicitly specify class definitions (urgent/RAS vs deadline vs best-effort), promotion rules, maximum deferral bounds, and starvation-prevention/fairness guarantees under continuous urgent load. Without hard bounds and proofs, prior art in generic throttling + priority queues will read onto this.</li><li style='font-size:13px;margin-bottom:4px;'>Prove idle/atomic-context safety end-to-end: enumerate all call sites that can submit mailbox work (AER/notifier paths, memdev probe/remove, health polling) and demonstrate that no urgent path ever blocks on sleeping locks or relies on in-IRQ MSR reads; document strict lock ordering between domain queue lock(s) and per-memdev mailbox mutex.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify the “package power-limit-active” signal: which MSR bits are used, what constitutes ‘active clamp’ vs historical event, sampling interval, epoch/staleness semantics, and how virtualization or heterogeneous packages affect correctness. Otherwise it looks like a straightforward reuse of existing RAPL/thermal-pressure signals.</li><li style='font-size:13px;margin-bottom:4px;'>Differentiate from existing kernel mechanisms with a tight negative space: explain why pm_qos, resctrl, intel_rapl/thermal frameworks, devfreq-style throttling, or existing CXL maintenance workqueues cannot implement the same behavior without your new host-domain object (and cite the specific missing primitives).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Specialist review failed - automated fallback</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Topology/package binding must be formally “fail-closed”: define exactly what evidence is sufficient (PCI segment + host bridge + root port + CPU package ID), and require a robust fallback (observe-only/no-gating) on ambiguity (multi-socket retimers/switches, ACPI SRAT/HMAT gaps, CXL fabric managers, virtualization). Also specify how bindings are updated on CPU/memdev hotplug and PCIe hierarchy changes.</li><li style='font-size:13px;margin-bottom:4px;'>MSR sampling needs a safe, hotplug-resilient implementation: use rdmsr_safe_on_cpu()/similar to read MSR_IA32_PACKAGE_THERM_STATUS on a known-online housekeeping CPU per package; handle CPU offline/online transitions, and guarantee no IRQ/atomic-context MSR reads. Define cache validity (time/epoch) and what happens when sampling fails (treat as “unknown” and disable gating, not “not power-limited”).</li><li style='font-size:13px;margin-bottom:4px;'>Mailbox scheduling correctness: explicitly define class semantics and hard bounds (max deferral time, deadline promotion rules) to prevent starvation/livelock. Ensure urgent/RAS work cannot be head-of-line blocked behind deferred queues, and provide strict lock ordering between the host-domain queue lock and per-memdev mailbox mutex to avoid deadlocks (including cancellation paths during teardown).</li><li style='font-size:13px;margin-bottom:4px;'>Side-channel / DoS considerations: class-based deferral changes timing and may leak power-pressure state or be used to amplify latency (e.g., user-triggerable maintenance). Add constraints so unprivileged activity cannot enqueue unlimited “best-effort” work that defers critical maintenance or burns CPU in scheduler wakeups; require rate-limiting/backpressure and clear privilege boundaries for which commands can be marked deferrable.</li><li style='font-size:13px;margin-bottom:4px;'>Compatibility/stability guarantees: specify behavior across Intel/non-Intel x86, systems lacking package clamp MSRs, and guests where MSR access is trapped. The design should degrade to no-gating without functional regressions, and must not introduce new userspace ABI unless explicitly justified.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the precise concurrency model for the per-domain arbiter: how the memdev list is protected (mutex vs RCU), how works are canceled/flushed on device removal and host bridge te</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify an implementable, non-sleeping-to-read-in-sampled-context “power-limit-active” backend with clear semantics (edge/level, hysteresis, minimum hold time, sampling period). If </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make the device→host-power-domain association algorithm concrete and conservative: use stable kernel primitives (PCI root port/host bridge identity + NUMA/ACPI proximity) and explic</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prove forward progress for best-effort maintenance: define an upper bound on deferral per command class (to avoid violating device expectations/health monitoring), and define behavi</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Urgent/RAS bypass must address priority inversion on the per-device mailbox lock: if best-effort holds the mailbox mutex, urgent work can still be blocked. You need an explicit poli</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define an unambiguous host-domain binding algorithm: PCI host-bridge/root-complex to *x86 package* is not inherently 1:1 (multi-socket, multi-root, CXL switches, hotplug). Specify e</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Pin down the package power-limit-active signal source and its semantics: if you sample MSR bits (e.g., IA32_*THERM_STATUS power-limit), document which bit, which CPU in the package </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Locking model needs a concrete proof: you’re introducing a two-class (urgent vs best-effort) scheduler on top of per-memdev mailbox serialization. Show the exact lock order between </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Starvation/fairness bounds must be implementable, not aspirational: specify a drain-window algorithm (time budget + max commands per window + aging) that guarantees (1) best-effort </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Device removal and hotplug correctness: ensure delayed_work is cancelled with cancel_delayed_work_sync(), domain objects are refcounted (or RCU-protected) so queued work cannot dere</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux power management using x86 CXL microarchitecture features
+</footer>
+</div></body></html>

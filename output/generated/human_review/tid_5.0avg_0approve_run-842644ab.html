@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 5.0] APIC-Topology-Aware CPU-Attributed NAPI-Epoch Pressure Bridg</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-842644abbca0 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 5.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>APIC-Topology-Aware CPU-Attributed NAPI-Epoch Pressure Bridge for Constraint-Safe RX Queue IRQ/RPS Rebalancing</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux networking using x86 APIC microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Queue-Monitoring Epoch Bridge for LLC-Aware x2APIC Receive Steering</li><li style='font-size:13px;'>Heavy-Tail Flow Partition Bridge for x2APIC-Cluster RSS and RPS Recomposition</li><li style='font-size:13px;'>x2APIC Vector Lease Manager for Queue-Dense NICs with APIC-Deadline Epochs</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: Optimizing High-Performance Linpack for Exascale Accelerated   Architectures &lt;&gt; intel_opt_manual | APPLICATION PERFORMANCE TOOLS
+  MMR Score:    0.7658</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A Linux kernel control plane that defines a generic softirq NAPI epoch at the `napi_poll()` wrapper, samples only O(1) current-CPU pressure signals at epoch entry and exit, attributes each RX-queue epoch to the executing CPU with explicit migrated-epoch rules, scores candidate CPUs with x86 APIC and LLC locality constraints, and commits RPS and IRQ changes through a generation-checked deferred protocol that honors managed IRQ masks, shared-IRQ limits, hotplug, RCU publication, and admin overrides.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The invention is not generic load balancing; it is a queue-scoped bridge with a precise kernel contract. Its novelty is the joint combination of: (1) a mainline-anchored NAPI epoch defined at the generic `napi_poll()` wr</div>
+    <div class="pill"><strong>Feasibility:</strong> The design fits Linux kernel constraints because the datapath does only bounded O(1) reads in softirq context, never sleeps, never allocates, never writes affinity, and never deref</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Current Linux receive placement is assembled from separate knobs such as RSS defaults, `smp_affinity`, RPS sysfs maps, irqbalance, and driver-local affinity helpers. Those knobs treat CPUs too much like a flat pool and do not define a queue-local, kernel-generic measurement boundary for where receive work actually ran. On modern x86, the cost of moving a queue is topology dependent: local APIC and x2APIC placement, LLC sharing, SMT contention, package and NUMA distance, effective IRQ masks, managed MSI-X policy, and transient online state all matter. Existing practice therefore suffers from three kernel-level gaps: no explicit NAPI epoch contract to pair entry and exit samples, no safe CPU-attribution rule when poll execution changes CPU or enters busy-poll modes, and no lifecycle-safe commit protocol that can update RPS and IRQ state without racing hotplug, managed-vector restrictions, teardown, or external control-plane writes.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>irqbalance periodically moves IRQs from userspace but does not observe queue-scoped NAPI epochs, does not combine IRQ and RPS with an ordered kernel commit, and does not maintain a per-queue override arbitration state. RPS sysfs updates can steer protocol processing but provide no generic in-kernel pressure bridge, no APIC-topology objective, and no managed-IRQ semantics. RFS and flow hashing optimize flow-to-CPU selection, not queue IRQ ownership or epoch attribution. XPS is transmit-side. Driver-specific affinity logic is fragmented and usually static, with no generic `napi_poll()` boundary, no migrated-epoch policy, and no claim to bounded inconsistency between RPS publication and IRQ moves. The patentable gap is therefore the concrete contract-plus-ordering-plus-arbitration mechanism, not the abstract idea of balancing load.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>Introduce a per-RX-queue Queue-Epoch Pressure Bridge. Each bridge descriptor is keyed by netdevice generation, ifindex, RX queue index, NAPI identity, and dedicated IRQ number when present. On every softirq-driven invocation of the generic `napi_poll()` wrapper, the bridge records entry CPU and entry snapshot, records exit snapshot and `work_done`, validates same-CPU attribution, converts the sample into a fixed-point pressure score, and updates a hysteretic per-queue state machine. When the pressure class and dwell budget justify a move, the bridge emits a plan of type no-op, RPS-only, IRQ-only, or coordinated RPS-plus-IRQ. A deferred worker then recomputes the legal target mask as the intersection of online CPUs, bridge policy mask, queue mask, housekeeping or isolation mask when configured, IRQ effective mask, and managed mask when applicable. The worker publishes a transitional RPS map under RCU, applies IRQ affinity or affinity hint according to IRQ type, confirms the effective result, prunes or rolls back as needed, and freezes itself when an external control-plane override is detected.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>RX vector -&gt; local APIC delivery -&gt; hardirq on CPU S
+      -&gt; NET_RX_SOFTIRQ -&gt; generic `napi_poll(n, repoll)` wrapper
+         -&gt; entry snapshot {cpu_id, local_clock, processed, time_squeeze, seq}
+         -&gt; driver `n-&gt;poll(n, budget)` returns `work_done`
+         -&gt; exit snapshot {cpu_id, local_clock, processed, time_squeeze}
+         -&gt; same-CPU validator + migrated-epoch filter
+         -&gt; fixed-point scorer + hysteresis + dwell budget
+         -&gt; plan {NO_OP | RPS_ONLY | IRQ_ONLY | COORDINATED}
+         -&gt; ordered worker
+            -&gt; `commit_mutex`
+            -&gt; prebuild new `rps_map`
+            -&gt; `cpus_read_lock()` revalidate online/policy/effective masks
+            -&gt; publish transitional RPS map under RCU
+            -&gt; `irq_set_affinity()` or affinity hint
+            -&gt; confirm effective affinity
+            -&gt; prune final RPS map or rollback
+            -&gt; override detector / holdoff / baseline adoption</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Phase 1: add a bridge descriptor per RX queue keyed by ifindex, queue index, NAPI identity, IRQ number, and generation; cache x86 topology class at CPU-online time. Phase 2: instrument the generic `napi_poll()` wrapper in `net/core/dev.c` with entry and exit snapshots, same-CPU validation, fixed-point scoring, and migrated-epoch accounting. Phase 3: implement the planner and ordered worker with a per-queue mutex, managed/shared IRQ semantics, and allocate-then-publish RPS replacement under RCU. Phase 4: add notifier-driven lifecycle management for netdevice unregister, queue-count changes, and CPU hotplug; ensure teardown only bumps generation and cancels work, never forcing RTNL into the worker. Phase 5: add override arbitration with effective-affinity and RPS-map fingerprints, holdoff windows, baseline adoption, and metrics export for observability.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Validate on dual-socket and single-socket Xeon systems with local APIC and x2APIC enabled, using drivers that expose dedicated MSI-X RX vectors and at least one shared-IRQ case. Measure per-queue packets per second, p99 and p99.9 receive latency, softirq CPU time, cache miss proxies, cross-socket traffic, and CPU migration rate before and after enabling the bridge. Exercise four correctness suites: (1) repoll-heavy NAPI under saturation to verify epoch pairing and no double-counting; (2) managed IRQ and shared IRQ paths to verify proper degradation and no illegal affinity writes; (3) hotplug and teardown tests to prove no stale offline CPUs remain in RPS maps and no affinity update occurs after generation change; and (4) admin-interference tests that inject `smp_affinity`, RPS sysfs, irqbalance-like moves, and RSS reconfiguration to confirm override detection, holdoff, and baseline adoption without oscillation.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A method comprising defining, at a generic Linux `napi_poll()` wrapper, a receive-processing epoch for a specific RX queue, capturing entry and exit snapshots on the executing CPU using only O(1) non-sleeping current-CPU reads, and updating a queue-local pressure state only when entry and exit occur on the same CPU.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the snapshots comprise `raw_smp_processor_id()`, a current-CPU time source, per-CPU `softnet_data.processed`, per-CPU `softnet_data.time_squeeze`, poll `work_done`, and poll `budget`, and wherein a fixed-point pressure score is normalized by `max(work_done,1)` and classified with hysteresis and dwell budgets.</li><li style='margin-bottom:8px;'>A method comprising selecting, for an RX queue, a placement action from no-op, RPS-only, IRQ-only, and coordinated RPS-plus-IRQ movement by scoring candidate CPUs according to x86 APIC-derived locality classes including LLC sharing, SMT sibling relation, package relation, NUMA relation, effective IRQ affinity, and managed-affinity constraints.</li><li style='margin-bottom:8px;'>The method of claim 3, wherein a coordinated movement is committed through a two-phase protocol that first publishes a transitional RPS map under RCU, then applies IRQ affinity or an affinity hint according to IRQ type, then confirms effective affinity, and finally prunes or rolls back the transitional RPS map while bounding inconsistency to legal online CPUs only.</li><li style='margin-bottom:8px;'>A queue-scoped kernel control plane comprising a refcounted bridge descriptor, a migrated-epoch suppression rule, a per-queue commit mutex, generation-checked hotplug and unregister handling, and an override-arbitration state machine that detects external changes to effective IRQ affinity or RPS maps, backs off for a holdoff interval, and adopts a stable external policy as a new baseline.</li></ol>
+  <h3>Claim Confidence</h3><ul><li style='margin-bottom:6px;'>Claim 1: confidence=0.91, conflict_score=0.14</li><li style='margin-bottom:6px;'>Claim 2: confidence=0.88, conflict_score=0.17</li><li style='margin-bottom:6px;'>Claim 3: confidence=0.87, conflict_score=0.19</li><li style='margin-bottom:6px;'>Claim 4: confidence=0.90, conflict_score=0.15</li><li style='margin-bottom:6px;'>Claim 5: confidence=0.89, conflict_score=0.16</li></ul>
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: migrated epochs reduce sample density on kernels or deployments with frequent execution-context movement. Mitigation: discard migrated epochs, require minimum valid sample density before action, and freeze the queue when migrated-sample rate exceeds 12.5 percent.</li><li style='margin-bottom:6px;'>Risk: managed IRQ or shared IRQ semantics make hardirq movement impossible. Mitigation: degrade deterministically to RPS-only or no-op, treat `-EINVAL` and `-EPERM` as policy states, and never retry until the legal mask generation changes.</li><li style='margin-bottom:6px;'>Risk: stale RPS maps could retain offline CPUs across hotplug. Mitigation: always revalidate under `cpus_read_lock()`, allocate maps off-path, abort on mask change, and strip offline CPUs immediately on topology-generation change.</li><li style='margin-bottom:6px;'>Risk: oscillation against irqbalance, tuned, or direct sysfs writes. Mitigation: fingerprint observed control planes, require persistence across two samples, apply 5-second then 30-second holdoffs, and adopt a stable external baseline instead of fighting it.</li><li style='margin-bottom:6px;'>Risk: teardown races with notifier paths or RTNL. Mitigation: keep the worker RTNL-free, use generation bumps plus work cancellation from notifier context, and make the bridge descriptor the only datapath object dereferenced after scheduling.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Linux `net/core/dev.c` generic `napi_poll()` and NET_RX_SOFTIRQ execution path</li><li>Linux per-CPU `softnet_data` accounting used by receive softirq processing</li><li>Linux RPS implementation and `rps_map` publication discipline under RCU</li><li>Linux generic IRQ affinity APIs including `irq_set_affinity()` and effective-affinity handling</li><li>Linux managed IRQ semantics associated with `IRQD_AFFINITY_MANAGED`</li><li>Linux CPU hotplug read-side synchronization via `cpus_read_lock()` and `cpu_online_mask`</li><li>x86 local APIC and x2APIC topology exposure through kernel CPU-topology facilities</li><li>Kernel topology helpers for LLC sharing, SMT siblings, package relation, and NUMA locality</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 5.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>You must precisely define *where* the “RX-serving napi-&gt;poll wrapper” lives and its call contexts: NAPI poll can occur via softirq, ksoftirqd, and busy-poll paths. The attribution rules (raw_smp_processor_id(), migrated-epoch discard) are only correct if preemption is disabled and the poll is truly CPU-pinned for the epoch; otherwise you need explicit preempt_disable()/enable() or to use smp_processor_id() with the correct locking assumptions.</li><li style='font-size:13px;margin-bottom:4px;'>The design needs a teardown-safe lifetime model for (netdev RX queue ↔ NAPI instance ↔ IRQ) bindings. NAPI instances and queue/IRQ mappings can change during ndo_stop/ndo_open, ethtool channel reconfig, driver reset, and free_irq()/pci_free_irq_vectors() ordering. A “refcounted bridge descriptor” isn’t enough unless you state exactly which kernel objects are referenced, how you pin them (netdev ref, napi ref if any, IRQ identity stability), and which locks/RCU domains protect each dereference.</li><li style='font-size:13px;margin-bottom:4px;'>IRQ affinity changes are not a simple two-phase commit: managed interrupts (IRQD_AFFINITY_MANAGED), irqdomain/MSI semantics, and shared IRQs constrain what you can request vs what becomes effective. You need explicit rules for: (a) when you use irq_set_affinity(), irq_set_affinity_hint(), or neither; (b) how you detect and handle irqbalance/user-space overrides without livelock; and (c) how you avoid fighting CPU hotplug and IRQ re-targeting done by core IRQ code.</li><li style='font-size:13px;margin-bottom:4px;'>RCU publication of RPS maps must be specified down to API-level details: which pointer is protected by RCU, how readers are guaranteed to be in an RCU read-side critical section (or otherwise safe), and how old maps are reclaimed (call_rcu() vs synchronize_rcu()) without sleeping in invalid contexts. Also clarify how you prevent concurrent sysfs writes to rps_cpus/rps_flow_cnt from corrupting controller state (serialization/override policy).</li><li style='font-size:13px;margin-bottom:4px;'>Locking order and deadlock-avoidance are underspecified: you mention cpus_read_lock() and per-netdev/per-queue mutexes, but you must define a strict lock hierarchy relative to RTNL, netdev queues locks, NAPI state transitions (napi_disable/enable), and CPUHP callbacks. Without this, the commit worker can deadlock or observe inconsistent topology/online masks mid-commit.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact hook point and stability story: whether you mean net/core/dev.c:napi_poll(), __napi_poll(), or driver wrappers. If you require modifying the generic NAPI poll wrapper, specify the minimal upstream-acceptable change and how you avoid perturbing hot-path semantics (e.g., GRO, repoll, napi_complete_done()).</li><li style='font-size:13px;margin-bottom:4px;'>Make the RX-unit abstraction concrete: many drivers have 1 IRQ per queue, but others share IRQs, use queue groups, or have NAPI instances not bijective with RX queues. Specify the data structure that binds {netdev, rxq or group, napi_struct, irq_desc/irq} and the rules when any link is absent/ambiguous.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify CPU-attribution semantics under migration and preemption: softirq can run on a different CPU than the hardirq that raised NAPI, and NAPI polling can be interrupted/reentered. Specify what constitutes an &#x27;epoch&#x27;, how you detect migration (raw_smp_processor_id() entry/exit?), and whether you discard, split, or attribute to exit-CPU, and why that choice is non-obvious.</li><li style='font-size:13px;margin-bottom:4px;'>Differentiate novelty from well-known combinations (irqbalance + RPS sysfs + topology masks + periodic sampling): you must explicitly claim what existing prior art does not teach, e.g., an ordered IRQ-then-RPS commit state machine with effective-affinity readback and bounded inconsistency guarantees, rather than a generic &#x27;controller&#x27;.</li><li style='font-size:13px;margin-bottom:4px;'>Planner objective is currently underspecified and risks obviousness: define the exact constraint set (managed affinity masks, housekeeping isolation, admin masks, shared-IRQ limits) and the optimization target (LLC locality, NUMA locality, churn minimization). Include how ties are broken and how you avoid oscillation (hysteresis, lease duration, generation counters).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Problem/Architecture/Implementation Plan/Claims sections are placeholders, so the draft is not yet report-ready despite strong core mechanism definition.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact hook point and contract for the “RX-serving NAPI poll wrapper” in mainline terms (e.g., net_rx_action() -&gt; napi_poll()) and prove it is stable across kernel versions/configs; include how you avoid double-counting when drivers use NAPI instances shared across multiple RX rings/queues.</li><li style='font-size:13px;margin-bottom:4px;'>Specify an explicit, teardown-safe object-lifetime model: how the controller holds references to netdev/napi/irq (or rx_queue) across unregister_netdev(), free_irq(), pci_free_irq_vectors(), and NAPI disable; document which refcounts/RCU protections are used and where synchronize_rcu()/grace periods are required for rps_map reclamation.</li><li style='font-size:13px;margin-bottom:4px;'>Make the arbitration story concrete: define how the controller detects and backs off from user/sysfs writes (/proc/irq/*/smp_affinity, ethtool -X/-L, RPS sysfs), irqbalance activity, and managed-affinity constraints; include a deterministic policy (priority + timeout) and the exact signals used (generation counters, effective_affinity readback, notifier hooks).</li><li style='font-size:13px;margin-bottom:4px;'>Clarify the legality primitives and topology sources on x86: which kernel APIs you consume for LLC/package/NUMA/SMT and how you handle hybrid topologies, CPU isolation (isolcpus/nohz_full), housekeeping masks, and per-cgroup cpusets; ensure the planner never selects CPUs that violate cpuset/housekeeping/isolation constraints.</li><li style='font-size:13px;margin-bottom:4px;'>Detail commit ordering and bounded inconsistency windows: what happens if irq_set_affinity() partially succeeds or is delayed while RPS maps are published; define rollback/degrade behavior per queue/IRQ, and ensure you do not cause pathological churn (rate-limit + hysteresis) under bursty traffic.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define a concrete privilege + activation model (CAP_NET_ADMIN, per-netns vs init-net only, sysfs/debugfs surface) and a deterministic arbitration policy with irqbalance and manual sysfs writes (who wins, for how long, and how backoff is triggered).</li><li style='font-size:13px;margin-bottom:4px;'>Specify teardown/lifetime guarantees: exact refcounting for netdev, napi_struct, netdev_rx_queue, and IRQ; how work items are cancelled/flushed on unregister/free_irq/pci_free_irq_vectors; and how you prevent UAF when publishing/replacing rps_map (RCU + call_rcu discipline).</li><li style='font-size:13px;margin-bottom:4px;'>Make the commit ordering and “bounded inconsistency” precise: what happens if IRQ affinity update succeeds but RPS publish fails (or vice-versa), what rollback looks like, and how you ensure you never steer work onto CPUs outside admin/housekeeping/isolation constraints during the transient.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten CPU-attribution rules for all RX execution modes: softirq vs threaded NAPI, busy-poll, and possible migration/preemption semantics; explicitly justify use of raw_smp_processor_id() and any timestamping in contexts where preemption state differs.</li><li style='font-size:13px;margin-bottom:4px;'>Add rate limiting/hysteresis requirements to prevent affinity/RPS churn under adversarial traffic (DoS-by-rebalancing) and to cap worst-case overhead in softirq + workqueue paths.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact execution context for applying affinity changes: irq_set_affinity()/disable_irq_nosync()/synchronize_irq() must not run from NAPI poll/softirq/atomic context. Speci</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Tear-down and lifetime safety is underspecified: you must serialize against netdev down/unregister and MSI-X/IRQ teardown so a pending ‘lease commit’ cannot touch a freed IRQ. Concr</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] CPU hotplug and cpumask validity need a concrete model: leases must be recomputed against cpu_online_mask and any per-IRQ effective/managed affinity masks at commit time under the a</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Coexistence with irqbalance/admin writes needs a deterministic arbitration rule and a safe detection mechanism: specify how you read the current effective affinity (with proper irq_</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The proposal mentions conditional quiescent handoff (disable_irq_nosync()+synchronize_irq()) but doesn’t bound the locking context: synchronize_irq() can induce long stalls and must</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact measurement hook(s) and context: if you instrument __napi_poll(), prove the entry/exit probes are non-sleeping, bounded, and safe under softirq and ksoftirqd execut</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify a correct RPS-map update protocol: use the existing RCU-based rps_map publish/free pattern (rcu_assign_pointer + call_rcu) and any required serialization (e.g., rps_map_mute</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Spell out IRQ-affinity semantics per IRQ type: for IRQD_AFFINITY_MANAGED, you cannot &quot;set&quot; arbitrary CPUs—your plan must intersect managed/effective masks and handle failure paths; </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Hotplug correctness: commit-time revalidation must use cpus_read_lock() (or the correct modern equivalent) only briefly, intersect with cpu_online_mask and any cpuset/housekeeping c</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Arbitration against admin/user overrides must be concrete: define what constitutes an override (current smp_affinity vs hint vs effective, and RPS sysfs writes), how you detect it w</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux networking using x86 APIC microarchitecture features
+</footer>
+</div></body></html>

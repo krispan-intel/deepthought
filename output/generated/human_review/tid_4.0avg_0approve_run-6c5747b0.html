@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] PTL-Scoped Immutable PMD Snapshot Descriptor with Backend-Ne</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-6c5747b09ee1 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>PTL-Scoped Immutable PMD Snapshot Descriptor with Backend-Neutral Reduction and Optional x86 AMX Tile Scoring for Linux THP Scan Ordering</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux memory management using x86 AMX microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>NUMA-Local AMX Pageblock Compaction Matrix</li><li style='font-size:13px;'>AMX PMD-Collapse Eligibility Matrix for khugepaged</li><li style='font-size:13px;'>AMX Stable-Node Correlation Engine for KSM</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | OPTIMIZATIONS FOR INTEL® AVX, INTEL® AVX2, &amp; INTEL® FMA &lt;&gt; intel_opt_manual | INDEX
+  MMR Score:    0.7918</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A khugepaged extension captures exactly one PMD window under the existing page-table lock into an immutable, versioned 5-plane descriptor using helper-only extraction and mandatory UNKNOWN classification, publishes that descriptor by release/acquire pointer handoff, and performs strictly bounded off-lock advisory scoring through scalar, AVX-512, or optional x86 AMX reducers that may reorder scan order and emit stable skip explanations but can never bypass the unchanged locked collapse revalidation path.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is not the fact that current Linux already scans 512 PTEs in mm/khugepaged.c; the novelty is the introduction of a standardized, architecture-stable snapshot ABI and advisory-only reduction contract that clea</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Transparent Huge Page collapse and adjacent PMD-scale memory-management scans spend significant CPU time revisiting the same 512-entry windows under the page-table lock, executing branch-heavy per-entry logic even when the result is merely that the window is sparse, cold, or otherwise a poor collapse target. On large Xeon systems this raises lock hold time variance, burns worker cycles, and degrades promotion efficiency for OLTP, JVM, analytics, and in-memory database workloads whose address spaces contain many repeatedly scanned but weak candidates. The technical challenge is that Linux mm correctness leaves very little room for speculative acceleration: the worker cannot sleep or reschedule while using kernel vector state, cannot dereference live page-table state off-lock, cannot rely on unstable or arch-private PTE encodings, and cannot allow accelerator output to authorize collapse or permanently suppress candidates. A useful invention therefore must preserve the exact baseline correctness path while extracting only those snapshot facts that are stable enough to rank work off-lock. The invention targets precisely that gap by making the fast path advisory-only, restricting locked capture to one PMD window per snapshot, encoding only helper-defined predicates plus a mandatory UNKNOWN bucket, and ensuring that any stale or imperfect advisory result can at most delay work for a bounded interval before the ordinary locked path reconsiders the candidate.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Current mm/khugepaged.c already performs a bounded HPAGE_PMD_NR scan under PTL and computes eligibility and skip conditions inline, so a bare claim to scanning 512 PTEs faster would be vulnerable to obviousness and overlap. The missing prior-art element is a formalized descriptor protocol: existing code does not define a reusable, versioned, immutable PMD snapshot object that is produced under PTL, published safely to off-lock consumers, and interpreted identically by multiple reduction backends. It also does not define a strict helper-only extraction set with a mandatory UNKNOWN taxonomy that prevents off-lock reasoning about swap entries, migration entries, device-private or devmap entries, uffd-wp markers, pte_special mappings, PROT_NONE encodings, or arch-private bit patterns. Nor does current practice provide a backend-neutral contract under which scalar, AVX-512, and AMX reducers are interchangeable implementations of the same advisory score, or a bounded starvation policy proving that reordered candidates cannot be suppressed indefinitely. Finally, known AMX material teaches dense matrix accumulation but not a kernel-mm-safe envelope for applying tile instructions inside a khugepaged worker: there is no prior description of how AMX feature gating, XCR0 and IA32_XFD checks, kernel_fpu_begin/end bracketing, no-reschedule slices, CPU migration control, and fallback behavior combine with Linux THP scan ordering while leaving authoritative collapse checks untouched.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention inserts an optional advisory ranking stage ahead of the expensive parts of khugepaged while leaving the authoritative collapse path unchanged. The stage runs only for PMDs already admitted by existing VMA and PMD eligibility gates, so it never manufactures new candidates and never expands the search space. For each candidate, khugepaged acquires the existing PTE lock with pte_offset_map_lock() and inspects at most HPAGE_PMD_NR entries exactly once. Under the PTL it performs only constant-work helper tests and bit stores; it does not fault in pages, follow struct page pointers, walk reverse maps, resolve migration, swap in memory, invalidate TLBs, invoke MMU notifier slow paths, or retain live PTE pointers after unlock. Each PTE is normalized into one of three categories: HOLE if and only if pte_none() is true; NORMAL_PRESENT if pte_present() is true and none of the mandatory UNKNOWN conditions apply; or UNKNOWN otherwise. The fixed descriptor contains five canonical bitplanes for HOLE, NORMAL_PRESENT, WRITABLE, YOUNG, and DIRTY, with WRITABLE, YOUNG, and DIRTY only set when NORMAL_PRESENT is set. Any entry that is swap-like, migration-like, device-private, devmap, uffd-wp, pte_special, PROT_NONE, helper-unavailable, or otherwise arch-private contributes no attribute bits and is recorded only through UNKNOWN reason counters. Raw pte_t values are not exported off-lock. Tier-0 early abort is intentionally limited to HOLE detection: if any HOLE bit is set, the descriptor receives a fixed low advisory score and HOLE_PRESENT explanation because a fully populated collapse cannot be authorized from that snapshot; this is safe even under concurrent faults because the result is advisory only and bounded anti-starvation guarantees later reconsideration. No other PTE state may trigger early abort because its semantics are architecture- or context-sensitive. After capture, the producer publishes the descriptor as an immutable allocation via release semantics; consumers acquire the pointer, read byte-stable contents, and score the descriptor off-lock with a scalar reducer, an AVX-512 reducer, or, where explicitly permitted by kernel xstate policy, an AMX INT8 reducer. The reducer computes only an advisory priority and explanation class, for example HOLE_PRESENT, UNKNOWN_HEAVY, COLD_CLEAN, DENSE_ACTIVE, or AGE_FORCED. Queue ordering may use the score to defer weak candidates, but every candidate has a bounded defer count and age-based override so none can starve. When a candidate is finally selected for actual collapse, khugepaged re-enters the existing locked scalar revalidation and collapse code path; descriptor output neither authorizes collapse nor suppresses any mandatory baseline checks.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Phase 1 adds the normalized descriptor type, helper-only extraction routine, and immutable publication path, with the scalar reducer as the sole initial backend and a debug mode that recomputes counts directly from the bitplanes to validate ABI consistency. Phase 2 wires the capture hook into khugepaged_scan_pmd(), stores descriptors per discovered candidate, and adds explanation enums and counters without changing the collapse decision path. Phase 3 introduces bounded queue ordering in khugepaged_scan_mm_slot(), including defer_count tracking, first-seen timestamps, and the age-forced FIFO override so the scheduler effect is observable and bounded. Phase 4 adds the AVX-512 backend behind a feature gate and continuously cross-checks it against the scalar reducer on the same immutable descriptor bytes during soak testing. Phase 5 adds the AMX backend as a non-essential x86 embodiment only if the target kernel exposes an explicit policy allowing in-kernel XTILE usage; that phase includes the capability hook for CPUID, XCR0, and IA32_XFD checks, the kernel_fpu_begin/end bracketing, tile configuration caching, 16-descriptor micro-batching, tilerelease on exit, and automatic fallback to AVX-512 or scalar on any precondition failure. Phase 6 measures success using lock-hold histograms, khugepaged CPU time, collapse attempts per successful promotion, descriptor staleness rate, and latency impact under sparse, dense-hot, and adversarial-mixed workloads. A deployment rule keeps the invention behavior-safe: if the reducer queue is disabled, if vector state is unavailable, or if debug cross-checking reports any semantic mismatch, khugepaged reverts to the baseline scalar ordering while preserving the rest of the MM subsystem unchanged.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft describes release/acquire publication of immutable descriptors but does not define a concrete lifetime/ownership model (RCU vs refcount vs pinned queue item) across concurrent consumers and mm teardown; without that, the design is one UAF away from being unreviewable for upstream.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define descriptor lifetime and reclamation precisely: how descriptors are allocated (per-mm cache? per-node slab?), how they are pinned while queued/reordered, and how they are freed under concurrent consumption and mm exit. Use an explicit mechanism (e.g., RCU with call_rcu(), or kref + explicit put, or embed in an already-pinned work item) and document the happens-before between publication and free.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify locking and read semantics for the PTL snapshot: reading 512 entries must use the correct helpers/READ_ONCE patterns (e.g., ptep_get()/READ_ONCE(pte_val(*ptep))) under the PTE page lock, and must not rely on memcpy of opaque pte_t on all architectures. Specify exactly which accessor is used and why it is safe across arch variants.</li><li style='font-size:13px;margin-bottom:4px;'>The ‘architecture-stable little-endian packed descriptor ABI’ is not acceptable as a kernel-internal promise without a user ABI boundary. Either (a) keep it strictly internal and drop endianness/ABI claims, or (b) if emitted to tracepoints/debugfs, specify UAPI rules (endianness, versioning, padding) and commit to compatibility; otherwise this is a maintenance hazard.</li><li style='font-size:13px;margin-bottom:4px;'>FPU/AVX-512 constraints need to be tightened: kernel_fpu_begin()/end() implies “no sleeping, no reschedule” inside the region and has IRQ/NMI constraints. Specify that reducers run only in process context, outside any spinlock/rcu read-side critical sections, with bounded preempt-off time (batch size limit), and never call anything that might fault or block.</li><li style='font-size:13px;margin-bottom:4px;'>AMX kernel use is currently a major upstream risk: gating on ‘kernels that explicitly permit in-kernel XTILE use’ is too hand-wavy. You must point to an actual in-kernel API contract for tile save/restore and CPU migration prevention; otherwise the AMX embodiment should be framed as out-of-tree/experimental only, not as a realistic upstream path.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: As written, the ‘snapshot-descriptor + off-lock scoring’ concept reads like an internal refactor/abstraction of existing khugepaged eligibility heuristics plus an obvious SIMD acceleration hook; patentable novelty and non-obvious technical effect over known kernel scan-and-score patterns is not yet crisply distinguished.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Nail down the differentiator vs prior art: kernels already do bounded PTL walks and then make policy decisions; you need a concrete, claimable mechanism that is more than “copy state + score later”. Action: explicitly identify which decisions are moved off-lock, what new guarantees the descriptor ABI provides (immutability/versioning/publication), and why that cannot be achieved by routine refactoring of mm/khugepaged.c counters/skip checks.</li><li style='font-size:13px;margin-bottom:4px;'>The ‘byte-stable descriptor ABI’ framing is weak if it is purely intra-kernel (not UAPI) and if it depends on arch-specific pte_t encoding. Action: define the descriptor as a derived semantic snapshot (not raw pte_t) with a minimal, architecture-agnostic vocabulary and a proof/argument for which bits are legally interpretable off-lock; otherwise examiners will treat it as an obvious internal serialization layer.</li><li style='font-size:13px;margin-bottom:4px;'>The mandatory UNKNOWN taxonomy is under-specified and may be viewed as an obvious safety fallback. Action: enumerate the exact UNKNOWN classes, the extraction rules under PTL, and the invariant that reducers must preserve (e.g., monotonic conservatism: UNKNOWN can only reduce priority, never increase) to show a non-trivial correctness contract.</li><li style='font-size:13px;margin-bottom:4px;'>The ‘identical advisory outputs across scalar/AVX-512/AMX’ requirement is likely unrealistic and could be attacked as non-enabled (different integer widths, saturating ops, reduction order). Action: specify the reducer math precisely (integer-only, fixed-point, defined tie-breaking, deterministic reduction order) and define acceptable equivalence (bit-identical vs order-equivalent ranking) so the claim is technically enforceable.</li><li style='font-size:13px;margin-bottom:4px;'>Kernel FPU/AMX feasibility needs tighter guardrails: kernel_fpu_begin() constraints, preemption/CPU migration, and AMX XTILE save/restore APIs are highly kernel-version-specific. Action: constrain claims to “optional hardware accelerator” with an explicit required kernel interface, and provide a safe fallback path + bounded non-preemptible time accounting; otherwise enablement/non-obviousness arguments get muddied.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Fill in the empty core sections (Problem / Proposed Invention / Architecture / Implementation Plan / Claims) with concrete, testable specifics: exact dataflow in khugepaged, where the descriptor is allocated, lifecycle/freeing, and how advisory reordering avoids starvation (e.g., aging/priority caps) so it’s not just a concept pitch.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten the kernel-correctness story around what is “architecturally stable” off-lock: justify why only pte_none is Tier-0 abort, and specify the exact UNKNOWN taxonomy mapping for swap, migration, devmap/device-private, uffd-wp, PROT_NONE, pte_special, and arch-private encodings; include the precise helper predicates used so reviewers can verify no unstable interpretation happens off PTL.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the descriptor ABI precisely (field list, bitplane definitions, packing/alignment, endianness, versioning, and extension rules). If the goal is ‘architecture-stable’, define which semantics are universal vs arch-provided via callbacks; otherwise explicitly scope the ABI to x86 to avoid overclaiming.</li><li style='font-size:13px;margin-bottom:4px;'>Make the snapshot extraction implementation-grade: under the page table lock, use READ_ONCE() (or equivalent) for each pte_t load and define how to handle potential 32-bit / non-atomic pte_t arch cases (either exclude them or provide an arch hook); also state constraints on running context (not under mmap_lock for long, not in atomic beyond PTL window).</li><li style='font-size:13px;margin-bottom:4px;'>Clarify kernel FPU/AMX operational constraints and budgeting: kernel_fpu_begin()/end() preemption/CPU-migration constraints and worst-case time in the non-preemptible region must be bounded; define batch sizes, fallback thresholds, and behavior on !CPU_FEATURE_AVX512/AMX, and explicitly state that scalar is normative for identical outputs.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define a hard non-leakage rule for the descriptor and “skip explanations”: never store or emit raw pte_t values, PFNs, swap offsets, or device-private identifiers in tracepoints/debugfs/logs. Make skip reasons an enum + counts only, and explicitly forbid “explain” paths from printing per-PTE details.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten the x86 FPU/AVX-512/AMX safety contract: require that reducers run only in process context (not NMI/IRQ), pin execution to one CPU for the live range (disable migration), bound preempt-disabled time, and explicitly zero/clear vector+tile registers (or use an API that guarantees scrub) before kernel_fpu_end()/tile release to prevent cross-context state leakage.</li><li style='font-size:13px;margin-bottom:4px;'>Specify descriptor lifetime and concurrency precisely: publication via release/acquire is not sufficient if slots can be reused/freed. Use an RCU-protected pointer or refcounted object, document reclamation rules, and guarantee readers cannot observe torn/partial descriptor contents (e.g., single-writer initialization + publish pointer last).</li><li style='font-size:13px;margin-bottom:4px;'>Audit RT/locking compatibility: ensure the PTL-held scan plus memcpy of 512 entries stays within acceptable worst-case latency (including cache misses) and is safe under CONFIG_PREEMPT_RT semantics. If necessary, use per-CPU preallocated buffers and avoid additional cacheline traffic while holding PTL.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify which PTE helper predicates are lock-independent and safe to apply off-lock across architectures; for anything not strictly stable from the copied pte_t value alone, force UNKNOWN. Document that off-lock classification must not call helpers that assume live page-table context or can fault/sleep.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Keep the lock-held snapshot strictly bounded: no helper that can fault, allocate, take mmap_lock, or trigger debug checks that may sleep while holding the PTL; snapshot must be simp</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Be conservative on PTE taxonomy: explicitly treat swap/devmap/device-private/migration/uffd-wp/pte_special and arch-specific encodings as UNKNOWN and force the existing slow revalid</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define memory ordering/atomicity expectations: snapshot must rely only on PTL mutual exclusion (no tearing assumptions), and the off-lock descriptor must never be used to skip manda</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Define the exact snapshot/lock protocol: which lock is held (e.g., pte_lock via pte_offset_map_lock()), what is copied (raw pte_t values vs derived booleans), and the maximum bounded</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Specify the fixed-shape descriptor and bitplane layout precisely (which per-PTE predicates become bitplanes, ordering, endian/bit numbering, size limits). Include an explicit rule fo</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Nail down the exact set of “architecturally stable helper predicates” and require each to be a pure bit-test (no memory deref, no locking, no sleeping) so the PTL-held snapshot loop</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the descriptor lifetime/publication model (allocation, reuse, ownership) and use explicit smp_store_release()/smp_load_acquire() (or equivalent) so off-lock reducers never o</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define anti-starvation invariants for khugepaged when triage only reorders work (e.g., bounded deprioritization + aging), so advisory scoring cannot cause indefinite postponement un</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] For x86 AMX/AVX-512 reducers, constrain execution to appropriate worker context and spell out FPU/XSAVE/AMX state handling (kernel_fpu_begin/end, AMX enabling constraints) to avoid </li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Prior-art overlap risk: khugepaged already performs a bounded 512-PTE (HPAGE_PMD_NR) scan under PTL and computes eligibility/skip conditions. You must explicitly diff against current</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux memory management using x86 AMX microarchitecture features
+</footer>
+</div></body></html>

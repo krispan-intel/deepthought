@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] RCU-Published Per-Lock-Class RTM Admission for Single-Attemp</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-2abd4932799f &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>RCU-Published Per-Lock-Class RTM Admission for Single-Attempt Native qspinlock Immediate-Successor Unlock Capsules</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux synchronization using x86 TSX microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Per-Class RTM Eligibility Governor for Linux Short Critical Sections</li><li style='font-size:13px;'>Transactional qspinlock Handoff Capsule</li><li style='font-size:13px;'>Transactional XArray Path Capsule for Page Cache Writers</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | INTRODUCTION &lt;&gt; Web Services for Asynchronous, Distributed Optimization Using   Conservative Signal Processing
+  MMR Score:    0.7630</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A default-off x86 Linux kernel mechanism that asynchronously RCU-publishes per-lock-class RTM eligibility and, only on the native qspinlock immediate-successor unlock branch, performs a single RTM commit of the exact baseline handoff stores after full lockword and successor-pointer revalidation, with unchanged wrapper IRQ/BH semantics and mandatory immediate fallback to the compiled baseline path on any mismatch, interrupt, NMI, or abort.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> This revision deliberately narrows the invention and drops the broader XArray mutation scope. The invention is not generic TSX lock elision, not transactional lock acquisition, not a transactional critical section, and n</div>
+    <div class="pill"><strong>Feasibility:</strong> The mechanism is feasible because it is scoped to existing x86 and Linux contracts. It only exists when the compiled kernel is using native qspinlock code and when build-time exclu</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux qspinlock already minimizes lock footprint, but the queued immediate-successor release path still exposes a short sequence of lockword and successor-handoff stores that can generate cacheline bouncing, transient wake/spin windows, and queue-handoff latency out of proportion to the useful work protected by the lock. A generic TSX-on or TSX-off policy is too coarse because RTM availability depends on microcode and BIOS policy, per-CPU feature state, `MSR_IA32_TSX_CTRL`, security mitigations, and whether the compiled kernel is using native or instrumented unlock code. Any kernel design here must preserve the exact semantics of `spin_unlock`, `spin_unlock_irqrestore`, `spin_unlock_irq`, and `spin_unlock_bh`; must tolerate interrupts and NMIs safely; must not alter queue topology or forward-progress guarantees; and must never reuse speculative state after abort. The technical problem is to define a Linux-specific, mechanically checkable unlock-side RTM contract that can be attempted only when a native qspinlock branch is known precisely enough to reproduce the exact baseline final state, while guaranteeing a single bounded attempt and exact fallback to the compiled native path.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Known HTM/TLE work typically speculates entire critical sections or elides lock acquisition, which broadens the conflict surface and leaves open questions about interrupt state, lock ownership, queue fairness, and debug-path equivalence. Prior art also often describes generic check-then-update transactional patterns rather than a Linux-native semantic branch with an exact baseline mapping. What is missing is a design that: (1) limits speculation to the unlock-side-only immediate-successor handoff event of native qspinlock; (2) requires an exact revalidation snapshot consisting of full lockword equality and a stable already-linked successor; (3) uses a conservative asynchronous admission plane that tracks runtime TSX availability and abort behavior without polluting the unlock fast path; (4) explicitly excludes paravirt and debug/instrumented unlock implementations; and (5) guarantees that the fallback path is the unchanged baseline helper, not a logically similar reimplementation. That narrower combination materially reduces prior-art overlap and supplies the correctness boundary reviewers asked for.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention introduces a per-lock-class control-plane object, `struct tsx_sync_class`, published under RCU and refreshed asynchronously. Each object contains: class identifier, wrapper variant mask (`plain`, `irqrestore`, `irq`, `bh`), a generation number, enable bit, per-CPU commit/abort counters summarized through a conservative EWMA filter, an optional CPU mask, and feature-policy bits derived from runtime TSX status. CPU hotplug and TSX policy changes trigger `tsx_sync_recompute_global_state()`, which updates a global generation and republishes any affected class objects. On the data path, the optimization is only reachable from the native qspinlock immediate-successor unlock helper. The attempt rule is: `if (!static_branch_unlikely(&amp;tsx_sync_any_enabled) || !rcu_dereference(class)-&gt;enabled || !this_cpu_read(tsx_sync_cpu_ok)) goto baseline;`. Before XBEGIN, the code captures `val_snapshot = atomic_read(&amp;lock-&gt;val)` and `succ_snapshot = READ_ONCE(node-&gt;next)`. The capsule is eligible only if: native qspinlock implementation is active; wrapper state matches the entry contract for the unlock variant; `succ_snapshot != NULL`; `(val_snapshot &amp; (_Q_LOCKED_MASK | _Q_PENDING_MASK)) == _Q_LOCKED_VAL`; the branch being executed is the immediate-successor handoff case; and the tail encoded in `val_snapshot &amp; _Q_TAIL_MASK` maps to the same successor identity the baseline helper would use for that branch. Inside the transaction, the code revalidates `atomic_read(&amp;lock-&gt;val) == val_snapshot`, `READ_ONCE(node-&gt;next) == succ_snapshot`, `READ_ONCE(succ_snapshot-&gt;locked) == 0`, and successor identity consistency. It then executes exactly the same logical writes that the selected baseline helper would execute for that branch, using the same helper-derived `val_post` and successor-handoff flag values. No other stores are permitted inside the capsule. On any mismatch, interrupt, NMI, fault, or RTM abort, the processor discards all transactional writes and control immediately jumps to the unchanged baseline helper with the original arguments. There is no retry. Wrapper-specific reenabling of interrupts or bottom halves remains outside the capsule and uses the unchanged wrapper logic, so the only optimized region is the native queued immediate-successor handoff publication itself.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>Control plane and data path:
+
+boot / hotplug / microcode / TSX policy
+        |
+        v
++-------------------------------+
+| tsx_sync_recompute_global...  |
+| - reads RTM + TSX policy      |
+| - updates per-CPU cpu_ok      |
+| - folds abort EWMA            |
+| - republishes class objects   |
++-------------------------------+
+        | RCU publish
+        v
++-------------------------------+
+| struct tsx_sync_class         |
+| enabled, gen, cpu mask,       |
+| wrapper mask, telemetry       |
++-------------------------------+
+        |
+        v
+queued_spin_unlock wrapper
+        |
+        +--&gt; if class disabled / cpu !ok / non-native build -&gt; baseline helper
+        |
+        +--&gt; native immediate-successor branch only
+                |
+                | snapshot: lock-&gt;val, node-&gt;next
+                v
+             XBEGIN
+                |
+                +--&gt; revalidate full lockword equality
+                +--&gt; revalidate same successor pointer
+                +--&gt; revalidate successor handoff flag still baseline-expected
+                |
+                +--&gt; write exact baseline handoff stores
+                |
+                v
+               XEND
+                |
+                +--&gt; unchanged wrapper post-actions
+
+Proof sketch of baseline equivalence: let `S0` be the pre-transaction shared state consisting of the full 32-bit qspinlock word and the relevant successor-node fields for the native immediate-successor branch. Let `B(S0)` be the exact state produced by the current baseline helper for that same branch. The capsule may commit only if the full lockword is still exactly `S0.lockword` and the successor link is still exactly `S0.succ`. The transaction then emits only the stores needed to reach `B(S0)` and commits atomically. Therefore other CPUs can observe either `S0` or `B(S0)`, but no additional intermediate state not already allowed by x86 RTM atomicity. Because the invention is limited to x86 kernels whose baseline helper relies on TSO-compatible release operations, the RTM commit point is at least as strong as the baseline release publication. If the transaction aborts, no transactional store becomes visible and the unchanged baseline helper executes, so the resulting shared state is exactly `B(S0)` for the then-current non-transactional state. This preserves correctness, queue topology, and forward progress while merely removing transient intermediate visibility windows on successful commit.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Add a Kconfig option scoped to `X86 &amp;&amp; X86_RTM`, with hard exclusions for `CONFIG_PARAVIRT_SPINLOCKS`, `CONFIG_DEBUG_SPINLOCK`, `CONFIG_PROVE_LOCKING`/lockdep, and `CONFIG_KCSAN`; leave the feature default-off. 2. Introduce `struct tsx_sync_class`, a registration API for candidate lock classes, a global static key, per-CPU `tsx_sync_cpu_ok`, and a control-plane worker that applies a conservative EWMA filter to commit/abort telemetry and republishes class objects under RCU. 3. Hook CPU hotplug and TSX-policy refresh points so `tsx_sync_recompute_global_state()` updates the global generation when CPUs come online/offline or TSX policy changes; stale readers remain safe because the final local-CPU gate is rechecked before XBEGIN. 4. Split the native qspinlock immediate-successor unlock code into an unchanged baseline helper and an RTM wrapper helper; the wrapper may only surround that semantic branch and must call the baseline helper directly on any non-attempt or abort so fallback machine code remains the baseline implementation. 5. Implement the exact snapshot and revalidation predicate using symbolic qspinlock macros (`_Q_LOCKED_MASK`, `_Q_PENDING_MASK`, `_Q_TAIL_MASK`) and the current branch&#x27;s successor-node semantics; if a kernel version cannot expose a precise helper-derived `val_post` or successor identity, the feature is compiled out for that version. 6. Keep wrapper semantics exact by running the capsule before any wrapper-specific reenabling step, leaving `irqrestore`, `irq`, and `bh` post-actions unchanged. 7. Export per-class counters through existing observability hooks so operators can see attempts, commits, abort reasons, and automatic disablement thresholds without affecting the unlock hot path.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Correctness: prove and test observational equivalence by instrumenting the baseline helper and RTM wrapper to compare `val_post`, successor identity, and wrapper post-actions under stress. 2. Forward progress: verify that every abort path performs at most one failed XBEGIN and then one baseline unlock, with no retry loop, under forced persistent abort, `tsx=off`, `rtm_always_abort`, and microcode-disabled RTM scenarios. 3. Interrupt/NMI safety: run irqstorm, NMI watchdog, perf PMU overflow, and resched interrupt workloads while stressing targeted lock classes; verify no partially released lock state is ever visible and that worst-case unlock latency is bounded by one abort plus the native helper. 4. Build/runtime exclusions: exercise kernels with paravirt spinlocks, lockdep, debug spinlock, and KCSAN enabled to confirm the feature self-disables or is not built. 5. Heterogeneous and hotplug behavior: online/offline RTM-capable and non-capable CPUs, toggle TSX policy where supported, and verify only current-CPU-eligible paths attempt XBEGIN while all others use baseline unlock. 6. Performance: benchmark queued lock handoff latency, LLC misses, lock hold-to-wakeup delay, and tail latency in metadata-heavy microbenchmarks and representative storage/database workloads. 7. Regression safety: compare the optimized kernel against the same kernel with the static key forced off and require identical functional results and no measurable slowdown for untargeted lock classes.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>1. A method in an x86 Linux kernel for optimizing synchronization, comprising: maintaining an RCU-published per-lock-class admission object that reflects runtime RTM eligibility; reaching a native qspinlock immediate-successor unlock branch; capturing a full qspinlock lockword snapshot and an already-linked successor snapshot; performing exactly one RTM attempt; inside the transaction revalidating full lockword equality and successor identity; committing exactly the baseline handoff stores for that branch if the revalidation succeeds; and otherwise executing the unchanged native baseline unlock helper without retry.</li><li style='margin-bottom:8px;'>2. The method of claim 1, wherein the RTM eligibility is additionally conditioned on a per-CPU runtime predicate derived from `X86_FEATURE_RTM`, a runtime-always-abort indicator, and current TSX policy, such that heterogeneous systems permit RTM attempts only on currently eligible CPUs and fall back on other CPUs.</li><li style='margin-bottom:8px;'>3. The method of claim 1, wherein the admission object is refreshed asynchronously in response to CPU hotplug events and TSX-policy changes, and is republished under RCU with a generation number so hot-path readers do not take locks or perform MSR reads in the unlock path.</li><li style='margin-bottom:8px;'>4. The method of claim 1, wherein the revalidation predicate requires equality of the full 32-bit qspinlock word, not merely masked lock bits, and additionally requires that the successor pointer captured before XBEGIN remains identical, non-null, and consistent with the tail encoding used by the native branch.</li><li style='margin-bottom:8px;'>5. The method of claim 1, wherein the optimization is limited to native qspinlock implementations and is excluded for paravirtualized queued spinlocks, debug or lockdep-instrumented spinlock implementations, and KCSAN-instrumented unlock paths.</li><li style='margin-bottom:8px;'>6. The method of claim 1, wherein wrapper semantics are preserved by executing the RTM capsule before any wrapper-specific interrupt or bottom-half reenabling operation, leaving the post-unlock wrapper logic bit-for-bit identical to the baseline kernel.</li><li style='margin-bottom:8px;'>7. The method of claim 1, wherein the committed transactional state is constrained to equal the exact post-state produced by the selected baseline immediate-successor unlock helper for the same snapshot, and the method does not alter queue topology, does not speculate lock acquisition, and does not speculate the protected critical section.</li><li style='margin-bottom:8px;'>8. The method of claim 1, wherein a conservative telemetry filter disables the admission object for a lock class after an abort-rate threshold or forward-progress threshold is crossed, and re-enables the lock class only after subsequent asynchronous evaluation, without adding retries to the unlock hot path.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Runtime TSX disablement or microcode policy changes can invalidate prior assumptions: mitigate by storing only advisory admission state under RCU and rechecking a local per-CPU eligibility bit immediately before XBEGIN; any stale state only causes a harmless fallback.</li><li style='margin-bottom:6px;'>Persistent abort storms from interrupts, NMIs, or conflict misses can erase benefit: mitigate with a mandatory single-attempt rule, no retry loop, per-class abort telemetry, and conservative automatic disablement.</li><li style='margin-bottom:6px;'>Prior-art overlap with generic HTM/TLE proposals: mitigate by explicitly limiting claims to unlock-side-only native qspinlock immediate-successor handoff, exact baseline-state reproduction, unchanged fallback helper, and no transactional acquisition or full critical-section speculation.</li><li style='margin-bottom:6px;'>Ordering mistakes on non-x86 or instrumented builds could break correctness: mitigate by restricting the invention to x86 kernels whose native helper uses TSO-compatible release semantics and by compile-time exclusion of paravirt/debug/lockdep/KCSAN variants.</li><li style='margin-bottom:6px;'>Kernel-version drift in qspinlock internals could weaken the exactness requirement: mitigate by tying implementation to a semantic branch plus helper-derived post-state; if a future kernel version cannot expose that exact mapping, the feature is disabled for that version rather than approximated.</li><li style='margin-bottom:6px;'>Operator concern about hidden behavior changes: mitigate by making the feature default-off, class-scoped, observable via counters, and reversible via static key and boot/runtime policy controls.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Linux kernel native qspinlock implementation (`kernel/locking/qspinlock.c` and associated native queued-spinlock helpers).</li><li>Linux qspinlock type and bitfield definitions (`include/asm-generic/qspinlock_types.h`, `include/asm-generic/qspinlock.h`).</li><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual sections covering RTM/XBEGIN/XEND/XABORT semantics and transactional abort conditions.</li><li>Linux x86 vulnerability and TSX policy handling, including TAA-related controls and `MSR_IA32_TSX_CTRL` interactions (`arch/x86/kernel/cpu/bugs.c` and admin-guide hardware-vulnerability documentation).</li><li>Linux CPU hotplug, RCU, static key, and per-CPU infrastructure used to publish and consume runtime feature policy.</li><li>Existing HTM/TLE literature for contrast, specifically prior approaches that speculate entire critical sections or transactional acquisition rather than a single unlock-side immediate-successor handoff capsule.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Memory-ordering proof is missing: you must demonstrate that an RTM commit of the unlock write-set is at least as strong as the existing qspinlock release semantics (including how the successor observes both the successor-grant store and the lockword update). Provide an explicit ordering argument tied to the exact baseline stores and the waiter-side acquire/consume operations; don’t rely on “x86 TSO” handwaving.</li><li style='font-size:13px;margin-bottom:4px;'>The draft’s “per-lock-class” gating is underspecified for non-lockdep / prove-locking-disabled builds (which you also want to support): define exactly what constitutes a lock class in those configurations, how it’s identified at runtime in the unlock fast path, and how you guarantee stable lifetime and uniqueness. If the answer is “needs lockdep keys,” then state that as a hard build-time requirement rather than an exclusion list.</li><li style='font-size:13px;margin-bottom:4px;'>Your revalidation predicate is not yet complete/precise enough for qspinlock correctness: beyond full 32-bit lockword equality and owner_node-&gt;next pointer equality, you must specify which node fields (e.g., successor’s locked/grant field value, and any additional queue linkage invariants used by the baseline immediate-successor path) are required to match and why that implies the queue topology cannot have advanced in a way that makes the transactional write-set unsafe.</li><li style='font-size:13px;margin-bottom:4px;'>IRQ/NMI/exception context constraints need to be made mechanically enforceable: define the exact predicates used to avoid RTM in NMI, hardirq, and other unsafe contexts, and ensure they cannot themselves introduce recursion or instrumentation side effects. Also specify how you avoid #UD/#GP on CPUs where RTM is absent/disabled (must be a hard pre-XBEGIN gate on the current CPU).</li><li style='font-size:13px;margin-bottom:4px;'>The control-plane/RCU publication story needs a concrete lifetime model: if you RCU-publish admission objects, specify who allocates/frees them, what grace period(s) protect readers in the unlock path, and how CPU hotplug + TSX policy changes interact with pointer publication so you cannot observe partially-initialized or freed state.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Lock-class gating as described is likely not implementable on production (lockdep-off) kernels without adding new metadata: native qspinlocks typically do not carry a lock-class identifier. Revise the design to (a) make admission per-static-site (per-callsite), per-lock-instance, or per-subsystem knob, or (b) explicitly introduce a lightweight class pointer in the lock object and account for ABI/layout impact.</li><li style='font-size:13px;margin-bottom:4px;'>Prior-art boundary is still too close to known HTM/TLE “make lock/unlock atomic” teachings. Strengthen novelty by explicitly limiting the write-set (exact stores, exact addresses/fields), defining the revalidation predicate precisely (which fields, which equality checks, which ordering), and explaining why unlock-side-only + immediate-successor-only + single-attempt + baseline-exact fallback is not an obvious specialization of existing TSX lock elision work.</li><li style='font-size:13px;margin-bottom:4px;'>The control-plane telemetry/RCU publication looks like an obvious engineering optimization unless tied to a concrete safety invariant. Specify the exact admission state machine (inputs, thresholds, decay, CPU hotplug handling, TSX policy/microcode change handling) and prove it cannot enable a path that violates correctness on heterogeneous RTM availability or after TSX is disabled at runtime.</li><li style='font-size:13px;margin-bottom:4px;'>Memory-ordering and ‘subscription’ correctness is underspecified. You must state which loads must be inside the transaction, which baseline release semantics are being replicated, and why transactional commit provides at least the required ordering for qspinlock handoff (including interactions with smp_store_release / READ_ONCE semantics and potential compiler reordering).</li><li style='font-size:13px;margin-bottom:4px;'>Define the exact exclusion set and failure modes in kernel terms: which contexts are forbidden (NMI, hardirq, softirq, preempt-off), which instrumentation configs break equivalence (LOCKDEP, DEBUG_SPINLOCK, KCSAN, PV qspinlock), and how you guarantee the RTM path cannot be taken when those configs are active (compile-time vs runtime checks).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Core sections (Problem/Architecture/Implementation Plan/Claims) are empty, so correctness, prior-art boundary, and enablement policy are not reviewable to kernel/enterprise standards.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact baseline write-set you are “capsuling” for the immediate-successor path (which fields, in what order, with what release semantics) and prove the RTM commit preserves Linux qspinlock memory-ordering and wake/spin invariants on x86 TSO; include a litmus-style argument for successor observing grant vs tail/locked transitions.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the precise exclusion predicates and call-site contexts: demonstrate the unlock capsule cannot run in NMI/irq-disabled/preempt states that would cause systematic RTM aborts or violate wrapper semantics; codify checks (e.g., in_nmi(), irqs_disabled(), preempt_count()) and justify each with measured abort rates.</li><li style='font-size:13px;margin-bottom:4px;'>Make the control-plane concrete: how lock classes map to admission objects (lockdep class keys vs raw lock addresses), how telemetry is aggregated without false sharing, how RCU publication lifetime is managed, and what happens on module unload / CPU hotplug / TSX policy toggles (generation handling and static_key enable/disable correctness).</li><li style='font-size:13px;margin-bottom:4px;'>Heterogeneous-CPU behavior is under-specified: Draft #1 allows per-CPU gating, but you must prove mixed RTM/non-RTM CPUs cannot create fairness regressions or pathological handoff jitter; Draft #3’s “all CPUs must support RTM” is safer—pick one policy and justify for Xeon fleet realities (BIOS TSX disable, microcode changes, VM exits).</li><li style='font-size:13px;margin-bottom:4px;'>Security/operability: explicitly address why this does not re-open TSX side-channel risk in enterprise kernels, how it interacts with TSX disablement (X86_FEATURE_RTM_ALWAYS_ABORT / tsx=off), and how distros can safely expose a per-lock-class knob without support nightmares (debugability, lockup triage, perf counters).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Any in-kernel RTM enablement can re-open TAA/MDS-class side-channel exposure unless it is strictly coupled to x86 TSX mitigation/disable policy and cannot be enabled on vulnerable/microcode-disabled systems.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Explicitly bind the runtime gate to the kernel’s TSX security policy (tsx= cmdline, IA32_TSX_CTRL, X86_BUG_TAA/MDS logic). State: if TSX is disabled/forced-abort for security, the feature must be unconditionally off (even per-lock-class).</li><li style='font-size:13px;margin-bottom:4px;'>Provide a concrete, auditable memory-ordering proof that an RTM commit of the exact unlock write-set is at least as strong as the baseline release semantics used by native qspinlock handoff on x86 (including interactions with pending/tail fields and successor-&gt;locked grant).</li><li style='font-size:13px;margin-bottom:4px;'>Nail down the revalidation predicate to exact fields and invariants (which qspinlock bits, which qnode fields, what constitutes “successor-tail consistency”), and show it prevents missed wakeups/topology corruption under concurrent unlock/slowpath/queue re-linking.</li><li style='font-size:13px;margin-bottom:4px;'>Define hard build/runtime exclusion criteria as Kconfig/ifdef conditions (LOCKDEP/PROVE_LOCKING/DEBUG_SPINLOCK/KCSAN/PARAVIRT/!native queued spinlock, PREEMPT_RT considerations). Don’t rely on prose; make it mechanically enforced.</li><li style='font-size:13px;margin-bottom:4px;'>Ensure the control-plane telemetry (abort/commit counters, class admission) is NMI/IRQ-off safe and does not introduce contention (per-cpu counters must use raw/this_cpu ops without instrumentation; RCU publication must not allocate or take locks).</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Topology revalidation: you must re-check (inside the RTM region) that the xarray root still points to the same node, and each parent slot still references the captured child (and sh</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Lock subscription semantics: “first access reads xa_lock word” is not sufficient unless you specify the exact lock primitive and ensure every contending writer causes a conflicting </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Preemption/IRQ model: RTM is not a sleepable primitive and can abort on interrupts, NMIs, and reschedules. If this fast path runs in preemptible process context, you need an explici</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] RCU publication ordering: an in-place slot swap visible to lockless RCU readers must use the same ordering guarantees as the baseline path (typically rcu_assign_pointer/WRITE_ONCE w</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Semantic restriction must be mechanically checkable: “non-NULL→non-NULL, no entry encoding class change, no tags/marks/count propagation” needs concrete predicates (e.g., xa_is_valu</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] You must provide a formal memory-ordering argument that RTM commit (XEND) preserves the *release* semantics required by spin_unlock for prior non-transactional critical-section stor</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact revalidation contract against the current kernel implementation: which qspinlock lockword bits/fields (locked/pending/tail encoding) and which MCS node fields (e.g.</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prove equivalence to the immediate-successor unlock branch at the granularity of observable intermediate states: baseline code may intentionally order (a) successor grant store and </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify hard gating conditions and exclusions aligned with upstream reality: TSX is often disabled for TAA/MDS mitigations (tsx=off, MSR_IA32_TSX_CTRL, X86_FEATURE_RTM presence/abse</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Address instrumentation and alternative unlock implementations: paravirt queued spinlocks, lockdep/debug builds, KCSAN, and static keys may alter codegen and required ordering. You </li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux synchronization using x86 TSX microarchitecture features
+</footer>
+</div></body></html>

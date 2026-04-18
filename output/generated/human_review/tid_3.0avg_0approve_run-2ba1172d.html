@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 3.0] DMA-Lifetime-Constrained Post-Map Scatterlist Run Folding wi</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-2ba1172d221f &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 3.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>DMA-Lifetime-Constrained Post-Map Scatterlist Run Folding with Deterministic Two-Pass Sizing and Optional x86 AVX-512 Break-Mask Classification</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux block I/O using x86 AVX-512 microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Vector Segment Folding Layer for blk-mq Scatter-Gather Translation</li><li style='font-size:13px;'>Vector Zero Semantic Translator for WRITE ZEROES Promotion</li><li style='font-size:13px;'>NVMe Submission Queue Transpose Engine Using AVX-512 Stripe Buffers</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | CHAPTER 15 &lt;&gt; intel_opt_manual | SOFTWARE OPTIMIZATION FOR INTEL® AVX-512 INSTRUCTIONS
+  MMR Score:    0.7909</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A Linux kernel helper that transforms already-mapped DMA segments into descriptor-safe runs, including mandatory intra-segment splits for hardware limits, through an atomic-safe scalar planner/emitter and an opt-in process-context x86 AVX-512 break classifier that accelerates detection without changing queue commit, MMIO ordering, or emitted run semantics.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The invention is not generic blk-mq batching, bio merging, dma_map_sg() coalescing, or NVMe doorbell optimization. It fills the specific gap between dma_map_* completion and hardware descriptor packing by defining a form</div>
+    <div class="pill"><strong>Feasibility:</strong> The scalar path is implementable with existing Linux kernel primitives and conventions: immutable mapped inputs, no allocation, no sleeping, no locks, no FPU/SIMD use, and overflow</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>After dma_map_sg(), dma_map_sgtable(), dma_map_page_attrs(), or equivalent streaming DMA mapping, many Linux drivers still must derive the final hardware descriptor runs they will program into a submission ring. That step is not solved by page-level bio merging or by dma_map_sg()&#x27;s reduction in nents, because a mapped DMA extent can still require further splitting or folding according to descriptor-specific limits that are only meaningful at descriptor-programming time: maximum bytes per descriptor, no-crossing boundary rules such as 64 KiB or 1 MiB windows, required start-address alignment, required length granularity, optional final-tail exceptions, and device DMA address-mask limits. Existing drivers therefore embed bespoke post-map loops that mix contiguity testing, overflow handling, budget estimation, and hardware packing. The result is duplicated branch-heavy code, inconsistent treatment of 32-bit dma_addr_t and wrap hazards, and no uniform way to ask for the exact descriptor count required for an already-mapped request before ring reservation.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>dma_map_sg() and related DMA APIs already coalesce adjacent entries when the DMA layer can present a single mapped segment, and blk/bio merge policies already merge requests before mapping. Those mechanisms are necessary but insufficient. They operate before final descriptor construction and do not provide a deterministic post-map partition under a formal descriptor contract. dma_set_max_seg_size() and dma_set_seg_boundary() influence mapping behavior, but they do not solve the full post-map problem because they do not yield an exact descriptor plan after IOMMU/SWIOTLB transformations, do not provide a count-then-emit API, and do not cover the full combination of start alignment, length granularity, tail policy, exact hardware descriptor budgeting, and explicit no-wrap behavior on narrow DMA address masks. scatterlist utilities iterate segments but do not standardize a reusable post-map folding result. The helper disclosed here fills that exact gap: given the already-mapped DMA stream and a formal legality contract, it returns the exact descriptor-safe run partition the driver will consume.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>Introduce a three-part subsystem for post-map DMA run folding. First, a generic extent view converts the already-mapped request into an immutable sequence of DMA address/length pairs, regardless of whether the caller starts from a scatterlist, sg_table, or single mapped page. Second, a generic scalar planner/emitter walks that immutable sequence and computes the unique descriptor-safe partition implied by the constraint contract; it can either count runs only or emit them into caller-provided storage, and it is valid in atomic, softirq, or process context because it allocates nothing and uses no SIMD/FPU state. Third, an optional x86 AVX-512 classifier may be invoked only through a separate process-context API to precompute candidate break bits in 8-lane batches; the classifier never emits runs itself and never becomes semantically authoritative. The scalar emitter remains the single source of truth for boundaries, ordering, and error handling, ensuring bit-identical outputs with or without AVX-512.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>[&#x27;Add the generic header and scalar core, plus a thin mapped-scatterlist adapter that only consumes the mapped nents returned by dma_map_*.&#x27;, &#x27;Define the formal constraint structure, documented error codes, and the count/emit API contract, including immutable-input retry rules and the statement that output capacity never affects boundaries.&#x27;, &#x27;Implement the scalar state machine with explicit promoted-width arithmetic guards, intra-segment splitting, boundary calculations, and exact -ENOSPC/-E2BIG reporting.&#x27;, &#x27;Add the optional x86 AVX-512 classifier behind Kconfig and static keys, with hard process-context gating, kernel_fpu_begin()/end() management, per-CPU scratch, and conservative scalar fallback on any guard failure.&#x27;, &#x27;Convert one representative non-NVMe driver and one storage-facing driver to the helper to show generality, while leaving their queue submission, locking, and MMIO ordering untouched.&#x27;]</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 3.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define an explicit, verifiable constraint struct (break predicates) with kernel-idiomatic semantics: at minimum {max_desc_len, boundary, align, dma_mask/addr_bits, allow_merge_across_sg}. Specify precisely when two DMA extents may merge (contiguous dma_addr_t, no boundary crossing, length not exceeding max, alignment rules) and when a single mapped SG entry must be split (e.g., max_desc_len or boundary).</li><li style='font-size:13px;margin-bottom:4px;'>Nail down the API contract and error model: returning “-ENOSPC retry counts” is non-idiomatic and easy to misuse. Prefer a count-first function that returns required descriptor count (or 0/-errno) and a separate emit function that assumes sufficient space; or return required count via out-param and use -ENOSPC only when output array is too small. Document overflow and upper-bound behavior (what exactly triggers -E2BIG vs -EINVAL).</li><li style='font-size:13px;margin-bottom:4px;'>Prove arithmetic safety for dma_addr_t and length math: every addr+len, boundary-end computation, and split-point computation must use check_add_overflow()/check_mul_overflow() with promoted widths, and must not assume dma_addr_t wrap is harmless (especially on 32-bit DMA). Include a hard rule: never form (addr + len - 1) without overflow checking.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify locking / context guarantees: the scalar planner+emitter must be callable from any submission context (including hardirq/softirq/atomic) with no sleeping, no allocation, and no FPU. State that the mapped scatterlist must remain immutable and valid for the duration of planning+emission and must not be concurrently unmapped (dma_unmap_sg) or modified.</li><li style='font-size:13px;margin-bottom:4px;'>AVX-512 fast path needs stricter kernel-FPU correctness gates: require explicit process-context API (not just “opt-in”), must verify irq_fpu_usable() (or arch equivalent), must avoid nesting hazards, and must ensure preemption/migration constraints are correct for per-CPU scratch (migrate_disable() or pinning strategy). Also guarantee the SIMD pass is advisory only (mask preclassification) and scalar emission re-validates all breaks to prevent silent misclassification bugs.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: As written, the claimed novelty is hard to distinguish from long-standing in-driver “count then emit” descriptor building plus boundary/segment-limit splitting; without a crisp, kernel-credible contract + API surface and clear separation from existing scatterlist/DMA/block mapping helpers, it risks being viewed as an obvious refactor/optimization.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the descriptor-legality contract as a precise, minimal set of break predicates (alignment, max-seg-len, boundary size, DMA mask wrap, descriptor budget, device-specific quirks) with exact semantics and ordering. Right now it’s described narratively; you need a normative spec (inputs/outputs, invariant that emission is identical across retries, and what “post-map” means under IOMMU/SWIOTLB).</li><li style='font-size:13px;margin-bottom:4px;'>Show clear separation from existing kernel prior art: many drivers already do deterministic two-pass sizing (reserve ring space / compute PRP/SG counts) and then emit descriptors, often with boundary splitting. You must enumerate what is new (e.g., a reusable generic helper + standardized error/retry semantics) and why that isn’t an obvious consolidation of duplicated loops.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify where this lives architecturally: placing it under block/ may be challenged because descriptor packing is often device- or transport-specific (NVMe PRP/SGL, SCSI, DMAengine) and DMA API layering is sensitive. Propose an appropriate subsystem home (lib/scatterlist, drivers/base/dma-mapping helpers, or a new lib) and how non-block users consume it without pulling in block internals.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the API and error model concretely: exact return types, how “-ENOSPC retry counts” are represented, how -E2BIG is triggered, how callers pass/receive required descriptor count, and how to avoid ambiguity between capacity shortage vs. unsatisfiable constraints.</li><li style='font-size:13px;margin-bottom:4px;'>The AVX-512 preclassifier risks being treated as obvious “SIMD speedup” unless you justify non-obviousness and practicality: provide a strict rule that SIMD only computes a break-mask (no authority), prove equivalence to scalar predicates, and detail FPU safety (preemption, nesting, irq_fpu_usable, migration pinning, per-CPU scratch lifetime) plus measurable wins on real SG patterns.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Key report sections (Problem/Architecture/Implementation Plan/Claims) are placeholders; without a concrete kernel-facing API + constraint model + claimable steps, it’s not yet defensible or implementable as a standardized helper.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact kernel API and data model: proposed function signature(s), the constraint struct (max descriptor bytes, max segments, boundary masks, alignment, no-cross-4G, max transfer, SGL element limits), and the precise return contract (e.g., required_desc_count, emitted_count, -ENOSPC meaning, -E2BIG thresholds).</li><li style='font-size:13px;margin-bottom:4px;'>Make the break/split predicates concrete and complete for real devices: adjacency (sg_dma_address + len == next_addr), boundary crossing (power-of-two boundary masks), max-descriptor-length splits, DMA mask wrap/32-bit truncation constraints, and any controller-specific “no-cross” rules; specify ordering guarantees for emitted runs.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify context legality and locking: which callers may use the scalar path (hardirq/softirq/NMI?), what guarantees ‘immutable mapped scatterlist’ requires, and how the helper avoids sleeping/allocations while still supporting two-pass sizing and retry behavior.</li><li style='font-size:13px;margin-bottom:4px;'>AVX-512 path needs a crisp safety/maintainability story: specify exact gating (CONFIG_X86_KERNEL_FPU, X86_FEATURE_AVX512F, irq_fpu_usable()/in_task(), preemption/migration pinning semantics), per-CPU scratch sizing/alignment, and prove bit-identical boundaries vs scalar across all inputs (including odd sg counts and tail handling).</li><li style='font-size:13px;margin-bottom:4px;'>Placement and reuse strategy: justify why this belongs under block/ versus lib/scatterlist or drivers/dma; ensure it’s usable by non-block DMA descriptor builders (RDMA-ish, accel queues) to maximize x86 server leverage and reduce duplication.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>The AVX-512 path needs a tighter safety contract: explicitly require/process-context-only (no softirq/bh), document required preemption/migration rules (e.g., migrate_disable()/preempt_disable()) around per-CPU scratch, and specify exactly which guard(s) are mandatory (irq_fpu_usable(), in_task(), !in_atomic(), !irqs_disabled()) before kernel_fpu_begin().</li><li style='font-size:13px;margin-bottom:4px;'>Compatibility risk: placing this “under block/” and framing as “for Linux block drivers” is too narrow; DMA descriptor building is used beyond block. Clarify the intended subsystem placement/API ownership (e.g., lib/ vs drivers/dma-mapping/ vs block/), and provide a stable header location and naming that won’t churn driver interfaces.</li><li style='font-size:13px;margin-bottom:4px;'>Crash/corruption risk: the draft claims overflow-safe arithmetic but doesn’t define the full set of constraints/predicates (max descriptor len, boundary, alignment, segment count limits, dma_addr_t wrap rules). You must spell out the break predicates precisely and show how the promoted-width math avoids undefined behavior for 32-bit dma_addr_t and for devices with 32-bit DMA masks on 64-bit kernels.</li><li style='font-size:13px;margin-bottom:4px;'>Side-channel/timing risk: the optional SIMD preclassifier changes per-IO CPU time as a function of scatterlist topology; even if semantics-preserving, it can amplify timing observability across cgroups/tenants. Add explicit guidance on threat model/mitigation (feature gated by static key + sysctl/module param, default-off, and avoid use for untrusted multi-tenant environments unless enabled by admin).</li><li style='font-size:13px;margin-bottom:4px;'>Determinism claim needs a concrete retry/error contract: define exact outputs for count-only vs emit, how -ENOSPC retry sizing is computed, and ensure identical partitions across retries even when device budgets (queue depth, max descriptors) change between passes; otherwise drivers can livelock/reserve incorrectly under contention.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the contract in kernel terms that map 1:1 to existing DMA constraints: explicitly relate max segment size and boundary handling to device DMA parameters (e.g., dma_get_max_se</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify exact boundary-mask semantics with examples and an implementable rule (e.g., “a run may not cross an address boundary of size (mask+1)”; clarify whether mask is inclusive li</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Pin down context/locking rules: the scalar core claims atomic/softirq safety, so it must not allocate, sleep, take mutexes, or use APIs that can fault. Document required caller seri</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prove lifetime safety of using DMA addresses: require that folding occurs strictly between successful dma_map_* and dma_unmap_* on the same mapping, and document that the helper mus</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify -ENOSPC / two-pass sizing semantics: define whether the first pass computes an upper bound or exact required run count, and guarantee determinism across passes (same inputs </li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact callable contexts and enforce them in the API contract: the scalar path claims “atomic-safe/no sleeping”, but real callers span process context, softirq, and possib</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Spell out the DMA-lifetime and ownership rules precisely: the helper must require that all dma_addr_t segments remain valid until the device is done (and unmap happens after complet</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prove correctness of the two-pass sizing under concurrent constraints: the “-ENOSPC retry semantics” must guarantee identical run boundaries between pass-1 counting and pass-2 emiss</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Be explicit about arithmetic and address-wrap rules on all architectures: dma_addr_t may be 32-bit; folding runs by (addr + len) must use check_add_overflow on the promoted type and</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify what “folding post-dma_map_*” means relative to existing DMA merging: if dma_map_sg() already merges adjacent segments, your fold must state its distinct constraint model (d</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux block I/O using x86 AVX-512 microarchitecture features
+</footer>
+</div></body></html>

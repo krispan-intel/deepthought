@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] Confirmed-AMX Power QoS Broker with Atomic Per-CPU Recency T</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-0aeffd08b38c &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Confirmed-AMX Power QoS Broker with Atomic Per-CPU Recency Tuples, Hotplug-Safe cpufreq Policy Floors, Per-CPU cpu_device Resume-Latency Requests, and One-Shot s2idle Guard Windows</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux power management using x86 AMX microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Deferred AMX Residency Broker for intel_pstate and cpuidle</li><li style='font-size:13px;'>AMX Cohort Domain for Package Quiescence Scheduling</li><li style='font-size:13px;'>Per-mm AMX Quiesce Contract for s2idle and Suspend Entry</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | 20.5.5.5 Convolution - Matrix-like Multiplications and Summations Equivalence . . . . . . . . . . . . . . . 20-17 &lt;&gt; intel_opt_manual | INTEL® ADVANCED MATRIX EXTENSIONS (INTEL® AMX)
+  MMR Score:    0.7814</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A Linux x86 kernel broker latches a per-task AMX-confirmed bit only after XTILE state is observed in a materialized in-memory fpstate image, publishes a non-torn atomic per-CPU recency tuple from scheduler-adjacent paths, and converts recent tuples into rate-limited, hotplug-safe per-policy freq_qos minimum floors plus per-CPU cpu_device DEV_PM_QOS_RESUME_LATENCY requests, with explicit OFF/SINGLE/GROUP hysteresis, SMT propagation, bounded optional s2idle deferral, and deterministic withdrawal.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The invention is not generic AMX burst detection and not generic DVFS hinting. Its novelty is the contract between x86 AMX evidence and Linux power-management side effects: a two-stage PROBE/CONFIRMED evidence model in w</div>
+    <div class="pill"><strong>Feasibility:</strong> The design stays inside existing Linux kernel mechanics. It relies on existing x86 fpstate materialization paths, fpregs_lock()-protected inspection of task fpstate, atomic64_t pub</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>AMX-heavy convolution, GEMM, and matrix-like reduction kernels often run as a sequence of short tile-compute slices separated by barriers, scalar epilogues, memory stalls, and userspace scheduling gaps. Utilization history alone does not encode that a CPU or physical core very recently executed AMX and is therefore unusually sensitive to both idle-state exit latency and abrupt inter-burst frequency collapse. The kernel needs a signal that is stronger than permission, narrower than generic utilization, and mechanically safe under x86 eager fpstate isolation rules. The signal must not be derived from stale live registers, must not depend on hardware exceptions as routine optimization control flow, and must never call cpufreq or cpuidle policy code from rq-locked or interrupt-sensitive contexts.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>The gap is a missing bridge between exact AMX-save evidence and bounded Linux power QoS actions. Existing xstate code answers correctness, isolation, and permission questions, but it does not expose a governor-facing, expiring, lockless contract for &#x27;AMX was materially present here very recently.&#x27; Existing schedutil/uclamp patterns aggregate runnable demand, not saved architectural XTILE evidence. Existing freq_qos and PM QoS mechanisms provide the actuators, but not the evidence model, state machine, or withdrawal rules. Historical x86 power-control work such as LongRun-style performance selection and embedded threshold-driven PMIC logic also fails to teach the claimed bridge because those systems are not keyed to per-task AMX materialization in Linux fpstate images. The topological void is therefore the combination of matrix-workload AMX evidence with Linux power-management QoS, not either mechanism alone.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>Introduce an AMX power broker composed of four coupled contracts. First, a per-task evidence latch distinguishes transient PROBE signals from CONFIRMED AMX use, where CONFIRMED requires seeing XTILE state in a materialized in-memory fpstate image. Second, scheduler-adjacent code publishes a packed atomic64 per-CPU recency tuple containing monotonic time, hotplug epoch, and evidence stage so readers never observe a torn timestamp-plus-flag pair. Third, an unbound deferred broker aggregates tuples at the actual Linux coupling domains of logical CPU, physical core, and cpufreq policy, then applies OFF/SINGLE/GROUP floors through freq_qos minimum requests and per-CPU DEV_PM_QOS_RESUME_LATENCY requests on cpu_device objects. Fourth, an optional system-level, one-shot, bounded s2idle guard window reads the same evidence but never pins an mm or task reference and can defer suspend only once and only for a root-configured maximum interval.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>Control flow:
+
+saved XTILE image in task fpstate
+  -&gt; set task_struct.thread.amx_observed = 1 (store-release, once per task lifetime until exec/exit)
+  -&gt; scheduler switch-in/switch-out of observed task on CPU N
+  -&gt; atomic64_set_release(per_cpu(amx_tuple, N), packed_tuple)
+  -&gt; queue delayed_work on unbound housekeeping workqueue
+  -&gt; cpufreq policy scan with cpufreq_cpu_get()/put()
+  -&gt; OFF / SINGLE / GROUP policy decision
+  -&gt; freq_qos_update_request(policy_ctx.soft_req / policy_ctx.hard_req)
+  -&gt; dev_pm_qos_update_request(cpu_ctx.resume_latency_req on get_cpu_device(cpu))
+  -&gt; optional read of atomic amx_s2idle_guard_until_us during s2idle prepare
+
+Primary kernel objects:
+- task_struct.thread.amx_observed: stable per-task execution-history latch
+- atomic64_t per_cpu(amx_tuple): packed recency publication record
+- struct amx_pm_policy_ctx: one per cpufreq_policy, owns work item, hrtimer, freq_qos requests, epoch snapshot
+- struct amx_pm_cpu_ctx: one per logical CPU, owns dev_pm_qos_request for cpu_device
+- atomic64_t amx_s2idle_guard_until_us: optional global one-shot suspend guard deadline</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Phase 1: add task-local amx_observed/amx_probe_seen fields, implement the CONFIRMED predicate in the fpstate materialization path, and clear the fields on fork/exec/exit. Phase 2: add atomic64 per-CPU tuple publication in scheduler switch-in/switch-out paths plus hotplug-epoch invalidation. Phase 3: add unbound amx_pm_policy_ctx workers, hrtimer-based expiry, cpufreq_cpu_get()/put() policy pinning, and OFF/SINGLE/GROUP freq_qos floors. Phase 4: add per-CPU cpu_device DEV_PM_QOS_RESUME_LATENCY requests with SMT propagation. Phase 5: add optional s2idle one-shot guard sysfs control, default disabled. Phase 6: add tracing, selftests, and admin documentation for thresholds and backoff behavior.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Validate on AMX-capable x86 systems using tiled GEMM and convolution microbenchmarks, bursty inference loops, and mixed scalar-plus-AMX workloads. Measure p50/p95/p99 wake-to-first-tile latency, inter-burst effective frequency, throughput per watt, package energy, and regression on non-AMX or permission-only tasks. Include negative tests proving that ARCH_REQ_XCOMP_PERM without actual XTILE save never triggers QoS, hotplug tests proving request withdrawal on policy rebuild, NOHZ full tests proving timer-driven expiry without scheduler ticks, SMT tests proving sibling-only latency caps, thermal tests proving clamp/backoff precedence, and suspend tests proving single-shot &lt;=2 ms s2idle deferral with automatic withdrawal.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A method in a Linux x86 kernel comprising: detecting CONFIRMED AMX execution only after XTILE state is observed in a materialized in-memory fpstate image of a task; latching a per-task AMX-observed indicator that survives context switches and is cleared on exec or task teardown; and refusing to treat AMX permission or first-use eligibility alone as sufficient evidence.</li><li style='margin-bottom:8px;'>The method of claim 1, further comprising publishing, from scheduler-adjacent paths, a packed atomic per-CPU tuple that includes a monotonic timestamp and an AMX evidence stage in a single non-torn machine word, the tuple being read only by deferred broker logic and being invalidated by hotplug epoch changes.</li><li style='margin-bottom:8px;'>The method of claim 1, further comprising aggregating the tuples at cpufreq-policy scope into an OFF, SINGLE, or GROUP state machine in which a single recently CONFIRMED core causes a first minimum frequency floor and multiple recently CONFIRMED CPUs or cores cause a stronger minimum frequency floor, both floors being rate-limited, expiring, and withdrawable.</li><li style='margin-bottom:8px;'>The method of claim 3, wherein each policy update pins cpufreq policy lifetime with cpufreq_cpu_get()/cpufreq_cpu_put(), owns one or more freq_qos_request objects in a policy context, and cancels timers and deferred work on policy exit or hotplug-induced rebuild to avoid use-after-free.</li><li style='margin-bottom:8px;'>The method of claim 1, further comprising attaching per-CPU dev_pm_qos requests of class DEV_PM_QOS_RESUME_LATENCY to cpu_device objects for CPUs whose CONFIRMED tuples are within a bounded recency window, and withdrawing those requests when the windows expire, thereby constraining idle-state exit latency only for selected CPUs rather than system-wide.</li><li style='margin-bottom:8px;'>The method of claim 5, wherein a CONFIRMED tuple for one SMT sibling causes temporary propagation of the resume-latency cap to the other sibling of the same physical core for a shorter SMT propagation window.</li><li style='margin-bottom:8px;'>A system-level suspend-control method comprising maintaining an atomic AMX guard deadline derived from recent CONFIRMED tuples and deferring s2idle at most once and for at most a configured bounded interval, without holding a per-mm reference and without permitting indefinite denial of suspend.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: false positives from permission-only enablement. Mitigation: only CONFIRMED saved-XTILE evidence can set amx_observed or drive QoS; PROBE is non-authoritative.</li><li style='margin-bottom:6px;'>Risk: torn or stale recency reads on SMP. Mitigation: atomic64 packed tuple with acquire/release semantics and hotplug epoch invalidation.</li><li style='margin-bottom:6px;'>Risk: cpufreq policy use-after-free during hotplug or governor transitions. Mitigation: cpufreq_cpu_get()/put() on every broker pass plus synchronous timer/work cancellation on policy exit.</li><li style='margin-bottom:6px;'>Risk: accidental global idle suppression. Mitigation: use only per-cpu cpu_device DEV_PM_QOS_RESUME_LATENCY requests and never PM_QOS_CPU_DMA_LATENCY.</li><li style='margin-bottom:6px;'>Risk: suspend DoS. Mitigation: optional feature, root-only sysfs enablement, hard 2 ms cap, and one-shot consumption per suspend attempt.</li><li style='margin-bottom:6px;'>Risk: fighting thermal or autonomous hardware controls. Mitigation: clamp to effective policy max, no direct MSR manipulation, and back off after repeated thermal saturation.</li><li style='margin-bottom:6px;'>Risk: overhead in scheduler-adjacent paths. Mitigation: one local atomic64 write only on relevant switch edges and no policy work under rq lock.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Intel 64 and IA-32 Architectures Optimization Reference Manual, section 20.5.5.5 on convolution and matrix-like multiplication equivalence.</li><li>Intel Advanced Matrix Extensions (AMX) architecture documentation and XSAVE/XRSTOR state-component definitions.</li><li>Linux x86 AMX permission interface via ARCH_REQ_XCOMP_PERM and dynamic xstate support.</li><li>Linux arch/x86 fpstate/xstate implementation and fpregs_lock()-protected fpstate materialization paths.</li><li>Linux include/linux/pm_qos.h for freq_qos_request, dev_pm_qos_request, and DEV_PM_QOS_RESUME_LATENCY.</li><li>Linux include/linux/cpufreq.h for cpufreq_cpu_get()/cpufreq_cpu_put() policy lifetime rules.</li><li>Historical x86 LongRun-style power-selection prior art, used here only as contrast to show absence of AMX-save-derived evidence bridging.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Per-mm recency/evidence is a correctness trap: AMX execution is per-thread, while an mm can be shared across threads/processes; this can misattribute AMX activity and apply QoS to unrelated runnable contexts unless the design is made strictly per-task (or per-mm with explicit, justified semantics and teardown synchronization).</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the *exact* “materialized fpstate” hook points and locking: you must only inspect XTILEDATA after the task’s fpstate is fully synchronized to memory (e.g., after __fpu_sync_state()-class paths) and never from rq-locked/atomic contexts; spell out required locks (fpregs_lock()/fpu_lock) and preemption rules to avoid races with XRSTOR/XSAVE update paths.</li><li style='font-size:13px;margin-bottom:4px;'>The packed 64-bit recency word needs a concrete update protocol: use atomic64_cmpxchg() loops (or seqcount) so epoch+class+time are updated atomically and readers get a coherent snapshot; specify memory ordering (smp_store_release / smp_load_acquire semantics) rather than assuming x86 atomicity if any code is generic or if readers run on different CPUs.</li><li style='font-size:13px;margin-bottom:4px;'>Per-mm aggregation must have a teardown-safe lifetime model: mm exit/exec/fork requires explicit reset points and RCU/refcounting so broker readers cannot dereference freed mm data; if you keep per-mm state, justify why mm-scoped QoS is correct despite thread-level AMX usage and implement robust mm_notifier / mmu_notifier or mmu_gather-style lifetime rules.</li><li style='font-size:13px;margin-bottom:4px;'>dev_pm_qos per-CPU cpu_device requests must be CPU-hotplug correct: create/remove requests in CPUHP online/offline callbacks, handle get_cpu_device(cpu)==NULL, and ensure the broker never touches a request for an offline CPU (or a cpu_device that has been unregistered), otherwise you risk UAF and PM QoS list corruption.</li><li style='font-size:13px;margin-bottom:4px;'>freq_qos request lifetime must be tied to cpufreq_policy rebuilds: cpufreq policies can be re-created on hotplug/governor changes; you need a reattach strategy (policy notifier or cpufreq transition/policy notifiers) and strict cpufreq_cpu_get()/put() usage in sleepable context, otherwise the broker can leave stale requests or hit UAF on policy free.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: As written, the novelty hinges on “CONFIRMED only when XTILEDATA is present in a materialized XSAVE image” driving PM/QoS actuation, but it does not yet pin down (a) the exact kernel hook points that guarantee materialization, (b) the exact bit/tests that cannot be set without true tile execution, and (c) the concrete broker/state-machine mechanics; without those, overlap/obviousness vs existing xstate bookkeeping + PM QoS + cpufreq QoS is high.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact CONFIRMED-evidence predicate with kernel-accurate fields: specify whether you key on xsave_header.xfeatures, xstate_bv, or fpstate.xfeatures, and show (with citations to x86 FPU code) that the XTILEDATA bit cannot become set from permission/initialization alone. If CONFIRMED can be set by any path that initializes/allocates tile state without executing tiles, prior art/obviousness risk increases sharply.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the precise hook points where the fpstate is guaranteed to be memory-materialized (e.g., specific functions/paths in arch/x86/kernel/fpu/) and demonstrate they are reached in the targeted workload cases. If you rely on rare paths (ptrace/coredump/signal) rather than common context-switch save, the claimed contract may be non-enabled or not practically differentiating.</li><li style='font-size:13px;margin-bottom:4px;'>Your publication mechanism (“single 64-bit packed word &lt;epoch, class, time_quantum&gt;”) needs a concrete layout, update protocol, and memory-ordering argument. State which writers update it (per-CPU? per-task? per-mm?), what readers are allowed to do locklessly, and how you prevent stale reads across CPU hotplug and task migration. Otherwise it reads like an obvious implementation detail over seqcount/atomic64.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify scope mismatch: AMX execution is per-thread, but you propose per-mm and per-physical-core recency. You must define aggregation rules (multiple threads in one mm; exec/fork; thread exit) and the reset/teardown semantics to avoid false GROUP activation and to make ‘guaranteed withdrawal’ true under all lifecycle transitions.</li><li style='font-size:13px;margin-bottom:4px;'>The OFF/SINGLE/GROUP broker needs concrete, claimable mechanics: define N-of-M entry thresholds, hysteresis parameters, expiry constants, rate limiting, and what triggers withdrawal (timer vs observed idleness vs policy teardown). Without that specificity, the broker overlaps heavily with generic “recent activity -&gt; QoS floor” patterns (schedutil/uclamp + freq_qos + PM QoS).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the admin control plane precisely (sysctl vs prctl vs cgroup) and its security model (who can mark AMX-burst-eligible, how it composes with containers, and how it’s reset on exec/clone).</li><li style='font-size:13px;margin-bottom:4px;'>Make the scheduling cohort algorithm concrete: how cores are selected per package, how the cohort bound is enforced, and how it interacts with cpuset/cgroup v2, isolcpus/nohz_full, core scheduling, SMT siblings, and RT/DL tasks (must be strictly subordinate, not best-effort).</li><li style='font-size:13px;margin-bottom:4px;'>Specify the exact CONFIRMED hook points and invariants: which x86 FPU/xstate paths guarantee an in-memory XSAVE image with XTILEDATA set, and how you avoid false negatives for tasks that execute AMX but don’t hit the chosen materialization path frequently.</li><li style='font-size:13px;margin-bottom:4px;'>Replace/justify the proposed seqcount publication in scheduler-adjacent paths: seqcount readers/writers must be non-blocking and memory-ordered correctly on all archs; clarify why atomic64 packed tuple isn’t sufficient and how hotplug epochs prevent use-after-offline.</li><li style='font-size:13px;margin-bottom:4px;'>Quantify and bound the PM actuation side effects: freq_qos floors can defeat energy proportionality and turbo budgeting across a socket—define caps, priorities, and decay constants so mixed-tenant Xeon hosts don’t get chronic over-flooring.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Locking/safety contract needs to be explicit: CONFIRMED must only be set when the task’s fpstate is already materialized by existing save/sync paths, and inspection must be under the correct x86 FPU locking (e.g., fpregs_lock()/fpu__lock or equivalent) so you never race with XRSTOR/XSAVE or read partially-written state.</li><li style='font-size:13px;margin-bottom:4px;'>The global s2idle “one-shot bounded gate” is a potential DoS knob unless it is strictly privilege-gated and rate-limited: define who can opt an mm in (CAP_SYS_ADMIN? cgroup policy?), cap total cumulative deferral over time, and ensure unprivileged workloads cannot extend suspend-not-before repeatedly via fork/exec churn.</li><li style='font-size:13px;margin-bottom:4px;'>The packed 64-bit recency word needs concrete compatibility guarantees: define time_quantum, wraparound behavior, and memory-ordering (release on publish, acquire on read) and ensure the design is correct on !CONFIG_64BIT atomic64 implementations (even if x86_64-only, say so).</li><li style='font-size:13px;margin-bottom:4px;'>Cross-task side-channel risk: publishing per-mm and per-core “confirmed AMX recency” can let one process infer co-tenant behavior (timing/activity). Mitigate by scoping visibility strictly inside the kernel broker, avoiding any user-visible interface, and considering per-cgroup aggregation instead of per-mm if any observability leaks are planned.</li><li style='font-size:13px;margin-bottom:4px;'>Withdrawal/teardown paths must be fully enumerated: exec/exit/mm teardown, CPU hotplug offline, cpufreq policy rebuild/governor switch, and cpu_device lifetime. Specify that all freq_qos/dev_pm_qos requests are removed in sleepable context with deterministic ordering to avoid use-after-free on policy/device objects.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact kernel event that sets the per-task “has_used_amx” flag and ensure it reflects *actual XTILE usage*, not merely permission/enabling. If it is set on XFD/permission </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Hotplug and policy lifetime: per-policy freq_qos requests must be created/updated/removed with correct cpufreq policy referencing (e.g., cpufreq_cpu_get/cpufreq_cpu_put) and must to</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Locking/order: reading per-CPU recency written from rq-locked/switch paths via READ_ONCE/WRITE_ONCE is not sufficient by itself—specify the memory-ordering requirements (e.g., times</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Scheduler-context instrumentation must be strictly non-sleeping and bounded: if you plan to timestamp on every context switch, justify overhead and use fast clocks (e.g., ktime_get_</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] cpufreq multi-CPU coupling semantics: the proposed “default N&gt;=2” gating can conflict with real cpufreq policy behavior (one CPU’s request affects all). You need a concrete, determi</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact observation point for “XTILE bits in a materialized xstate image” so you never trigger an XSAVE/FP state sync just to detect AMX. The only safe/cheap place is where</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the locking / ownership model for reading another task’s xstate: you must not read task-&gt;thread.fpu.state while the task can be running on another CPU (or while its state is</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The proposed “lockless single-scalar monotonic recency” publication needs a concrete concurrency design: on SMP you must guarantee readers never see a torn timestamp+flag pair. Use </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Policy-scoped freq_qos updates must be hotplug/teardown-safe. A deferred broker work item must pin the cpufreq_policy lifetime (cpufreq_cpu_get()/put() or equivalent) and must cance</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Per-core/per-CPU idle-latency “hints” are underspecified and easy to get wrong: Linux’s PM QoS is largely global or per-device, and cpuidle selection reads specific constraints. You</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux power management using x86 AMX microarchitecture features
+</footer>
+</div></body></html>

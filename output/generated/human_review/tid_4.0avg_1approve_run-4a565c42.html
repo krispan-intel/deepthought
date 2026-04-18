@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 4.0] Conservative KVM EPT Range-Scoped CPU-Access Epoch Contract </title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-4a565c42eee5 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Conservative KVM EPT Range-Scoped CPU-Access Epoch Contract for Accelerating Safe DMA Pin/IOMMU Reclaim</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux device driver using x86 EPT microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>EPT A/D Residency Bridge for VFIO and vhost DMA Pin Governance</li><li style='font-size:13px;'>EPT Write-Intent Window for Mediated Device Doorbell Coalescing</li><li style='font-size:13px;'>EPT A/D-Guided Hugepage Promotion for Driver-Shared Queue Extents</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: TPS65218_ENABLE2_GPIO3 &lt;&gt; EPT_VIOLATION_PROT_WRITE
+  MMR Score:    0.7665</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A kernel-internal x86 KVM mechanism lets VFIO/iommufd and vhost/vDPA register memslot-bound guest ranges, receive conservative CPU-access epochs derived only from existing EPT/TDP observation points, and shorten DMA pin or IOMMU-map lifetime only after a mandatory DMA-quiesce fence and immediate mmu_invalidate_seq, memslot-generation, and PFN revalidation, with no allocation or sleep in notifier fast paths.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The inventive step is not generic use of EPT accessed bits, reactive MMU invalidation, or backend DMA reclaim considered separately; it is a narrow kernel-internal contract that binds a reclaim candidate to a concrete {s</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux device backends attached to KVM guests, especially VFIO/iommufd and vhost/vDPA paths that own virtqueue pages, ring pages, doorbell pages, and transient DMA buffers, often retain long-lived page pins and IOMMU mappings after the guest CPU has effectively stopped touching the corresponding guest-physical range. Existing mmu_notifier and iommufd invalidation mechanisms protect correctness only after host mappings actually change, so they are reactive teardown signals rather than proactive, range-scoped evidence that a still-valid mapping is CPU-cold. x86 KVM already encounters EPT leaf state in TDP MMU paths and can sometimes observe accessed-bit transitions, but that telemetry is private, mode-dependent, and not bound to a driver-consumable identity or ordering contract. Without a correctness-safe bridge, Linux device drivers either keep pins and maps too long, increasing unreclaimable memory and IOMMU residency, or risk reclaim decisions based on stale observations that race with memslot moves, invalidations, or in-flight DMA.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Prior art covers reactive invalidation sequencing, EPT accessed/dirty harvesting for KVM&#x27;s own MMU policy, and backend-specific DMA teardown logic, but it does not define a kernel-internal ABI that lets a backend register a precise guest-physical extent and later query a conservative CPU-access epoch that is machine-checkably bound to the same live struct kvm, memslot identity, memslot generation, and invalidation epoch. The missing element is an auditable concurrency contract: how the extent is registered, when hints are suppressed, what locks and SRCU domains protect readers and writers, how invalidate_start and invalidate_end are serialized through the canonical mmu_invalidate_seq, how fast paths avoid allocation and sleeping, and why no consumer can reclaim based on a stale extent after a slot move, split, unmap, dirty-log transition, or PFN replacement. That precise contract, not a generic heuristic, is the inventive gap.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>KVM x86 exposes an internal service called an EPT epoch domain. A KVM-attached DMA owner registers one or more guest-physical extents that are page-aligned, wholly contained in a single live memslot, and annotated with the access class it cares about, typically CPU read/write touches that imply the guest is still actively driving a ring or buffer. For each registered extent, KVM stores a fixed-size descriptor keyed by struct kvm pointer, memslot id, memslot generation, base_gfn, npages, and access_mask. When existing TDP MMU code paths already inspect reliable EPT leaf state and observe a relevant CPU access, KVM advances a per-VM monotonic cpu_access_epoch and publishes the new epoch into the matching extent descriptor together with a snapshot of the current even mmu_invalidate_seq. Consumers may read that snapshot, but they are forbidden to shorten a pin or unmap merely because the epoch looks old. They may act only after they themselves stop and drain DMA for that queue or buffer, then immediately revalidate mmu_invalidate_seq, memslot generation, and PFN identity before unpinning or unmapping. If any check fails, the backend keeps the existing pin or map and falls back to baseline behavior.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>ASCII overview:
+
+VFIO/iommufd or vhost/vDPA backend
+        |
+        | register extent {slot id, generation, gfn range, access_mask}
+        v
++-------------------------------+
+| KVM EPT epoch domain          |
+| per-VM extent table           |
+| per-VM cpu_access_epoch       |
+| canonical mmu_invalidate_seq  |
++-------------------------------+
+        ^                    |
+        | publish epoch only | invalidate start/end updates
+        | from existing EPT  | canonical seq, memslot changes
+        | observation points |
+        |                    v
+  x86 TDP MMU paths      mmu_notifier / memslot update paths
+
+Action path:
+1. backend queries extent snapshot
+2. backend performs queue stop + completion drain + DMA fence
+3. backend rechecks mmu_invalidate_seq, memslot generation, and PFNs
+4. only then may backend shorten pin or IOMMU map lifetime
+5. on any mismatch, backend retains mapping and retries later</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Add an internal ept_epoch_domain object to KVM x86 and wire lifetime to struct kvm teardown. 2. Implement sleepable register and unregister helpers that validate slot containment, generation, alignment, and capability support, then allocate or recycle a fixed descriptor from a per-VM pool. 3. Add query helpers callable by VFIO, iommufd, vhost, and vDPA backends under SRCU. 4. Instrument only existing EPT/TDP observation points to publish cpu_access_epoch and mmu sequence snapshots into matching descriptors. 5. Add suppression hooks for dirty logging, permission-forced write protection, unsupported tracking modes, and memslot generation changes. 6. Integrate backend-side DMA-quiesce plus revalidation logic before existing unpin or unmap calls. 7. Add tracepoints and internal stats for kernel developers only while keeping all telemetry non-user-visible in production paths.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Correctness validation focuses on race freedom and fail-closed behavior: concurrent memslot move during candidate reclaim, invalidate_start between query and DMA drain, PFN replacement during long DMA fence, dirty-log enable while descriptors exist, and nested or unsupported modes where publication must remain UNKNOWN. Functional validation checks that stale hints never cause an unpin or unmap that baseline code would forbid. Performance validation checks that the registration and query path do not materially increase MMU lock hold time, notifier latency, or device completion latency. All tests compare against a baseline where the feature is compiled in but disabled, verifying zero behavior change except when the backend can prove DMA quiescence and the sequence-generation checks pass.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A kernel-internal method in x86 KVM comprising registering, by a KVM-attached DMA owner, a guest-physical extent identified by struct kvm, memslot identifier, memslot generation, base guest frame number, page count, and access mask; publishing for that extent a conservative CPU-access epoch only from existing EPT or TDP MMU observation points; and permitting reclaim-oriented shortening of DMA pin or IOMMU-map lifetime only after a backend-performed DMA-quiesce protocol and an immediate revalidation that the canonical mmu_invalidate_seq remains unchanged and even and that the memslot generation and PFNs still match the registration.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein registration is rejected unless the extent is page-aligned, wholly contained within a single live memslot for the supplied generation, and requests only access classes observable without introducing new EPT faults or scanning paths, and wherein exhaustion of a preallocated descriptor budget returns an error that disables hinting for the requester without altering baseline mapping retention semantics.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein invalidate_start and invalidate_end are represented by odd and even publications of the canonical mmu_invalidate_seq using release ordering, and wherein the querying backend uses acquire ordering on both an initial and a final sequence load to reject any snapshot that races with a concurrent memslot invalidation, split, move, unmap, or PFN replacement.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein KVM suppresses publication or marks the extent non-actionable when dirty logging, access tracking without reliable hardware A/D observation, PFN write-protect, or unsupported execute-tracking modes make observed access state ambiguous for reclaim purposes.</li><li style='margin-bottom:8px;'>A non-user-visible KVM x86 subsystem comprising a per-VM extent table with fixed descriptors allocated outside notifier context, monotonic cpu_access_epoch state, and query helpers callable by VFIO, iommufd, vhost, or vDPA backends, the subsystem being configured so that notifier and MMU observation fast paths execute without sleeping or allocation and so that all failures fall back to retaining existing pins and IOMMU mappings.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: a backend misinterprets a stale snapshot as permission to reclaim. Mitigation: mandate the DMA-quiesce plus seq, generation, and PFN revalidation protocol and document that the hint never bypasses existing unpin or unmap legality checks.</li><li style='margin-bottom:6px;'>Risk: notifier fast paths regress latency through allocation or blocking. Mitigation: preallocate descriptors in sleepable registration context, hard-cap per-VM metadata, and fail registration with -ENOSPC rather than allocating in invalidate_start or invalidate_end.</li><li style='margin-bottom:6px;'>Risk: dirty logging, access tracking, or write-protect modes distort access semantics. Mitigation: explicit suppression flags disable actionability whenever those modes are active or ambiguous.</li><li style='margin-bottom:6px;'>Risk: NUMA or multi-socket contention on shared metadata. Mitigation: only a small per-extent descriptor and a per-VM epoch are touched in fast paths, and removing bucket counters or global aggregates from the core design avoids cacheline ping-pong across Xeon sockets.</li><li style='margin-bottom:6px;'>Risk: telemetry could create a cross-tenant timing signal. Mitigation: keep all state per-VM and kernel-internal, expose only coarse monotonic epochs to in-kernel consumers, and exclude global aggregation or user ABI surfaces.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual, virtualization and EPT A/D-bit behavior sections.</li><li>Linux KVM x86 TDP MMU and mmu_notifier sequencing documentation and source comments around mmu_invalidate_seq semantics.</li><li>Linux VFIO and iommufd invalidation and DMA mapping lifetime documentation.</li><li>Linux vhost and vDPA backend queue-stop, drain, and memory registration paths relevant to DMA quiescence.</li><li>Prior KVM documentation on dirty logging, access tracking, write protection, and memslot generation handling.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Spell out the exact locking/SRCU context required for range registration, teardown, and revalidation (e.g., which parts run under slots_lock vs SRCU vs kvm-&gt;mmu_lock) and explicitly forbid calling paths that can sleep from notifier/fast paths.</li><li style='font-size:13px;margin-bottom:4px;'>Precisely enumerate the “existing reliable EPT/TDP observation points” used to derive CPU-touch epochs (e.g., EPT A/D harvest sites, tdp_mmu fault paths, SPTE install/zap points) and justify why each observation is not lossy under common configs (A/D disabled, accessed-bit aging policies, nested, etc.).</li><li style='font-size:13px;margin-bottom:4px;'>Define the required memory-ordering contract around publishing/consuming the epoch hint (what is release-stored, what is acquire-loaded) and how it composes with kvm-&gt;mmu_invalidate_seq semantics to avoid false-fresh reads on weakly ordered CPUs.</li><li style='font-size:13px;margin-bottom:4px;'>Be explicit about what the DMA-quiesce fence means concretely (device-specific drain, IOMMU invalidation, vhost/vDPA queue stop, etc.) and the minimum correctness requirements so reclaim never races in-flight DMA even if the epoch hint is stale.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Novelty boundary is currently blurry versus existing mmu_interval_notifier-based invalidation tracking (VFIO/iommufd) plus KVM access/dirty mechanisms; claims need a crisp carve-out that is clearly not an obvious composition.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Explicitly differentiate from mmu_interval_notifier + device-side DMA-quiesce: explain why a KVM-private, memslot-bound CPU-access epoch is materially different from (a) mmu_interval_notifier invalidate sequences, (b) get_user_pages()/FOLL_PIN lifetime rules, and (c) generic page-idle/DAMON-based recency; then narrow claims to the unique causal chain (EPT/TDP observation → conservative epoch → post-quiesce revalidation).</li><li style='font-size:13px;margin-bottom:4px;'>Define the exact ‘reliable EPT/TDP observation points’ used to advance epochs (function-level), and prove conservativeness: if you only update on zap/split/fault, you may miss hot pages with no exits—state how you avoid false ‘cold’ indications (e.g., require periodic A/D harvesting, require access-tracking mode, or treat unknown as hot).</li><li style='font-size:13px;margin-bottom:4px;'>Specify the DMA-quiesce fence semantics precisely per backend (VFIO/iommufd, vhost, vDPA): what API call constitutes quiesce, what ordering guarantees exist between (1) device stops DMA, (2) IOTLB invalidation/unmap, and (3) CPU epoch revalidation; otherwise the contract is not enforceable and will be attacked as hand-wavy.</li><li style='font-size:13px;margin-bottom:4px;'>Pin down the identity tuple and lifecycle rules: exact meaning of memslot generation, what happens on slot move/resize, KSM, THP collapse, migration, and hva→pfn changes; require an explicit re-lookup path and failure behavior when the tuple becomes stale.</li><li style='font-size:13px;margin-bottom:4px;'>Locking + memory ordering needs concrete rules: specify which fields are atomic, which are protected by mmu_lock/slots_lock/SRCU, and the acquire/release edges around mmu_invalidate_seq publication/consumption; otherwise overlap reviewers will map it to existing seqcount patterns and call it obvious.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Core sections (Problem/Architecture/Implementation/Claims) are missing, and the DMA-quiesce + revalidation contract is not specified tightly enough to be reviewable/upstreamable.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Specify the exact x86/KVM “EPT/TDP observation points” that are allowed to advance a range’s CPU-access epoch (e.g., which TDP MMU paths read A/D bits or observe SPTE walks) and explicitly prohibit all other sources; otherwise the “conservative” guarantee is unprovable and risks regressions across CPU generations and KVM modes.</li><li style='font-size:13px;margin-bottom:4px;'>Define a concrete DMA-quiesce fence interface for VFIO/iommufd and vhost/vDPA (what object signals quiesce, who owns it, how it composes with device reset/stop-queue semantics, and how you prevent use-after-free on teardown). The invention hinges on ‘mandatory DMA-quiesce’ but provides no kernel-level handshake details.</li><li style='font-size:13px;margin-bottom:4px;'>Make the post-quiesce revalidation sequence precise: required locks (SRCU vs slots_lock vs mmu_lock), required ordering (acquire/release around kvm-&gt;mmu_invalidate_seq and memslots-&gt;generation), and the exact PFN revalidation primitive (including handling of file-backed memslots, HVA invalidation, and pinned pages). Ambiguity here is a correctness bug, not just a documentation gap.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify interactions with KVM tracking modes that also consume EPT state (dirty logging, access tracking, write-protect, NX tracking). If your scheme relies on A/D observations, you must state capability gating and fallback behavior per mode to avoid corrupting KVM’s accounting or breaking live migration workflows.</li><li style='font-size:13px;margin-bottom:4px;'>Add explicit scope gating for confidential VMs (e.g., TDX) and nested virtualization: if the host cannot legally observe/interpret EPT-like accessed state (SEPT/nested-EPT), the contract must either be disabled or define an alternative safe ‘always-stale’ behavior. Xeon strategic value improves if this is called out cleanly rather than failing later.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact “reliable EPT/TDP observation points” and their semantics: which code paths set/clear EPT A/D, when bits may be stale, and how this interacts with existing KVM page-aging/access-tracking. Without a precise definition, consumers may treat the epoch as stronger than it is and reclaim too aggressively.</li><li style='font-size:13px;margin-bottom:4px;'>Spell out the mandatory DMA-quiesce fence contract end-to-end (VFIO/iommufd/vhost): what constitutes quiesced (device-specific stop, completion, and IOMMU TLB invalidation), how it is verified, and how you prevent a backend from using the hint without a real hardware/driver-level DMA stop (including PASID/SVA cases).</li><li style='font-size:13px;margin-bottom:4px;'>Add an explicit compatibility/legal-mode matrix: forbid or no-op under dirty logging, memslot write-protect, access tracking, NX tracking, nested virtualization, shadow MMU (non-TDP), and any mode where EPT permissions/bit harvesting are repurposed. State the required KVM/MMU role prerequisites and fallback behavior.</li><li style='font-size:13px;margin-bottom:4px;'>Specify memory-ordering rules precisely: which fields are published with release, which are consumed with acquire, and how mmu_invalidate_seq and memslot generation are read atomically to avoid torn/ABA reads. Also cover mmu_invalidate_seq wraparound handling and whether epochs are monotonic per-VM or per-range.</li><li style='font-size:13px;margin-bottom:4px;'>Side-channel/TAA risk: even kernel-internal publication of per-range CPU-touch recency can become a high-resolution cross-tenant signal if accessible to loadable modules or broad subsystems. Require strict capability gating (only KVM-attached backends for the same VM), avoid exporting to tracing/debugfs, and consider coarse quantization or rate-limiting of epoch visibility.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define a hard lifetime/ownership model for the backend-held VM identity (struct kvm *): require explicit kvm_get_kvm()/kvm_put_kvm() or an SRCU/RCU-safe handle, and specify teardown</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Spell out locking and context rules for updating per-bucket invalidation-pressure counters: invalidation paths may run under mmu_lock, SRCU, and/or mmu_notifier contexts; counter up</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the exact synchronization between memslot generation changes and hint validity: the worker must revalidate memslot-&gt;generation (and the slot pointer itself) under the correc</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify how the deferred remap attempt interacts with TDP MMU concurrency: identify which lock (kvm-&gt;mmu_lock, tdp_mmu_lock) is taken, ensure it does not deadlock with concurrent za</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Bound overhead and false sharing: per-memslot per-2MiB-bucket arrays can be large; propose a sizing/compaction strategy and counter layout to avoid cacheline contention in hot inval</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specialist review failed - automated fallback</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Precisely define the proposed “kernel-only ABI” surface: exact structs, ownership/lifetime rules, and how registration is keyed (struct kvm + memslot id + generation). Without a conc</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Nail down the concurrency/ordering model for invalidate_start/invalidate_end epochs: where they are incremented, which contexts (mmu_notifier vs mmu_lock vs SRCU) write/read them, an</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Specify how “bucketed invalidation pressure counters” are updated without false sharing and without sleeping: per-cpu aggregation vs atomic increments, overflow/decay, and the policy</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Explain interactions with existing KVM tracking modes that already constrain huge mappings (dirty logging, access tracking, NX/execute tracking, pfn write-protect). You need explicit</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux device driver using x86 EPT microarchitecture features
+</footer>
+</div></body></html>

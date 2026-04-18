@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 5.0] Single-GFN EPT Freeze Contract for Batched Guest Register In</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-40fae31c2db6 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 5.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Single-GFN EPT Freeze Contract for Batched Guest Register Intent into Sleeping Linux Backends</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux device driver using x86 EPT microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>EPT Commit-Window Bridge for Regmap-Backed Virtual GPIO/PMIC Drivers</li><li style='font-size:13px;'>EPT A/D Epoch Translator for Guest Driver Queue Pages</li><li style='font-size:13px;'>Semantic EPT Leaf Coalescer for Driver DMA Arenas Independent of Guest PSE</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: TPS65218_ENABLE2_GPIO3 &lt;&gt; EPT_VIOLATION_PROT_WRITE
+  MMR Score:    0.7665</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A KVM in-kernel virtual device exposes one ordinary write-back guest-RAM 4 KiB stage page containing versioned 64-byte register-intent slots and one always-trapped control page; the stage page starts EPT write-protected so the first eligible store raises an `EPT_VIOLATION_PROT_WRITE` that opens an epoch by granting RW on only that single GFN, and COMMIT or FENCE closes the epoch by re-applying write-protect to that GFN, draining remote writable translations, copying a frozen snapshot, and handing it to a serialized worker that replays policy-validated operations such as `TPS65218_ENABLE2.GPIO3` masked updates through sleeping Linux backends including regmap, I2C, and SPI with explicit fence, abort, retry, and status semantics.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is not generic shared memory plus a doorbell. It is a guest-visible, kernel-plausible three-party contract between guest slot production, KVM EPT state transitions, and serialized sleeping-backend replay. Fir</div>
+    <div class="pill"><strong>Feasibility:</strong> Each primitive is implementable with known Linux and KVM mechanisms plus a bounded amount of new glue. KVM already has memslots, gfn-to-hva resolution, TDP/EPT leaf write-protect w</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Guests often need to manipulate host-side Linux device drivers that ultimately sleep on slow peripheral buses such as I2C and SPI. A representative example is a virtual PMIC modeled after TPS65218, where boot, brownout recovery, or policy transitions may touch `ENABLE2.GPIO3`, rail-enable bits, reset-control bits, and sequencing registers in quick bursts. Pure KVM MMIO emulation traps every store and cannot safely sleep in the VM-exit path, so the host burns cycles on exits, emulation, and wakeups instead of useful backend work. Naive shared-memory batching is faster but loses the driver-level semantics that matter: register width, masked updates, offset allowlists, ordering, fence behavior, retryability, and side-effect exclusions. The technical problem is therefore to batch guest-authored register intent using x86 EPT transitions while preserving an auditable freeze point, deterministic slot completeness, sleeping-backend safety, and bounded interaction with TDP hugepage promotion.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Known approaches each miss a required part of the contract. Classic per-access MMIO trapping is correct but too expensive for register storms. Virtio rings, vhost-user queues, ivshmem, and doorbell-based shared-memory channels batch data movement but do not define a verifiable freeze of ordinary guest RAM before a sleeping Linux backend consumes register intent. KVM dirty logging and dirty ring already use write-protect plus TLB invalidation, but they track page dirtiness for migration and logging rather than validated register operations; they do not encode register offset, width, mask, side-effect policy, guest-visible ABORT/FENCE semantics, or serialized replay into regmap/I2C/SPI backends. Prior art also does not tie a first-write `EPT_VIOLATION_PROT_WRITE` on a single batch aperture to a deterministic slot ABI and to a backend policy table that can safely express `TPS65218_ENABLE2.GPIO3` as a masked update rather than an unstructured guest read-modify-write. Finally, prior art is usually silent on how to confine hugepage disruption to the aperture&#x27;s containing 2 MiB window and how to bound split quarantine state across memslot movement and promotion churn.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention introduces a KVM-managed register-intent aperture with an exact guest ABI, exact host lifecycle, and exact replay contract.
+
+1. Guest-visible memory objects.
+- One 4 KiB stage page is mapped as ordinary write-back guest RAM through an ordinary memslot.
+- One separate control page is exposed as always-trapped MMIO and contains command and status registers.
+- The stage page is initially EPT write-protected in CLOSED state.
+
+2. Slot ABI.
+- Byte 0..63 of the stage page is a header: `magic`, `abi_version`, `epoch_seq`, `slot_count`, `feature_bits`, and producer-visible status generation.
+- The remaining space holds 63 cache-line-sized 64-byte slots.
+- Each slot is little-endian and naturally aligned, with fields `{offset_le16, op_u8, width_u8, flags_le32, value_le64, mask_le64, cookie_le64, seq_le32, crc_le32, reserved_le64, commit_word_le64}`.
+- A slot is well-formed only if `seq` equals the current epoch, `op/width` are allowed by the provider policy, CRC matches the body, and `commit_word_le64` is written as one aligned 8-byte store encoding `{VALID, epoch_seq, slot_index, crc}`.
+
+3. State machine.
+- CLOSED: stage GFN is EPT-WP; first eligible guest store traps.
+- OPEN: KVM has temporarily granted RW on the single stage GFN; guest may fill slots.
+- CLOSING: guest issued `COMMIT(seq)` or `FENCE(seq)` by MMIO write to the control page; KVM re-write-protects the same GFN, drains remote writable translations, then copies the 4 KiB stage page into kernel memory.
+- FROZEN: immutable snapshot is queued to a worker; status registers expose `frozen_seq`, `worker_seq`, error bitmap, and terminal outcome.
+- ABORT: guest may issue `ABORT(seq)` only while OPEN and before freeze completion; KVM re-write-protects the stage GFN, discards the staged epoch, advances `aborted_seq`, and reports ABORTED.
+
+4. Memory ordering and multi-vCPU rules.
+- Guest software must write all slot body fields, execute `sfence`, perform the final 8-byte aligned store to `commit_word`, execute `sfence`, and only then issue the MMIO `COMMIT` or `FENCE` write.
+- Multiple vCPUs may write during the same OPEN epoch, but same-slot ownership is first-writer-wins by guest-side atomic claim; non-atomic footer writes, torn writes, same-slot collisions, mismatched sequence numbers, and unsupported widths are ignored for replay and surfaced as per-slot validation errors.
+- The worker replays slots in deterministic slot-index order, so guest-visible ordering is stable across runs.
+
+5. Backend contract.
+- Each trusted in-kernel provider registers `kvm_reg_intent_backend_ops` plus a per-offset policy table with entries such as `DIRECT_WRITE`, `UPDATE_BITS`, `BULK_LINEAR`, `NO_BATCH`, `WRITE_ONCE_PER_EPOCH`, `REQUIRE_FENCE_AFTER`, and optional `PRE_DELAY_US` and `POST_DELAY_US`.
+- Replay is serialized in a worker thread or dedicated kthread, never in the VM-exit path.
+- Supported backend calls include `regmap_write`, `regmap_update_bits`, `regmap_bulk_write`, `i2c_transfer`, and `spi_sync`; providers declare which are legal.
+- Auto-retry is permitted only for policy-marked idempotent operations such as masked updates or direct writes to explicitly idempotent registers. Non-idempotent offsets fail terminally and require guest-visible recovery logic.
+- A `TPS65218_ENABLE2.GPIO3` update is carried as `UPDATE_BITS(offset=ENABLE2, mask=GPIO3_BIT, value=GPIO3_BIT)` and not as a raw guest RMW sequence.
+
+6. Trust and lifecycle.
+- Only trusted in-kernel providers may call `kvm_ept_aperture_register(kvm, desc)`.
+- Registration records `stage_gfn`, `control_gfn`, memslot ID and generation, module owner, backend ops, policy table, slot ABI version, and max slot count; KVM takes a module reference and invokes an LSM hook such as `security_kvm_ept_aperture_register()`.
+- Registration fails closed if the memslot is incompatible, the provider is unauthorized, or the aperture window would exceed the configured per-VM limit.
+- Unregistration happens on device teardown, VM destroy, memslot delete or move, memslot generation mismatch, or provider unload. If unregistration races with an OPEN epoch, KVM aborts that epoch and reverts future accesses to ordinary MMIO emulation.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>Host-side architecture and EPT interaction are intentionally narrow and auditable.
+
+ASCII overview:
+
+Guest vCPU stores                    Guest vCPU MMIO
+   |                                      |
+   v                                      v
+[Stage Page 4 KiB WB RAM]           [Control Page MMIO]
+   | first eligible store trap             | COMMIT/FENCE/ABORT/STATUS
+   v                                      v
++-------------------------------------------------------+
+| KVM Aperture Manager                                  |
+| - CLOSED/OPEN/CLOSING/FROZEN state                    |
+| - slot validator                                      |
+| - per-offset policy lookup                            |
+| - seq/status accounting                               |
++--------------------------+----------------------------+
+                           |
+                           v
+                  +------------------+
+                  | TDP/EPT MMU      |
+                  | - stage GFN WP/RW|
+                  | - single-GFN walk|
+                  | - remote TLB drain|
+                  +--------+---------+
+                           |
+                           v
+                    [Frozen Snapshot]
+                           |
+                           v
+                  +-------------------+
+                  | Replay Worker     |
+                  | regmap/i2c/spi    |
+                  | serialized order  |
+                  +---------+---------+
+                            |
+                            v
+                    [Status / fence ack]
+
+EPT leaf policy and hugepage containment.
+- Each registered aperture computes a window key `window_gfn = stage_gfn &amp; ~511`, i.e. the 2 MiB EPT window containing the 4 KiB stage page.
+- KVM stores aperture state in a per-memslot xarray keyed by `window_gfn`. Each entry is immutable for readers and contains `{reason_bits, memslot_generation, expires_jiffies, provider_id}`.
+- `reason_bits` includes `APERTURE_PIN`, plus existing causes such as dirty-log, NX, access tracking, or zap-induced split reasons. Promotion is allowed only when no reason bit remains.
+- The hugepage-eligibility lookup occurs under `mmu_lock` in the TDP mapping path after ordinary disqualifiers are known and immediately before large-SPTE installation. This placement prevents accidental creation of a 2 MiB SPTE in a window that must remain split.
+- The design does not claim any new EPT encoding; it only ensures that the aperture&#x27;s own 2 MiB window stays at 4 KiB granularity while other windows remain promotable.
+
+Bounded split quarantine and cleanup.
+- One permanent `APERTURE_PIN` entry exists per active aperture window.
+- At most one transient cooldown record per aperture window is allowed, used to suppress immediate re-promotion after recent aperture activity.
+- Cooldown records are evicted on unregister, memslot move/delete, memslot generation mismatch, or timeout expiry.
+- A per-VM cap bounds total aperture windows; registration beyond the cap fails.
+
+Locking and invalidation discipline.
+- Readers in the TDP map path do only immutable xarray lookup while holding `mmu_lock`.
+- Providers never call back into KVM while holding backend device locks; registration and teardown follow device-config lock -&gt; KVM slots lock -&gt; `mmu_lock` ordering, avoiding AB/BA inversion.
+- Memslot updates and teardown invalidate aperture entries using the same lifecycle boundaries as other MMU metadata, so aperture state cannot leak across memslot moves.
+
+Freeze mechanics.
+- On `COMMIT` or `FENCE`, KVM marks the epoch CLOSING, walks the TDP roots for the single stage GFN, clears writable permission in every leaf mapping of that GFN, and then calls the existing remote translation drain path, e.g. `kvm_flush_remote_tlbs(kvm)`, which on VMX uses the normal EPT invalidation path before vCPU re-entry.
+- COMMIT success is defined only after that drain call returns. Therefore KVM does not snapshot or acknowledge COMMIT while any vCPU can still hold a writable translation for the stage GFN.
+- Only after the drain completes does KVM copy the 4 KiB page into a kernel-owned buffer and queue the worker.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Phase 1: Define ABI and registration surface.
+- Add `kvm_ept_aperture_register()` and `kvm_ept_aperture_unregister()` as internal KVM APIs for trusted in-kernel providers.
+- Define descriptor fields: `stage_gfn`, `control_gfn`, memslot ID/generation, module owner, policy table pointer, backend ops, ABI version, max slots, and capability flags.
+- Add an LSM authorization hook and module-refcount ownership checks.
+
+Phase 2: Implement state machine and control-page commands.
+- Add CLOSED/OPEN/CLOSING/FROZEN/ABORTED states and seq accounting.
+- Implement first-write handling by starting with stage GFN EPT-WP and recognizing eligible `EPT_VIOLATION_PROT_WRITE` on that single GFN.
+- Implement control-page commands `COMMIT`, `FENCE`, `ABORT`, and `STATUS` as trapped MMIO operations.
+
+Phase 3: Implement single-GFN freeze path.
+- Add a helper that write-protects only the stage GFN across all relevant TDP roots.
+- After permission clearing, invoke the existing remote TLB drain path and define COMMIT completion as the return point of that drain.
+- Copy the 4 KiB stage page into a kernel snapshot buffer only after the drain completes.
+
+Phase 4: Add validator and replay worker.
+- Validate header version, epoch sequence, CRC, footer commit word, slot ownership, width legality, alignment, and per-offset policy.
+- Convert validated slots into serialized backend calls: `regmap_write`, `regmap_update_bits`, `regmap_bulk_write`, `i2c_transfer`, or `spi_sync`.
+- Add per-slot status, worker error codes, retryability metadata, and terminal outcome publication.
+
+Phase 5: Add hugepage-containment policy.
+- Add per-memslot xarray entries keyed by the 2 MiB aperture window.
+- Consult the reason bitmap under `mmu_lock` after normal TDP hugepage disqualifiers and before installing a large SPTE.
+- Reuse the same split-reason accounting style as existing churn causes so aperture logic composes with dirty logging, NX, and zap paths.
+- Add bounded cooldown and cleanup on memslot generation changes and teardown.
+
+Phase 6: Integrate sample providers.
+- Prototype a regmap-backed PMIC provider with policies for `TPS65218_ENABLE2.GPIO3`, rail-enable registers, and no-batch side-effect registers.
+- Prototype an I2C-only provider and an SPI provider to prove backend abstraction.
+- Default failure mode is safe fallback to ordinary MMIO emulation if registration is denied or aperture state becomes invalid.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. ABI correctness: create KVM selftests that populate slots from one and multiple vCPUs, including valid commits, torn footer writes, bad CRC, stale sequence numbers, unsupported widths, and same-slot collision cases. Verify that only well-formed slots replay and that error bitmaps are published.
+2. Freeze correctness: instrument COMMIT so tracing shows the exact order `write-protect stage GFN -&gt; remote translation drain complete -&gt; snapshot copy -&gt; worker queue`. Assert that COMMIT cannot return before the drain step completes.
+3. Fence and abort semantics: verify that `FENCE(seq)` does not retire until all prior batches reach terminal state and that `ABORT(seq)` succeeds only while OPEN and before snapshot.
+4. Backend semantics: test regmap, I2C, and SPI providers with explicit per-offset policies. Use a TPS65218-like model to confirm that `ENABLE2.GPIO3` is replayed as a masked update and that forbidden offsets are rejected.
+5. Hugepage containment: measure EPT split count and promotion count before and after aperture registration. Verify that only the aperture&#x27;s containing 2 MiB window remains pinned to 4 KiB leaves and that unrelated windows still promote to 2 MiB.
+6. Locking and lifecycle: fuzz memslot delete/move, VM teardown, provider unload, and concurrent COMMIT/unregister paths to prove that xarray entries are cleaned up, module refs are released, and no stale aperture state survives generation changes.
+7. Performance and energy: compare per-write MMIO against the aperture path using boot-style PMIC register storms and GPIO toggle bursts. Measure VM exits, EPT violations, remote shootdowns, worker latency, p95/p99 batch completion, throughput, and package energy via RAPL on recent Xeon systems.
+8. Prior-art differentiation evidence: document that the frozen object contains semantic slot records, status, and fence behavior rather than dirty-bit information, and show that replay into sleeping backends occurs without sleeping in VM-exit context.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A method comprising exposing to a guest a write-back stage page in ordinary guest RAM and a separate always-trapped control page, wherein the stage page begins EPT write-protected, a first eligible guest store to the stage page opens a batch epoch by granting write permission on only that single guest frame number, and a subsequent control-page COMMIT or FENCE closes the batch epoch.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein closing the batch epoch comprises clearing writable permission for the single stage guest frame number in TDP/EPT leaf entries, completing a remote translation drain for all vCPUs, and only after that completion copying the stage page into a kernel-owned frozen snapshot buffer.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein the stage page contains versioned, fixed-size register-intent slots, each slot being replay-eligible only when a sequence field, checksum field, and final aligned commit word satisfy a deterministic validation rule, thereby rejecting torn, stale, or malformed guest writes.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein a serialized worker replays validated slots into sleeping Linux backends selected from regmap, I2C, and SPI according to a per-offset policy table that specifies operation type, masked-update legality, no-batch exclusions, fence requirements, and retryability.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein KVM maintains an aperture leaf-policy entry keyed by the 2 MiB window containing the stage guest frame number, keeps that window at 4 KiB leaf granularity while the aperture is active or cooling down, and leaves other 2 MiB windows eligible for promotion.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein provider registration is limited to trusted in-kernel modules that pass authorization checks, bind the aperture to a memslot generation, and are automatically invalidated on teardown, memslot movement, or generation change.</li><li style='margin-bottom:8px;'>A virtual PMIC implementation using the method of claim 4 wherein a guest request affecting `TPS65218_ENABLE2.GPIO3` is represented and replayed as a masked update rather than a raw guest read-modify-write sequence.</li></ol>
+  <h3>Claim Confidence</h3><ul><li style='margin-bottom:6px;'>Claim 1: confidence=0.86, conflict_score=0.21, rationale=Combines ordinary guest RAM, first-write EPT opening, and trapped control-page closure into a narrow contract not seen in generic queueing art.</li><li style='margin-bottom:6px;'>Claim 2: confidence=0.89, conflict_score=0.18, rationale=The ordered freeze sequence with remote translation drain before snapshot is technically crisp and materially different from ordinary deferred work batching.</li><li style='margin-bottom:6px;'>Claim 3: confidence=0.84, conflict_score=0.24, rationale=Deterministic slot completion and malformed-write rejection sharpen the boundary against dirty logging and generic shared pages.</li><li style='margin-bottom:6px;'>Claim 4: confidence=0.82, conflict_score=0.27, rationale=Serialized replay into sleeping Linux backends with per-offset policy is strong when tied to the validated slot ABI and fence semantics.</li><li style='margin-bottom:6px;'>Claim 5: confidence=0.79, conflict_score=0.31, rationale=Defensible if drafted narrowly as containment of one aperture window rather than any claim about 2 MiB mappings with holes.</li><li style='margin-bottom:6px;'>Claim 6: confidence=0.77, conflict_score=0.25, rationale=Authorization and lifecycle gating improve defensibility by making the KVM/MMU interaction concrete and non-generic.</li><li style='margin-bottom:6px;'>Claim 7: confidence=0.74, conflict_score=0.29, rationale=Provider-specific PMIC embodiment is valuable as a dependent claim anchored to a concrete masked-update use case.</li></ul>
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: COMMIT latency rises if remote translation drain is expensive on large vCPU counts. Mitigation: keep the aperture to one stage GFN, batch many register intents per epoch, and expose telemetry so guests choose COMMIT cadence deliberately.</li><li style='margin-bottom:6px;'>Risk: Guest software violates slot-ordering or writes torn footers. Mitigation: require aligned 8-byte commit-word stores, validate CRC and sequence, ignore malformed slots, and publish precise error bits in STATUS.</li><li style='margin-bottom:6px;'>Risk: Same-slot races across vCPUs create ambiguous intent. Mitigation: require guest-side atomic slot claim, define first-writer-wins semantics, replay in slot-index order, and reject colliding malformed slots.</li><li style='margin-bottom:6px;'>Risk: Aperture state could suppress hugepage promotion too broadly. Mitigation: key the policy by the containing 2 MiB window only, bound aperture count per VM, use explicit cooldown expiry, and clean entries on memslot generation changes.</li><li style='margin-bottom:6px;'>Risk: Lock inversion between backend drivers and KVM MMU code. Mitigation: forbid provider callbacks under `mmu_lock`, use immutable lookup in the TDP fast path, and enforce registration/teardown lock ordering.</li><li style='margin-bottom:6px;'>Risk: Auto-retry could duplicate non-idempotent side effects. Mitigation: encode retryability in the per-offset policy table and auto-retry only explicitly idempotent or masked-update operations.</li><li style='margin-bottom:6px;'>Risk: Trust boundary abuse by arbitrary kernel modules. Mitigation: restrict registration to trusted in-kernel providers, hold module references, invoke an LSM authorization hook, and fail closed to ordinary MMIO emulation on denial.</li><li style='margin-bottom:6px;'>Risk: Prior-art challenge that this is just dirty logging repurposed. Mitigation: emphasize claim elements that dirty logging lacks: well-formed semantic slots, control-page COMMIT/FENCE/ABORT, backend policy enforcement, and serialized sleeping-backend replay.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual, volumes covering EPT, INVEPT, and memory ordering.</li><li>Linux KVM x86 and TDP MMU source and documentation for memslots, SPTE write-protect, and remote TLB invalidation.</li><li>Linux regmap API documentation and representative in-tree drivers using `regmap_update_bits` and bulk register writes.</li><li>Linux I2C core documentation for `i2c_transfer` and sleeping transfer constraints.</li><li>Linux SPI core documentation for `spi_sync` and serialized transfer semantics.</li><li>Texas Instruments TPS65218 PMIC documentation and Linux driver sources for `ENABLE2`, GPIO3 control, and masked bit updates.</li><li>KVM dirty logging, dirty ring, and migration-related prior art for distinguishing dirtiness tracking from semantic register-intent freezing.</li><li>Performance and energy-measurement references for Xeon platforms, including RAPL-based package energy accounting and VM-exit profiling.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 5.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact locking + lifetime model for provider hint publication: how the authorized-provider token is created/destroyed, how it pins (or does not pin) the provider module, and how you prevent UAF when KVM dereferences window metadata concurrently with provider unregister/memslot teardown (RCU grace period vs SRCU domain must be explicit).</li><li style='font-size:13px;margin-bottom:4px;'>Specify the concurrency rules with KVM memslot changes: hint lookup must be generation-checked against memslot-&gt;generation (and ideally memslots generation) so stale window state cannot affect a different mapping after userspace remaps/compacts memory; document when and where generation is sampled under what lock (mmu_lock? slots_lock? SRCU).</li><li style='font-size:13px;margin-bottom:4px;'>Make the ‘only after hard constraints pass’ guarantee mechanically true in code: identify the exact decision points in TDP promotion/map paths and ensure AVOID_HUGE cannot bypass correctness constraints like MMIO/invalid PFN handling, NX hugepage limitations, memtype constraints, gfn-&gt;pfn resolution failures, and private/shared memory restrictions (e.g., TDX/SEV-SNP paths if applicable).</li><li style='font-size:13px;margin-bottom:4px;'>Bounded split quarantine needs an eviction policy that is race-safe and does not create non-deterministic oscillation: define the quarantine key (2MiB window + split-cause enum), budget enforcement under contention, and how quarantine is cleared on zap/unmap/memslot move so you don’t permanently pessimize hugepages after transient splits.</li><li style='font-size:13px;margin-bottom:4px;'>Fast-path cost must be proven acceptable: one extra metadata lookup per candidate 2MiB decision can still be hot; specify exact data structure (xarray/idr/rhashtable) and the read-side primitive (RCU) used, and ensure no hidden refcounting or allocations in the MMU fast path.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: As written, the core mechanism reads as an obvious composition of (a) EPT write-protect/dirty logging style trapping, (b) a guest doorbell/commit page, and (c) deferred workqueue replay; the draft must tighten claims around the specific “permission-downgrade + global stale-writable-translation drain + then-snapshot” contract and why that is not taught/suggested by existing KVM dirty logging/dirty ring + virtio/vhost batching.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define a crisp claim boundary that survives KVM dirty logging / dirty ring prior art: explicitly state what new guarantee is provided (e.g., a *host-verifiable frozen snapshot point* for a specific GFN created by downgrading EPT perms + draining stale writable translations) and what is *not* claimed (generic shared memory + doorbell, generic batching, generic workqueue replay). Then rewrite novelty to contrast against dirty logging’s goal (dirty-bit collection) with concrete, testable semantic differences (retry/abort/idempotency semantics tied to snapshot closure).</li><li style='font-size:13px;margin-bottom:4px;'>Prove (or narrowly assume) correctness of the “frozen snapshot” under concurrency: specify the exact ordering between guest slot writes, guest COMMIT store, VM-exit on the control page, EPT RW→RO transition, remote TLB/EPT invalidation, and host memcpy. Address races where a vCPU continues writing the stage page after COMMIT (multi-vCPU publishers) and show how the ABI prevents torn slots (e.g., seqlock-style commit word, per-slot sequence/cookie, required guest memory barriers).</li><li style='font-size:13px;margin-bottom:4px;'>Be concrete about the KVM implementation points and locking: identify which path performs the SPTE permission downgrade, what lock(s) are held (e.g., mmu_lock), and how you avoid sleeping or lock inversion while also guaranteeing remote invalidation completion. If you rely on existing ‘flush remote TLBs’ helpers, say exactly which ones and what they guarantee (synchronous completion vs queued IPIs).</li><li style='font-size:13px;margin-bottom:4px;'>Security/abuse model is underspecified for ‘sleeping Linux backends’ (regmap/I2C/SPI): a malicious guest can craft slot contents to poke arbitrary registers or DoS slow buses. You need a strict policy schema (per-offset allowlist + mask semantics + max ops/epoch + time budget) and a clear trust boundary for who can register a backend and map a stage page. Also specify failure handling (abort/poison/disable backend) to avoid repeated traps becoming a host-side amplification vector.</li><li style='font-size:13px;margin-bottom:4px;'>Separate (or drop) the hugepage-bias channel from the main invention unless you can show non-obvious coupling. As-is, ‘PREFER_HUGE/AVOID_HUGE’ is at high overlap risk with existing host-side hugepage controls (madvise, THP knobs, KVM hugepage eligibility heuristics, memslot flags). If kept, constrain it to a novel, bounded, cause-matched quarantine mechanism and show why existing knobs cannot express the same behavior without regressions.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the provider trust and authorization model concretely: what constitutes a “trusted in-kernel provider,” how tokens are created/revoked, and how you prevent an in-kernel consumer from degrading system-wide EPT behavior (e.g., rate limits, capability checks, per-VM scoping, and debug/trace visibility).</li><li style='font-size:13px;margin-bottom:4px;'>Specify exact KVM integration points and decision order: identify the precise hook(s) in TDP MMU where the hint is consulted (pre-split vs post-split, map vs promote), and provide pseudocode showing “all hard constraints pass first, then consult hint, then apply quarantine/budget.”</li><li style='font-size:13px;margin-bottom:4px;'>Make split-quarantine deterministic and measurable: enumerate the split causes you will key on (e.g., write-protect/dirty logging, mmio, access tracking, memslot invalidation, NX, private/shared transitions), how long quarantine persists (time vs generation count), and the bounded memory/cpu cost per memslot/VM.</li><li style='font-size:13px;margin-bottom:4px;'>Address confidential-VM and private/shared memory interactions explicitly (TDX, SEV-SNP): show that hinting cannot cause incorrect mappings or side effects during shared&lt;-&gt;private conversion, restricted memtype cases, or page acceptance flows; clarify whether hints are disabled/ignored for certain memory attributes.</li><li style='font-size:13px;margin-bottom:4px;'>Provide a Xeon-relevant validation plan: define workloads (vhost/vDPA, storage, NFV), metrics (2 MiB coverage %, EPT walk rate, split/re-promote churn, tail latency, package power), and expected deltas; without this, strategic value for Xeon competitiveness is asserted but not demonstrated.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Provider authorization/lifetime model is underspecified; without strict gating + teardown ordering, this risks UAF/data races or a host-side performance/availability DoS vector.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define an explicit trust/authorization boundary for “authorized provider tokens”: specify exactly which kernel components may register (built-in vs modules), how revocation works on module unload, and ensure no path from unprivileged guests/userspace/eBPF can influence hint publication.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the precise lifetime and concurrency rules for window metadata: how it is allocated/freed relative to memslot replacement and SRCU grace periods; require a generation/seq scheme that prevents use-after-free when memslots are reinstalled while vCPUs are concurrently mapping.</li><li style='font-size:13px;margin-bottom:4px;'>Prove the hint checks are strictly advisory and post-hard-check only: document the exact call sites so PREFER_HUGE/AVOID_HUGE cannot bypass existing correctness constraints (memtype, MMIO, NX/permissions, invalid PFNs, private/shared memory constraints) and cannot interfere with mandatory zaps/splits.</li><li style='font-size:13px;margin-bottom:4px;'>Bound and rate-limit provider updates and quarantine growth: define per-VM/per-memslot memory caps and an eviction/backoff policy so a buggy/malicious provider cannot churn window state to induce pathological split/promotion oscillation or unbounded metadata allocation.</li><li style='font-size:13px;margin-bottom:4px;'>Address side-channel/observability: even host-only hints can create guest-visible timing/perf signatures; define whether this is acceptable, and if not, constrain hint use to non-secret-dependent classifications and/or require stable policies not derived from sensitive host state.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define precise semantics for *hint updates* (PREFER_HUGE→AVOID_HUGE and vice versa): which existing SPTEs must be zapped, whether remote TLB/EPT invalidation is required, and whethe</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the locking/lifetime model for the per-memslot hint store in the TDP fault path: if you claim a lockless lookup under memslots SRCU, you must state the exact RCU/SRCU discip</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Spell out interactions with features that already constrain huge mappings (dirty logging, migration, memslot flags, mmu notifier invalidations, NX/permissions, memtype/MTRR/PAT, pri</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Cover hugepage split/merge churn implications under concurrency: when hint says PREFER_HUGE, you still need to avoid fighting concurrent splits triggered by write-protect/dirty trac</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify alignment and range handling: how you handle partial coverage of a 2M window, memslot moves/resizes, and overlapping registrations. You need deterministic conflict resolutio</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact synchronization contract for publishing/reading window metadata: which structure is protected by kvm-&gt;slots_lock vs SRCU (memslots) vs RCU (provider metadata), and </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify teardown and generation-change behavior: when memslots are replaced (generation bump), you must guarantee that (a) all readers in the TDP fault/promotion paths stop observin</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prove the hints cannot influence correctness by accidentally skipping existing ‘hard constraints’: show the exact call site and ordering where the hint is consulted only after verif</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Split-quarantine needs a bounded, deterministic policy: define the key (GFN-aligned 2 MiB window), storage (per-memslot radix/xarray?), eviction, and cooldown timing. Without strict</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Address lock ordering with TDP MMU operations: clarify whether the hint lookup happens under mmu_lock, under a per-root lock, or lockless. If under mmu_lock, ensure providers never </li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux device driver using x86 EPT microarchitecture features
+</footer>
+</div></body></html>

@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] Queue-Epoch XDP Topology Descriptor with Verifier-Clamped At</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-145f0bc9c175 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Queue-Epoch XDP Topology Descriptor with Verifier-Clamped Attachment-Owned x86 eBPF Variants, Bounded Flow Synopsis, and NMI-Safe Numeric Attribution</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux device driver using x86 eBPF microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Descriptor Topology Vector-Driven x86 eBPF JIT for XDP-Coupled NIC Drivers</li><li style='font-size:13px;'>LBR-Brokered Dual-Image x86 eBPF JIT Switching for Driver-Attached Packet Paths</li><li style='font-size:13px;'>BMI2/POPCNT Flow Synopsis Bridge from x86 eBPF Classifiers to Deferred pr_fmt Driver Logging</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: A flow-based IDS using Machine Learning in eBPF &lt;&gt; pr_fmt
+  MMR Score:    0.7641</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A Linux NIC driver publishes an immutable per-RX-queue, queue-epoch Topology Descriptor containing only BPF-observable XDP layout facts sourced from xdp_buff and xdp_rxq_info; a kernel validator intersects that descriptor with verifier-derived specialization masks; and an attachment-owned x86 eBPF variant owner selects a specialized JIT image from a fixed-size cache without mutating shared bpf_prog state, while optional NMI-safe numeric execution tags, perf/LBR/PEBS attribution, a generic-netlink flow-synopsis ABI, and rate-limited pr_fmt diagnostics expose queue, attachment, and variant identity without pointers or unbounded fast-path work.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The inventive core is not generic XDP metadata access, generic bpf_link lifetime handling, generic bpf_dispatcher fanout, or generic per-program JITing. The novelty is a verifier-sound kernel contract with five concrete </div>
+    <div class="pill"><strong>Feasibility:</strong> The proposal is implementable using existing Linux building blocks with bounded extensions. RX-queue quiesce points already exist through queue disable, napi_disable(), interrupt m</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Metadata-heavy XDP programs on x86 increasingly combine packet parsing, queue-derived policy, RX hash or VLAN reads, timestamps, data_meta parsing, and bounded flow summarization. Today the generic x86 eBPF JIT must assume only conservative verifier facts and therefore emits address materialization, alignment handling, and guard sequences that are safe across all queues and all attachment instances of the same verified program. That leaves queue-local performance on the table when a NIC driver actually knows a narrower runtime layout for a given RX queue and RX epoch. Existing dispatcher and trampoline mechanisms do not solve this because they fan out among programs or manage attachment lifetime, but they still treat the JIT image as a shared property of bpf_prog and do not provide an attachment-owned, independently versioned specialized image selected from queue-local runtime facts. The observability story is also weak: when multiple specialized images are created and retired live from identical bytecode, RIP-only perf attribution becomes ambiguous, and overflow handlers cannot safely chase attachment pointers. A further gap exists for security analytics and ML-assisted flow inspection: generic BPF maps are not an acceptable model for a driver fast path that must be allocation-free, verifier-irrelevant, and bounded under softirq or threaded-NAPI execution. What is missing is a precise kernel contract that lets drivers publish only BPF-observable queue facts, proves that specialization is a strict subset of verifier permission, attaches variant ownership to the attachment object rather than the shared program, and exports fixed-size numeric observability suitable for flow-based IDS pipelines and pr_fmt-correlated operational debugging.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Upstream bpf_dispatcher and multi-program XDP dispatch select among attached programs, but they do not define a queue-epoch descriptor of BPF-observable layout facts, do not perform a verifier-side admissibility intersection for specialization facts, and do not give each attachment its own bounded specialized-image cache. Existing trampoline and bpf_link lifetime mechanisms manage attach and detach safely, but they do not provide queue-indexed variant ownership or generation-tracked JIT images independent of shared bpf_prog state. Existing per-program JIT images are shared across attachments and cannot model independent queue-local specialization without either mutating shared state or cloning whole programs. Perf attribution and symbol lookup solutions infer execution from RIP, symbol names, or address ranges; they do not provide an NMI-safe numeric tag written at execution time and readable without dereferencing freed objects. Fixed-size sketches and BPF maps are known generally, but the specific combination here is narrower: a driver-side per-CPU synopsis plane updated outside BPF map semantics, with a compile-time probe cap, little-endian fixed record ABI, queue-epoch correlation, and explicit ML-feature fields derived from the same validated descriptor contract. The novelty boundary is therefore the combined queue-epoch descriptor, verifier clamp, attachment-owned variant cache and dispatch point, numeric attribution plane, and bounded synopsis ABI.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention introduces a concrete kernel contract.
+
+1. Topology Descriptor ABI and invariants.
+A driver publishes a queue-local immutable descriptor with canonical facts derived only from xdp_buff and xdp_rxq_info state that is already BPF-observable or directly constrains helper-legal pointer movement. The in-kernel canonical layout is:
+struct xdp_topology_desc_v1 {
+    u16 abi_version;
+    u16 len;
+    u32 flags;
+    u32 queue_epoch;
+    u32 rxq_index;
+    u16 data_meta_off_min;
+    u16 data_meta_off_max;
+    u16 headroom_min;
+    u16 headroom_max;
+    u8  data_align_log2;
+    u8  meta_align_log2;
+    u16 adj_head_neg_max;
+    u16 adj_head_pos_max;
+    u16 adj_meta_neg_max;
+    u16 adj_meta_pos_max;
+    u32 metadata_bits;
+    u32 verifier_caps;
+    u64 layout_cookie;
+    u64 desc_crc64;
+} __aligned(8);
+The descriptor contains no pointers. abi_version starts at 1. len allows forward extension. In-kernel storage is native-endian and naturally aligned; any export to userspace is serialized to the identically ordered little-endian uapi struct xdp_topology_desc_uapi_v1. metadata_bits is limited to BPF-visible metadata presence, such as RX hash availability, VLAN metadata presence, hardware timestamp presence, and driver-specific metadata blocks only if those blocks are reachable through existing verifier-approved data_meta access. layout_cookie is a stable numeric digest of the driver&#x27;s queue layout contract, not a pointer. The canonical source of truth is xdp_rxq_info for queue identity and queue capabilities, and xdp_buff for packet/data/data_meta/headroom relationships. A driver may not publish cacheline placement, DMA ring addresses, or any non-BPF-observable hardware-private fact.
+
+2. Publication and epoch update contract.
+The descriptor is replaced only at a queue quiesce point. For live queue update the driver: masks the queue IRQ; disables or pauses RX refill; calls napi_disable() or equivalent queue-drain primitive; waits until the current NAPI poll instance exits; computes the new descriptor; submits it to the kernel validator; allocates a new immutable descriptor object; and then publishes it with rcu_assign_pointer(rxq-&gt;topology_desc, new_desc) followed by queue re-enable. The queue_epoch increments on any change that can affect BPF-visible layout or helper legality, including firmware profile change, metadata enable or disable, MTU/headroom change, queue reset, XDP program attachment change that alters verifier caps, or driver path switch that changes data_meta placement. In-flight packets from the old epoch finish under the old descriptor because the queue is quiesced before publication. Netdev teardown or attachment teardown first clears the queue&#x27;s variant pointer and attachment owner pointer, disables queues, invokes synchronize_net() to flush outstanding softirq readers, and retires descriptors and images through call_rcu(). No reader can observe a partially initialized descriptor because readers fetch only an RCU-protected immutable pointer.
+
+3. Kernel-side validation and verifier clamp.
+During verification, the kernel computes for each program and attach context a specialization manifest containing: admissible ranges for data_meta offset and headroom-sensitive offsets; admissible helper adjustment ranges; metadata presence bits that are consumed by the program; and a per-insn may_specialize mask identifying load, compare, and constant-materialization sites whose operands may be constant-folded if a descriptor supplies a narrower fact. On publish, the validator intersects the driver descriptor with this manifest. A descriptor field is accepted only if it is a subset of the verifier-proven envelope. If a driver publishes an overly permissive range or a metadata bit not proven relevant and safe, that field is rejected and the queue falls back to the baseline image for that attachment. The effective specialization descriptor is therefore clamp(desc_from_driver, verifier_manifest), never union(desc, verifier). This closes the soundness gap for buggy or malicious drivers.
+
+4. x86 JIT specialization rules.
+The x86 JIT may specialize only at instructions marked in may_specialize. Allowed transforms are: constant-folding of immediate values derived from the effective descriptor; deletion of bytecode-equivalent compare branches whose outcome is fully determined by descriptor facts; substitution of a verifier-permitted aligned load form for an already existing load when width is unchanged; and reordering of already present loads inside the same verifier-dominated safe region when doing so adds no memory touch and preserves Spectre-v1 hardening shape. Disallowed transforms are: adding any new load, store, helper call, or branch target; widening any memory access; hoisting a load across a verifier guard or helper boundary; changing the order or presence of hardened array-index masking or fence sequences when BPF Spectre mitigations are enabled; or specializing on non-observable driver-private facts. The JIT emits a compact audit trailer per variant containing the variant_gen, descriptor hash, and transformed-insn bitmap, and it can run a debug-time assert pass that checks every transformed instruction against the verifier manifest.
+
+5. Attachment-owned variant owner and cache.
+Variant ownership lives in a dedicated attachment object, for example struct xdp_attach_variant_owner, referenced from the bpf_link for link-based XDP and from the per-netdev XDP attach object for legacy attach. The owner contains stable attach_id, a baseline image pointer, a fixed-size variant cache, and a queue-to-variant binding table. Shared bpf_prog and bpf_prog_aux remain unmodified except for immutable verifier manifest storage. A concrete bounded design is VARIANT_CACHE_MAX = 8 specialized images per attachment, selected by a fixed-order open-addressed cache keyed by {descriptor_hash, verifier_manifest_hash, jit_feature_mask}. Variant lookup probes at most 8 slots. Variant creation is not on the packet path; on cache miss the queue executes the baseline image and queues background creation in attach-control context. An entry is evictable only when refcnt == 0, it is not the current binding for any queue, and its retired bit is set; otherwise miss falls back to baseline rather than blocking. Specialized text is allocated with the existing BPF JIT text allocator, one text allocation per variant, and variant metadata lives in a dedicated kmem_cache. Retirement uses refcount drop plus call_rcu(). Tail-calls and bpf2bpf operate normally because the attachment-owned specialization affects only the entry program image; a tail-called callee executes its own baseline or its own attachment-scoped owner if separately attached in another hook. bpf_redirect, cpumap, and devmap behavior are unchanged because the descriptor contract is defined only for the current hook&#x27;s entry context.
+
+6. Dispatch integration without shared-program mutation.
+The indirection point is attachment-owned. For XDP multi-program dispatch, bpf_dispatcher first resolves the attachment slot as it already does; the slot target is a small attachment thunk owned by the variant owner, not the shared program image. That thunk reads the queue&#x27;s RCU-published current variant binding and tail-jumps to either owner-&gt;baseline_image or owner-&gt;variant[slot]. For single-program attach, the netdev XDP attach object points directly to the same thunk. Concurrent attach/detach is safe because the dispatcher or attach object swaps one RCU-protected owner pointer, while queue bindings and variant pointers are independently RCU-protected and refcounted. No mutation of bpf_prog-&gt;bpf_func or shared per-prog JIT image is required.
+
+7. NMI-safe attribution.
+Each CPU has a fixed-depth execution-tag stack, TAG_STACK_MAX = 4, stored in per-CPU aligned memory:
+struct xdp_exec_tag_v1 {
+    u32 seq;
+    u32 attach_id;
+    u32 variant_gen;
+    u16 variant_slot;
+    u16 flags;
+    u32 queue_epoch;
+};
+At XDP entry the attachment thunk increments a per-CPU depth counter, selects the stack slot, writes seq odd, then WRITE_ONCE stores attach_id, variant_gen, variant_slot, flags, and queue_epoch, executes smp_wmb(), and writes seq even. On return it decrements depth. If depth exceeds TAG_STACK_MAX, the writer stores a sentinel overflow tag with flags.XDP_TAG_OVERFLOW = 1. NMI or perf overflow readers never write these structures. They read depth with READ_ONCE, sample the top slot, and retry at most ATTRIB_RETRY_MAX = 2 times if seq is odd or changes. Because the payload contains only numeric IDs, readers never dereference freed objects. Nested NMI or perf recursion cannot corrupt tags because readers are read-only and writers only run on hook entry or exit, not in NMI context. Perf, LBR, or PEBS sample augmentation appends a fixed little-endian record xdp_exec_tag_uapi_v1 so post-processing does not rely on address-to-symbol matching.
+
+8. Bounded flow synopsis plane and userspace ABI.
+The optional flow synopsis runs only in NAPI softirq or threaded-NAPI context for queues whose owner has synopsis enabled. It is explicitly verifier-irrelevant: it is driver and core-kernel code, not a BPF map update. Each CPU has a fixed-size array FLOW_SYN_SLOTS = 64 of synopsis records and a monotonically wrapping cursor. Update is lock-free and per-CPU only. The writer uses this_cpu_ptr() and, on PREEMPT_RT or threaded NAPI, enters with migrate_disable() so CPU-local ownership is preserved for the bounded critical section. Each packet computes a compact flow key from already available fields, for example Toeplitz hash, L3/L4 protocol tuple class, packet length bucket, queue id, metadata bits, and variant_gen. The update probes at most PROBE_MAX = 4 slots using a compile-time fixed probe sequence derived from the flow hash. Each touched record update is wrapped with a per-record u32 seq version: seq odd, WRITE_ONCE fields, smp_wmb(), seq even. Readers that see mismatched seq values retry the record. No allocation, list walk, map lookup, or data-dependent loop is permitted. On CPU hotplug, affected queues are quiesced and rebound; the outgoing CPU&#x27;s synopsis buffer remains publishable until synchronize_net() and then is retired. The userspace interface is a generic netlink family XDPV_GENL_FAMILY with commands GET_ATTACH_INFO, GET_QUEUE_DESC, and GET_FLOW_SYNOPSIS. Synopsis records use a fixed little-endian ABI:
+struct xdp_flow_synopsis_rec_v1 {
+    __le16 abi_version;
+    __le16 rec_len;
+    __le32 cpu;
+    __le32 attach_id;
+    __le32 variant_gen;
+    __le32 queue_epoch;
+    __le32 flow_hash;
+    __le16 l3_proto;
+    __le16 l4_proto;
+    __le16 len_bucket;
+    __le16 tcp_flag_mask;
+    __le32 packet_count;
+    __le32 byte_count;
+    __le32 metadata_bits;
+    __le32 ml_feature_bits;
+    __le32 seq;
+};
+This is expressly a fixed-record feature plane for downstream IDS or ML classification, not a generic sketch API. Optionally, state transitions such as attach, fallback, eviction, or descriptor rejection may emit rate-limited pr_fmt lines carrying the same stable numeric tags for operator correlation, but pr_fmt is diagnostics only and never the control plane.
+
+9. x86 microarchitectural benefit.
+By specializing only on validated descriptor facts, the x86 JIT can reduce dependent address arithmetic, shorten hot traces, and improve I-cache and uop-cache residency while preserving verifier and Spectre safety. The design also improves PMU interpretability because LBR and PEBS samples carry direct attachment and variant identity rather than requiring address-range inference.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>Attachment-owned dispatch and specialization flow:
+
+┌────────────────────────────────────────────────────────────────────┐
+│ RX queue qN                                                       │
+│  xdp_rxq_info + xdp_buff facts                                    │
+│  queue_epoch E                                                    │
+└──────────────┬─────────────────────────────────────────────────────┘
+               │ queue quiesce + validate + publish
+               v
+┌────────────────────────────────────────────────────────────────────┐
+│ xdp_topology_desc_v1 (immutable, RCU-published, no pointers)      │
+│ {abi_version,len,queue_epoch,rxq_index,data_meta range, headroom, │
+│  alignment, helper adjust bounds, metadata_bits, verifier_caps}   │
+└──────────────┬─────────────────────────────────────────────────────┘
+               │ intersect with verifier manifest
+               v
+┌────────────────────────────────────────────────────────────────────┐
+│ verifier specialization manifest                                  │
+│ {per-insn may_specialize bitmap, admissible bounds, caps hash}    │
+└──────────────┬─────────────────────────────────────────────────────┘
+               │ descriptor_hash + manifest_hash
+               v
+┌────────────────────────────────────────────────────────────────────┐
+│ xdp_attach_variant_owner (owned by bpf_link or netdev XDP attach) │
+│ attach_id                                                          │
+│ baseline_image                                                     │
+│ variant_cache[8] -&gt; x86 JIT text images                            │
+│ queue_binding[rxq] -&gt; baseline or variant slot                     │
+└──────────────┬─────────────────────────────────────────────────────┘
+               │ attachment thunk (RCU)
+               v
+┌────────────────────────────────────────────────────────────────────┐
+│ dispatcher/trampoline call site                                    │
+│ existing multi-prog fanout -&gt; attachment thunk -&gt; selected image   │
+│ no mutation of shared bpf_prog-&gt;bpf_func                           │
+└──────────────┬─────────────────────────────────────────────────────┘
+               │ entry/exit numeric tagging
+               ├───────────────┐
+               v               v
+┌──────────────────────┐   ┌────────────────────────────────────────┐
+│ per-CPU tag stack    │   │ optional per-CPU flow synopsis         │
+│ {attach_id,gen,slot, │   │ FLOW_SYN_SLOTS=64, PROBE_MAX=4         │
+│  queue_epoch,seq}    │   │ seq-versioned fixed records            │
+└──────────┬───────────┘   └──────────────────┬─────────────────────┘
+           │                                   │
+           v                                   v
+┌──────────────────────────────┐   ┌────────────────────────────────┐
+│ perf/LBR/PEBS sample augment │   │ generic netlink XDPV family    │
+│ xdp_exec_tag_uapi_v1         │   │ GET_QUEUE_DESC / GET_SYNOPSIS  │
+└──────────────────────────────┘   └────────────────────────────────┘
+
+Canonical data sources and invariants:
+- Queue identity and queue capabilities come from xdp_rxq_info.
+- Packet/data/data_meta/headroom relationships come from xdp_buff.
+- Only BPF-observable or helper-legality facts may enter the descriptor.
+- Descriptor objects are immutable after publication.
+- Queue-epoch changes require queue quiesce before rcu_assign_pointer().
+- Specialized x86 transforms are limited to may_specialize-marked instructions and must preserve verifier and Spectre hardening semantics.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Add a verifier-side specialization manifest. Extend the XDP verifier path to compute admissible descriptor ranges, metadata-bit dependencies, and a per-insn may_specialize mask, stored immutably with the verified program but not used to mutate shared JIT state.
+2. Introduce xdp_topology_desc_v1 and validator helpers in net/XDP core. Provide helpers that derive canonical values from xdp_buff and xdp_rxq_info, validate driver submissions, and compute the effective descriptor as the intersection of driver facts and verifier facts.
+3. Extend XDP attachment state with xdp_attach_variant_owner. For bpf_link attach, anchor the owner in the link object; for legacy netdev XDP attach, anchor the owner in the per-netdev attach state. Add stable attach_id allocation, queue_binding tables, bounded variant cache bookkeeping, refcounts, and RCU retirement.
+4. Add the attachment thunk integration point to dispatcher and single-program attach paths. The thunk must be attachment-owned, RCU-updatable, and able to resolve queue-local variant bindings without touching shared bpf_prog-&gt;bpf_func.
+5. Implement x86 JIT specialization in arch/x86/net/bpf_jit_comp.c. Consume the effective descriptor and verifier manifest, enforce the allowed-transform list, emit the audit trailer, and fall back to the baseline image if any transform precondition fails. Ensure the baseline image remains available at all times.
+6. Implement queue publication/update hooks in driver support code and net core helpers. Require queue quiesce before descriptor publish, define epoch bump triggers, and wire live replacement, queue reset, and teardown to RCU-safe retirement.
+7. Implement NMI-safe numeric attribution. Add per-CPU tag-stack data, entry/exit writer helpers in the attachment thunk, and perf/LBR/PEBS sample augmentation with fixed little-endian xdp_exec_tag_uapi_v1 payloads.
+8. Implement the optional bounded flow synopsis plane. Add per-CPU fixed-slot storage, O(PROBE_MAX) update logic, seq-versioned record writes, PREEMPT_RT-safe migrate_disable() handling for threaded NAPI, CPU-hotplug rebinding, and generic netlink dump commands.
+9. Add operator diagnostics. Emit rate-limited pr_fmt messages only on descriptor rejection, variant creation, fallback, eviction, and teardown with stable numeric identifiers so logs line up with perf and netlink output.
+10. Document UAPI and invariants. Specify abi_version handling, little-endian serialization rules, alignment requirements, and the meaning of VARIANT_CACHE_MAX, TAG_STACK_MAX, FLOW_SYN_SLOTS, and PROBE_MAX.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Verifier soundness tests: create selftests where drivers attempt to publish overly permissive data_meta bounds, helper adjust ranges, or metadata bits; confirm the validator rejects specialization and the baseline image executes.
+2. JIT transform audit tests: compare baseline and specialized images for programs covering aligned loads, metadata reads, helper adjustments, Spectre-hardened bounds checks, tail-calls, and bpf2bpf; assert no new memory references, no widened loads, and no deleted hardening sequences.
+3. Queue-epoch concurrency tests: repeatedly change MTU, headroom, metadata enablement, queue reset, and attachment state while traffic flows; confirm no packet executes under a partially updated descriptor and that old descriptors retire only after RCU grace.
+4. Attach/detach lifecycle tests: stress concurrent bpf_link attach/detach, legacy XDP replace, multi-queue execution, and netdev teardown; confirm queue_binding, owner swap, and variant retirement remain race-free.
+5. Dispatcher integration tests: run stacked XDP programs through bpf_dispatcher and single-program attach; verify the attachment thunk preserves stacking order and that variant selection is attachment-local.
+6. NMI/perf attribution tests: trigger perf overflow, nested PMU interrupts, and recursive sampling while XDP traffic runs; confirm xdp_exec_tag_uapi_v1 records are numerically consistent, seq retries bound correctly, and overflow sentinel behavior is explicit.
+7. Flow synopsis tests: verify O(PROBE_MAX) update cost with adversarial hash collisions, correctness of seq-versioned snapshot retries, PREEMPT_RT threaded-NAPI operation with migrate_disable(), and CPU-hotplug rebinding without stale-pointer exposure.
+8. PMU and microarchitectural evaluation: on Xeon, measure cycles per packet, uop delivery, I-cache misses, branch mispredicts, and LBR/PEBS attribution quality for baseline versus specialized images under metadata-heavy XDP workloads and flow-based IDS feature extraction.
+9. UAPI compatibility tests: validate generic netlink dumps, little-endian record decoding, abi_version negotiation, record-length forward compatibility, and pr_fmt correlation using stable numeric IDs.
+10. Negative robustness tests: fuzz descriptor publication inputs, variant cache misses, tag-stack overflow, and synopsis buffer saturation; confirm deterministic fallback to baseline rather than silent corruption.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>1. A method for executing an XDP program in a Linux network receive path, comprising: publishing, for an individual receive queue and queue epoch, an immutable topology descriptor limited to BPF-observable XDP layout facts; validating the topology descriptor against verifier-derived admissible specialization facts for the program; selecting, through an attachment-owned indirection object distinct from shared bpf_prog state, either a baseline x86 eBPF JIT image or a specialized x86 eBPF JIT image associated with the validated topology descriptor; and executing the selected image without widening any memory access or adding any new memory touch relative to the verified program.</li><li style='margin-bottom:8px;'>2. The method of claim 1, wherein the topology descriptor comprises a versioned fixed-layout structure containing queue_epoch, rxq_index, bounded data_meta offsets, bounded headroom values, alignment classes, helper-legal adjustment bounds, and metadata presence bits, and wherein the canonical source of the bounded values is xdp_buff and xdp_rxq_info.</li><li style='margin-bottom:8px;'>3. The method of claim 1, wherein the validator computes an effective specialization descriptor as an intersection of driver-published facts and verifier-proven bounds, and disables specialization for a queue when any published fact is not a subset of the verifier-proven bounds.</li><li style='margin-bottom:8px;'>4. The method of claim 1, wherein the attachment-owned indirection object stores a bounded cache of at most VARIANT_CACHE_MAX specialized JIT images keyed by descriptor hash and verifier-manifest hash, performs fixed-order bounded probing, creates variants outside the packet path, and falls back to the baseline image when no evictable cache entry exists.</li><li style='margin-bottom:8px;'>5. The method of claim 1, further comprising writing, at program entry, a per-CPU numeric execution tag containing attach_id, variant_gen, variant_slot, and queue_epoch into a seq-versioned fixed-depth tag stack, and reading said tag from an NMI or perf overflow path without dereferencing any program or attachment pointer.</li><li style='margin-bottom:8px;'>6. The method of claim 1, further comprising updating, in NAPI softirq or threaded-NAPI context, a per-CPU bounded flow synopsis array using a compile-time fixed probe bound PROBE_MAX, storing versioned fixed-size records in little-endian format, and exporting the records through a versioned userspace interface for flow-based IDS or machine-learning analysis.</li><li style='margin-bottom:8px;'>7. A non-transitory kernel memory arrangement comprising: an immutable queue-epoch topology descriptor object, a verifier specialization manifest with per-instruction may-specialize indicators, an attachment-owned variant owner with queue bindings and bounded specialized-image cache, a per-CPU seq-versioned execution-tag stack, and a per-CPU bounded flow-synopsis store, wherein the arrangement preserves baseline execution semantics when specialization predicates are not satisfied.</li><li style='margin-bottom:8px;'>8. A Linux networking system comprising a NIC driver, an XDP attachment manager, an x86 eBPF JIT compiler, and a performance-observability subsystem configured to cooperate according to claims 1 through 7, further wherein rate-limited pr_fmt diagnostics emit stable numeric identifiers for descriptor publication, specialization fallback, and variant retirement without serving as a control plane.</li></ol>
+  <h3>Claim Confidence</h3><ul><li style='margin-bottom:6px;'>Claim 1: confidence=0.86, conflict_score=0.18. Strong because it ties queue-epoch descriptor publication, verifier intersection, attachment-owned dispatch, and no-widening specialization into one bounded method.</li><li style='margin-bottom:6px;'>Claim 2: confidence=0.82, conflict_score=0.20. Strong on concrete descriptor fields and canonical xdp_buff/xdp_rxq_info sources, which materially narrow the claim away from generic metadata hints.</li><li style='margin-bottom:6px;'>Claim 3: confidence=0.88, conflict_score=0.14. Strongest defensible kernel distinction because the validator-intersection step directly answers the soundness gap not addressed by generic dispatcher or JIT art.</li><li style='margin-bottom:6px;'>Claim 4: confidence=0.80, conflict_score=0.23. Good differentiation via attachment-owned bounded cache and off-path creation, though generic cache concepts are known outside this exact kernel context.</li><li style='margin-bottom:6px;'>Claim 5: confidence=0.83, conflict_score=0.19. Strong because the seq-versioned numeric tag stack and NMI-safe no-pointer readout are more specific than generic perf attribution.</li><li style='margin-bottom:6px;'>Claim 6: confidence=0.79, conflict_score=0.24. Moderately strong; bounded sketches are generally known, but the fixed probe semantics, driver-side update constraints, and versioned IDS/ML ABI improve distinctiveness.</li><li style='margin-bottom:6px;'>Claim 7: confidence=0.78, conflict_score=0.22. System-memory arrangement claims are useful but somewhat broader; support is improved by the explicit component list and fallback requirement.</li><li style='margin-bottom:6px;'>Claim 8: confidence=0.76, conflict_score=0.25. Useful integration claim for commercial systems, with added narrowness from pr_fmt being diagnostic-only and stable numeric identifiers.</li></ul>
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: a buggy or malicious driver publishes an over-broad descriptor and causes unsound specialization. Mitigation: publish-time validator intersects driver facts with verifier-proven envelopes and disables specialization on any non-subset field.</li><li style='margin-bottom:6px;'>Risk: live queue reconfiguration races with packet execution. Mitigation: require queue quiesce before rcu_assign_pointer(), use immutable descriptor objects, and retire old objects only after synchronize_net() or call_rcu() as appropriate.</li><li style='margin-bottom:6px;'>Risk: attachment-owned variant ownership could be mistaken for shared-program mutation and invite prior-art attack. Mitigation: bind ownership to bpf_link or netdev XDP attach objects, keep shared bpf_prog images unchanged, and document the attachment thunk indirection point explicitly.</li><li style='margin-bottom:6px;'>Risk: x86 specialization could accidentally weaken Spectre hardening or widen loads. Mitigation: use a verifier-produced may_specialize mask, enforce an allowlist of transforms, emit an audit trailer, and keep the baseline image permanently available for fallback.</li><li style='margin-bottom:6px;'>Risk: NMI/perf recursion corrupts attribution state. Mitigation: store only numeric IDs in a fixed-depth per-CPU tag stack, use seq-versioned writes with READ_ONCE/WRITE_ONCE and bounded retries, and mark overflow explicitly with a sentinel flag.</li><li style='margin-bottom:6px;'>Risk: the bounded flow synopsis is dismissed as a generic sketch. Mitigation: define exact record layout, little-endian UAPI, compile-time PROBE_MAX semantics, per-CPU execution restrictions, and the specific queue-epoch and variant correlation fields.</li><li style='margin-bottom:6px;'>Risk: PREEMPT_RT and CPU hotplug break per-CPU synopsis assumptions. Mitigation: restrict updates to NAPI softirq or threaded-NAPI context, use migrate_disable() in threaded paths, quiesce and rebind queues on hotplug, and retire old buffers after grace periods.</li><li style='margin-bottom:6px;'>Risk: cache pressure causes unpredictable latency. Mitigation: create specialized variants only off the packet path, bound cache size and probe count, and fall back to the baseline image instead of performing synchronous allocation or eviction in the hot path.</li><li style='margin-bottom:6px;'>Risk: userspace tools misinterpret evolving ABIs. Mitigation: include abi_version and record length in every exported structure, serialize in little-endian form, and preserve forward compatibility through additive field extension only.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Linux XDP core concepts: xdp_buff, xdp_rxq_info, NAPI, queue disable and teardown paths.</li><li>Linux attachment mechanisms: bpf_link, legacy netdev XDP attach state, dispatcher-style multi-program fanout.</li><li>Linux x86 eBPF JIT implementation patterns and existing JIT text allocation / RCU retirement techniques.</li><li>Linux verifier concepts relevant to pointer bounds, helper legality, and Spectre-aware JIT constraints.</li><li>Linux perf, PEBS, and LBR observability paths as the baseline substrate for numeric sample augmentation.</li><li>Generic netlink as the proposed userspace control and dump interface for queue descriptors and flow synopsis records.</li><li>Known operational need for flow-based IDS and machine-learning feature extraction in eBPF/XDP deployments, used here as the target consumer of the bounded synopsis plane rather than as the point of novelty.</li><li>Rate-limited pr_fmt diagnostics as an operator-facing correlation aid only, expressly separated from the control plane.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>NMI-safety is underspecified: if softirq/NAPI writes tags while NMI reads them, you must use an actually NMI-safe scheme (e.g., raw_seqcount_latch/seqcount_t, or a single atomic64/128 encoding) with defined nesting rules; plain seqcount writer-side assumptions can break under NMI reentrancy.</li><li style='font-size:13px;margin-bottom:4px;'>Per-microarchitecture JIT variants are unsafe on heterogeneous x86 (e.g., hybrid cores / differing feature sets) unless constrained to boot-time &quot;all CPUs&quot; feature masks; otherwise a queue migrated to a CPU lacking the ISA used by a variant will fault.</li><li style='font-size:13px;margin-bottom:4px;'>Variant lifetime/teardown needs a concrete model: how JIT text images are RCU-retired, how you prevent execution of freed text, and how you synchronize with bpf_link detach / netdev teardown without relying on sleeping primitives in XDP paths.</li><li style='font-size:13px;margin-bottom:4px;'>Dispatcher integration is hand-wavy: selecting a JIT image &quot;without mutating shared bpf_prog&quot; still requires an indirection point (bpf_dispatcher, trampolines, or per-attach wrapper prog). Specify where the function pointer lives, how it’s updated (RCU + barriers), and how verifier/JIT state remains coherent.</li><li style='font-size:13px;margin-bottom:4px;'>Queue-epoch publication must be tied to real quiescence guarantees: document the exact points where no XDP execution can be in-flight for that RXQ (NAPI disable alone may be insufficient depending on driver), and the required memory ordering for publishing the new descriptor + variant binding.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Core novelty is at high risk of being read as an obvious combination of existing XDP-observable metadata + per-attach cookies/IDs + multi-image JIT plumbing unless the verifier-clamp and attachment-owned variant lifecycle are made concrete and clearly distinguished from upstream mechanisms.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Differentiate explicitly from existing attribution primitives (e.g., attach_cookie/bpf_link_id/bpf_prog_id and perf’s existing BPF metadata): state what your numeric tag enables that those cannot (e.g., variant_slot+queue_epoch correlation at NMI time) and where it is consumed in perf/LBR/PEBS.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the exact verifier-sound “clamp/intersection” mechanism: define descriptor fields, their provenance (xdp_buff/xdp_rxq_info), the per-insn specialization mask representation, and the proof argument that specialization cannot widen memory reach, add new accesses, or change helper legality.</li><li style='font-size:13px;margin-bottom:4px;'>Make attachment-owned variant ownership non-handwavy: name the concrete kernel objects/structs, how they plug into XDP attach (bpf_link vs legacy), how dispatcher/trampoline selects the per-queue variant, and the RCU/refcount teardown rules for code images (including queue-epoch rollover).</li><li style='font-size:13px;margin-bottom:4px;'>Clarify prior art overlap on “Topology Descriptor”: explain why this is not just repackaging existing XDP metadata/hints and why “queue-epoch publication at quiesce points” is necessary and non-obvious versus current driver reconfig and XDP generic/native paths.</li><li style='font-size:13px;margin-bottom:4px;'>Bounded flow-synopsis plane risks being seen as routine fixed-size per-CPU telemetry: define the ABI records, versioning, exact feature set, and why it is novel versus existing flow dissector/conntrack/nftables and BPF-extracted flow keys (and why it must be kernel-owned rather than a BPF map).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Strong concept, but it lacks a concrete kernel ABI/locking/lifecycle spec (descriptor fields, publication rules, verifier clamp mechanics, and perf/LBR/PEBS attribution plumbing), so it is not yet reviewable as an implementable upstream-grade design.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Specify the Topology Descriptor ABI precisely: exact field list, sizes, endianness, versioning, and which fields are strictly BPF-observable from xdp_buff/xdp_rxq_info. Include publication rules (who writes, when, quiesce points), and required memory-ordering (RCU + RELEASE/ACQUIRE) so readers never observe partially-initialized descriptors.</li><li style='font-size:13px;margin-bottom:4px;'>Define the verifier-clamp mechanism concretely: where in verifier/JIT pipeline the clamp happens, how per-insn specialization masks are represented, and how you prove specializations cannot widen memory reach (e.g., no new ptr arithmetic, no new helper calls, no new packet/data_meta bounds assumptions). Tie this to existing verifier state and show a minimal proof argument.</li><li style='font-size:13px;margin-bottom:4px;'>Detail attachment-owned variant lifecycle and concurrency: how the variant cache is keyed (descriptor hash + CPU uarch class), how many images are allowed, what triggers (re)JIT, and the exact teardown sequence (RCU retire of text + metadata). Clarify interaction with shared bpf_prog state, bpf_link lifetime, and the XDP dispatcher/multi-prog attach model to avoid semantics drift across attachments.</li><li style='font-size:13px;margin-bottom:4px;'>Make the x86 attribution path implementable: define the per-CPU tag storage layout, seqcount/sequence protocol, and where tags are written/cleared relative to NMI entry/exit so perf/LBR/PEBS samples can be reliably correlated without pointer dereferences. Also specify how user space retrieves tags (perf aux? bpf_trace? per-cpu mmap?) and how nesting/re-entrancy is handled.</li><li style='font-size:13px;margin-bottom:4px;'>Bounded flow synopsis needs a concrete netlink ABI and update model: record schema, PROBE_MAX behavior under collisions, rate/overhead controls, and how you guarantee it stays outside verifier semantics (kernel-owned only). Include how this benefits Xeon (e.g., stable feature vectors aligned with PEBS/LBR sampling) without perturbing cache/branch behavior in the RX fast path.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the Topology Descriptor ABI precisely (fixed-size struct, padding rules, endianness, versioning, and which fields are stable vs optional) and specify how kfunc/helper returns it (copy-to-BPF stack vs pointer) to avoid UAPI drift and speculation/pointer misuse.</li><li style='font-size:13px;margin-bottom:4px;'>Verifier-clamp needs a concrete, auditable rule: show exactly how runtime descriptor fields are intersected with verifier-proven bounds/may-specialize masks so specialization cannot widen memory reach, add new helpers, or change packet-visible semantics (include failure/deny behavior).</li><li style='font-size:13px;margin-bottom:4px;'>NMI-safe tag writes/reads need a hard correctness argument: specify seqcount type, preempt/irq state for writers (NAPI/softirq), bounded retry/fallback for NMI readers, nesting/recursion behavior, and lifetime of attachment_id/variant_id to prevent UAF-like misattribution.</li><li style='font-size:13px;margin-bottom:4px;'>Variant JIT image lifecycle must guarantee no execution-after-free: document RCU + text allocator freeing sequence, required synchronize points (e.g., synchronize_net/synchronize_rcu), and how dispatch tables/queues stop referencing old images during epoch switches.</li><li style='font-size:13px;margin-bottom:4px;'>Side-channel / multi-tenant exposure: numeric tags + flow synopsis + netlink export can leak attachment topology/traffic features via perf or netlink. Specify privilege gating (CAP_SYS_ADMIN/CAP_NET_ADMIN), per-netns scoping, rate limits, and interaction with perf_event_paranoid/BPF perf restrictions.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact in-kernel data structure and BPF map type(s) (e.g., BPF_MAP_TYPE_PERCPU_ARRAY with N fixed buckets containing {u64 sig, u64 cnt, u64 evict_cnt,...}). Without this, </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make the bounded probe/evict algorithm verifier-proof: require a compile-time constant PROBE_MAX (or bpf_loop with a hard upper bound) and explicitly forbid data-dependent loops. Sp</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify concurrency/snapshot semantics for userspace decode. Per-CPU tables avoid cross-CPU write races, but userspace reads can observe mid-update or torn 64-bit values on 32-bit p</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Nail down the synopsis ABI: versioning must cover endianness, signature/hash construction, and feature-bit meaning. Also explicitly ban including kernel addresses or unstable IDs in</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Differentiate clearly from existing attachment-specific trampolines/bpf_link execution paths: specify exactly where the per-attachment indirection lives (link vs attachment object vs</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact lifetime/RCU protocol for publishing and retiring a per-attachment JIT-image pointer (including who owns the text, when call_rcu/synchronize_rcu happens, and how yo</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The proposed per-CPU “tag stack” is not NMI-safe as stated: an NMI can interrupt the fast path while it is pushing/popping, causing torn state or depth corruption. You must specify </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify how perf/LBR/PEBS overflow handlers read tags without dereferencing attachment pointers and without torn reads on 32-bit or unaligned fields. Use READ_ONCE/WRITE_ONCE, align</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify how dispatch is integrated with existing bpf dispatcher/trampoline call sites without mutating shared bpf_prog state: you need a concrete indirection point that is attachmen</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The “bounded flow synopsis” needs a concrete, verifier-irrelevant implementation: it cannot rely on BPF map update semantics from arbitrary driver fast paths, and it must be proven </li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux device driver using x86 eBPF microarchitecture features
+</footer>
+</div></body></html>
