@@ -47,7 +47,7 @@ done
 
 if [ "$WORKER_COUNT" -gt 0 ]; then
     COPILOT_ACTIVE=$(ps aux | grep "[g]h copilot" | wc -l)
-    CLAUDE_ACTIVE=$(ps aux | grep "[c]laude -p" | grep -v "claude_agent\|check_progress" | wc -l || true)
+    CLAUDE_ACTIVE=$(ps aux | grep "[c]laude$" | grep -v "auto_worker\|check_progress\|pts" | wc -l || true)
     # Count w* vs c* workers from active pids
     COPILOT_WORKERS=0
     CLAUDE_WORKERS=0

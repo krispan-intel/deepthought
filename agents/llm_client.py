@@ -450,7 +450,9 @@ class LLMClient:
             prompt = self._smart_truncate(prompt, self.copilot_prompt_max_chars)
 
         claude_model = self._resolve_claude_code_model(model)
-        effort = settings.copilot_effort or "high"
+        # Use medium effort for claude_code_cli — high causes ~50s/call overhead
+        # vs copilot_cli's ~10s. Medium balances quality and speed.
+        effort = "medium"
 
         command = [
             "claude",
