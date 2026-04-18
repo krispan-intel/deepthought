@@ -271,16 +271,18 @@ all of the following hold:
 \noindent\textbf{C4 (Vacancy).}
 \[
   \max_{k \in \mathcal{K} \setminus \{A,B\}}
-    \mathrm{cos}(k,\; C)
+    \mathrm{cos}(\mathrm{dense}(k),\; C)
   \;<\; \theta_v
 \]
-where $\theta_v$ is a vacancy threshold.
+where $C = m(\mathrm{dense}(A), \mathrm{dense}(B))$ is the synthetic
+void midpoint (Definition~\ref{def:slerp}) and $\theta_v$ is a
+vacancy threshold.
 \end{definition}
 
 Intuitively: $A$ and $B$ both point toward the target domain~(C1);
 are neither trivially similar nor unrelated~(C2); share at least one
 meaningful technical token as a conceptual bridge~(C3); and the
-synthetic void midpoint $C = m(A,B)$ is unoccupied by any existing
+synthetic void midpoint $C$ is unoccupied by any existing
 document~(C4).  The idea to be invented lives in the neighbourhood
 of $C$---the gap between two related but unexplored concepts.
 
@@ -464,20 +466,20 @@ Table~\ref{tab:taxonomy} shows the distribution.
 \begin{table*}[t]
 \centering
 \small
-\caption{Fatal flaw categories across 888 rejected candidates (new-format runs).
-  Note: counts exceed 888 because multiple specialists may flag flaws per candidate.}
+\setlength{\tabcolsep}{5pt}
+\caption{Fatal flaw categories across 888 rejected candidates.
+  Counts exceed 888 because multiple specialists may flag flaws per candidate.}
 \label{tab:taxonomy}
-\setlength{\tabcolsep}{8pt}
-\begin{tabular}{lrrl}
+\begin{tabular}{l r r p{6.5cm}}
 \toprule
-Category & Count & \% & Representative specialist quote \\
+Category & Count & \% & Representative specialist feedback \\
 \midrule
-Locking / concurrency model    & 1,072 & 35.5\% & ``Synchronisation model violates LKMM; rq->lock discipline not proven'' \\
-Prior art / novelty overlap    &   599 & 19.8\% & ``Reads as combination of existing thermal-pressure and NUMA-balancing'' \\
-Other technical issues         &   757 & 25.0\% & Various implementation-specific correctness objections \\
-Incomplete specification       &   230 &  7.6\% & ``Concurrency contract for sidecar metadata not fully specified'' \\
-Security / side-channel risk   &   199 &  6.6\% & ``Side-channel exposure via scheduler-observable pressure signal'' \\
-Kernel ABI / notrace violation &   165 &  5.5\% & ``Target function absent from /proc/kallsyms (inlined or notrace)'' \\
+Locking / concurrency    & 1,072 & 35.5\% & ``Synchronisation model violates LKMM; rq$\to$lock discipline not proven'' \\
+Prior art / novelty      &   599 & 19.8\% & ``Reads as combination of thermal-pressure and NUMA-balancing prior art'' \\
+Other technical issues   &   757 & 25.0\% & Various implementation-specific correctness objections \\
+Incomplete specification &   230 &  7.6\% & ``Concurrency contract for sidecar metadata underspecified'' \\
+Security / side-channel  &   199 &  6.6\% & ``Scheduler-observable pressure signal creates covert channel'' \\
+Kernel ABI violation     &   165 &  5.5\% & ``Target function absent from \texttt{/proc/kallsyms} (inlined)'' \\
 \bottomrule
 \end{tabular}
 \end{table*}
