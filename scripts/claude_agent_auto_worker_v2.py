@@ -376,63 +376,76 @@ class ClaudeAgentAutoWorkerV2:
                     logger.info(f"Debate max revisions reached: {run_id}")
                     break
 
-                # Collect all issues from specialists for revision
-                all_issues = []
-                for name, r in reports.items():
-                    for iss in r.get("issues", []):
-                        all_issues.append(f"[{name}] {iss}")
-                feedback_text = "\n".join(all_issues[:15])
+                # Split feedback into two tracks for focused revision:
+                # Track 1: Technical correctness (kernel_hardliner + security_guardian)
+                # Track 2: Strategic/novelty (prior_art_shark + intel_strategist)
+                correctness_specialists = {"kernel_hardliner", "security_guardian"}
+                strategy_specialists = {"prior_art_shark", "intel_strategist"}
 
-                # Revise drafts using feedback (use gpt-5.4 to match Maverick quality)
+                correctness_issues = []
+                strategy_issues = []
+                for name, r in reports.items():
+                    issues = [f"[{name}] {iss}" for iss in r.get("issues", [])[:4]]
+                    if r.get("fatal_flaw", "").strip():
+                        issues.insert(0, f"[{name}] FATAL: {r['fatal_flaw'].strip()}")
+                    if name in correctness_specialists:
+                        correctness_issues.extend(issues)
+                    else:
+                        strategy_issues.extend(issues)
+
                 void_context = request.get("void_context", "")[:2000]
                 target = request.get("target", "")
-                revised_drafts = []
-                for draft in current_drafts:
-                    td = draft.get("tid_detail", {})
+
+                PRESERVE_INSTRUCTION = (
+                    "You MUST preserve ALL tid_detail sub-fields: "
+                    "problem_statement, prior_art_gap, proposed_invention, architecture_overview, "
+                    "implementation_plan, validation_plan, draft_claims (≥2 items), "
+                    "risks_and_mitigations, references. Never empty these fields."
+                )
+
+                def _do_revision(draft_in: dict, feedback: list, focus: str) -> dict:
                     system_prompt = (
-                        "You are an Elite System Architect revising a Technical Invention Disclosure "
-                        "based on expert committee feedback. Address every issue raised. "
-                        "Preserve the overall structure. Strengthen weak areas with concrete kernel details. "
-                        "Return the COMPLETE revised draft as JSON.\n\n"
-                        "CRITICAL: You MUST preserve ALL tid_detail sub-fields in your response:\n"
-                        "problem_statement, prior_art_gap, proposed_invention, architecture_overview,\n"
-                        "implementation_plan, validation_plan, draft_claims (list), risks_and_mitigations (list),\n"
-                        "references (list). Never omit or empty these fields. If a field was provided, keep it\n"
-                        "and improve it. draft_claims must have at least 2 claim strings."
+                        f"You are an Elite Kernel Architect revising a TID. "
+                        f"Focus exclusively on {focus}. Address every issue below precisely. "
+                        f"Return the COMPLETE revised draft as JSON.\n\n{PRESERVE_INSTRUCTION}"
                     )
                     user_prompt = (
                         f"Target: {target}\n\n"
-                        f"Void context (supporting evidence):\n{void_context}\n\n"
-                        f"Original draft:\n{json.dumps(draft, indent=2, ensure_ascii=False)}\n\n"
-                        f"Committee feedback to address:\n{feedback_text}\n\n"
-                        "Return strict JSON with EXACTLY the same top-level keys and tid_detail sub-keys "
-                        "as the original draft. All tid_detail fields must be non-empty strings/lists. "
-                        "Improve every section based on the feedback."
+                        f"Void context:\n{void_context}\n\n"
+                        f"Current draft:\n{json.dumps(draft_in, indent=2, ensure_ascii=False)}\n\n"
+                        f"Feedback to address ({focus}):\n" + "\n".join(feedback) + "\n\n"
+                        "Return strict JSON matching the original structure exactly."
                     )
-                    response_text = self.llm.chat(
-                        model="gpt-5.4",
-                        system_prompt=system_prompt,
-                        user_prompt=user_prompt,
-                        temperature=0.5,
-                    )
-                    revised = self._parse_json_response(response_text, "DebateRevision")
-
-                    # Safety net: merge back any missing tid_detail fields from original
-                    orig_td = draft.get("tid_detail", {})
-                    rev_td = revised.get("tid_detail", {})
+                    resp = self.llm.chat(model="gpt-5.4", system_prompt=system_prompt,
+                                         user_prompt=user_prompt, temperature=0.5)
+                    result = self._parse_json_response(resp, "DebateRevision")
+                    # Safety net: restore any dropped fields
+                    orig_td = draft_in.get("tid_detail", {})
+                    rev_td = result.get("tid_detail", {})
                     for field in ("problem_statement", "prior_art_gap", "proposed_invention",
                                   "architecture_overview", "implementation_plan", "validation_plan",
                                   "draft_claims", "risks_and_mitigations", "references"):
                         if not rev_td.get(field) and orig_td.get(field):
                             rev_td[field] = orig_td[field]
                     if rev_td:
-                        revised["tid_detail"] = rev_td
-                    # Also preserve top-level fields if lost
+                        result["tid_detail"] = rev_td
                     for field in ("scores", "why_now", "novelty_thesis", "feasibility_thesis", "market_thesis"):
-                        if not revised.get(field) and draft.get(field):
-                            revised[field] = draft[field]
+                        if not result.get(field) and draft_in.get(field):
+                            result[field] = draft_in[field]
+                    return result
 
-                    revised_drafts.append(revised)
+                all_issues = correctness_issues + strategy_issues
+                revised_drafts = []
+                for draft in current_drafts:
+                    # Pass 1: fix technical correctness (kernel + security)
+                    if correctness_issues:
+                        draft = _do_revision(draft, correctness_issues,
+                                             "kernel correctness, locking, concurrency, and security")
+                    # Pass 2: strengthen novelty and strategic positioning
+                    if strategy_issues:
+                        draft = _do_revision(draft, strategy_issues,
+                                             "novelty, prior-art distinction, and Intel strategic value")
+                    revised_drafts.append(draft)
 
                 # Record revision trace (offset round number if retry)
                 revision_trace.append({
