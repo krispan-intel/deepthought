@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 4.0] Load-Validated Access-Class Descriptors, Snapshot-Checked Po</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-a4b9a2789308 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — yellow_card_revise</div>
+</div>
+
+<section class="card">
+  <h1>Load-Validated Access-Class Descriptors, Snapshot-Checked Poison Ledger, and CPUHP-Retargeted IRQ Service Domains for x86 CXL</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux device driver using x86 CXL microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Access-Class Bridge Between LLVM Loop Analysis and x86 CXL Transfer Policy</li><li style='font-size:13px;'>CXL Service-Domain State Machine for x86 LLC-Local Interrupt and Workqueue Placement</li><li style='font-size:13px;'>Poison-Shadow Folio Ledger for x86 Machine-Check-Safe CXL Media Recovery</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: A Case for CXL-Centric Server Processors &lt;&gt; A Case Study of LLVM-Based Analysis for Optimizing SIMD Code Generation
+  MMR Score:    0.7675</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A Linux x86 CXL driver substrate emits immutable per-site access-class descriptors at build time, validates them at module load, binds each transfer site at probe to a legal helper generation for CXL.mem versus MMIO or mailbox paths, and couples that binding to an RCU-published service-domain object whose generation-bound poison ledger, paginated snapshot model, DPA-to-page projection, and hardirq-safe CPU targeting prevent stale clear-poison, illegal helper use, and use-after-free across reset, reprobe, hotplug, and poison storms.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is not irq_work, workqueues, poison tracking, or x86 copy primitives taken separately; it is the coordinated kernel invariant that a CXL driver may perform a hot-path action only from an immutable, load-valid</div>
+    <div class="pill"><strong>Feasibility:</strong> The design uses standard Linux implementation building blocks in a new arrangement: read-only descriptor sections, RCU publication of immutable policy objects, kref-managed worker </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux CXL drivers on x86 must optimize several coupled paths without violating kernel context rules. First, a driver may touch fundamentally different resource kinds: write-back CXL.mem windows that can legally use memory-tuned helpers, MMIO apertures that cannot tolerate those helpers, and mailbox windows that must remain strictly ordered and serialized. Second, poison can appear, disappear, or be re-enumerated while the device is resetting, reprobing, or changing topology, so a driver cannot safely issue clear-poison based on a stale local cache or a loose generation counter. Third, interrupt servicing must pick CPUs that are close to the CXL path and still legal under cpu_online, managed IRQ affinity, cpuset, housekeeping, and nohz_full policy, but hardirq cannot take sleeping locks or recompute topology. Fourth, the driver may internally observe poison at device-granule or sub-page resolution while Linux MM must only receive page or folio semantics, especially across interleaved decoders and DAX or kmem mappings. The invention therefore addresses a concrete kernel problem: how to let hot paths use only prevalidated pointer dereferences and irq_work enqueue, while all mailbox submission, poison enumeration, page failure propagation, retargeting, and clear-poison authorization remain ordered, race-proof, and tied to hardware-visible sequencing.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Existing mechanisms solve fragments but not the combined correctness contract. irq_work plus workqueues provide generic hardirq deferral, but they do not publish an immutable CXL service-domain object with a lockless legality check, a hotplug-safe preferred CPU or fallback CPU, and a process-context cpuhp recomputation rule. Generic IRQ affinity and managed interrupts can distribute vectors, but they do not score CPUs from HMAT, SLIT, SRAT, CDAT, and decoder-hop topology while intersecting managed affinity, cpuset-effective masks, housekeeping CPUs, nohz_full exclusions, and cpu_online state. memory_failure(), DAX poison tracking, and badblocks expose MM-facing poison handling, but they do not preserve a driver-internal sub-page poison bitmap keyed by CXL device granules, nor do they define how a single system page that spans multiple DPA poison granules is externally represented as one page failure while retaining internal granule bits. Conventional driver-local generation counters do not define a robust paginated Get Poison List snapshot model, do not distinguish partial refresh from a complete refresh, do not specify what happens when reset occurs mid-enumeration, and do not provide an atomic check-and-act clear-poison authorization that revalidates tuple identity at both submit and completion. Finally, memcpy or compiler-vectorization literature may suggest faster transfer kernels, but it does not teach a kernel-consumable, ABI-stable, load-validated descriptor stream that binds each C site to a legal x86 helper family while proving that SIMD, AMX, non-temporal, persistence-flush, or copy_mc-class helpers are never applied to the wrong resource kind or invoked from forbidden kernel contexts.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention introduces a unified x86 CXL driver substrate with three coordinated layers. The first layer is a build-time access-class declaration mechanism: a C macro, optionally informed by offline LLVM site classification, emits an immutable descriptor record and a unique anchor object for each annotated transfer site into a dedicated read-only section. Each descriptor states resource kind, mapping type, persistence requirement, context class, copy direction, alignment assumptions, and the set of x86 helper families that are legal for that site. At module load, the kernel treats the section as untrusted input, validates record sizes and flags, resolves anchors, and builds an immutable anchor-keyed lookup. At probe, a binder selects a concrete helper generation per site from legal families such as scalar or ERMS copy, copy_mc-class access, flush-assisted persistent copy, or non-temporal store for write-back CXL.mem, while rejecting memory-only helpers for MMIO or mailbox and rejecting SIMD or AMX-class helpers for IRQ, NMI, or FPU-forbidden contexts.
+
+The second layer is an RCU-published service-domain object shared by all hot paths of a memdev, region path, or decoder path. The object contains an immutable IRQ-policy snapshot and a mutable poison-execution backend. The IRQ-policy snapshot stores bind_generation, reset_epoch, preferred_cpu, fallback_cpu, and a legal CPU mask already intersected with managed IRQ affinity, cpuset-effective policy, housekeeping_cpumask(HK_TYPE_DOMAIN), nohz_full exclusions, and current online CPUs. Hardirq performs only lockless reads: it does READ_ONCE() of preferred_cpu and fallback_cpu, checks cpumask_test_cpu() against cpu_online_mask and the RCU-published legal mask, and queues irq_work to a preallocated backend. If the preferred CPU is offline or no longer legal, hardirq uses the fallback CPU or an unbound housekeeping-safe queue; it never takes cpu_hotplug locks, mutexes, or topology walks. CPU hotplug, cpuset changes, or affinity changes are handled by process-context callbacks that recompute scores, publish a new immutable policy snapshot under RCU, and free the old snapshot only after synchronize_rcu().
+
+The third layer is a generation-bound poison ledger. The driver maintains an xarray of ledger entries keyed by {memdev instance, DPA base}. Each entry stores granule_bits, projected PFN or folio range, range_seq, reason_bits, state, and mm_seq. Short mutations are protected by spinlock_t ledger_lock; all mailbox commands are serialized by mutex mailbox_lock; state transitions such as PROBING, ONLINE, RESETTING, REMOVING, and DEAD are serialized by state_lock. No spinlock is ever held across a mailbox transaction. Get Poison List is modeled as an immutable snapshot build: the worker allocates a provisional snapshot, paginates through continuation cookies, and mints snapshot_id = ((u64)reset_epoch &lt;&lt; 32) | refresh_seq. A partial enumeration is not externally visible. Only after the final page is reached and reset_epoch is unchanged does the worker publish the snapshot pointer and active_snapshot_id under RCU and update affected ledger entries. If reset, reprobe, or timeout occurs mid-enumeration, the provisional snapshot is discarded and never authorizes clear-poison.
+
+Clear-poison is authorized as an atomic check-and-act sequence. Under mailbox_lock and then ledger_lock, the driver verifies that the targeted entry exists, that {bind_generation, reset_epoch, snapshot_id, range_seq} still matches the active service-domain view, that no newer poison event has bumped range_seq, that no refresh covering the range is in flight, and that mitigation_complete holds. Mitigation_complete is defined in kernel terms as: (1) the current complete snapshot has been projected to all affected PFNs or folios for the range; (2) for kmem or system-RAM mappings, memory_failure() or equivalent page offlining has completed for each projected PFN in process context; (3) for fsdax, devdax, or pmem mappings, DAX poison or badblocks tracking has been updated and user-visible mappings invalidated or drained in process context; (4) no page or folio in the range remains pending MM notification for the current mm_seq; and (5) either the platform-reported scrub or remediation status for the range is complete, or the driver will require a post-clear re-enumeration proving that the range is absent from a newer complete poison snapshot before marking it cleared. If the checks pass, the entry is moved to CLEAR_PENDING, the mailbox clear is issued without holding ledger_lock, and completion rechecks the tuple. If tuple mismatch or a new poison event occurred, the completion cannot clear the ledger and the range remains poisoned pending refresh. This prevents mistaken clearing of newly poisoned media.
+
+DPA-to-page translation is explicit. For each region path, the DPA mapper stores decoder-way count, interleave granularity, stripe position, HPA base, and mode. Mapping follows DPA -&gt; stripe index -&gt; interleave way -&gt; region-relative address -&gt; HPA -&gt; PFN or folio. If one system page covers multiple DPA poison granules, the ledger ORs those granule bits internally but exports one page or folio poison semantic to MM. If one DPA poison granule spans multiple pages, the mapper emits each touched PFN or folio separately. Thus sub-page detail remains internal for correctness and stale-clear prevention, while Linux MM sees only page or folio outcomes.
+
+Forward progress under poison storms is maintained by per-range dedupe, reason-bit coalescing, a bounded worker backlog, one in-flight mailbox transaction per service domain, and timeout-governed retries. Repeated poison interrupts for the same range only set reason bits and do not enqueue duplicate workers. Failures leave the entry in a stable poisoned state with a retry budget and backoff rather than livelock. The disclosed invariant is observable through tracepoints: no stale clear across reprobe or reset, no hardirq slow path, and no publication of a partial poison snapshot as authoritative.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>Object model and control flow:
+
+[build-time site annotation / optional LLVM classification]
+                |
+                v
+   [.cxl_accdesc RO section + unique anchor objects]
+                |
+         module load validator
+                |
+                v
+       immutable anchor-&gt;descriptor map
+                |
+             probe binder
+                |
+                v
+        RCU-published bound-site table
+                |
+                v
+   +---------------------------------------------+
+   | struct cxl_service_domain                   |
+   |  - kref, rcu_head                           |
+   |  - u32 bind_generation                      |
+   |  - u32 reset_epoch                          |
+   |  - u64 active_snapshot_id                   |
+   |  - struct cxl_irq_policy __rcu *policy      |
+   |  - spinlock_t ledger_lock                   |
+   |  - struct mutex mailbox_lock                |
+   |  - struct mutex state_lock                  |
+   |  - struct xarray poison_xa                  |
+   |  - struct irq_work irq_kick                 |
+   |  - struct work_struct poison_work           |
+   |  - struct work_struct affinity_work         |
+   |  - enum { PROBING, ONLINE, RESETTING, ... } |
+   +---------------------------------------------+
+
+Hardirq path:
+  rcu_read_lock()
+  sd = rcu_dereference(dev-&gt;svc_domain)
+  policy = rcu_dereference(sd-&gt;policy)
+  cpu = READ_ONCE(policy-&gt;preferred_cpu)
+  if cpu invalid or !cpumask_test_cpu(cpu, cpu_online_mask) or
+     !cpumask_test_cpu(cpu, policy-&gt;legal_mask):
+       cpu = READ_ONCE(policy-&gt;fallback_cpu)
+  irq_work_queue(&amp;sd-&gt;irq_kick)
+  rcu_read_unlock()
+
+irq_work callback / process context:
+  queue_work_on(cpu or fallback, sd-&gt;svc_wq, &amp;sd-&gt;poison_work)
+
+poison_work:
+  mutex_lock(mailbox_lock)
+  build provisional Get Poison List snapshot
+  paginate through continuation cookies
+  if final page reached and reset_epoch unchanged:
+      publish snapshot_id = ((u64)reset_epoch &lt;&lt; 32) | refresh_seq
+      spin_lock(ledger_lock)
+      update ledger entries, range_seq, reason_bits, mm_seq needs
+      spin_unlock(ledger_lock)
+  project DPA -&gt; PFN/folio via decoder interleave math
+  call memory_failure() or DAX/badblocks process-context path
+  if mitigation_complete and tuple still matches:
+      move entry to CLEAR_PENDING and issue Clear Poison
+  on completion:
+      recheck {bind_generation, reset_epoch, snapshot_id, range_seq, mm_seq}
+      if still equal and post-clear refresh confirms absence, mark CLEARED
+      else leave poisoned and schedule refresh
+  mutex_unlock(mailbox_lock)
+
+CPU-target scoring is computed only in process context. The worker ranks legal CPUs using a weighted score derived from HMAT latency and bandwidth, SLIT NUMA distance, SRAT proximity, CDAT device locality attributes, and CXL topology hop count through root ports, switches, and decoders. The legal candidate set is formed first by intersecting managed IRQ affinity, cpuset-effective policy, housekeeping CPUs, nohz_full exclusions, and cpu_online state; scoring never revives an illegal CPU. cpuhp callbacks and policy-change workers publish a replacement cxl_irq_policy under RCU and retire the old snapshot after synchronize_rcu().
+
+Teardown sequence: state_lock moves the domain to RESETTING or REMOVING; online publication is cleared; IRQ sources are disabled; irq_work and poison work are drained; synchronize_rcu() prevents new readers from observing old policy or domain pointers; mailbox completions are drained; bind_generation or reset_epoch is incremented; old snapshots are dropped by kref/RCU; reprobe rebuilds mappings and republishes the service domain. This ordering ensures that hardirq enqueue never touches freed memory and that a clear-poison authorized before reset cannot retire poison after reset.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Build-time descriptor layer. Introduce a cxl_access_desc record and a C macro that emits one immutable descriptor plus one anchor object per annotated transfer site. Fields include resource_kind, mapping_kind, context_mask, persistence_class, direction, alignment, and helper_family_mask. Optionally feed the macro generation from an offline LLVM analysis pass, but keep the runtime kernel contract entirely descriptor-based.
+
+2. Load validator and probe binder. At module load, validate descriptor array bounds, version, flags, and anchor uniqueness, then build an immutable anchor-keyed map. At probe, compute bind_generation and choose a concrete helper for each site. Example rules: allow ERMS or scalar copy for ordinary RAM-like CXL.mem; allow flush-assisted helper plus sfence only for persistent write-back CXL.mem; allow non-temporal store only for write-back mappings with explicit persistence class; allow copy_mc-class helpers for machine-check-tolerant reads; reject all memory-tuned helpers for MMIO or mailbox; reject SIMD or AMX families for IRQ, NMI, or FPU-forbidden contexts. Store results in an immutable bound-site table published via RCU.
+
+3. Service-domain publication and lifecycle. Add struct cxl_service_domain with kref, rcu_head, state_lock, mailbox_lock, ledger_lock, poison_xa, irq_work, and process-context workers. Publish dev-&gt;svc_domain with rcu_assign_pointer() only after full initialization, then set ONLINE with release semantics. On teardown or reset, clear ONLINE, detach the RCU pointer, synchronize_rcu(), cancel or flush workers, wait for in-flight krefs to drain, and then free snapshots and backend memory.
+
+4. IRQ-policy snapshot and hotplug-safe targeting. Define struct cxl_irq_policy as an immutable object holding bind_generation, reset_epoch, preferred_cpu, fallback_cpu, legal_mask, and score metadata. Compute legal_mask by intersecting managed IRQ affinity, cpuset-effective policy, housekeeping_cpumask(HK_TYPE_DOMAIN), nohz_full exclusions, and cpu_online_mask. For each legal CPU, compute score = locality_weight(CDAT, HMAT, SLIT, SRAT, decoder_hops) - policy_penalties. Publish the best CPU and a housekeeping-safe fallback. Hardirq reads only preferred_cpu and fallback_cpu with READ_ONCE(), validates them locklessly against cpu_online_mask and legal_mask, and queues irq_work; all rescoring occurs from cpuhp, cpuset, or affinity-change workers in process context.
+
+5. Poison ledger and snapshot model. Represent each poisoned range as an xarray entry keyed by {memdev instance, DPA base}. Store granule_bits, projected PFN range, range_seq, mm_seq, reason_bits, state, and the last complete snapshot_id that asserted the entry. Protect short mutations with ledger_lock. Serialize Get Poison List, Clear Poison, and any mailbox state read with mailbox_lock. Build a provisional snapshot for paginated enumeration and publish it only if the enumeration reaches end-of-list without reset_epoch change. If reset or timeout occurs mid-enumeration, discard the provisional snapshot and leave the current authoritative snapshot unchanged.
+
+6. DPA-to-page projection. For every region path, cache decoder interleave parameters and mapping mode. Project DPA to region-relative HPA and then to PFN or folio. In kmem or system-RAM mode, call memory_failure() from process context for each affected PFN. In fsdax, devdax, or pmem mode, update DAX poison or badblocks tracking and invalidate or drain mappings in process context. Externally expose only page or folio failure; internally retain exact granule_bits so later refreshes and clear authorization can distinguish partial-page poison changes.
+
+7. Clear-poison authorization and TOCTOU closure. Under mailbox_lock and ledger_lock, verify entry existence and the exact tuple {bind_generation, reset_epoch, snapshot_id, range_seq, mm_seq}. If mitigation_complete holds, transition the entry to CLEAR_PENDING, drop ledger_lock, issue the mailbox clear, then reacquire ledger_lock on completion and compare the same tuple again. If any field changed, do not mark cleared; instead schedule a refresh. Require a post-clear refresh or platform remediation-complete indication before moving an entry to CLEARED.
+
+8. Forward-progress controls. Coalesce duplicate interrupts per range by OR-ing reason_bits and test-and-set of a queued flag. Limit one in-flight mailbox transaction per service domain. Use bounded retries with timeout and backoff. Keep separate workers for poison refresh, affinity recomputation, and reset sequencing so that mailbox stalls do not block hotplug policy publication. Tracepoints should emit domain publish, policy publish, snapshot publish, stale-clear reject, clear submit, clear complete, and IRQ fallback events.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Descriptor legality tests. Add KUnit coverage for load-time descriptor validation, including malformed records, duplicate anchors, unsupported helper-family masks, and rejection of MMIO or mailbox sites bound to memory-only helpers. Verify that IRQ-context sites cannot bind to SIMD, AMX, or other FPU-dependent helpers.
+
+2. CPU-targeting tests. Use CPU hotplug test infrastructure to offline the preferred CPU while interrupts are arriving. Confirm via tracepoints that hardirq performs only lockless READ_ONCE()/cpumask tests, selects fallback without sleeping, and that cpuhp-driven affinity_work republishes a new cxl_irq_policy under RCU. Add scenarios for managed IRQ affinity changes, cpuset-effective mask restriction, and housekeeping/nohz_full exclusions.
+
+3. Poison snapshot sequencing tests. Emulate paginated Get Poison List responses with continuation cookies, injected mailbox delays, and reset mid-enumeration. Verify that partial snapshots are never published, that snapshot_id changes only on complete refresh, and that reset_epoch mismatch discards the provisional snapshot. Add a race where new poison appears on the same DPA range between authorization and completion; the expected result is stale-clear rejection and retention of the poisoned state.
+
+4. DPA mapping tests. For kmem, fsdax, devdax, and pmem modes, validate DPA -&gt; stripe -&gt; HPA -&gt; PFN or folio translation across interleaved decoders. Include cases where one system page spans multiple poison granules and where one granule spans multiple pages. Confirm that MM receives only page or folio semantics while the internal ledger preserves sub-page granule_bits.
+
+5. Mitigation-complete and clear-poison tests. Verify that clear-poison is blocked until MM projection and memory_failure() or DAX tracking are complete for the current mm_seq. Require either platform remediation-complete indication or a post-clear re-enumeration showing the range absent from a newer complete snapshot. Inject a reset after submit but before completion to prove that completion cannot retire poison under a stale reset_epoch.
+
+6. Storm and forward-progress tests. Generate repeated poison events for the same and adjacent ranges, plus slow or failing mailbox commands. Confirm one queued work item per range, reason-bit coalescing, bounded backlog, timeout-governed retries, and absence of livelock. Record tracepoints showing clear rejection, retry, and eventual stable state.
+
+7. Observable invariant tests. Export tracepoints such as trace_cxl_sd_publish, trace_cxl_irq_target_fallback, trace_cxl_poison_snapshot_publish, trace_cxl_clear_authorize, trace_cxl_clear_reject_stale, and trace_cxl_clear_complete. Use them to prove the central novelty invariant: no stale clear across reset or reprobe, no hardirq slow path, and no publication of a partial poison snapshot as authoritative.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>1. A Linux kernel method for operating an x86 CXL device driver, comprising: emitting at build time an immutable access-class descriptor and unique anchor for each transfer site; validating the descriptors at module load; binding, at device probe, each transfer site to a concrete helper generation selected from a legal x86 helper-family set according to resource kind, mapping type, persistence class, and kernel context; and thereafter permitting the hot path to execute only through the bound generation so that a helper legal for write-back CXL.mem is prevented from being applied to MMIO or mailbox resources.</li><li style='margin-bottom:8px;'>2. The method of claim 1, wherein the driver publishes an RCU-protected service-domain object containing bind_generation, reset_epoch, an immutable IRQ-policy snapshot, and a poison ledger, and wherein a hardirq path performs only lockless reads of preferred_cpu and fallback_cpu, validates legality using cpu_online state and a precomputed legal CPU mask, and enqueues irq_work without taking a sleeping lock, mailbox lock, or topology recomputation path.</li><li style='margin-bottom:8px;'>3. The method of claim 1, wherein poison is tracked in an internal ledger keyed by memdev instance and device physical address range, each ledger entry storing sub-page granule bits, projected page or folio identifiers, range_seq, reason_bits, and mm_seq, and wherein the driver exposes only page or folio poison semantics to Linux MM while retaining the sub-page granule bits for stale-clear prevention and post-refresh comparison.</li><li style='margin-bottom:8px;'>4. The method of claim 1, wherein a Get Poison List enumeration is represented as an immutable snapshot having snapshot_id = ((reset_epoch &lt;&lt; 32) | refresh_seq), the snapshot being published only after a paginated enumeration reaches end-of-list without reset_epoch change, such that a partial enumeration or an enumeration interrupted by reset is discarded and cannot authorize clear-poison.</li><li style='margin-bottom:8px;'>5. The method of claim 1, wherein clear-poison is performed as an atomic check-and-act sequence under mailbox serialization, the sequence requiring equality of {memdev instance, DPA range, bind_generation, reset_epoch, snapshot_id, range_seq, mm_seq} both when a clear command is submitted and when it completes, such that a reset, reprobe, new poison event, or newer snapshot prevents a stale clear from retiring newly poisoned media.</li><li style='margin-bottom:8px;'>6. The method of claim 1, wherein mitigation_complete for a poisoned range requires completion of current-snapshot DPA-to-page projection, completion of memory_failure() or DAX or badblocks poison propagation for each affected page or folio in process context, absence of pending MM notification for the current mm_seq, and either platform-reported remediation completion or a post-clear refresh proving absence of the range from a newer complete poison snapshot.</li><li style='margin-bottom:8px;'>7. The method of claim 1, further comprising computing CPU service scores from HMAT, SLIT, SRAT, CDAT, and CXL decoder-topology inputs only after intersecting managed IRQ affinity, cpuset-effective policy, housekeeping CPUs, nohz_full exclusions, and current online CPUs, publishing the resulting preferred and fallback CPUs as an immutable policy snapshot, and recomputing the snapshot solely in process context upon CPU hotplug or policy change.</li><li style='margin-bottom:8px;'>8. The method of claim 1, further comprising coalescing repeated poison events by per-range deduplication and reason-bit accumulation, limiting each service domain to one in-flight mailbox transaction, and exporting tracepoints that prove no stale clear across reset or reprobe, no hardirq slow path, and no publication of a partial poison snapshot as authoritative.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Mailbox latency may serialize poison handling too aggressively: mitigate with one in-flight mailbox transaction per service domain, per-range dedupe, bounded retries, and separate workers for reset, affinity recompute, and poison refresh so unrelated control paths continue to make progress.</li><li style='margin-bottom:6px;'>CPU scoring may become unstable under rapid hotplug or cpuset churn: mitigate by publishing immutable IRQ-policy snapshots under RCU, letting hardirq consult only the last published snapshot, and recomputing policy solely from cpuhp and policy-change workers in process context.</li><li style='margin-bottom:6px;'>DPA-to-page projection across interleaved decoders may be error-prone: mitigate by caching decoder interleave parameters in one mapper component, validating stripe math with KUnit and fault-injection tests, and requiring page or folio projection before mitigation_complete can hold.</li><li style='margin-bottom:6px;'>False stale-clear rejections may reduce recovery throughput when poison changes frequently: mitigate by accepting false negatives as safe, rescheduling a refresh on mismatch, and keeping range_seq and snapshot_id comparisons explicit so safety is favored over eagerness.</li><li style='margin-bottom:6px;'>RCU and kref lifecycle bugs could lead to use-after-free in teardown: mitigate by clearing published pointers before synchronize_rcu(), draining irq_work and workers before final kref_put(), and making the backend object reference-counted so queued work cannot outlive its service domain.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Compute Express Link (CXL) specification sections covering Get Poison List, Clear Poison, media events, decoder topology, and Type-3 memory devices.</li><li>Linux kernel facilities: RCU, kref, irq_work, workqueues, CPU hotplug callbacks, xarray, memory_failure(), DAX poison tracking, and badblocks handling.</li><li>ACPI HMAT, SLIT, SRAT, and CDAT tables for latency, bandwidth, and locality metadata used in CPU-target scoring.</li><li>Linux CXL core concepts for memdevs, regions, decoders, and interleave arithmetic used for DPA-to-HPA or PFN projection.</li><li>Intel 64 and IA-32 architecture and optimization references for ERMS, copy_mc-class behavior, CLWB or SFENCE persistence ordering, and non-temporal store legality on write-back memory mappings.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>RCU publication of the “execution-target descriptor” must specify exact lifetime + teardown rules: use rcu_assign_pointer()/rcu_dereference() for readers, and free via kfree_rcu() or call_rcu(); do not mix kref final free with RCU readers unless the final release is RCU-delayed. Also state which fields are immutable after publish to avoid torn reads without extra barriers.</li><li style='font-size:13px;margin-bottom:4px;'>Hardirq path must be strictly non-sleeping end-to-end: irq_work callbacks run in interrupt context, so they must not take mutexes, call mailbox routines, or touch MM paths (memory_failure(), dax badblocks) that can sleep. Use hardirq only to set reason bits + queue irq_work; have irq_work only enqueue a process-context worker that does the real work.</li><li style='font-size:13px;margin-bottom:4px;'>CPU hotplug handling cannot rely on “cpu_online sampling” alone: the chosen CPU can go offline immediately after sampling. Define a race-free enqueue strategy (e.g., queue to an unbound workqueue with WQ_UNBOUND and apply locality inside the worker, or use a per-domain cpumask published via RCU and let workqueue reroute when queue_work_on() fails). Also explicitly respect housekeeping_cpumask() / isolated CPUs if claiming an HK-safe fallback.</li><li style='font-size:13px;margin-bottom:4px;'>The poison ledger’s DPA→PFN/folio mapping cache needs a concrete invalidation and pinning model: mapping can become stale across CXL.mem decoder reprogramming, mem_hotplug/offline, dev_pagemap teardown, reset, or reprobe. You need to hold the right refs (e.g., dev_pagemap get/put where applicable) and define what happens when translation fails mid-flight.</li><li style='font-size:13px;margin-bottom:4px;'>The “complete-snapshot generation gate” must be defined as a real state machine with serialization against reset and concurrent poison arrival: specify which lock (mutex vs spinlock) protects snapshot build, how you detect partial enumeration, what abort/retry conditions are, and how you prevent starvation under poison storms (bounded retries/backoff, mailbox timeout handling).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Sharpen the inventive delta vs well-known kernel patterns (RCU-published immutable targets + irq_work + workqueue + CPU hotplug). As written, the combination risks being characterized as an obvious composition unless you specify a concrete new enforcement point (e.g., a single mandatory clear-poison gate function) and a novel state tuple that existing subsystems do not already use.</li><li style='font-size:13px;margin-bottom:4px;'>Define the “completed snapshot” semantics precisely and mechanically: what constitutes completion, what ordering guarantees exist (e.g., mailbox poison-list enumeration vs asynchronous poison events), and what happens if new poison arrives mid-enumeration. Include an explicit state machine with transitions/abort conditions and how reset/reprobe increments dev_gen/topo_gen.</li><li style='font-size:13px;margin-bottom:4px;'>Make the clear-poison authorization tuple implementable: specify exact fields, storage location, and atomicity requirements (e.g., per-entry epoch in xarray, snapshot_id monotonicity, completion-time recheck). Clarify whether the completion-time recheck uses a returned device cookie/poison-seq (if none exists) and how you prevent false-positive clears without hardware acknowledgments.</li><li style='font-size:13px;margin-bottom:4px;'>Specify integration boundaries with Linux MM/DAX to avoid prior-art overlap and enable enablement: exactly when memory_failure()/dax badblocks insertion is invoked, what the mitigation-complete predicate is (and who sets it), and how you prevent sub-page poison bookkeeping from leaking across MM APIs while still allowing accurate revalidation.</li><li style='font-size:13px;margin-bottom:4px;'>IRQ/CPU targeting claims need a tighter novelty hook: many subsystems already do RCU-published CPU maps with cpuhp updates and housekeeping fallbacks. To reduce overlap risk, define the CXL-specific inputs (CDAT/decoder/root-port/SNC locality scoring) and show that the scoring materially changes outcomes vs existing generic affinity mechanisms (or codify why generic affinity cannot satisfy the constraints).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the concrete kernel objects and lifetimes: exact struct layout for service_domain, target descriptor, and poison-ledger entries; specify which fields are immutable (RCU-published) vs mutable, and the precise teardown sequence (kref/rcu_head/synchronize_rcu) to eliminate UAF under reset/unbind.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the “atomic check-and-act” mechanism for clear-poison: what is the authoritative device-side identity (poison list sequence counter? timestamp? vendor cookie?) vs purely software epoching; document how you prevent clearing a newly-poisoned DPA when hardware provides no monotonic per-entry token.</li><li style='font-size:13px;margin-bottom:4px;'>Pin down the DPA→PFN/folio mapping contract across kmem, pmem/devdax, and memmap-on-demand: which APIs you will call (dev_pagemap, dax, ZONE_DEVICE helpers), what locks/context constraints apply, and how you handle transient mappings during hot-remove and decoder reconfiguration.</li><li style='font-size:13px;margin-bottom:4px;'>Make the forward-progress story measurable: provide bounds/strategy for poison storms (dedupe keys, rate limiting, mailbox serialization policy, snapshot refresh cadence), plus explicit starvation avoidance when housekeeping fallback is used under CPU hotplug or isolated CPUs.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify IRQ/topology scoring inputs and failure modes: when CDAT/HMAT are absent or stale, what deterministic fallback is used; how SNC/NUMA locality is converted into a CPU mask; and how you keep the hardirq path O(1) while still guaranteeing cpu_online legality and affinity correctness.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Specify the exact hardirq-safe fastpath: require only READ_ONCE/WRITE_ONCE on reason bits + irq_work_queue(); forbid any dereference that can fault (e.g., DPA-&gt;PFN lookups) from IRQ context, and document this as an invariant with lockdep/RCU annotations.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten lifetime rules for the RCU-published target object: define teardown ordering (disable IRQ source -&gt; stop irq_work enqueue -&gt; synchronize_rcu() -&gt; drain workqueue -&gt; free/kref_put), and ensure no mailbox work can outlive the service domain after reset/unbind.</li><li style='font-size:13px;margin-bottom:4px;'>Define the snapshot state machine precisely (START_ENUM -&gt; COMPLETE(snapshot_id) -&gt; CLEAR_AUTH(snapshot_id, entry_epoch) -&gt; COMPLETE/ABORT) and include explicit abort conditions (reset_epoch change, new poison arrival, mailbox timeout) to avoid stale-clear and to guarantee bounded retry/backoff under storms.</li><li style='font-size:13px;margin-bottom:4px;'>Ensure DPA-to-page/folio mapping cache invalidation is correct across memory hotremove, dax/kmem mode switches, and decoder reconfiguration; require invalidation hooks tied to dev_pagemap teardown and CXL decoder rebind events, not just device reset.</li><li style='font-size:13px;margin-bottom:4px;'>Add a compatibility guard for platforms lacking stable poison enumeration sequencing: make the &#x27;complete-snapshot&#x27; requirement mandatory (no partial enumeration use), and rate-limit enumeration/clear to prevent CPU starvation (DoS) from repeated poison interrupts.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact concurrency model for the shadow ledger: which paths can run in hardirq/softirq/process context, and whether updates are protected by spin_lock_irqsave(), SRCU/RCU,</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify how the sub-page bitmap bookkeeping maps onto Linux’s page/folio-granular HWPoison interfaces without creating false “sub-page semantics” in core MM (e.g., clarify that sub-</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Tighten the stale-clear suppression story across reset/reprobe: document the lifetime of a device instance generation (who increments it, when), how in-flight clear work is cancelle</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify ordering requirements: ensure mitigation completion is a concrete, checkable predicate (e.g., all impacted mappings torn down, any required cache/TLB invalidations done) bef</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Address forward progress and rate limiting: if poison storms occur, specify bounded work and backpressure (e.g., per-device budgets) so ledger growth and repeated enumeration don’t </li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact hardirq-to-worker enqueue primitive and prove it is IRQ-safe: if you rely on queue_work()/queue_work_on(), document which locks it takes and how you avoid deadlocks</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] RCU-published “immutable execution-target descriptor” needs a concrete lifetime model: specify what is RCU-protected (descriptor pointer vs embedded work item), how updates occur (r</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] CPU hotplug/housekeeping constraints are underspecified: selecting a preferred CPU from HMAT/SLIT/CDAT is fine, but you must handle cpu_online changes without taking sleeping locks </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Poison ledger concurrency rules are missing: define the lock(s) protecting the ledger (spinlock vs mutex), which operations can sleep (mailbox clear-poison, poison enumeration), and</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The “generation/epoch/snapshot” gating must be tied to actual hardware-visible sequencing: if the CXL poison list can change concurrently with enumeration, you need a robust snapsho</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux device driver using x86 CXL microarchitecture features
+</footer>
+</div></body></html>

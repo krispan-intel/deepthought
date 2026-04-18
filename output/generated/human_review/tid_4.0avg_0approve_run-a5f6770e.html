@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] Generation-Tagged Dual-Slot CXL MSI-X Handoff with x86 Inter</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-a5f6770e5272 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Generation-Tagged Dual-Slot CXL MSI-X Handoff with x86 Interrupt-Remap Commit, CPUID/x2APIC-Local Affinity, and Durable-Event Windowing</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux interrupt handling using x86 CXL microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Latency-Class irq_domain for CXL HDM-Aware MSI Steering</li><li style='font-size:13px;'>TSC-Deadline Interrupt Credit Bridge for CXL Event Storms</li><li style='font-size:13px;'>Shadow-IRTE Epoch Bridge for CXL Decoder Transition Quiescence</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | INDEX &lt;&gt; __do_cpuid_func
+  MMR Score:    0.7907</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A Linux CXL driver allocates two MSI-X lanes for each revectorable CXL control-plane source, chooses a target CPU from existing x86 CPUID-derived topology and CXL proximity data, programs the inactive lane first, waits in sleepable worker context for an x86 interrupt-remap-completion contract before switching device policy to that lane, publishes the new active generation only after device acknowledgement, classifies any interrupt on the now-inactive lane as a stale late arrival that may only coalesce a drain worker through an atomic drain_pending flag, and applies bounded severity-aware batching solely to CXL event classes backed by durable device-side logs or sticky status while yielding completely to administrator affinity ownership.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The non-obvious core is not generic IRQ affinity or generic interrupt moderation. It is a CXL-scoped handoff protocol that solves a specific x86 correctness gap left open by ordinary Linux retarget sequences. Existing ir</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>CXL host bridges, switches, ports, and Type-3 devices expose low-rate but latency-sensitive control-plane interrupts such as mailbox completion, event-log notification, RAS signaling, media-status change, poison-related notifications, and topology-change events. On multisocket x86 servers, the default CPU chosen for these MSI or MSI-X interrupts can be remote from the CXL root port, decoder, or memory expander, creating unnecessary cross-socket traffic and longer mailbox or RAS tail latency. The placement decision also ages poorly: decoder rebalance, memory-region reconfiguration, CPU hotplug, node hotplug, hot-remove recovery, or switch-path changes can invalidate an initially good CPU target. A simple in-place retarget is not enough. On x86 systems with interrupt remapping, software may observe an interrupt after irq_set_affinity and even after synchronize_irq, yet still be unable to prove whether that interrupt corresponds to the pre-switch route or the post-switch route, because synchronize_irq drains executing handlers, not the visibility of backend remap-table invalidation or device-side policy writes that selected the old MSI-X entry. That ambiguity blocks correctness-sensitive policies such as stale-route suppression, locality accounting, and bounded batching. In parallel, some CXL event sources expose durable event logs or sticky status, so servicing every interrupt immediately wastes CPU under correctable or advisory storms, while other sources such as mailbox completion and fatal errors are not paceable at all. A kernel-resident mechanism is needed that improves x86-locality for CXL interrupts, makes route generation observable during retarget, coalesces stale-lane late arrivals without unbounded workqueue amplification, respects IRQF_ONESHOT and sleepability rules, degrades safely when vectors or remap hooks are unavailable, and never fights administrator affinity control.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux already provides pci_alloc_irq_vectors_affinity, managed IRQ placement, irq_set_affinity_hint, irq_set_affinity, synchronize_irq, request_threaded_irq, CPU-hotplug migration, and backend-specific interrupt-remap logic in Intel VT-d and AMD IOMMU code. CXL already provides event logs, sticky event-status indications, and mailbox or register-level interrupt policy control. The missing element is an end-to-end CXL-specific handoff protocol that makes route generation observable and commits only when both host and device routing are known to have crossed the handoff boundary. The precise failure mode left unsolved by the prior art is this: with one virq, software may mask, synchronize, update affinity, and unmask, but any later interrupt remains ambiguous because it may have been generated before the device observed the new policy or before the IOMMU’s remap or interrupt-entry cache observed the new target, and the same virq identity is used on both sides of the transition. Synchronize_irq is insufficient because it waits only for already-running handlers on that virq; it does not prove that queued invalidation for Intel VT-d interrupt-remap entries, AMD interrupt-remap-table visibility, or any posted write that changes the selected MSI-X entry has completed. Standard interrupt moderation also does not solve the CXL-specific distinction between durable event logs, which can be drained in bounded windows, and non-durable sources, which must bypass pacing entirely. No existing Linux mechanism combines dual-lane route identity, x86 remap-visibility commit, stale-lane coalescing, CXL-durable severity taxonomy, vector-pressure fallback, and explicit administrator-ownership handoff in one coherent protocol.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention introduces a per-source cxl_irq_source control object and a dual-generation handoff protocol.
+
+Representative state:
+struct cxl_irq_lane {
+    int virq;
+    u16 msix_entry;
+    cpumask_var_t target_mask;
+    u8 slot_id;
+};
+
+enum cxl_route_state { OLD_ACTIVE, SWITCHING, NEW_ACTIVE };
+enum cxl_batch_state { BYPASS, WINDOW_OPEN, FORCE_DRAIN };
+enum cxl_override_state { DRIVER_MANAGED, ADMIN_OWNED };
+
+struct cxl_irq_source {
+    raw_spinlock_t route_lock;
+    struct mutex ctrl_mutex;
+    struct cxl_irq_lane lane[2];
+    u8 active_slot;
+    u8 pending_slot;
+    u32 generation;
+    enum cxl_route_state route_state;
+    enum cxl_batch_state batch_state;
+    enum cxl_override_state override_state;
+    atomic_t drain_pending;
+    atomic_t urgent_pending;
+    struct hrtimer reopen_timer;
+    ktime_t reopen_deadline;
+    unsigned int max_defer_us;
+    bool single_slot_fallback;
+    bool source_has_durable_log;
+    bool source_is_urgent_only;
+    struct work_struct drain_work;
+    struct irq_affinity_notify affinity_notify;
+};
+
+Required route-state invariants:
+1. Exactly one slot is authoritative for normal servicing at any instant, identified by active_slot.
+2. route_state equals OLD_ACTIVE or NEW_ACTIVE only when active_slot and device policy agree.
+3. During SWITCHING, the inactive slot may receive interrupts, but those interrupts are never allowed to perform device mailbox or log-drain work directly; they may only coalesce a deferred drain through drain_pending.
+4. The new slot becomes authoritative only after both host-side interrupt-remap visibility and device-side event-policy acknowledgement complete.
+5. If single_slot_fallback is true, the driver performs ordinary affinity updates but does not claim stale versus current distinguishability.
+
+Retarget sequence for a dual-slot source:
+1. In sleepable worker context, lock ctrl_mutex. If override_state is ADMIN_OWNED, abort automatic retarget.
+2. Select a candidate CPU mask using dev_to_node, the root-port or device NUMA node, cpumask_of_node, housekeeping constraints, and Linux x86 topology that already reflects CPUID 0x1F or 0x0B x2APIC relationships. Prefer a housekeeping CPU local to the CXL root and avoid remote socket spill unless no local online CPU is available.
+3. Choose pending_slot as the currently inactive slot. Program only that slot’s host virq affinity through irq_set_affinity on its virq and update irq_set_affinity_hint for observability.
+4. Call a backend-defined remap-visibility primitive from the same sleepable context. The minimal new kernel API is arch_irq_remap_sync(struct irq_data *d), or equivalently an irq_domain operation with the same semantics. It returns only after the active interrupt-remap backend has made the updated destination globally visible for that virq. On Intel VT-d, the implementation waits for the queued invalidation and interrupt-entry-cache invalidation associated with the IRTE update to complete. On AMD IOMMU, the implementation waits for completion of the backend’s interrupt-remap-table invalidation sequence for that interrupt. If no backend exposes such a hook, the source is placed in single_slot_fallback and the dual-generation guarantee is disabled.
+5. After host remap visibility returns, program the CXL device-side source-to-vector mapping, such as Set Event Interrupt Policy or the source’s interrupt-policy register, so the logical source points to the pending slot’s MSI-X entry.
+6. Wait for device acknowledgement or mailbox completion, then acquire route_lock, increment generation, set active_slot to pending_slot, transition route_state to NEW_ACTIVE, and release route_lock.
+7. The previously active slot remains registered. Any late arrival there is classified as stale because slot_id no longer equals active_slot. That handler path only atomically sets drain_pending and queues drain_work once.
+
+Interrupt servicing rules:
+- Primary handler fast path reads active_slot, route_state, batch_state, and override flags with READ_ONCE or under route_lock, performs no sleeping operation, issues no mailbox command, and never takes ctrl_mutex.
+- If the interrupt arrived on a non-authoritative slot, the handler executes: if atomic_cmpxchg(drain_pending, 0, 1) == 0 then queue_work(drain_work); return IRQ_HANDLED.
+- If the authoritative source is non-durable or urgent-only, the primary handler sets urgent_pending and returns IRQ_WAKE_THREAD.
+- If the authoritative source is durable and paceable, the primary handler opens or extends a bounded window and returns IRQ_HANDLED without waking the thread, leaving the line unmasked.
+- The threaded handler or drain_work path is the only context allowed to issue mailbox commands, read event records, inspect overflow bits that require sleepable access, or clear device-side status.
+
+Severity-aware batching taxonomy:
+- Bypass immediately: mailbox completion, fatal and uncorrectable RAS, poison or media conditions that require prompt host action, topology-hot-remove or link-loss indications, and any source without durable state.
+- Windowable: informational, advisory, warning, and correctable-event classes whose records persist in a CXL device event log until fetched and cleared, or whose source exposes a sticky non-empty status bit.
+- Progress rule: each windowable source has max_defer_us. The first interrupt opens WINDOW_OPEN. The hrtimer expiration moves the source to FORCE_DRAIN and queues drain_work if no thread is already active. The drain worker reads device event status, fetches records, detects overflow or sticky-nonempty state, and if overflow or saturation is observed it forces BYPASS or FORCE_DRAIN mode until two consecutive clean drains occur. Continuous correctable storms therefore cannot starve drain progress.
+
+IRQF_ONESHOT interaction:
+- Each lane is registered with a primary handler and a threaded handler.
+- The primary handler returns IRQ_WAKE_THREAD only for urgent or forced-drain service. That is the only case where IRQF_ONESHOT masks the line.
+- Windowed durable events return IRQ_HANDLED from the primary handler, so the IRQ remains unmasked during the pacing window.
+- The reopen_timer callback never touches irq_desc state and never unmasks the IRQ. It only flips batch_state to FORCE_DRAIN and queues drain_work if drain_pending was clear. This prevents races that could leave a oneshot IRQ masked or a thread stuck.
+
+Allocation and fallback:
+- Dual-slot mode consumes two MSI-X vectors per revectorable logical source.
+- If the platform grants fewer than 2 times the number of desired sources, the driver prioritizes sources in this order: fatal or RAS event interrupt, general event-log interrupt, mailbox completion, then lower-value notifications.
+- Sources that do not receive a pair operate in single-slot mode: ordinary irq_set_affinity plus synchronize_irq is used, but the driver makes no stale-versus-current claim and disables generation-sensitive batching around retarget windows.
+- If the platform exposes only shared minimum vectors, multiple low-value sources may share one drain worker, but only paired sources receive the generation-tagged handoff guarantee.
+
+Affinity ownership boundary:
+- Default placement uses managed IRQ affinity where supported and publishes hints with irq_set_affinity_hint.
+- The driver registers irq_affinity_notify on both lanes. Any explicit administrator or userspace-directed affinity change marks override_state as ADMIN_OWNED, cancels pending automatic retarget work, and stops driver-initiated affinity moves.
+- During ADMIN_OWNED state, CPU hotplug is handled only by generic kernel migration rules required to keep the IRQ on an online CPU; the driver does not pull the IRQ back toward its preferred local CPU until ownership is explicitly returned to DRIVER_MANAGED mode.
+- This prevents conflict with irqbalance or direct smp_affinity writes while still allowing a policy-controlled automatic mode.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>Steady state and handoff model:
+
+[CXL logical source S]
+      |
+      | device policy selects one MSI-X table entry for S
+      v
++----------------------------+
+| lane[0] virq / msix entry  |
+| lane[1] virq / msix entry  |
++----------------------------+
+      |
+      | host routes each virq through x86 interrupt-remap backend
+      v
+[VT-d or AMD IOMMU remap state] --&gt; [x2APIC destination CPU]
+
+Per-source software state:
+  active_slot      = 0 or 1
+  generation       = monotonically increasing commit id
+  route_state      = OLD_ACTIVE | SWITCHING | NEW_ACTIVE
+  batch_state      = BYPASS | WINDOW_OPEN | FORCE_DRAIN
+  override_state   = DRIVER_MANAGED | ADMIN_OWNED
+  drain_pending    = atomic coalescer
+  urgent_pending   = atomic urgent marker
+
+Primary-handler decision tree:
+  if slot_id != active_slot:
+      if drain_pending was 0: queue drain_work
+      return IRQ_HANDLED
+  if source is urgent-only or batch_state == FORCE_DRAIN:
+      set urgent_pending
+      return IRQ_WAKE_THREAD
+  if source has durable log:
+      if batch_state == BYPASS:
+          return IRQ_WAKE_THREAD
+      open or extend bounded window
+      return IRQ_HANDLED
+  else:
+      return IRQ_WAKE_THREAD
+
+Retarget ordering:
+  ctrl_mutex lock
+    -&gt; compute target CPU mask from node locality, housekeeping, x2APIC topology
+    -&gt; program inactive lane affinity
+    -&gt; arch_irq_remap_sync(inactive lane)
+    -&gt; program device interrupt policy to inactive MSI-X entry
+    -&gt; wait device acknowledgement
+    -&gt; route_lock
+         route_state = NEW_ACTIVE
+         active_slot = pending_slot
+         generation++
+       unlock
+  ctrl_mutex unlock
+
+Formal invariants:
+- I1: Only the active slot may initiate immediate servicing; inactive-slot deliveries are always treated as stale late arrivals.
+- I2: NEW_ACTIVE is published only after host remap visibility and device acknowledgement, never earlier.
+- I3: No lock taken in hardirq or threaded-IRQ context is held across mailbox operations.
+- I4: drain_work scheduling is bounded by atomic drain_pending, so stale-lane storms collapse to one outstanding worker per source.
+- I5: Admin-owned affinity disables all driver retarget actions except unavoidable kernel migration to an online CPU.
+- I6: Batching is enabled only when the source exposes durable event state and a finite max_defer_us; otherwise the source remains immediate-service.
+
+Timer and thread interaction:
+  WINDOW_OPEN --timer expiry--&gt; FORCE_DRAIN --queue work or wake thread--&gt; BYPASS or WINDOW_OPEN
+  IRQF_ONESHOT masking occurs only on the IRQ_WAKE_THREAD path; timer expiry does not directly mask or unmask the line.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Vector provisioning. During CXL port or memdev probe, request MSI-X with PCI_IRQ_MSIX and PCI_IRQ_AFFINITY. For N revectorable sources, attempt to allocate 2N vectors. Build a priority table so fatal or RAS and main event-log sources receive pairs first, with mailbox completion next. Mark remaining sources single_slot_fallback if vector pressure prevents pairing.
+2. Lane registration. For each paired source, request_threaded_irq on both virqs with the same source-private data and distinct slot_id values. The primary handler performs only slot classification, atomic flags, timer arm, and optional IRQ_WAKE_THREAD. The thread or workqueue path performs event fetch, clear, and mailbox interaction.
+3. x86 locality policy. Compute the preferred CPU mask from dev_to_node, PCI or ACPI PXM, cpumask_of_node, housekeeping_cpumask, and Linux x86 topology helpers that already reflect CPUID-derived package, die, core, and x2APIC relationships. Prefer a non-isolated housekeeping CPU local to the CXL root port or decoder, then same socket, then nearest online fallback.
+4. Interrupt-remap completion hook. Add a minimal generic hook, arch_irq_remap_sync or equivalent irq_domain callback, callable only from sleepable worker context with no irq_desc lock held. Intel VT-d implementation waits for completion of the backend’s queued invalidation and interrupt-entry-cache invalidation for the updated IRTE. AMD implementation waits for completion of the interrupt-remap-table invalidation path used after destination updates. Generic code returns -EOPNOTSUPP if absent, which forces single_slot_fallback for that source.
+5. Retarget worker. Serialize all lane switching and device-policy writes under ctrl_mutex. Sequence: choose inactive lane, call irq_set_affinity on that virq, call irq_set_affinity_hint, wait arch_irq_remap_sync, issue CXL Set Event Interrupt Policy or equivalent source-policy write to select the inactive MSI-X entry, wait for mailbox or register acknowledgement, then publish active_slot and generation under route_lock. Never hold route_lock across mailbox or arch hook calls.
+6. Affinity ownership. Register irq_affinity_notify for each virq. On external affinity change, set override_state to ADMIN_OWNED under route_lock, cancel delayed retarget work, and leave future placement unchanged except for kernel-mandated online-CPU migration. Provide an explicit driver-managed mode toggle to resume automatic placement.
+7. Batching engine. Attach a per-source hrtimer and work item. Only sources marked source_has_durable_log participate. Set max_defer_us conservatively, for example 25 to 50 microseconds nominal and never above a hard 250 microsecond cap. The primary handler opens the window. Timer expiry sets FORCE_DRAIN and queues work if drain_pending was clear. The worker fetches CXL event records, checks sticky non-empty and overflow indications, drains records, and if overflow or repeated saturation is present it disables windowing temporarily and forces immediate drains until the storm subsides.
+8. Source taxonomy. Classify mailbox completion and fatal or uncorrectable events as source_is_urgent_only. Classify informational, advisory, warning, and correctable log-backed sources as durable and windowable only when the device advertises persistent event records or sticky status semantics. Disable batching for any source that lacks an explicit durable criterion.
+9. CPU hotplug and topology changes. Subscribe to CPU hotplug and relevant CXL topology notifications. In DRIVER_MANAGED mode, queue the retarget worker to recompute masks for affected sources. In ADMIN_OWNED mode, do not recompute preferred placement except to survive offlined CPUs.
+10. Single-slot behavior. For sources without vector pairs or without a remap-sync hook, use ordinary affinity APIs and optional coalesced drain work, but do not publish any claim that stale and current deliveries are distinguishable. Disable generation-sensitive batching during handoff on those sources.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Functional correctness. Add tracepoints logging source id, slot id, generation, route_state transitions, active_slot changes, override_state changes, and whether an interrupt took the stale-lane, window-open, force-drain, or urgent path. Demonstrate that after each successful retarget, only the committed slot performs immediate servicing and all deliveries on the previous slot collapse into coalesced drain scheduling.
+2. Remap-visibility proof. Run on at least three host configurations: Intel VT-d enabled, AMD IOMMU interrupt remapping enabled, and remapping unavailable or disabled. Verify that paired mode is enabled only when the arch hook is supported and that unsupported systems fall back to single-slot mode without claiming route-generation distinction.
+3. Race and context audit. Exercise lockdep and irqsoff tracing while repeatedly retargeting under interrupt load. Confirm no mailbox command runs under route_lock or in hardirq context, no ctrl_mutex is taken from interrupt context, and no irq_desc lock inversion is introduced.
+4. IRQF_ONESHOT behavior. Inject urgent and windowed events while hrtimer expiries occur close to thread wakeups. Confirm the primary handler wakes the threaded handler only on urgent or forced-drain transitions, that the timer never manipulates irq_desc state, and that no line remains masked after thread completion.
+5. Storm and overflow testing. Generate sustained correctable and advisory event storms using platform error injection or synthetic device firmware hooks. Verify bounded CPU usage, max defer never exceeding the configured cap, and automatic bypass when overflow or sticky non-empty conditions persist.
+6. Affinity override testing. With irqbalance active and with manual writes to smp_affinity, confirm irq_affinity_notify transitions the source to ADMIN_OWNED, stops driver retargeting, and preserves admin intent across subsequent topology changes except unavoidable online-CPU migration.
+7. CPU and topology churn. Repeatedly hotplug CPUs, rebalance nodes, and trigger CXL region or decoder updates while event interrupts fire. Verify retarget workers serialize correctly, old-slot late arrivals remain safe, and no source loses service.
+8. Performance evaluation. Measure median and tail latency for mailbox completion and urgent RAS handling, remote-socket interrupt rate, workqueue amplification, and CPU cycles per event on stock Linux versus paired-lane mode. Expected gains are lower remote-interrupt traffic and lower tail latency for urgent local servicing, with reduced CPU overhead during durable correctable-event storms.
+9. Negative tests. Force vector scarcity and absence of the remap-sync hook, and confirm the driver enters single-slot fallback, disables generation-sensitive claims, and still services events correctly.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A Linux kernel method for CXL interrupt routing, comprising allocating first and second MSI-X lanes for a single logical CXL control-plane interrupt source, programming an inactive one of the lanes to a target x86 CPU selected from existing kernel topology and CXL proximity information, waiting for a backend-defined interrupt-remap visibility operation for the inactive lane, programming a device-side CXL interrupt policy so the logical source points to the inactive lane, and only then publishing the inactive lane as an active generation for normal servicing.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein an interrupt received on a lane whose slot identifier differs from a stored active slot after publication of the active generation is classified as a stale late arrival and is limited to atomically coalescing deferred drain work without directly issuing mailbox commands or event-log reads from the interrupt primary handler.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein a per-source route state comprises OLD_ACTIVE, SWITCHING, and NEW_ACTIVE states, and NEW_ACTIVE is reachable only after both host-side interrupt-remap visibility and device-side policy acknowledgement complete, thereby making the handoff boundary observable in software despite in-flight or stale x86 interrupt-remap deliveries.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein severity-aware batching is enabled only for CXL interrupt sources whose underlying events are durably represented by device-side event-log records or sticky non-empty status bits, and wherein mailbox completion, fatal or uncorrectable conditions, or non-durable edge-triggered sources bypass batching and wake immediate servicing.</li><li style='margin-bottom:8px;'>The method of claim 4, wherein a bounded defer window is enforced by a timer that transitions a source from WINDOW_OPEN to FORCE_DRAIN and causes deferred servicing no later than a configured maximum defer interval, and wherein overflow or persistent sticky-nonempty conditions disable or tighten batching until at least a threshold number of clean drains is observed.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein automatic retargeting is suppressed in response to an in-kernel affinity-ownership notification that indicates administrator-directed affinity control, such that the driver yields affinity ownership while still permitting mandatory kernel migration to an online CPU.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein if insufficient MSI-X vectors or no interrupt-remap visibility hook is available, the source is placed in a single-slot fallback mode that preserves correct interrupt handling but omits any claim that stale and current deliveries are distinguishable during retarget.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: platforms may not expose enough MSI-X vectors for full pairing. Mitigation: rank sources by value, allocate pairs only to the highest-value CXL sources, and place the remainder in explicit single-slot fallback without overclaiming the guarantee.</li><li style='margin-bottom:6px;'>Risk: no generic Linux API currently exposes a remap-visibility barrier with the required semantics. Mitigation: define a minimal sleepable arch_irq_remap_sync hook and gate paired mode on its availability; unsupported backends fall back safely.</li><li style='margin-bottom:6px;'>Risk: stale-lane late arrivals during storms could otherwise create unbounded workqueue churn. Mitigation: use atomic drain_pending coalescing so at most one deferred drain is outstanding per source.</li><li style='margin-bottom:6px;'>Risk: IRQF_ONESHOT plus timer-driven batching could leave an IRQ masked or the service thread stuck. Mitigation: wake the threaded handler only for urgent or forced-drain service, keep timer callbacks out of irq_desc manipulation, and leave windowed interrupts on the non-thread-wakeup path.</li><li style='margin-bottom:6px;'>Risk: durable-log assumptions may be wrong for a given source or firmware implementation. Mitigation: require an explicit durable-state criterion before enabling batching and permanently disable pacing for any source lacking persistent records or sticky state.</li><li style='margin-bottom:6px;'>Risk: user or administrator policy may conflict with automatic locality steering. Mitigation: use managed affinity and affinity notifications, switch to ADMIN_OWNED on external changes, and stop driver-initiated retargeting until ownership is returned.</li><li style='margin-bottom:6px;'>Risk: mailbox latency in the drain path may cause backlog under sustained correctable-event load. Mitigation: bound max defer, force drains on timer expiry, enter bypass mode on overflow or sustained saturation, and keep urgent classes permanently non-batched.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Linux kernel MSI and generic IRQ affinity infrastructure, including pci_alloc_irq_vectors_affinity, irq_set_affinity, irq_set_affinity_hint, request_threaded_irq, and irq_affinity_notify</li><li>Linux x86 topology and NUMA facilities derived from CPUID, x2APIC, SRAT, and PXM data</li><li>Intel VT-d interrupt remapping concepts, including IRTE update visibility and interrupt-entry-cache invalidation</li><li>AMD IOMMU interrupt remapping concepts for destination update visibility</li><li>CXL specification material covering event logs, event interrupt policy, mailbox completion behavior, and durable event record semantics</li><li>Linux CXL subsystem documentation for ports, memdevs, event handling, and topology-driven device relationships</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft does not specify a concrete, verifiable ordering + memory-barrier contract for publishing the new active MSI-X slot/generation versus in-flight IRQs; without an explicit release/acquire (and PCI posted-write) model, the hardirq path can observe an inconsistent (slot,state)-&gt;(policy,IRTE) cut and misclassify new interrupts as stale (or vice versa).</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact synchronization primitive for the “x86 interrupt-remap visibility” step. Name the backend call site(s) and required semantics (must guarantee IRTE update is globally visible before device policy switch is committed). If such a guarantee cannot be exported, specify a safe fallback that preserves correctness (e.g., no dual-slot switch, or keep old slot authoritative and treat new slot as best-effort only).</li><li style='font-size:13px;margin-bottom:4px;'>Spell out the memory-ordering rules for the slot handoff state machine: use an smp_store_release() when publishing new active_slot/generation, and smp_load_acquire() in the hardirq handler when reading it. Also describe how you handle PCI posted writes to MSI-X table / device policy registers (readback or explicit barriers) so the software commit point cannot outrun hardware visibility.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify locking boundaries between hardirq top-half, threaded IRQ, and workqueue contexts. Any path reachable from hardirq must not take mutexes, must not issue mailbox commands, and must not take locks that can be taken by sleepable policy-programming code. Provide a lock hierarchy (e.g., raw_spinlock_t for irq-visible routing state; mutex for mailbox/policy; never both held).</li><li style='font-size:13px;margin-bottom:4px;'>The timer-reopened windowing needs a precise IRQ masking/unmasking story. If using IRQF_ONESHOT, you must ensure the threaded handler returns promptly and does not leave the line masked across timer waits; otherwise you risk losing edge-triggered semantics or stalling further events. Prefer a design where hardirq acks immediately and only schedules drains, with explicit hrtimer-driven workqueue reopen.</li><li style='font-size:13px;margin-bottom:4px;'>Dual-slot consumption of MSI-X vectors is a real feasibility constraint: many devices expose limited vectors and may share interrupt sources. Specify how vectors are allocated (per event class? per memdev?) and provide a correctness-preserving single-slot mode when a second vector is unavailable (including how you avoid misrouting during affinity changes in that mode).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Novelty risk: dual-slot / generation-tagged revectoring resembles known double-buffering patterns (e.g., dual MSI-X, “old/new vector” transitions) plus standard irq affinity retargeting; you must crisply state what is *CXL-specific* and *non-obvious* beyond combining known primitives (explicitly contrast against existing MSI/MSI-X reprogram flows and irqchip semantics).</li><li style='font-size:13px;margin-bottom:4px;'>The “x86 interrupt-remap visibility hook” is underspecified and may already be implied by existing irqchip/IRTE programming paths (or may be impossible to guarantee generically). Define an exact contract: what constitutes visibility (IOMMU invalidation completed? posted write drained?); which backends (Intel VT-d, AMD IOMMU) provide it; what API you call; and what happens when the backend cannot provide a synchronous guarantee.</li><li style='font-size:13px;margin-bottom:4px;'>Ordering correctness needs a formal, implementable happens-before story: host programs inactive MSI-X entry + affinity, then IRTE update/invalidation, then device Set Event Interrupt Policy, then publication of NEW_ACTIVE. Specify required barriers (e.g., DMA/PCIe ordering, wmb()/mmiowb(), synchronize_irq vs none) and which steps may sleep.</li><li style='font-size:13px;margin-bottom:4px;'>The timer-reopened drain windowing overlaps heavily with prior art (NAPI-like interrupt mitigation, hrtimer-based coalescing, severity-based throttling). To reduce obviousness, you must tie window eligibility to *durable* CXL event log semantics with a concrete proof obligation: exactly which event classes are safe to defer, how overflow/escalation is detected, and how you bound worst-case delay under sustained load.</li><li style='font-size:13px;margin-bottom:4px;'>MSI-X vector budget and topology realities: allocating two vectors per revectorable source can be infeasible on devices with small tables or many sources. Add a clear fallback matrix (single-slot mode, per-class consolidation, or shared vectors) and explain how correctness degrades without invalidating the core claim.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact CXL capability/contract that permits allocating and binding *two* MSI-X vectors per recoverable event source (and how this maps onto Set Event Interrupt Policy message numbers). Add an explicit feature-detect + fallback path for devices that expose only a single usable vector or a single policy slot.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the concrete Linux arch/IRQ API surface for the “x86 interrupt-remap visibility” hook: where it lives (generic IRQ core vs intel/amd IOMMU), what it returns (sync completion vs best-effort), and how drivers call it without depending on backend-private symbols. Include behavior when interrupt remapping is disabled, in x2APIC vs xAPIC, and under virtualization.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten the concurrency model for the dual-generation state machine: document required memory ordering (WRITE_ONCE/READ_ONCE + smp_store_release/smp_load_acquire), define what data is touched in hardirq vs thread vs workqueue contexts, and prove no lost-wakeup scenario when collapsing stale-slot interrupts into a single deferred drain (especially across rapid revector + CPU hotplug).</li><li style='font-size:13px;margin-bottom:4px;'>Clarify urgent-path semantics with IRQF_ONESHOT: show that timer-windowing never holds the oneshot thread masked while deferring work, and define how fatal/overflow escalation preempts an in-flight recoverable window (e.g., immediate drain + window cancel + policy bump).</li><li style='font-size:13px;margin-bottom:4px;'>Administrator affinity ownership needs a precise detection and non-interference rule: state how you detect admin-pinned affinity (smp_affinity, irqbalance hints, managed IRQs, isolation/housekeeping CPUs) and what the driver is allowed to change (affinity hint vs actual affinity) to avoid fighting operators and orchestration.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define and prove the no-loss/no-starvation contract for deferred (windowed) drains: specify maximum deferral time, what happens under continuous interrupt storms, and how you guarantee progress for each recoverable event class without relying on timer reopens that can be perpetually postponed.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify the security/availability implications of “severity-aware” pacing: demonstrate that an attacker or faulty device cannot downgrade/shape events into the paceable classes to delay service of conditions that should be treated urgent (e.g., overflow/sticky bits, repeated correctables indicating impending failure). Include an explicit escalation rule-set tied to CXL Event Status/Overflow semantics.</li><li style='font-size:13px;margin-bottom:4px;'>The proposed arch hook for “interrupt-remap visibility” risks ABI/compatibility breakage across Intel VT-d vs AMD IOMMU vs no-remapping systems: specify an interface that is stable, non-sleeping where required, and has a well-defined fallback that preserves correctness (not just performance). Also define behavior under irqchip/MSI domain variations (PCI MSI-X vs platform MSI).</li><li style='font-size:13px;margin-bottom:4px;'>Concurrency model needs a crisp state machine and memory-ordering story: document which fields are read/written in hardirq vs threaded IRQ vs workqueue, which locks/atomics guard the generation switch, and how you prevent use-after-free or stale pointers during CPU hotplug / memdev removal while stale-lane interrupts are still arriving.</li><li style='font-size:13px;margin-bottom:4px;'>Ensure the dual-slot MSI-X approach cannot exhaust vectors or regress platform policies: provide a compatibility plan for devices with limited MSI-X table size, shared vectors, or systems with strict IRQ allocation constraints; include explicit failure handling and a safe single-slot mode that does not misclassify late interrupts as stale in a way that drops required servicing.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Be explicit about the exact kernel-visible signal used for “device→NUMA proximity” (e.g., dev_to_node()/pci_dev-&gt;dev, ACPI/PXM-derived node), and define behavior for node==-1, multi</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define a correct, race-free rule for “user/admin override detection”: rely on in-kernel state (e.g., IRQD_AFFINITY_SET/managed affinity semantics) rather than sampling /proc, and sp</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Constrain where hints are applied: never call irq_set_affinity_hint() from hardirq context; ensure updates are serialized against vector teardown (free_irq()/pci_free_irq_vectors) a</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Define the *exact* construction that makes “old vs new routing unambiguous.” In Linux terms: what state carries the generation (per-IRQ data, per-msi_desc, irqchip private, cxl devic</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Prove non-obviousness vs standard patterns: disable_irq()/mask + synchronize_irq() + irq affinity/retarget + IOMMU/IR invalidation + enable_irq(). You need a crisp delta: e.g., a man</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact MSI-X dual-slot programming/commit sequence and required ordering: mask old vector, program inactive entry (msg_addr/msg_data), flush posted writes via readback, th</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Do not hand-wave “interrupt-remap completion”: identify an existing kernel API (or propose a minimal new one) to flush/serialize IRTE updates on x86, and prove it is callable in the</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify locking and context rules for shared state (generation, window state, override state): use spinlock/atomic for IRQ/top-half access, mutex for mailbox/workqueue paths; never </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prevent stale-vector interrupt storms from degenerating into unbounded workqueue scheduling: use an atomic “drain_pending” flag (or similar) to coalesce scheduling, and ensure the h</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify how timer “reopen windows” interact with IRQF_ONESHOT threaded handlers: ensure urgent severities can always preempt pacing without races that leave IRQ masked/threads stuck</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux interrupt handling using x86 CXL microarchitecture features
+</footer>
+</div></body></html>

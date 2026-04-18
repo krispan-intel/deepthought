@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] Kernel-Internal x86 PEBS Stall-Elasticity Broker and Bounded</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-9ce1e5eddf8c &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Kernel-Internal x86 PEBS Stall-Elasticity Broker and Bounded Region-Cost Contract for Linux Power Management</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux power management using x86 PEBS microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>PEBS Stall-to-Frequency Contract for schedutil and intel_pstate</li><li style='font-size:13px;'>PEBS-to-DAMON Power Map for Memory-Tier and Reclaim Energy Control</li><li style='font-size:13px;'>PEBS Elasticity-Domain Packing for Scheduler-Driven C-State Amplification</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | POWER OPTIMIZATION FOR MOBILE USAGES &lt;&gt; Computation Peer Offloading for Energy-Constrained Mobile Edge Computing   in Small-Cell Networks
+  MMR Score:    0.7646</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A kernel-resident broker uses x86 PEBS precise load-latency samples plus fixed counters to compute a bounded elasticity scalar E in [0,1] and an optional per-mm region-cost heat map, captures only fixed-width tuples in NMI context into per-CPU SPSC rings, performs deferred metadata-only VMA attribution under strict lock-time budgets, publishes per-policy snapshots with seqcount and per-mm maps with RCU, and actuates only discretionary cpufreq or intel_pstate headroom and optional DAMON schemes while deterministically degrading to neutral under low confidence, PMU contention, or policy conflicts.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The inventive step is a Linux-feasible kernel contract, not the abstract idea of using PMU data for power policy. The disclosed mechanism combines: (1) NMI-safe fixed-tuple PEBS capture with no allocation, no AUX parsing</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux power-management paths such as schedutil and intel_pstate primarily infer the value of higher frequency from runnable utilization, boost heuristics, and policy minima and maxima. On modern x86 systems, that misses memory-stalled phases in which additional core frequency adds little throughput but materially increases package power and thermal pressure, and it also misses address-localized cost hotspots such as remote NUMA accesses, PMEM or CXL-backed accesses, and expensive file or DAX-backed regions whose penalties are not visible in utilization alone. Existing perf-based workflows can observe these effects offline, but they do not define a bounded, lock-safe, production kernel contract that transforms x86 PEBS evidence into real-time power actuation and optional region-directed memory management without risking NMI unsafety, mmap scalability regressions, scheduler semantic breakage, cross-mm leakage, or unpredictable behavior when PEBS is unavailable, multiplexed, or contended.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Prior art fails at the contract boundary. Utilization-only governors do not distinguish frequency-sensitive work from backend-stalled work. perf mem, precise PEBS, and related userspace tooling can collect precise load-latency samples, but their normal operating model is AUX or ring-buffer delivery to userspace followed by offline or delayed attribution, not a kernel-fast-path actuation contract with bounded synchronization and deterministic neutral fallback. BPF cannot safely reproduce the disclosed path because the required attribution may sleep, may take mmap_read_lock, and must consult VMA metadata under bounded time budgets; BPF also does not provide a production-safe way to parse raw PEBS tuples in PMI and then feed seqcount-stable governor snapshots without verifier, helper, and context restrictions. DAMON can monitor access patterns and manage regions, but it does not teach converting sparse precise microarchitectural latency samples into bounded region-cost maps keyed by mm lifetime and VMA epochs while preserving non-overlap, hard caps, and PMU coexistence rules. The missing inventive boundary is therefore the end-to-end kernel broker: fixed-width PEBS capture in PMI, deferred no-fault VMA metadata attribution, bounded scalar and region publication, and confidence-gated actuation that preserves existing scheduler and cpufreq invariants.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention introduces a kernel-internal x86 PEBS broker that owns or shares a PEBS-capable precise load-latency event and a small fixed set of counting events on each CPU in a cpufreq policy. In PMI context, the broker copies only a fixed tuple of scalar fields from the PEBS record and CPU-local cached task-mm metadata into a per-CPU single-producer single-consumer ring. A sleepable worker drains the ring, resolves the mm cookie to a live per-mm context, and performs metadata-only VMA lookup under mmap_read_lock with strict nanosecond and sample budgets; samples that cannot be safely attributed are dropped or used only for policy-scalar estimation, never for address maps. The worker aggregates attributed samples into fixed-size page bins with exponential decay, bounded eviction, and deterministic merge and split rules, producing an immutable per-mm region-cost map compatible with DAMON region invariants. In parallel, it computes a per-policy bounded elasticity scalar E and confidence scalar C from weighted load-latency, sample density, multiplex ratio, attribution success, and freshness. Writers publish scalar policy snapshots under seqcount and immutable region maps under RCU. schedutil and intel_pstate readers consume only the scalar snapshot in non-sleeping paths, applying the broker only to discretionary headroom above already-computed effective minima and below existing maxima. If the PMU is unavailable, multiplexed below threshold, stale, or policy-constrained, the broker publishes confidence zero and the existing Linux behavior proceeds unchanged.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>NMI/PMI ring correctness is underspecified: a per-CPU SPSC ring is not automatically safe under nested NMIs/PMIs. You need an explicit NMI-reentrancy guard (e.g., per-CPU nesting counter) and strict release/acquire publication (smp_store_release/smp_load_acquire) for head/tail, otherwise you risk tuple tearing and consumer seeing partially written entries.</li><li style='font-size:13px;margin-bottom:4px;'>The mm-identity + VMA-generation scheme needs concrete lifetime rules: you must not retain VMA pointers past mmap_read_lock, and you must define exactly where/how the VMA-generation counter is incremented (under mmap_write_lock on *all* map/unmap/mprotect/mremap paths) and how readers observe it without races (atomic_t/seqcount with barriers).</li><li style='font-size:13px;margin-bottom:4px;'>Deferred attribution must prove UAF-safety for mm/task: workers must take a real mm reference (mmget_not_zero + mmput) and handle exit/exec cleanly. Also define what happens when the sampled address is in a transient VMA state (e.g., split/merge) or when mmap_read_lock acquisition exceeds the time budget (must drop work deterministically).</li><li style='font-size:13px;margin-bottom:4px;'>perf/PEBS ownership is non-trivial: a kernel broker cannot safely &quot;program PEBS&quot; ad-hoc without going through perf_event. Specify whether you rely on perf_event_create_kernel_counter + overflow callback, how you behave under multiplexing/throttling, and how you avoid interfering with existing perf users (including precise_ip constraints and PEBS global enable/disable transitions).</li><li style='font-size:13px;margin-bottom:4px;'>Security/observability constraints are missing: collecting user virtual addresses in-kernel can bypass perf_event_paranoid/ptrace checks unless you explicitly gate collection/attribution (CAP_PERFMON/CAP_SYS_ADMIN, cgroup opt-in) and ensure only aggregated outputs are exposed/acted upon. Also document how KASLR/kernel addresses are never sampled/propagated.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The novelty is asserted as a “kernel contract,” but the draft still lacks claim-ready, kernel-accurate definitions of the identity/cookie, attribution bounds, and PMU-ownership/coexistence rules—without those, it risks reading as an obvious in-kernel integration of perf+DAMON+cpufreq QoS.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the mm-identity mechanism precisely (allocation, lifetime, reuse resistance, teardown): e.g., idr/xa cookie tied to mm lifetime with RCU-safe lookup; specify how PID reuse/exec/exit and mm swapping are handled without UAF.</li><li style='font-size:13px;margin-bottom:4px;'>Ground the sampling context correctly: clarify whether the overflow handler is NMI/IRQ on x86 perf, what APIs are legal there, and how the fixed-width ring publication is made tear-free (memory ordering, head/tail, seq/commit protocol).</li><li style='font-size:13px;margin-bottom:4px;'>Spell out PMU ownership/coexistence policy: how the broker behaves when userspace perf owns PEBS, when multiplexing/throttling occurs, and how it avoids breaking perf_event invariants (reservation model, enable/disable, CPU hotplug).</li><li style='font-size:13px;margin-bottom:4px;'>Make the bounded VMA attribution algorithm concrete: which maple-tree/VMA lookup primitive is used, exact lock (mmap_read_lock) hold-time budgeting strategy, and what happens when the budget is exceeded (drop policy, sampling backpressure, confidence decay).</li><li style='font-size:13px;margin-bottom:4px;'>Clarify DAMON integration details: DAMON targets (vaddr vs paddr), how sampled user VAs are converted into DAMON-compatible non-overlapping regions, and how actions are constrained so you don’t inadvertently create a new side-channel or violate DAMON’s intended monitoring granularity.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Fill the empty core sections (Problem / Proposed Invention / Architecture / Implementation Plan / Claims). Right now it reads like an abstract; for an Intel-strategic report it must include a concrete architecture diagram (modules, threads, data paths), explicit scope boundaries (what is and is not controlled), and a staged rollout plan (observe-only → recommend → actuate).</li><li style='font-size:13px;margin-bottom:4px;'>Specify the exact PEBS event programming and data contract: which event(s) (e.g., MEM_LOAD_RETIRED.*), required PERF_SAMPLE_* fields, minimum CPU generations for stable latency/weight semantics, and how you handle multiplexing/throttling/PMU contention. Include explicit confidence scoring inputs (sample rate, skid, lost samples, period jitter, weight validity) and the neutral-degrade thresholds.</li><li style='font-size:13px;margin-bottom:4px;'>Harden the security/tenancy model for per-mm address attribution: define how you avoid leaking address-level information across cgroups/containers, how kptr_restrict/perf_event_paranoid/LSM policy gates are honored, and whether region maps are exposed only to privileged kernel policy code vs. any user ABI. Clarify what happens under guest VMs, KVM, and with PEBS disabled by platform policy.</li><li style='font-size:13px;margin-bottom:4px;'>Define the actuation contract precisely to avoid violating existing kernel invariants: what QoS knob is used (freq_qos max cap vs min cap), how this interacts with intel_pstate (HWP limits), schedutil utilization signals, uclamp, RT/DL bandwidth, and energy_model. Add explicit conflict resolution when multiple governors/agents request QoS concurrently.</li><li style='font-size:13px;margin-bottom:4px;'>Quantify the Xeon/CXL strategic value with measurable KPIs and validation methodology: target workloads (inference, DB, cache-miss heavy analytics), metrics (Joules/txn, tail latency, DRAM+CXL tier energy, perf/W), and a plan to evaluate on Sapphire Rapids / Emerald Rapids (plus client) with and without CXL memory tiering and DAMON migration enabled.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Side-channel/TAA risk is under-specified: PEBS-derived address/latency signals can leak sensitive access patterns across tasks/tenants. You must explicitly gate enablement and readout behind a strict privilege model (e.g., CAP_SYS_ADMIN + perf_event_paranoid semantics + LSM hooks) and ensure any exported per-mm/region data is cgroup-scoped and non-readable by unprivileged users.</li><li style='font-size:13px;margin-bottom:4px;'>Crash/NMI safety needs concrete correctness guarantees: define the exact fixed-width tuple layout, ring index update protocol, and memory-ordering (smp_store_release/smp_load_acquire or equivalent) to prevent torn reads, overwrite races, and recursion issues in PMI/NMI. Also specify behavior under CPU hotplug, NMI nesting, and perf throttling to avoid use-after-free or ring corruption.</li><li style='font-size:13px;margin-bottom:4px;'>Compatibility/ownership invariants are asserted but not proven: clarify how the broker coexists with existing perf_event users (exclusive PMU ownership, multiplexing, constraints like exclude_guest/kernel), and how it behaves under KVM/guest PMU virtualization. Define deterministic fallback states when PEBS is unavailable, when counter constraints fail, or when other perf events preempt resources.</li><li style='font-size:13px;margin-bottom:4px;'>mmap_read_lock &#x27;bounded budget&#x27; is vague: you need a measurable bound (time and/or number of maple-tree nodes walked), a retry/abandon strategy, and a starvation/priority policy so attribution cannot cause latency spikes or lock contention on mmap-heavy workloads.</li><li style='font-size:13px;margin-bottom:4px;'>Data lifecycle safety is incomplete: specify mm-cookie creation/teardown, mmget_not_zero usage, RCU lifetime rules for per-mm maps, and how you avoid PID/mm reuse confusion across exec/exit while guaranteeing no stale pointers or UAF in readers.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">yellow_card_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define mm lifetime rules end-to-end: how the deferred worker safely pins/refs the target mm (e.g., mmget_not_zero + mmput) and handles samples from tasks that have already exited or</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the exact NMI/PMI capture constraints and data types: the ring write path must be strictly NMI-safe (no locks that can deadlock, no allocations, no mmap interaction). Show h</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] VMA attribution under mmap_read_lock needs bounded time: naive per-sample find_vma() can be O(samples * log(nr_vmas)) and may hold mmap_lock too long. Add batching and a strict budg</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify what “no-fault attribution” means in practice: ensure you never touch user page tables in a way that can fault, and document which helpers are allowed (VMA lookup only). If </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the mapping from sparse VA samples to DAMON regions precisely: DAMON operates on regions (start/end) and per-region access stats. You need a concrete binning scheme (page-gra</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact interrupt-context constraints and data path: PEBS handling typically runs in PMU IRQ/NMI-ish contexts depending on platform; you must specify which context(s) you s</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Ring buffer correctness needs a concrete memory-ordering and overflow model: single-producer/single-consumer per-CPU rings still require careful sequencing (WRITE_ONCE head/tail, ba</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] mm identity and lifetime must be nailed down: &#x27;mm-cookie&#x27; and &#x27;VMA-sequence lifetime model&#x27; are mentioned, but you must specify how you safely pin/lookup the mm in deferred context </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The deferred VMA attribution step must state exact locking and non-faulting rules: using mmap_read_lock is fine, but you must bound lock hold time and explicitly avoid anything that</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] RCU/seqcount publication contract is not fully specified: if you publish per-mm/per-cgroup maps and per-policy scalars, define which structures are protected by RCU, which by seqcou</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux power management using x86 PEBS microarchitecture features
+</footer>
+</div></body></html>

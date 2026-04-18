@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] Sealed AMX Contract Envelope with Host-Normalized Residency </title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-31be9120bc8a &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Sealed AMX Contract Envelope with Host-Normalized Residency Token and Geometry Advisory for KVM</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux virtualization using x86 AMX microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Paravirtual AMX Residency Token for KVM vCPU Placement</li><li style='font-size:13px;'>XTILECFG-Derived TDP MMU Windowing for Hugepage-Stable AMX Guests</li><li style='font-size:13px;'>AMX Capability Envelope for Migratable KVM Guests</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: ALX: Large Scale Matrix Factorization on TPUs &lt;&gt; intel_opt_manual | 20.5.5.5 Convolution - Matrix-like Multiplications and Summations Equivalence . . . . . . . . . . . . . . . 20-17
+  MMR Score:    0.7771</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A KVM VM optionally seals a per-VM AMX Contract Envelope (ACE) that freezes guest-visible AMX CPUID 0x7/0xD state, XCR0, IA32_XSS, IA32_XFD policy, and legal tile-geometry maxima; from that sealed contract, KVM derives only in sleepable vCPU-thread contexts two host-owned artifacts from bounded inputs: a short-lived residency token from a 64-byte guest phase hint and an immutable generation-tagged AMX Geometry Advisory Descriptor from an already-synchronized saved guest xstate buffer, letting the Linux scheduler and TDP MMU bias LLC locality and hugepage admissibility with zero guest-memory dereferences, zero XSAVE/XRSTOR/FPU acquisition in hot paths, and deterministic migration compatibility.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is a kernel-enforced three-plane mechanism that existing virtualization and CPU-model tooling do not provide in combination: (1) a sealed per-VM AMX capability envelope that freezes the exact guest-visible AM</div>
+    <div class="pill"><strong>Feasibility:</strong> The design fits Linux/KVM because all guest-memory reads, xstate validation, and descriptor construction happen only in existing sleepable or ioctl contexts on the vCPU thread, whi</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>AMX-heavy Linux guests running on KVM incur host-side penalties that existing virtualization interfaces do not address cleanly: vCPU migration across LLC domains destroys locality for matrix phases, and second-level page mappings may stay fragmented even when the guest is repeatedly touching dense, tile-shaped working sets that would benefit from stable huge mappings. The host, however, must preserve scheduler fairness, affinity, cpusets, cgroup policy, core scheduling, dirty logging, NUMA and THP rules, and MMU invalidation correctness. It must not read guest memory, fault, allocate, take guest FPU ownership, or perform XSAVE/XRSTOR under rq locks or TDP MMU fast paths. It also must not let malformed xstate, drifting CPU models, or migration retries silently change the guest-visible AMX ABI. The missing system problem is therefore a kernel-safe way to expose AMX-aware optimization signals to the host scheduler and MMU while freezing migration semantics and keeping hot paths side-effect free.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Existing QEMU CPU models, KVM CPUID filtering, and XSAVE migration payloads can make source and destination hosts broadly compatible, but they do not create a kernel-enforced sealed contract that freezes exactly which AMX-related CPUID 0x7 bits, CPUID 0xD layout, XCR0 bits, IA32_XSS values, IA32_XFD policy, and tile-geometry maxima are allowed after the VM begins execution. Existing paravirtual scheduler hints communicate preemption or lock state, not a bounded LLC-residency preference derived from matrix-phase structure. Existing KVM/TDP hugepage heuristics rely on fault density, A/D aging, or generic access-range behavior and do not consume an immutable, generation-tagged, AMX-specific geometry descriptor extracted from validated guest xstate. Existing migration checks also do not define a one-way restore-failure latch that prevents repeated retries with incompatible AMX state. The inventive gap is the combination of sealing, bounded host-normalized hinting, xstate-fresh geometry extraction, and generation-safe MMU use.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention adds an optional KVM capability, for example `KVM_CAP_X86_AMX_ACE`, with a concrete VM ABI. Userspace first configures the conventional CPU model, then submits `KVM_X86_VM_SET_ACE` carrying a normalized `struct kvm_ace_v1` that includes: AMX-related CPUID 0x7 bits; a CPUID 0xD layout hash for XTILECFG/XTILEDATA sizing and offsets; allowed XCR0 bits; allowed IA32_XSS bits; initial IA32_XFD mask and permitted XFD toggles; and maximum legal AMX geometry such as palette ID bound, tiles bound, rows-per-tile bound, bytes-per-row bound, and total tile-bytes bound. `KVM_X86_VM_SEAL_ACE` transitions the VM from OPEN to SEALED and computes a `normalized_hash`. After seal, KVM rejects any userspace ioctl, restore payload, or runtime control write that would alter those frozen elements. Migration compatibility is defined precisely as: same ACE ABI version, same `normalized_hash`, destination host supports every sealed feature, CPUID 0xD layout matches, and restored guest AMX xstate validates against the sealed maxima. If restore fails, a one-way `ACE_RESTORE_FAILED` latch is set so later restore or run attempts fail deterministically until VM reset or recreation.
+
+The scheduler plane introduces one bound 64-byte guest phase-hint record per vCPU via `KVM_X86_VCPU_BIND_PHASE_HINT`. KVM snapshots that GPA only at legal sleepable run boundaries using existing guest-memory helpers. The hint carries no guest addresses; it contains only version, phase epoch, phase class, requested locality score, and requested TTL. KVM clamps those fields to host bounds, derives a host-owned `kvm_ace_residency_token` with a sequence number, current LLC ID, bounded locality score, and expiration in a small number of scheduler slices, and publishes it with WRITE_ONCE. Scheduler hot paths only read the token and may use it as a tiebreaker within already-allowed CPUs; they never override affinity, cpuset, cgroup, core-scheduling, or fairness rules.
+
+The MMU plane introduces an immutable `kvm_amx_geom_desc` published under RCU. Geometry extraction is legal only when `ace_xstate_fresh` is set, meaning KVM already has an up-to-date saved guest xstate image in the vCPU&#x27;s existing xstate buffer due to an existing save/sync path such as successful `KVM_SET_XSAVE`, a migration-save/`KVM_GET_XSAVE` path after KVM&#x27;s normal guest-state synchronization, or a `KVM_RUN` return path that has already materialized guest xstate to host memory. If the bit is clear, extraction is a strict no-op. The descriptor stores tile geometry plus generation tags: `ace_gen`, `xstate_seq`, `memslots_gen`, `mmu_inval_seq`, and a TDP root role identifier. TDP MMU readers compare all tags; any mismatch causes an immediate no-op.
+
+To avoid overlap with generic fault-density schemes, the MMU side also uses a concrete bounded evidence structure: a fixed direct-mapped array of 32 per-vCPU `ace_fault_bucket` entries keyed by 2 MB-aligned GFN base. Each bucket records bounded counts for read/write/execute EPT violations, an A/D-young bit when available, a saturating score, and `last_jiffies`. Buckets are allocated once at vCPU creation, updated in amortized O(1), and replaced only by same-key overwrite or lowest-score eviction; no per-fault allocation occurs. A geometry descriptor can only raise hugepage admissibility if existing KVM promotion rules already pass, the current bucket score crosses threshold, the geometry footprint fits the candidate 2 MB window, the descriptor is unexpired, and all generation tags match. Thus geometry acts only as a host-side admissibility constraint, not as an address selector.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>Control and data flow:
+
+┌──────────────┐   SET_ACE / SEAL_ACE / GET_ACE   ┌───────────────────────────────┐
+│ QEMU / VMM   │ ───────────────────────────────▶ │ KVM VM ACE state machine      │
+│ CPU model    │ ◀──────── normalized hash ────── │ OPEN -&gt; SEALED -&gt; FAIL_LATCH  │
+└──────┬───────┘                                   └──────────────┬────────────────┘
+       │ BIND_PHASE_HINT GPA                                      │
+       ▼                                                          ▼
+┌──────────────┐   sleepable KVM_RUN / ioctl boundary   ┌──────────────────────────┐
+│ vCPU thread  │ ─────────────────────────────────────▶ │ snapshot hint, test       │
+│ legal sync   │                                        │ ace_xstate_fresh, build   │
+│ context only │ ◀───────────────────────────────────── │ token and geom desc       │
+└──────┬───────┘                                        └─────────┬────────────────┘
+       │ READ_ONCE under rq lock                                   │ RCU read + O(1) bucket update
+       ▼                                                           ▼
+┌──────────────┐                                          ┌──────────────────────────┐
+│ Scheduler    │                                          │ TDP MMU fault path       │
+│ LLC stickiness│                                         │ hugepage admissibility   │
+└──────────────┘                                          └──────────────────────────┘
+
+Host-owned structures:
+- `struct kvm_ace_v1 { u32 abi_version; u32 flags; u64 amx_cpuid7_mask; u64 cpuid_0d_layout_hash; u64 xcr0_allowed_mask; u64 xss_allowed_mask; u64 xfd_initial_mask; u64 xfd_toggle_mask; u16 max_palette; u16 max_tiles; u16 max_rows_per_tile; u16 max_bytes_per_row; u32 max_total_tile_bytes; u8 normalized_hash[32]; u64 ace_gen; }`
+- `struct kvm_ace_residency_token { u32 seq; u16 llc_id; u8 locality_score; u8 ttl_slices; u64 expires_jiffies; }`
+- `struct kvm_amx_geom_desc { u64 ace_gen; u64 xstate_seq; u64 memslots_gen; u64 mmu_inval_seq; u32 tdp_root_role_id; u16 palette; u16 tiles; u16 rows; u16 bytes_per_row; u32 total_tile_bytes; u8 confidence; u8 expires_in_quanta; }`
+- `struct ace_fault_bucket { u64 gfn_2m_base; u16 faults_r; u16 faults_w; u8 faults_x; u8 score; u32 last_jiffies; u8 ad_young; u8 valid; }[32]` per vCPU.
+
+State machine and invariants:
+1. ACE is mutable only in OPEN state. `KVM_X86_VM_SEAL_ACE` moves it to SEALED before first vCPU run.
+2. After SEALED, KVM rejects modifications to AMX-related CPUID 0x7/0xD exposure, XCR0 policy, IA32_XSS policy, IA32_XFD policy, or ACE geometry maxima.
+3. `ace_xstate_fresh` is set only on paths that already leave a synchronized guest xstate image in the existing KVM xstate buffer, and each such event increments `xstate_seq`. If the bit is not set, no geometry descriptor is built.
+4. Descriptor publication snapshots `ace_gen`, `xstate_seq`, `memslots_gen`, `mmu_inval_seq`, and `tdp_root_role_id`. MMU readers require exact match across all of them and otherwise do nothing.
+5. The residency token never contains guest addresses and expires quickly. The geometry descriptor never leaves the kernel by default. Existing KVM hugepage, dirty logging, and memory pressure rules remain the primary gate; ACE only adds a secondary bias signal.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. UAPI and capability negotiation:
+   - Add `KVM_CAP_X86_AMX_ACE`, `KVM_X86_VM_SET_ACE`, `KVM_X86_VM_GET_ACE`, `KVM_X86_VM_SEAL_ACE`, and `KVM_X86_VCPU_BIND_PHASE_HINT` in `include/uapi/linux/kvm.h` and document them in the KVM API docs.
+   - QEMU flow: build normal x86 CPU model first, query capability, submit ACE, read back normalized ACE/hash, include that hash in migration metadata, and seal before first `KVM_RUN`.
+
+2. VM seal enforcement and compatibility predicate:
+   - Store ACE in `struct kvm` with state OPEN/SEALED/RESTORE_FAILED.
+   - At seal time, reject illegal or host-inconsistent combinations: AMX feature bits not supported by host, CPUID 0xD layout inconsistent with xfeatures, XCR0 bits outside host support, IA32_XSS supervisor bits outside policy, or IA32_XFD masks enabling unsupported xfeatures.
+   - Hook post-seal enforcement into the existing CPUID/xstate/MSR control paths so AMX-related `KVM_SET_CPUID2`, xstate restore, and relevant control-register/MSR writes cannot widen or alter the sealed envelope.
+   - Compatibility test on migration restore: `src.abi_version == dst.abi_version &amp;&amp; src.normalized_hash == dst.normalized_hash &amp;&amp; dst_host_caps superset src_caps &amp;&amp; restored_xstate validates under src maxima`. On failure, set `RESTORE_FAILED` and return the same terminal error on every subsequent restore/run until reset.
+
+3. Phase-hint sampling and scheduler token:
+   - Bind exactly one 64-byte guest GPA per vCPU. Snapshot it only at `KVM_RUN` boundaries where guest-memory access may sleep.
+   - Normalize fields: clamp locality score to a small range such as 0..15, clamp TTL to a small number such as 1..4 scheduler quanta, ignore unknown versions, and hash only `(vm_id, vcpu_id, phase_epoch)` into the token sequence.
+   - Scheduler integration lives in existing wake-placement or task-selection hooks and uses the token only as an LLC-locality tiebreaker inside allowed CPU masks.
+
+4. Saved-xstate freshness contract and geometry extraction:
+   - Maintain `ace_xstate_fresh` and `xstate_seq` per vCPU.
+   - Set them only when KVM already has a synchronized guest xstate image in the existing save buffer: after successful `KVM_SET_XSAVE`, after migration-save/`KVM_GET_XSAVE` style paths that already invoke the normal KVM guest-state synchronization, and after a `KVM_RUN` return path that has already copied AMX state into the buffer.
+   - Clear or invalidate on vCPU reset, failed restore, ACE reseal, or any operation that changes the control policy relevant to AMX xfeatures.
+   - Extract palette, tile count, max rows, bytes per row, and total tile bytes from that saved buffer only in the vCPU thread, validate them against the sealed ACE maxima, and publish a new RCU descriptor if valid; otherwise publish nothing.
+
+5. MMU evidence and deterministic decay:
+   - Add 32 fixed `ace_fault_bucket` entries per vCPU in the TDP MMU path, keyed by 2 MB-aligned GFN base, allocated once at vCPU creation.
+   - On each EPT violation relevant to a hugepage candidate, update the matching bucket in O(1): same-key saturating increment or lowest-score replacement. Record read/write/execute class, `last_jiffies`, and A/D-young when present.
+   - Decay lazily with no timers: `delta = min(MAX_SHIFT, (jiffies - last_jiffies) &gt;&gt; ACE_DECAY_SHIFT); score = score &gt;&gt; delta; last_jiffies = jiffies;`. Without EPT A/D, use only violation-derived increments plus the same lazy decay.
+   - Promotion bias is applied only if current KVM/TDP hugepage checks already pass, bucket score is above threshold, descriptor TTL is live, geometry fits within the currently faulting 2 MB-aligned range, and all descriptor generation tags match current `memslots_gen`, `mmu_inval_seq`, and root role. Any mismatch is an immediate no-op; there is no partial application.
+
+6. Security and observability discipline:
+   - Keep ACE descriptors and geometry internal to KVM by default: no debugfs, perf, or tracepoint export of raw geometry or token contents.
+   - If observability is needed, expose only coarse aggregated counters behind an explicit admin-only opt-in.
+   - Ensure the hint contains no guest GPAs, and geometry cannot force promotion on an ineligible region; it can only raise confidence for a region already surfaced by ordinary KVM fault handling.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. ABI/selftest coverage: add KVM selftests for `SET_ACE`, `GET_ACE`, `SEAL_ACE`, and phase-hint binding; verify illegal CPUID 0x7/0xD, XCR0, IA32_XSS, and IA32_XFD combinations are rejected at seal time.
+2. Post-seal immutability: verify all AMX-related CPUID/xstate/MSR modification paths fail after seal while unrelated non-AMX controls continue to behave normally.
+3. Migration determinism: migrate between hosts with matching ACE hashes and confirm success; then test mismatched hash, mismatched CPUID 0xD layout, and out-of-bounds AMX xstate restore, confirming `RESTORE_FAILED` latches and repeated attempts return the same terminal error.
+4. Freshness invariant: force descriptor construction only from successful `KVM_SET_XSAVE`, migration-save/`KVM_GET_XSAVE`, and `KVM_RUN` return paths that already produced a synchronized guest xstate image; verify stale or missing `ace_xstate_fresh` causes strict no-op publication.
+5. Hot-path audit: instrument scheduler placement hooks and TDP MMU fault handlers to confirm they execute without XSAVE/XSAVES/XRSTOR, guest-memory reads, FPU acquisition, IPIs, sleeps, or allocations.
+6. Fault-storm bound tests: generate adversarial EPT faults from guests and confirm bucket memory remains constant, updates are O(1), and replacement/decay stay bounded with no global scans.
+7. A/D-absent fallback: run with EPT A/D disabled and verify jiffies-based lazy decay behaves deterministically and does not require timers.
+8. Security tests: confirm raw descriptors are not externally exposed by default, phase hints cannot encode addresses, and hugepage behavior changes only when existing KVM eligibility gates already pass.
+9. Performance tests: run AMX-heavy inference/training kernels inside Linux guests, measure vCPU LLC residency, TDP hugepage hit rate, tail latency, and host CPU overhead against an otherwise identical non-ACE baseline.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>1. A virtualization system comprising a kernel virtual machine monitor configured to receive a per-virtual-machine AMX Contract Envelope, validate the envelope against host AMX capabilities, seal the envelope so that AMX-related CPUID 0x7 state, CPUID 0xD xstate layout, XCR0 policy, IA32_XSS policy, IA32_XFD policy, and tile-geometry maxima become immutable for the virtual machine, derive from a bounded guest phase hint a host-owned residency token, derive from an already-synchronized saved guest xstate buffer an immutable AMX geometry descriptor, and apply the token and descriptor in scheduler and MMU hot paths without guest-memory access or FPU/xstate operations in those hot paths.</li><li style='margin-bottom:8px;'>2. A method of operating a virtual machine monitor, the method comprising: configuring a virtual machine with AMX exposure; receiving and sealing a normalized AMX capability envelope; rejecting, after sealing, any modification that would change frozen AMX-visible state; validating a migration restore by comparing a normalized envelope hash and sealed capability bounds between source and destination; and, upon restore incompatibility, setting a one-way failure latch that causes later restore or run attempts to fail deterministically until reset.</li><li style='margin-bottom:8px;'>3. The system of claim 1, wherein the AMX geometry descriptor is published only when a freshness bit indicates that the guest xstate buffer already contains a synchronized image produced by an existing save or restore path, the descriptor includes at least an xstate sequence value, a memslots generation value, an MMU invalidation sequence value, and a TDP root role identifier, and an MMU reader treats any mismatch in those values as an immediate no-op.</li><li style='margin-bottom:8px;'>4. The system of claim 1, wherein MMU-side evidence for hugepage admissibility is maintained in a fixed-size per-vCPU array of buckets keyed by large-page-aligned guest frame number ranges, each bucket storing bounded fault counts, time information, and a saturating score, the buckets being allocated outside fault handling and updated in amortized O(1) time without per-fault allocation.</li><li style='margin-bottom:8px;'>5. The system of claim 4, wherein score decay is performed lazily using a host monotonic timebase comprising jiffies, such that decay occurs only on bucket access, requires no periodic timer and no global scan, and remains available when hardware accessed/dirty bits are absent.</li><li style='margin-bottom:8px;'>6. The system of claim 1, wherein the guest phase hint excludes guest addresses and is normalized by clamping a requested locality value and time-to-live to host bounds, and wherein the resulting residency token may influence vCPU placement only as a locality tiebreaker within preexisting affinity, fairness, cpuset, cgroup, and core-scheduling constraints.</li><li style='margin-bottom:8px;'>7. The system of claim 1, wherein the AMX geometry descriptor is strictly host-internal by default and can increase hugepage promotion confidence only after ordinary KVM hugepage eligibility checks already succeed, thereby preventing the geometry descriptor from operating as a guest-controlled address oracle.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: post-seal CPU-model drift could create a split-brain AMX ABI between userspace and kernel; mitigation: seal ACE only after normal CPU-model setup, store a normalized ACE hash in KVM, and reject all AMX-related CPUID/xstate/MSR mutations after sealing.</li><li style='margin-bottom:6px;'>Risk: stale geometry could bias MMU decisions after guest phase changes; mitigation: publish geometry only when `ace_xstate_fresh` is set, tag each descriptor with `xstate_seq` plus MMU generations, give it a short expiry, and require exact tag match or immediate no-op.</li><li style='margin-bottom:6px;'>Risk: a malicious guest could induce excessive host work through EPT fault storms; mitigation: use a fixed 32-bucket per-vCPU evidence table, saturating counters, same-key overwrite or lowest-score eviction, and no per-fault allocation or global scans.</li><li style='margin-bottom:6px;'>Risk: hosts without EPT A/D may degrade signal quality or need expensive maintenance; mitigation: define a deterministic lazy-decay policy based on `jiffies`, apply it only on local bucket access, and avoid timers entirely.</li><li style='margin-bottom:6px;'>Risk: hints or geometry could amplify cross-VM side channels through predictable hugepage behavior; mitigation: prohibit guest addresses in hints, keep raw token/geometry internal to KVM by default, and let ACE only raise admissibility when ordinary KVM hugepage gates already pass.</li><li style='margin-bottom:6px;'>Risk: restore loops on incompatible AMX state could cause operational churn; mitigation: add the one-way `RESTORE_FAILED` latch so repeated attempts fail immediately and consistently until VM reset or recreation.</li><li style='margin-bottom:6px;'>Risk: scheduler fairness could regress if locality bias is too strong; mitigation: bound token lifetime and weight tightly and apply it only as an LLC-locality preference inside existing scheduler legality and fairness rules.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual and Optimization Reference Manual sections covering AMX, CPUID 0x7/0xD, XTILECFG/XTILEDATA xfeatures, XCR0, IA32_XSS, and IA32_XFD semantics.</li><li>Linux KVM x86 architecture and xstate handling, including CPUID filtering, XSAVE migration interfaces, and guest-state synchronization paths that already materialize saved xstate buffers.</li><li>Linux KVM TDP MMU and hugepage promotion logic, including existing fault-density and A/D-based heuristics that remain the primary gate in this proposal.</li><li>QEMU x86 CPU-model and live-migration compatibility mechanisms, used here as the orchestration layer but not as a substitute for kernel-enforced sealing.</li><li>Prior paravirtual scheduler and preemption hinting mechanisms, which do not create host-normalized AMX residency tokens or freeze an AMX migration ABI.</li><li>Retrieved void anchors connecting AMX matrix semantics and virtualization-performance architecture, including matrix-equivalence optimization literature and virtualized-environment performance-architecture literature that suggest a gap at the intersection of AMX geometry and host VM policy.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact locking/RCU lifetime model for the published “immutable advisory descriptor”: which contexts read it (e.g., TDP fault path), whether they can take rcu_read_lock(), and how writers retire/replace it (call_rcu vs refcount). Without this, you risk UAF or inconsistent generation checks under concurrent MMU invalidation.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the “fresh XSAVE image” invariant precisely: what sets/clears freshness, what memory barriers pair writer/reader (smp_store_release/smp_load_acquire or seqcount), and how you guarantee XTILECFG bytes are from the same architectural epoch as the envelope generation (no torn read across partial XSAVE sync).</li><li style='font-size:13px;margin-bottom:4px;'>Spell out the exact validation pipeline for guest-supplied/restored xstate: validate xstate_header (xfeatures, xcomp_bv), require XCR0/IA32_XSS consistency, reject unsupported XFD policy combinations, and handle partial/compacted formats safely. This must be robust against malicious userspace/guest state to avoid out-of-bounds reads or accepting illegal AMX state.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify how “seal” interacts with existing ioctls and runtime changes: KVM_SET_CPUID2, KVM_SET_MSRS (XSS/XFD), KVM_SET_XCRS, KVM_ENABLE_CAP. After sealing, you must hard-block any mutation that would change guest-visible AMX ABI, including per-vCPU toggles, otherwise the envelope is not a real contract.</li><li style='font-size:13px;margin-bottom:4px;'>Bounded EPT-fault buckets still need a concurrency story: are updates strictly vCPU-thread-only, or can other contexts touch them (e.g., async page faults, mmu notifier zaps)? If any cross-context access exists, define atomicity/locking (per-vCPU lock, raw_spinlock_t, or per-cpu) and ensure no false sharing/hot-cacheline ping-pong on fault storms.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten the novelty boundary versus existing KVM mechanisms: explicitly contrast with current CPUID/MSR/xstate handling (e.g., fixed CPUID models, existing xsave restore validation, existing mmu invalidation sequencing) and show what is *newly enforced by kernel ABI* rather than convention in userspace/QEMU.</li><li style='font-size:13px;margin-bottom:4px;'>Define the concrete kernel/user ABI for “sealing” (ioctl(s), data structures, allowed call order, and exact immutability rules). Include: what fields are sealed, what constitutes a compatibility match across hosts, and what happens on KVM_SET_CPUID2 / MSR writes / XCR0 changes after seal (hard fail vs ignore).</li><li style='font-size:13px;margin-bottom:4px;'>Make the hugepage-bias algorithm non-obvious and bounded: specify the exact evidence bucket design (size, keying by GPA window, update path), the precise admissibility predicate that uses AMX geometry (what geometry fields, how they constrain promotion), and a proof-style argument that geometry never provides an address oracle or materially new side channel.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify “freshness” and synchronization invariants with real KVM state transitions: define when the XSAVE image is considered fresh, how freshness is invalidated (e.g., after guest runs, after host FPU ownership changes, after migration load), and show that XTILECFG parsing cannot accidentally occur from stale/partial buffers under concurrency.</li><li style='font-size:13px;margin-bottom:4px;'>Deterministic restore-failure latching needs sharper semantics: specify what errors latch (e.g., unsupported XFD policy, illegal tile sizes, host lacks AMX), how latching interacts with vCPU reset, KVM_RUN loops, migration incoming state, and whether the latch is per-vCPU or per-VM (and why).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Fill the empty core sections (Problem / Proposed Invention / Architecture / Implementation Plan / Claims) with concrete, testable specifics: exact uAPI surface (ioctl IDs/structures), state machine for “seal”, and the descriptor layout (fields, sizes, generation/tag semantics). Right now it reads like an abstract rather than a shippable kernel feature proposal.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten the Intel/Xeon strategic angle with measurable outcomes and a clear “why now”: quantify expected wins (e.g., 2MiB promotion rate, EPT fault rate reduction, tail latency) on representative AMX workloads; explicitly position as lowering virtualization tax for AMX on Xeon vs. generic THP tuning to strengthen competitive differentiation.</li><li style='font-size:13px;margin-bottom:4px;'>Security/abuse analysis needs to be explicit: prove the bounded EPT-violation buckets + geometry constraint cannot become a guest-controlled side channel (e.g., biasing hugepage placement to infer host LLC topology or co-tenant activity). Define caps, decay rules, and invariants that make it robust under adversarial fault patterns.</li><li style='font-size:13px;margin-bottom:4px;'>Define the compatibility model precisely: what constitutes ACE equality across migration (CPUID leaves, XCR0, IA32_XSS, IA32_XFD, XSAVE area size/layout), what happens on destination mismatch, and how restore-failure latching interacts with live migration, snapshot/restore, and vCPU reset.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify kernel integration points and fast-path guarantees: specify exactly where “fresh XSAVE” is sourced (which existing KVM xstate sync path), what marks freshness, and ensure no hidden FPU ownership transitions or XSAVE instructions can be triggered from MMU fault handling under any config.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: No explicit multi-tenant side-channel policy: LLC/hugepage bias driven by guest-influenced state can amplify cross-VM timing channels unless strictly gated/disabled by host policy.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define a hard security policy knob (default-off in shared hosting) for any LLC-locality / hugepage biasing driven by guest state; otherwise this becomes a host-provided amplification path for cache/translation side channels (TAA-style observability via placement + timing).</li><li style='font-size:13px;margin-bottom:4px;'>Specify and enforce the XSAVE &#x27;freshness&#x27; invariant precisely: which existing KVM path sets/clears it, what locks protect it, and required memory ordering (e.g., WRITE_ONCE + smp_store_release on publish; readers use smp_load_acquire) so TDP MMU never observes partially-updated geometry/descriptor pointers.</li><li style='font-size:13px;margin-bottom:4px;'>Prove lifetime safety of the &#x27;already-synchronized saved guest XSAVE image&#x27; used for geometry extraction: pin the backing buffer or copy the minimal XTILECFG bytes into VM-owned storage; do not retain pointers into per-vCPU scratch that can be freed/reused across vCPU teardown, migration, or KVM_SET_XSAVE ioctls.</li><li style='font-size:13px;margin-bottom:4px;'>Bounded EPT-fault buckets still risk guest-triggered host CPU DoS: require strict per-vCPU rate limiting/capping per time window and avoid contended atomics in the fault path; document worst-case instruction count per fault and ensure it cannot scale with guest-controlled indices (hash-collision or bucket-thrashing).</li><li style='font-size:13px;margin-bottom:4px;'>Generation tagging needs to match actual invalidation domains: include mmu_seq / tdp_mmu_root invalidation sequence that is guaranteed to change on memslot updates, MMU role changes, and SPTE zaps; otherwise stale geometry may be applied after root recreation or memslot remap.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the ACE contract surface precisely: which CPUID leaves/bits (AMX, XSAVE sizing), which XCR0 bits (XTILECFG/XTILEDATA), which IA32_XSS bits (if any), and whether IA32_XFD is p</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the per-VM immutability and locking model: where the ACE is stored (kvm-&gt;arch.*), when it is initialized (VM creation vs first vCPU), and how it is read in vCPU run/XSAVE io</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make restore behavior deterministically bounded: on invalid/unsupported tile state during load/SET_XSAVE, the kernel must fail once (inject a single architecturally correct #GP/#NM </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define destination-host compatibility checks for migration: validate that the destination host supports the ACE-required xfeatures before accepting the migrated VM state. If not sup</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify userspace ABI: propose a concrete KVM capability and/or ioctl(s) for enabling/querying ACE and exporting its frozen enumeration, and ensure old userspace keeps working when </li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Precisely define the lifetime/locking of the “already-current saved guest xstate buffer”: you must guarantee the XTILECFG bytes are read from memory that cannot be concurrently modi</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define an explicit freshness rule for “already-current” xstate (when it is updated, and how staleness is detected). Avoid any design that implicitly depends on KVM_GET_XSAVE/KVM_SET</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prohibit any FPU/AMX acquisition, XSAVE/XSAVES, XRSTOR, IPIs, or anything that can sleep/spin in the TDP MMU fault/fast paths. The descriptor must be precomputed in vCPU thread cont</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make the advisory descriptor invalidation-safe by construction: tie publication to a clearly defined generation domain that includes at least memslots changes, TDP root role changes</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Bounded EPT-fault evidence needs a concrete data structure and caps: specify what is recorded (GPA ranges? counts? shapes?), the maximum per-vCPU/VM memory, eviction policy, and how</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux virtualization using x86 AMX microarchitecture features
+</footer>
+</div></body></html>

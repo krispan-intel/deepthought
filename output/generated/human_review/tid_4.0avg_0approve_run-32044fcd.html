@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] Monotonic Snapshot-Bound Expedited membarrier with Entry-Cat</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-32044fcdda11 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Monotonic Snapshot-Bound Expedited membarrier with Entry-Catchup Acknowledgments and APIC-Topology-Aware x86 Fanout</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux synchronization using x86 APIC microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>x2APIC Cohort Membarrier Engine for mm_cpumask-Scoped Expedite Barriers</li><li style='font-size:13px;'>APIC-CPUID Shootdown Domain Lattice for flush_tlb_mm_range</li><li style='font-size:13px;'>Multicast Call-Single Fabric for APIC-Scoped Kernel Rendezvous</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | APPLICATION PERFORMANCE TOOLS &lt;&gt; Optimizing High-Performance Linpack for Exascale Accelerated   Architectures
+  MMR Score:    0.7736</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>An x86/Linux expedited membarrier protocol that reserves a global 64-bit request sequence, store-releases that sequence into an mm-scoped pending field, takes a seqcount-stable snapshot T of CPUs that hold the mm in active or lazy-TLB residency at moment S, proves completion only when each CPU in T has store-released obs_seq &gt;= requested seq after executing the existing membarrier-required remote action, forces post-S entrants and pre-clear leavers to self-catch up before user return or membership removal, and optionally reduces APIC send cost through CPUID/x2APIC-aware fanout selection that is never part of the correctness proof.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The defensible novelty is a narrow, kernel-grade completion contract for mm-scoped expedited membarrier rather than a generic sequence-counter idea. The contract fixes a sequence r, publishes r into mm-&gt;mb_pending_seq wi</div>
+    <div class="pill"><strong>Feasibility:</strong> The mechanism fits existing Linux and x86 primitives without inventing fictional paths. Linux already has mm_cpumask-based residency tracking, switch_mm/enter_lazy_tlb/leave_mm tra</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux expedited membarrier for an mm-scoped command must guarantee that every CPU that could execute user code under the target mm after the issuer&#x27;s request has passed through the required remote ordering point before the syscall returns. The hard cases are not the common case; they are concurrent issuers, CPUs in lazy-TLB state, tasks migrating between CPUs during snapshot and dispatch, CPUs entering or leaving the mm while the issuer is sending IPIs, CPUs sitting in idle or guest mode, and CPUs being offlined. Existing descriptions are often underspecified because they talk about a send mask but do not define an exact snapshot moment, a precise membership rule aligned with Linux residency semantics, or an authoritative publish point that proves a remote CPU has completed the required action. On x86 there is a second, separable problem: APIC send cost matters on large systems, but x2APIC addressing and virtualization behavior are too platform-dependent to be trusted as the correctness proof. The invention therefore addresses both dimensions at once: a software-verifiable completion contract with exact membership invariants, and an APIC-aware transport planner whose only effect is performance.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Current Linux expedited membarrier already performs important pieces of the job: it supports private expedited commands, derives targets from mm residency state such as mm_cpumask, uses generic SMP call-function or IPI rendezvous machinery, and returns only after that generic rendezvous path reports completion. Generic Linux infrastructure also already includes per-CPU state, global command sequencing, and many fanout optimizations. The minimal novel delta is therefore not &#x27;use a sequence&#x27; or &#x27;use APIC topology&#x27;; those would be obvious. The gap is an explicit, claimable contract that: (1) defines moment S using a writer-serialized mm residency seqcount covering the exact membership transitions that determine whether a CPU still participates; (2) freezes target set T at S but closes post-S migration races by requiring entry-side and exit-side catch-up against mm-&gt;mb_pending_seq; (3) defines completion solely by a post-barrier store-release of per-CPU obs_seq and an issuer-side load-acquire test obs_seq &gt;= r; and (4) treats any topology-aware x2APIC fanout as a safety-gated, non-authoritative transport layer. Existing APIC and smp_call_function prior art teaches ways to send interrupts, and existing Linux membarrier teaches expedited synchronization, but not this combined snapshot-bound proof obligation with explicit residency invariants and non-authoritative APIC optimization.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The proposed system is an x86_64 embodiment for MEMBARRIER_CMD_PRIVATE_EXPEDITED-class operations, optionally including PRIVATE_EXPEDITED_SYNC_CORE, with these concrete elements.
+
+1. Request reservation and publication. The issuer reserves a unique 64-bit global sequence r from atomic64_t mb_global_seq. It then performs smp_store_release(&amp;mm-&gt;mb_pending_seq, r). That store-release is the publication point that later entrants and leavers compare against.
+
+2. Residency state and writer serialization. For an mm that has registered for private expedited commands, mm_context_t gains a raw spinlock mb_residency_lock and a seqcount mb_residency_seq. Writer-side transitions that change whether a CPU belongs to the mm-scoped residency set execute under that lock and seqcount: switch_mm into the mm, switch_mm away from the mm, enter_lazy_tlb for the mm, leave_mm for the mm, and the residency-clearing side of exit_mmap/teardown. The write-side critical section updates both the membership bit in mm_cpumask(mm) and the per-CPU residency mode for that mm (ACTIVE, LAZY, or NONE). Because per-CPU obs_seq storage exists for every online CPU from bringup to CPU_DEAD, readers cannot observe &#x27;CPU in mask but ack storage uninitialized&#x27;.
+
+3. Moment S and target set T. The issuer holds cpus_read_lock across snapshot, dispatch, and wait. It then repeats: begin = read_seqcount_begin(&amp;mm-&gt;mb_residency_seq); copy T = mm_cpumask(mm) &amp; cpu_online_mask; optionally snapshot per-CPU ACTIVE/LAZY tags for debugging or policy; retry if read_seqcount_retry says a writer raced. The successful seqcount read defines moment S. A CPU belongs to frozen set T iff at S it is marked ACTIVE or LAZY for that mm and therefore could resume a thread of that mm without first passing through a membership transition that would run the catch-up rule. This aligns T with the same residency notion Linux already uses for mm-scoped shootdown participation.
+
+4. Remote action and publish point. For each cpu in T, the transport layer delivers a non-blocking notification. The remote action is exactly the existing membarrier command-specific action required by Linux for that command: for PRIVATE_EXPEDITED the existing full memory barrier path; for PRIVATE_EXPEDITED_SYNC_CORE the existing sync-core path before return to userspace. The handler must not sleep, allocate, or take sleeping locks. Immediately after the command-specific action, the CPU performs smp_store_release(&amp;per_cpu(obs_seq, cpu), max(current_obs_seq, r)). This release is the only authoritative completion evidence.
+
+5. Entry-side and exit-side catch-up. To avoid missing CPUs that join after S or leave before their bit is cleared, the invention adds two local rules. On switch_mm into the mm, or on the return-to-user path for a task running that mm, the CPU performs seq = smp_load_acquire(&amp;mm-&gt;mb_pending_seq); if seq &gt; obs_seq then it executes the same command-specific action locally and store-releases obs_seq = seq before userspace continues. Symmetrically, before a CPU clears its ACTIVE or LAZY membership for that mm in switch_mm away, leave_mm, or teardown, it again compares mm-&gt;mb_pending_seq against obs_seq and performs the same catch-up if needed before clearing the bit under mb_residency_seq. Therefore no CPU can resume userspace under the mm after S without a barrier at or after r, and no CPU can disappear from membership in a way that strands the waiter.
+
+6. Completion predicate and concurrency rule. The issuer waits only on the frozen set T. For each cpu in T it repeatedly performs smp_load_acquire(&amp;per_cpu(obs_seq, cpu)) and completes when every value is &gt;= r. Equality is not required; &gt;= naturally handles multiple issuers and coalescing. If a CPU processes a later request r2, publishing obs_seq = r2 also satisfies all earlier requests r1 &lt;= r2. This is why the design uses 64-bit monotonic sequences and scopes the x86 embodiment to x86_64 atomic64_t platforms; 32-bit torn sequence handling is intentionally excluded.
+
+7. Missed-IPI handling without APIC proof. The issuer never trusts APIC delivery-status bits, IRR/ISR state, or multicast completion. If a CPU in T is still lagging, the issuer recomputes a laggard subset L = { cpu in T | load_acquire(obs_seq[cpu]) &lt; r } and resends notifications to L using the safe generic per-CPU path, typically physical unicast or the existing smp_call_function_single/many fallback. Forward progress depends only on eventual obs_seq publication or membership-transition catch-up, not on APIC transport metadata.
+
+8. Hotplug, idle, guest mode. cpus_read_lock prevents a target CPU from completing the CPUHP offline transition while it is in T, so the waiter cannot lose track of a target due to hot-unplug. If an implementation wants shorter read-lock hold time, a CPUHP offline callback may perform the same catch-up and publish obs_seq before the CPU is removed from cpu_online_mask, but that is an optimization, not the primary proof. NOHZ idle CPUs are still safe because an IPI wakes them or the catch-up rule fires before they re-enter user mode. Guest-mode CPUs are safe because completion is not inferred from APIC state; the design simply waits for obs_seq. Under virtualization, the transport planner disables logical multicast and falls back to generic authoritative sends.
+
+9. APIC-topology-aware planner. The send-side planner is purely an optimization. It always executes the issuer locally when self is in T. For remaining targets it defaults to x2APIC physical unicasts. It may batch a subset by full-cluster logical delivery only when all of the following hold: x2APIC is enabled; CPUID leaf 0x1F or 0xB yields a stable x2APIC cluster decomposition; the targeted subset equals an exact, full online cluster mask; topology generation has not changed since boot; the system is not running under a hypervisor-paravirtual APIC mode; interrupt remapping or other destination-rewriting facilities are absent or explicitly known not to rewrite x2APIC logical cluster semantics; and a kernel safety knob allows the mode. If any condition fails, the planner falls back to physical unicasts or existing generic fanout. APIC optimization can only reduce sends; it cannot alter the completion proof.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>Core objects:
+- global atomic64_t mb_global_seq
+- per-mm atomic64_t mb_pending_seq
+- per-mm raw_spinlock_t mb_residency_lock + seqcount_t mb_residency_seq
+- existing mm_cpumask(mm)
+- per-CPU atomic64_t obs_seq
+
+Control flow:
+
+Issuer CPU
+  reserve r = atomic64_inc_return(mb_global_seq)
+  smp_store_release(mm-&gt;mb_pending_seq, r)
+  cpus_read_lock()
+  do {
+      begin = read_seqcount_begin(mm-&gt;mb_residency_seq)
+      T = mm_cpumask(mm) &amp; cpu_online_mask
+  } while (read_seqcount_retry(mm-&gt;mb_residency_seq, begin))   // defines moment S
+  plan fanout(T, cpuid_topology, x2apic_mode, platform_gates)
+  dispatch notifications to T
+  while (exists cpu in T with smp_load_acquire(obs_seq[cpu]) &lt; r) {
+      L = laggards(T, r)
+      resend L with authoritative unicast/generic path
+  }
+  cpus_read_unlock()
+  return to caller
+
+Remote/target CPU path
+  on IPI, switch_mm into mm, switch_mm away from mm, leave_mm, or return-to-user under mm:
+      seq = smp_load_acquire(mm-&gt;mb_pending_seq)
+      if (seq &gt; obs_seq_local) {
+          existing membarrier remote action for command
+          smp_store_release(obs_seq_local, seq)
+      }
+
+Writer-side residency transitions under mb_residency_lock + mb_residency_seq:
+  switch_mm into mm      -&gt; update per-CPU mode ACTIVE, set mm_cpumask bit
+  enter_lazy_tlb(mm)     -&gt; update per-CPU mode LAZY, keep/set mm_cpumask bit
+  switch_mm away/leave   -&gt; catch up if pending_seq &gt; obs_seq, then clear or retag bit
+  exit_mmap/teardown     -&gt; clear membership only after catch-up rule
+
+Key invariants:
+- T is a frozen set at moment S.
+- No CPU may return to userspace under mm with obs_seq &lt; mm-&gt;mb_pending_seq.
+- No CPU may clear mm residency with obs_seq &lt; mm-&gt;mb_pending_seq.
+- APIC transport is advisory; obs_seq is authoritative.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Add opt-in state to mm_context_t for tasks that register for private expedited membarrier: mb_pending_seq, mb_residency_lock, and mb_residency_seq. Keep the feature disabled for unregistered mms so ordinary context-switch paths do not pay the extra serialization cost.
+
+2. Introduce a small per-CPU structure containing obs_seq and a residency-mode tag used only for registered mms. Initialize it at CPU bringup and keep it valid until CPU_DEAD.
+
+3. Instrument the residency transition sites already relevant to mm ownership: switch_mm_irqs_off, enter_lazy_tlb, leave_mm, and the teardown path that removes the mm from runnable residency. Under mb_residency_lock plus seqcount, update mm_cpumask and the per-CPU ACTIVE/LAZY/NONE tag atomically from the reader&#x27;s perspective. Before clearing residency, run the exit-side catch-up rule if mm-&gt;mb_pending_seq exceeds local obs_seq.
+
+4. Implement membarrier_expedited_snapshot(mm, cmd) that reserves r, store-releases mm-&gt;mb_pending_seq, takes the seqcount-stable snapshot T under cpus_read_lock, and records whether self is in T. This helper becomes the front door for the new protocol.
+
+5. Implement the non-blocking remote handler wrapper. It must invoke the pre-existing command-specific membarrier action and then store-release obs_seq. Do not add sleeping locks, allocations, or debug control-plane dependencies inside the handler.
+
+6. Add the entry-side catch-up check to the switch_mm/return-to-user path for registered mms so post-S entrants cannot run userspace with stale obs_seq. The check should be a fast compare against mm-&gt;mb_pending_seq and should short-circuit in the common case where no request is pending.
+
+7. Build the x86 transport planner. The planner should consult boot-time topology parsed from CPUID 0x1F or 0xB, x2APIC enablement, hypervisor presence, interrupt-remapping status, and a topology-generation stamp. It should always support self-local execution and physical unicasts, and only enable full-cluster logical sends when the exact gating rules are satisfied.
+
+8. Add a laggard resend loop that uses obs_seq as the sole truth source. If any CPU in T still has obs_seq &lt; r after the first pass, resend to just that laggard set through the authoritative generic path. Ignore APIC delivery-status bits completely.
+
+9. Scope the initial implementation to x86_64. State explicitly that 32-bit x86 is excluded from the claimed embodiment to avoid torn 64-bit sequence handling and because the APIC-topology optimization depends on deployment assumptions that are effectively x86_64-only in production.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. LKMM proof sketch. Model the issuer&#x27;s smp_store_release(mm-&gt;mb_pending_seq, r), the target CPU&#x27;s command-specific barrier followed by smp_store_release(obs_seq, r), and the issuer&#x27;s smp_load_acquire(obs_seq) wait loop. Show that once the issuer observes obs_seq &gt;= r, the target CPU has necessarily executed the required barrier action before that observation. On x86 TSO this reduces to ordinary loads/stores plus compiler barriers, but the release/acquire annotations make the proof explicit and portable.
+
+2. Membership-race proof. Prove four invariants: (I1) a CPU in T at S cannot disappear without either handling the notification or performing exit-side catch-up before clearing residency; (I2) a CPU not in T at S cannot return to userspace under the mm without entry-side catch-up if mm-&gt;mb_pending_seq &gt; obs_seq; (I3) seqcount retry prevents readers from observing torn membership transitions; and (I4) cpus_read_lock prevents hotplug from removing a target CPU from cpu_online_mask during snapshot/wait.
+
+3. Concurrency stress. Run multi-issuer tests that create overlapping expedited membarrier requests on the same mm and on different mms, with forced task migration, rapid switch_mm churn, and back-to-back requests. Verify completion uses obs_seq &gt;= r rather than equality and that coalesced later acknowledgments satisfy earlier requests.
+
+4. CPU-state stress. Exercise NOHZ idle, deep idle exit, guest mode under KVM, and CPU hotplug. Confirm that logical multicast is automatically disabled under virtualization or interrupt-remapped environments and that cpus_read_lock or CPUHP catch-up prevents indefinite waits.
+
+5. Transport-fallback tests. Inject failures or artificial delays into the initial APIC planner choice, including intentionally disabling full-cluster logical delivery after the first send. Verify that laggard resend through physical unicast or generic call-function paths still completes correctly because obs_seq is the only authority.
+
+6. Performance evaluation. Benchmark private expedited membarrier latency and APIC write count on high-core-count x86_64 servers for sparse, medium-density, and full-cluster target sets. Compare local-only, physical-unicast-only, and gated logical-cluster modes. Measure not just median latency but p99/p999 tail latency and total send operations.
+
+7. Regression checks. Confirm no change in semantics for unregistered mms, no sleeping or debugfs/procfs dependencies in the handler, and no dependency on APIC delivery-status bits. Confirm that disabling the APIC planner still leaves the snapshot-bound completion contract intact.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A computer-implemented synchronization method for an x86_64 Linux kernel private expedited membarrier command, comprising: reserving a unique 64-bit request sequence r; store-releasing r to an mm-scoped pending sequence field; under a reader-stable CPU-hotplug exclusion, obtaining a seqcount-stable snapshot T of CPUs that hold the mm in active or lazy-TLB residency at moment S; dispatching a non-blocking remote action to CPUs in T; and completing the membarrier only after observing, for each CPU in T, a per-CPU observed sequence value greater than or equal to r, wherein each observed sequence value is store-released only after the remote CPU executes the command-specific membarrier ordering action.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein writer-side mm residency transitions that affect membership in T are serialized by a per-mm lock and seqcount and include switch_mm entry, switch_mm exit, enter_lazy_tlb, leave_mm, and teardown-related residency clearing, such that a reader retries until it observes a non-torn snapshot of mm_cpumask-derived membership.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein a CPU that enters the mm after moment S must, before returning to userspace under that mm, load-acquire the mm-scoped pending sequence field, compare the loaded value to its per-CPU observed sequence, execute the command-specific membarrier ordering action when the loaded value is greater, and store-release the per-CPU observed sequence to at least the loaded value.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein a CPU that is about to clear its active or lazy residency for the mm must, before clearing its membership bit, perform the same compare, ordering action, and store-release sequence when the mm-scoped pending sequence exceeds its observed sequence, thereby preventing a frozen snapshot target from disappearing without acknowledgment.</li><li style='margin-bottom:8px;'>The method of claim 1, further comprising an x86 APIC transport planner that always permits self-local execution, uses x2APIC physical unicasts as a default for remote CPUs, and enables x2APIC logical delivery only when CPUID topology leaves define an exact full-cluster target set and platform gates confirm that virtualization, interrupt remapping, and topology ambiguity cannot rewrite the selected logical destination semantics, wherein completion is still determined solely by the observed sequence values.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein laggard CPUs are identified solely by per-CPU observed sequence values remaining below r and are resent notifications through an authoritative generic unicast path, without relying on APIC delivery-status bits or multicast completion state as proof of correctness.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: prior-art overlap with existing Linux expedited membarrier and smp_call_function fanout. Mitigation: keep independent claims centered on the snapshot-bound completion contract, entry/exit catch-up invariants, and post-barrier obs_seq publication; treat APIC fanout as a dependent optional embodiment.</li><li style='margin-bottom:6px;'>Risk: added context-switch overhead from writer-side residency serialization. Mitigation: enable the extra lock and seqcount only for mms that explicitly register for private expedited membarrier, and keep the common no-pending-request fast path to a single compare against mm-&gt;mb_pending_seq.</li><li style='margin-bottom:6px;'>Risk: topology-driven logical delivery behaves differently under virtualization or interrupt remapping. Mitigation: default to physical unicast, disable logical clustering when X86_FEATURE_HYPERVISOR or remapping ambiguity is present, and never use transport metadata as completion evidence.</li><li style='margin-bottom:6px;'>Risk: subtle race bugs around lazy-TLB state, migration, and teardown. Mitigation: serialize all membership-affecting transitions under the same seqcount domain, require catch-up before residency clear or user return, and validate with LKMM plus migration/hotplug stress tests.</li><li style='margin-bottom:6px;'>Risk: indefinite wait on CPUs in idle, guest mode, or hotplug transitions. Mitigation: hold cpus_read_lock across snapshot/send/wait as the primary guarantee, optionally add CPUHP offline catch-up for shorter lock hold, and use obs_seq-based laggard resend instead of trusting a one-shot IPI.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Linux kernel expedited membarrier implementation and UAPI definitions, including kernel/sched/membarrier.c and include/uapi/linux/membarrier.h, as the baseline semantics being narrowed rather than replaced.</li><li>Linux mm residency and shootdown participation mechanisms, including mm_cpumask(mm), switch_mm_irqs_off(), enter_lazy_tlb(), leave_mm(), and x86 TLB shootdown paths, for defining active and lazy membership.</li><li>Linux CPU hotplug and cpus_read_lock()/cpu_online_mask mechanisms for freezing the online CPU set during snapshot, dispatch, and wait.</li><li>Linux Kernel Memory Model guidance on smp_store_release, smp_load_acquire, and full memory barriers for proving the post-barrier acknowledgment contract.</li><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual, Volume 3, for local APIC/x2APIC operation and CPUID topology enumeration via leaves 0x1F and 0xB.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The entry/exit “self-catch-up” gates are not nailed to concrete, non-sleeping kernel transition points with an explicit locking + memory-ordering contract; without that, post-snapshot entrants/leavers can still miss the required remote action or publish ordering.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Precisely define the membership model: which states count as “can resume under mm without a barrier-producing transition” (active vs lazy-TLB vs kernel thread borrowing mm), and prove that every path into such a state executes the catch-up check before returning to userspace (e.g., switch_mm/finish_task_switch/return-to-user).</li><li style='font-size:13px;margin-bottom:4px;'>Specify the serialization and sleepability rules for the proposed per-mm raw spinlock + seqcount: which writers take it (switch_mm, enter_lazy_tlb/leave_mm, mmput? CPUHP callbacks), in what contexts (IRQ-off / preempt-off), and ensure readers (snapshotter) never block while holding cpus_read_lock; avoid ABBA between cpu_hotplug locking and mm residency lock.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten LKMM ordering: issuer must store-release mm-&gt;mb_pending_seq (or per-command field), remote CPUs must execute the membarrier-required action then smp_store_release(obs_seq=r), and issuer must smp_load_acquire(obs_seq) when testing completion; also define how multiple concurrent requests are serialized to prevent overwriting pending_seq and incorrectly “skipping” required actions.</li><li style='font-size:13px;margin-bottom:4px;'>Handle CPU hotplug rigorously: if a CPU is in snapshot T and goes offline, you need a guaranteed completion publication (or removal-from-T under the same membership seqcount) that cannot be missed by the waiter; describe the exact CPUHP state(s) used and how you avoid waiting on a dead per-cpu obs_seq that will never advance.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify leaver semantics: “pre-clear leavers must catch up before membership removal” needs a concrete rule for where the compare+barrier happens relative to clearing the mm cpumask bit and switching away; otherwise a CPU can clear membership and still return to user under the mm without having observed the pending seq.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: As written, the core mechanism risks being read as a straightforward repackaging of existing Linux patterns (mm_cpumask targeting + per-CPU completion/sequence + cpus_read_lock stabilization), plus well-known TLB-shootdown/RCU-style membership/epoch techniques; you must crisply differentiate what correctness property is newly guaranteed vs current membarrier and related mm-generation mechanisms.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Differentiate from existing Linux membarrier completion logic: spell out (a) what current code waits for (IPI completion? per-CPU state?) and (b) the exact new completion contract you add (e.g., &#x27;post-remote-action store_release(obs_seq) is the sole authority&#x27;). Include a concrete &#x27;before vs after&#x27; race that current upstream does not close, otherwise novelty will be attacked as inherent in existing per-CPU acknowledgment paths.</li><li style='font-size:13px;margin-bottom:4px;'>The draft relies on an &#x27;entry gate&#x27; concept; you must enumerate every kernel-to-user transition where the gate must be enforced (e.g., switch_mm paths, return-to-user fast paths, signal return, context tracking/nohz full, guest/idle transitions). Without an exhaustive hook set, the contract &#x27;no CPU can resume user under mm after publish without catch-up&#x27; is not credible and will be framed as an obvious but incomplete idea.</li><li style='font-size:13px;margin-bottom:4px;'>Define the membership bit semantics precisely: what does &#x27;can resume user execution for mm without first executing an mb_entry_gate(mm) check&#x27; mean with lazy TLB, kernel threads borrowing mm, and CPUs that hold mm in non-user contexts? If you exclude lazy holders, explain how you prevent a lazy holder from becoming a user runner without passing the gate.</li><li style='font-size:13px;margin-bottom:4px;'>LKMM/memory-ordering proof needs sharpening: specify the required acquire loads on the issuer side (what variable, where), and show that &#x27;remote membarrier action; then store_release(obs_seq=R)&#x27; is sufficient for the issuer to infer the remote action happened-before completion. Also define whether the issuer reads obs_seq with smp_load_acquire and how it pairs with store_release; otherwise reviewers will claim the sequencing is already implied by IPI completion semantics.</li><li style='font-size:13px;margin-bottom:4px;'>CPU hotplug handling is under-specified: define the exact CPUHP state that publishes &#x27;teardown completion&#x27;, and prove there is no hang if a CPU goes offline between snapshot T and IPI dispatch, or if it executes the barrier but dies before publishing obs_seq. Tie this explicitly to cpus_read_lock / cpu_online_mask snapshot rules and the wait loop’s accounting.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact membership invariant for set T in terms of existing Linux residency tracking: precisely when a CPU is considered able to resume user execution under an mm without passing an entry gate (active vs lazy-TLB vs kernel threads), and specify the authoritative set source (mm_cpumask? new mask?) plus the required set/clear points.</li><li style='font-size:13px;margin-bottom:4px;'>Make the entry-catchup rule concrete by naming and wiring the mandatory gate locations: switch_mm (including switch_mm_irqs_off paths), return-to-user slowpath, and any mm-residency transitions (enter_lazy_tlb/leave_mm). Ensure there is no path that returns to user mode under the mm after S without performing the compare+catchup.</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug/offline completion must be fully specified: which CPUHP state publishes the teardown completion sequence, what locks it can take (must not deadlock with cpus_read_lock/cpu_hotplug_lock), and how the requester distinguishes &#x27;acked via remote action&#x27; vs &#x27;acked via teardown&#x27; without weakening the completion contract.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten the LKMM ordering proof: explicitly state the required smp_store_release on mm-&gt;mb_pending_seq and per-CPU obs_seq, the required smp_load_acquire sites on requestor and entrant/leaver, and demonstrate that the remote membarrier action is ordered-before the obs_seq publication on every architecture path you touch (esp. compiler reordering across the remote callback).</li><li style='font-size:13px;margin-bottom:4px;'>Quantify and mitigate switch_mm overhead: adding a per-mm spinlock+seqcount in a high-frequency path can be a regression on Xeon (context-switch heavy). Provide a plan to keep the common case lockless (e.g., read-mostly seqcount, per-cpu fast check only when mb_pending_seq changes) and include perf counters/benchmarks (tbench, hackbench, JVM/JIT workloads).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact “entry gate” coverage and prove it is unavoidable for *all* paths that can resume user execution under an mm after publication S (e.g., switch_mm fast paths, return-to-user, idle-&gt;user transitions, KVM/VMEXIT paths, lazy-TLB transitions). Without a complete gate coverage argument, post-S entrants can miss catch-up and break the completion contract.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten the LKMM story: specify precisely which variables use release/acquire (mm-&gt;mb_last_published_seq, per-CPU obs_seq, mask/seqcount snapshot) and show the waiting side uses smp_load_acquire (or stronger) on obs_seq. Also clarify ordering for the SYNC_CORE variant (serializing vs full memory barrier) so “remote action then publish obs_seq” cannot be observed out of order on weakly ordered cores.</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug/offline closure needs a concrete state machine: when a CPU transitions toward CPU_DEAD, how its membership bit is cleared under the same writer-side seqcount discipline, how teardown completion is published, and how the issuer avoids waiting on a CPU that is no longer guaranteed to run callbacks. Include the exact locking/CPUHP ordering to prevent hangs or use-after-free of per-CPU ack state.</li><li style='font-size:13px;margin-bottom:4px;'>Side-channel/timing risk: the optional topology/density-based transport choice changes IPI patterns and latency in a data-dependent way that unprivileged callers can potentially measure (CPU topology inference, co-residency signals). Mitigate by gating the optimization to privileged contexts, making selection deterministic/constant within a boot, or explicitly documenting/accepting the leakage.</li><li style='font-size:13px;margin-bottom:4px;'>Virtualization/compatibility: x2APIC logical delivery and “verified exact coverage” assumptions can be false under KVM, APICv, x2APIC emulation, or CPU hotplug/topology changes. Specify hard runtime guards (CPUID + MSR + hypervisor checks) and mandatory fallback to per-CPU unicast without relying on APIC delivery-status for correctness.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact mm-snapshot algorithm and its locking: a plain cpumask_copy(mm_cpumask(mm)) is not a synchronized snapshot unless you specify how it is stabilized against concurren</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify whether the per-CPU obs_seq is per-mm or global. A global per-CPU ack is unsound because CPUs switch mms; it can create false completion across different mms/issuers. You ne</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prove the completion condition under concurrency: if multiple issuers can be in-flight, specify the sequencing (atomic64 req_seq per-mm), the ordering of IPI payload vs seq publicat</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Memory-ordering claim needs tightening: release/acquire on obs_seq only provides ordering for memory accesses, not a magical guarantee that an smp_mb() executed. You must state the </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Hotplug/offline corner cases must be specified: what happens if a target CPU goes offline after snapshot but before ack, or if the mm_cpumask contains a CPU in the middle of dying? </li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the snapshot target set T precisely in terms of existing kernel invariants: mm_cpumask(mm) alone is not a complete statement unless you spell out how it relates to lazy-TLB, </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Your “late-entry self-barrier rule” must be concretely implementable in switch_mm (or equivalent) without sleeping and without taking locks that can deadlock in IRQ-off context. Spe</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Completion via per-CPU observed generation needs a full memory-ordering contract: require smp_store_release(obs_gen, req_gen) after the remote action, and on the issuer use smp_load</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Hotplug safety is underspecified: if T is derived from cpu_online_mask at snapshot S, you must also define what happens when a CPU in T offlines while the issuer waits. Holding cpus</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] If you use any seqcount/RCU-style stable-read protocol for mm residency, you must prove readers can’t observe a torn membership transition that yields an impossible T (e.g., see CPU</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux synchronization using x86 APIC microarchitecture features
+</footer>
+</div></body></html>

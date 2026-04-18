@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] Two-Phase Driver Contract Switching with Build-Time E-Graph-</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-523a41a1c345 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Two-Phase Driver Contract Switching with Build-Time E-Graph-Verified Variant Tables, Single-Mutex State Serialization, x86 RAPL Guardrail Telemetry, MMIO-Flush-Safe Publication, and Deferred Sleepable Apply</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux device driver using x86 RAPL microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Deferred RAPL-to-Driver Energy Contract Layer for Multiqueue Datapaths</li><li style='font-size:13px;'>E-Graph-Derived Datapath Equivalence Classes Selected by RAPL</li><li style='font-size:13px;'>Package Energy Affinity Leases for MSI-X and Queue Placement</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: Accelerator Codesign as Non-Linear Optimization &lt;&gt; Automatic Datapath Optimization using E-Graphs
+  MMR Score:    0.7322</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A kernel-resident mechanism that treats driver datapath tuning as an offline non-linear codesign problem over a declared ring/DMA IR, uses equality saturation to emit a finite immutable table of verifier-approved numeric variants plus per-field quiesce metadata, and then, only from ordered workqueue process context under a single device configuration mutex and state machine, selects among those prebuilt variants using bounded driver counters with x86 package-domain RAPL as an advisory guardrail, applying changes through PREPARE-&gt;QUIESCE-&gt;PROGRAM-&gt;VERIFY-&gt;RESUME-&gt;PUBLISH with required MMIO posted-write flushes and release/acquire fast-path publication only after successful programming and subsystem resume.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is not generic adaptive interrupt moderation, generic powercap governance, or generic workqueue-based tuning. The novelty is the combined boundary of: (i) a precise build-time driver IR for ring service, DMA </div>
+    <div class="pill"><strong>Feasibility:</strong> The design is kernel-realistic because every runtime primitive already exists: alloc_ordered_workqueue for deferred process-context control, a device config mutex and generation co</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux high-throughput device drivers expose a real but dangerous optimization surface spanning hardware-visible and software-visible knobs. In the live-switchable scope of this disclosure, the allowed runtime classes are limited to predeclared numeric fields such as irq_coalesce_usecs, irq_coalesce_frames, tx completion batch threshold, refill_low_wm, descriptor prefetch distance, poll_budget_cap, queue_cpu_mask_id, irq_vector_affinity_id, CQE compression or moderation mode bits expressly marked online-safe by the driver, and service_program_id only when that ID selects among precompiled const micro-op tables interpreted by fixed driver code rather than swapping code or function pointers. A larger surface may be declared but only as REQUIRES_FULL_REINIT, including ring_depth, queue_count, MSI-X vector count, descriptor_layout_id, queue object topology, DMA mapping format, and any field that requires allocation, free, queue creation, or reopen. The kernel problem is that these knobs trade throughput, latency proxy, cache locality, interrupt rate, and energy, but the datapaths that would benefit from adaptation run in IRQ, softirq/NAPI, or blk-mq contexts where sleeping, energy reads, scoring, and partial reprogramming are unsafe. Naive adaptation risks mixed-epoch fast-path execution, stale CPU-mask references, races with ethtool or reset paths, incorrect posted-MMIO ordering, broken DMA ownership transitions, and oscillation caused by package-scoped energy noise.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Existing RAPL and powercap facilities primarily measure or cap power; they do not define a driver-safe actuation boundary, do not solve device/package attribution limits, and do not provide safe degradation when RAPL is unavailable or untrustworthy. Existing DIM-style adaptive interrupt moderation, devfreq-like governors, and queue-affinity tuners may run from timers or workqueues, but they still synthesize settings online, usually target one or two knobs, and generally lack: a precise ring/DMA IR; build-time equality-saturation search over coupled hardware/software parameters; explicit proof obligations covering DMA ownership, descriptor bounds, barrier placement, and IRQ-context constraints; immutable build-generated finite variant tables; per-field metadata for visibility and quiesce requirements; a single serialization point shared with all existing driver reconfiguration paths; and a formal PREPARE-&gt;QUIESCE-&gt;PROGRAM-&gt;VERIFY-&gt;RESUME-&gt;PUBLISH protocol with release/acquire fast-path publication. That boundary, not mere workqueue execution, is the inventive wall.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Switching protocol order is internally inconsistent: it says PREPARE-&gt;QUIESCE-&gt;PROGRAM-&gt;VERIFY-&gt;PUBLISH-&gt;RESUME (and elsewhere mentions RESUME before/after PUBLISH). You must define a single canonical order and justify it with a concrete invariant: no fast-path reader can observe a variant index that refers to partially-programmed HW state. Typically this means RESUME (reenable IRQ/NAPI/queues) must happen after PUBLISH only if PUBLISH is purely about exposing already-safe state; otherwise PUBLISH must occur after RESUME plus a confirmed quiesce boundary for readers.</li><li style='font-size:13px;margin-bottom:4px;'>The publication model is underspecified and risks mixed-epoch access. Saying “smp_store_release active variant index” is not enough unless you also specify what readers load, in what contexts (NAPI/IRQ/softirq), and what constitutes an epoch boundary (e.g., per-queue NAPI poll loop, per-xmit). If any reader caches pointers/derived parameters, you need either (a) a single immutable table with index-only reads and no pointer chasing, or (b) RCU (or seqlock) with explicit lifetime rules. Spell out exactly what data is protected by the mutex vs. what is lockless, and prove no UAF / torn read.</li><li style='font-size:13px;margin-bottom:4px;'>Quiesce requirements are too hand-wavy across subsystems. For netdev, you must specify the exact sequence (e.g., rtnl_lock? netif_device_detach? napi_disable per NAPI instance? synchronize_net? disable_irq/synchronize_irq?) and what it guarantees for TX and RX paths. For blk-mq, “blk_mq_quiesce_queue” vs “blk_mq_freeze_queue” have different semantics; you must state which is required per knob class and ensure no in-flight request observes reprogrammed doorbells/register layouts.</li><li style='font-size:13px;margin-bottom:4px;'>Rollback semantics are not defined at the hardware level. If PROGRAM partially succeeds then VERIFY fails, you need an explicit revert-to-known-good sequence that is safe under the same quiesce model, including re-validating device state (ring pointers, DMA mappings, interrupt moderation registers). Without a specified ‘golden’ baseline and idempotent programming rules, rollback can be unsafe or impossible on real devices.</li><li style='font-size:13px;margin-bottom:4px;'>RAPL integration needs correctness constraints: perf_event_create_kernel_counter callbacks can run on PMU contexts; you must ensure no sleeping in those paths, handle CPU/package hotplug/online changes deterministically, and define package attribution gating precisely (topology changes, CPU migration, cgroup/CPU isolation). Also define sampling windowing and overflow handling for energy counters so the guardrail cannot oscillate due to wraparound or noisy attribution.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:3</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Core novelty hinges on the offline IR+proof obligations and the exact runtime publication/switching semantics, but both are still under-specified—leaving the concept vulnerable to an “obvious combination of known autotuning + static tables + workqueue + power telemetry” prior-art attack.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Nail down the *claimed technical delta* versus known driver tuning (ethtool coalesce/adaptive moderation, devfreq/cpufreq-style governors, static parameter tables): explicitly claim “no runtime synthesis, numeric-only table, build-time proof discharge over a declared IR, and switching only through quiesce-bounded state machine sharing the same config mutex as lifecycle paths.” Right now this boundary is described but not claim-tight.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the IR and proof obligations concretely enough to distinguish from generic compiler optimization / superoptimization (e-graphs/egg, PGO, autotuners): define the ring/DMA/MMIO primitives, the allowed rewrite classes, and at least a minimal formal safety contract (DMA ownership/lifetime, bounds, ordering/barriers, context/sleepability, quiesce preconditions). Without this, examiners can map it to “superoptimizer emits variants” + “driver picks one.”</li><li style='font-size:13px;margin-bottom:4px;'>Resolve and precisely define the switching protocol semantics (order and meaning of PREPARE/QUIESCE/PROGRAM/VERIFY/PUBLISH/RESUME/ROLLBACK). In particular, clarify whether PUBLISH can occur before RESUME and what readers are permitted to observe; otherwise prior art on generation counters + RCU-like publication will subsume it, and correctness arguments become hand-wavy.</li><li style='font-size:13px;margin-bottom:4px;'>Strengthen the RAPL guardrail story to avoid obviousness: define package-attribution gating criteria (CPU hotplug, task migration, multi-socket devices, IRQ affinity changes), energy window sizing, and failure/disable behavior. Otherwise it reads like standard “use RAPL as an input signal” (well-precedented in powercap/telemetry systems).</li><li style='font-size:13px;margin-bottom:4px;'>Add at least one concrete embodiment that is *not* trivially covered by existing live reconfig paths: e.g., per-field quiesce metadata driving automated selection of the minimal required quiesce scope (IRQ sync vs netdev quiesce vs blk-mq quiesce vs full reinit) *and* enforceable by generated tables/proofs. That’s a crisp differentiator from ordinary driver-specific hand-coded sequencing.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten the switching protocol semantics: explicitly define whether PUBLISH happens only after RESUME (recommended) to prevent fast-path readers from observing a new variant before interrupts/NAPI/queues are safely re-enabled; document the exact epoch/serialization rule (e.g., quiesce all producers/consumers, program+readback, resume subsystems, then smp_store_release(active_variant)).</li><li style='font-size:13px;margin-bottom:4px;'>Clarify RAPL correctness limits and gating: specify sampling window, counter width/wrap handling, perf multiplexing/PMU availability behavior, and—critically—how you avoid mis-attribution when multiple devices share a package (normalize by device activity, require stable CPU↔package mapping, disable RAPL influence under CPU hotplug / VM migration / ambiguous package ownership).</li><li style='font-size:13px;margin-bottom:4px;'>Make the IR/proof obligations concrete: enumerate the invariants the e-graph tool must prove for each knob (DMA lifetime/ownership, memory ordering/barriers, MMIO ordering + posted-write flush rules, bounds/aliasing, context-safety “may_sleep” constraints) and define what constitutes a proof-carrying artifact that Kbuild can validate reproducibly.</li><li style='font-size:13px;margin-bottom:4px;'>Define the driver-facing API surface and lock ordering: specify required callbacks (prepare/quiesce/program/verify/resume/rollback), how this composes with rtnl_lock, ndo_open/stop, ethtool ops, PCI reset and AER recovery, and how deadlocks are avoided when sharing the same reconfiguration mutex across lifecycle paths.</li><li style='font-size:13px;margin-bottom:4px;'>Upstreamability/security: the proposed optional MSR backend is likely contentious; constrain to perf/powercap interfaces by default, and add rate-limiting/hysteresis requirements plus explicit rollback criteria to prevent oscillation or denial-of-service via forced reconfig loops.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Locking/ordering is underspecified and risks deadlock: explicitly define lock order between the “single reconfiguration mutex” and rtnl_lock (netdev), ethtool paths, PCI error recovery, and device removal/unload. Provide a concrete rule (e.g., rtnl_lock outermost, then reconfig mutex) and show how workqueue callbacks avoid inversions.</li><li style='font-size:13px;margin-bottom:4px;'>Publication semantics are too hand-wavy for crash-free epoch transitions: define the exact fast-path read points (NAPI poll, TX xmit, completion handlers) and provide a concrete scheme (e.g., generation counter + smp_store_release after all MMIO flush + DMA sync + IRQ/NAPI re-enable; readers use smp_load_acquire once per poll cycle). Clarify whether PUBLISH happens before or after RESUME and why it cannot expose partially programmed hardware state.</li><li style='font-size:13px;margin-bottom:4px;'>RAPL/perf energy sampling introduces side-channel and policy risk: specify privilege/namespace gating (e.g., disable or clamp RAPL influence unless CAP_SYS_ADMIN and not in multi-tenant mode), and ensure the energy provider cannot leak cross-workload information via driver-visible counters. Also define behavior when CONFIG_PERF_EVENTS is off, perf_event_paranoid restrictions apply, or RAPL events are unavailable/mis-attributed.</li><li style='font-size:13px;margin-bottom:4px;'>Quiesce/verify mechanics need concrete, subsystem-correct APIs per driver class: for netdev, detail when to use napi_disable+synchronize_net vs netif_tx_stop_all_queues, synchronize_irq, and device-specific interrupt masking; for blk-mq, specify blk_mq_quiesce_queue vs freeze/tagset quiesce and how you guarantee no in-flight DMA touches reprogrammed rings.</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug/package attribution failure handling must be explicit: define what happens across CPU hotplug, package remapping, suspend/resume, and offline cores. Ensure energy attribution instability forces immediate guardrail disable without oscillation, and that errors cannot stall the datapath (bounded work, timeouts, and rollback conditions).</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact locking/context model for transitions: IRQ affinity updates and netdev steering updates must run strictly in sleepable process context (workqueue), and you must spe</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make the CPU-mask admissibility rules concrete and checkable: each candidate mask must be intersected/validated against cpu_online_mask, housekeeping/isolcpus constraints, cpuset/ta</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify precedence and non-interference with userspace/admin controls: explicitly define how the lease state machine behaves when userspace sets affinity (irqbalance, manual /proc/i</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Detail the activation sequencing for multi-queue NICs/MSI-X: if you adjust IRQ affinity and XPS/RPS/RFS steering, you must ensure queue/vector mapping consistency (no transient mism</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Telemetry inputs for congestion/health must be bounded-cost and race-safe: define which counters are sampled, how you avoid expensive per-packet reads, how you handle counter wrap/R</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact publication mechanism for the active variant (e.g., atomic_t index with smp_store_release()/smp_load_acquire() + READ_ONCE/WRITE_ONCE). Spell out how fast paths avo</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Quiesce is underspecified and easy to get wrong: for netdev you must state whether you quiesce TX, RX, or both; which locks are held (RTNL? per-queue locks?); and the required seque</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Block layer quiesce needs concrete constraints: blk_mq_quiesce_queue()/unquiesce must not deadlock with request submission/completion paths, timeouts, or driver reset. Specify lock </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The draft claims “never from NAPI/IRQ” but does not address concurrency with existing driver reconfig paths (ethtool, ndo_open/stop, link reset, PCI error recovery). You need a sing</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] RAPL sampling details are missing but matter for correctness: define which in-kernel API is used (perf_event_create_kernel_counter vs MSR reads), CPU/package mapping, counter width/</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux device driver using x86 RAPL microarchitecture features
+</footer>
+</div></body></html>

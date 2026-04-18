@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 2.0] Immutable x86 Lease-Generation ABI for sched_ext with PMU-Ph</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-54154121d029 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 2.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Immutable x86 Lease-Generation ABI for sched_ext with PMU-Phase Mining, Hugepage/LLC Affinity, and Kernel-Enforced Fallback</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux scheduler using x86 eBPF microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>PEBS Epoch Commit Bridge for sched_ext LLC-Aware Dispatch</li><li style='font-size:13px;'>Temporal Capacity Lease Bridge for Hybrid x86 sched_ext Policies</li><li style='font-size:13px;'>Speculation-Domain Dispatch Tokens for IBPB-Aware Linux Scheduling</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: SCX_OP_IDX &lt;&gt; Use of Data Mining in Scheduler Optimization
+  MMR Score:    0.7745</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A bounded x86 capture-fold-publish pipeline converts hybrid-core capacity signals and sampled PMU phase evidence into immutable per-task lease generations whose fixed-size candidate shortlist is exposed to sched_ext eBPF through verifier-safe kfuncs, while a mandatory kernel commit helper revalidates cpuset, hotplug, and topology legality and forces default legal dispatch on any stale, expired, mismatched, or illegal lease.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The invention is not merely exposing HFI, ITMT, arch_scale_cpu_capacity(), sched_domain topology, or perf samples to BPF. The narrow core novelty is a scheduler-grade lease ABI and commit discipline in which the kernel p</div>
+    <div class="pill"><strong>Feasibility:</strong> The design fits existing kernel mechanisms: NMI-safe perf overflow capture into fixed per-CPU rings, deferred folding/classification in kthreads or workqueues, RCU-managed immutabl</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux scheduling, including sched_ext policies, increasingly needs short-timescale task and CPU suitability hints on hybrid x86 systems, but the scheduler fast path cannot safely compose those hints in real time. CPU-side inputs such as Intel HFI, ITMT, thermal pressure, and arch_scale_cpu_capacity() describe only part of the placement problem. Task-side inputs such as L2 miss pressure, LLC streaming behavior, DTLB walk intensity, and hugepage sensitivity are visible through PMU sampling or memory-side evidence, but PMU overflow handlers may execute in NMI context and cannot take sleeping locks, allocate memory, walk scheduler topology, or mutate unbounded pid-keyed structures. sched_ext eBPF policies also cannot be trusted to reconstruct legality from racing cpuset, cpu_active, and sched_domain state on their own. The technical problem is therefore to provide sched_ext with a single-read, verifier-safe, low-latency decision object that combines x86 capacity and bounded task-phase evidence, remains correct across cpuset churn, CPU hotplug, topology rebuild, and object lifetime races, and guarantees forward progress when the hint becomes stale or invalid.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Existing interfaces each expose fragments but not the claimed kernel contract. arch_scale_cpu_capacity(), ITMT, Intel HFI, thermal pressure, and cpufreq data provide scalar CPU desirability but no per-task immutable lease generation, no expiry, no legal-placement cookie, and no mandatory fallback enforcement. sched_domains and LLC IDs provide topology but not a committed shortlist bound to a specific task generation. EAS, util_est, and uclamp express utilization or clamp policy, not PMU-derived phase compatibility or hugepage/cache pressure classes. Generic seqcount, RCU, or snapshot exposure mechanisms still require the BPF policy to fetch multiple mutable objects, reason about cross-source consistency, retry on races, and self-police legality. Perf-based phase-detection work generally stops at observability or classifier output and does not define a verifier-safe sched_ext ABI with opaque generation cookies, fixed-size descriptors, release/acquire publication, kernel-side legality recheck, and non-bypassable default legal dispatch. The non-obvious combination is precisely this: immutable legal-placement envelope plus expiry plus must-use commit helper, with PMU mining, LLC locality, and hugepage affinity as bounded dependent hints rather than the core claim.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>Provide a Committed x86 Lease-Generation Snapshot Bridge with five bounded stages.
+
+Stage 1 - CAPTURE (NMI-safe, strictly bounded): Configure a small event set per sampled CPU, for example INST_RETIRED.ANY, CPU_CLK_UNHALTED.THREAD or cycles, an L2 miss event such as MEM_LOAD_RETIRED.L2_MISS or L2_RQSTS.MISS, and DTLB_LOAD_MISSES.WALK_COMPLETED. Sampling runs in overflow mode with period &gt;= 500k retired instructions and an absolute cap of 2000 interrupts per second per CPU. The overflow handler writes a 32-byte record into a fixed per-CPU append-only ring of 4096 records: { task_cookie:u64, pid:u32, cpu:u16, event_mask:u16, ts_mono_ns:u64, l2_bucket:u8, llc_bucket:u8, dtlb_bucket:u8, ipc_bucket:u8, flags:u8 }. The handler performs no allocation, no blocking, no pid-hash mutation, no topology lookup, and no scheduler-facing state update. On full ring, it drops the sample and increments a per-CPU drop counter.
+
+Stage 2 - FOLD, CLASSIFY, AND BOUNDED MINING (deferred context only): A per-node or per-housekeeping kthread drains at most 256 records per wake and updates a fixed-capacity 4-way set-associative phase table keyed by task_cookie. The table size is static, for example 16384 entries globally or per node, so memory growth is bounded. Each entry stores exponentially decayed counters for l2_mpki, llc_mpki, dtlb_mpki, ipc, sample_count, last_seen_ns, last_llc_id, and a hugepage-evidence accumulator derived from sampled DTLB walk intensity plus whether the task recently executed in a THP-backed VMA or hugetlb-backed region observed by a separate bounded memory notifier. Every 100 ms, the worker computes updated bucket cutpoints from sliding histograms per hybrid class using fixed percentiles such as P50, P80, and P95; the resulting mining_seq is monotonic and versioned. The worker maps each active entry into stable enums: phase_class in { unknown, compute_dense, l2_bound, llc_streaming, dtlb_bound, mixed } and hugepage_affinity in { unknown, neutral, thp_beneficial, hugepage_strong }. This is scheduler-oriented data mining, but it is bounded, versioned, and entirely off the scheduler hot path.
+
+Stage 3 - BUILD AUTHORITATIVE LEGAL-PLACEMENT ENVELOPE: For each candidate task, the worker derives an internal legal mask using current authoritative state: legal_mask = p-&gt;cpus_ptr intersection cpu_active_mask intersection topology-selected span. The topology-selected span may be the task&#x27;s current LLC domain, hybrid-capacity-preferred domain, or NUMA-local subset, but the result is always intersected with the task&#x27;s current cpuset allowance and active CPUs. The worker ranks at most eight candidate CPUs using a score composed of normalized capacity, hybrid-class compatibility, LLC locality, L2-miss penalty, and hugepage affinity. The full cpumask remains kernel-internal; the BPF-visible object contains only a fixed-size shortlist and metadata.
+
+Stage 4 - PUBLISH IMMUTABLE GENERATION: The worker allocates an RCU-managed immutable object from a dedicated cache: kernel object = { rcu_head, full legal_mask, desc_v1 }. desc_v1 contains fixed-size fields only: abi_version:u16, len:u16, generation:u32, flags:u32, task_cookie:u64, lease_cookie:u64, publish_mono_ns:u64, expiry_mono_ns:u64, cpuset_seq:u32, hotplug_seq:u32, topology_seq:u32, mining_seq:u32, llc_id:u16, numa_id:u16, hybrid_class:u8, phase_class:u8, hugepage_affinity:u8, candidate_cnt:u8, preferred_cpu:s16, fallback_cpu_hint:s16, candidate_cpu[8]:u16, score_q10[8]:u16, perf_cap_q10[8]:u16, energy_cap_q10[8]:u16, l2_bucket[8]:u8, llc_bucket[8]:u8, dtlb_bucket[8]:u8. No variable-sized arrays are exposed in v1. After full initialization, the writer performs smp_store_release() on the task&#x27;s published lease pointer. Old objects are reclaimed with call_rcu() after grace period.
+
+Stage 5 - READ AND COMMIT THROUGH VERIFIER-SAFE KFUNCS: The sched_ext BPF policy obtains the current task_cookie from existing task-cookie support and calls only fixed-ABI helpers such as scx_bpf_lease_read_v1(task_cookie, &amp;out), scx_bpf_lease_commit_v1(task_cookie, lease_cookie, chosen_cpu, dsq_id, flags), and scx_bpf_lease_default_v1(task_cookie, dsq_id, flags). scx_bpf_lease_read_v1 enters rcu_read_lock(), performs an acquire load of the published pointer, copies the immutable fixed-size desc into BPF stack memory, and returns. scx_bpf_lease_commit_v1 revalidates that the task_cookie matches the task in the active sched_ext hook frame, the abi_version and len are supported, the lease_cookie matches, expiry_mono_ns has not passed, chosen_cpu is active, and chosen_cpu remains legal for the task under current cpuset and topology state. If validation succeeds, the helper commits placement. If any check fails, the helper must perform default legal dispatch: first prefer the current CPU&#x27;s local DSQ if legal and runnable, otherwise invoke the kernel&#x27;s default select_cpu path, and if no specific legal CPU is selected, enqueue on the global DSQ. There is no retry loop on a failed lease generation, so forward progress is preserved even if leases expire continuously.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>The architecture is a publish-once, validate-on-commit bridge between x86 microarchitectural sensing and sched_ext placement.
+
+ASCII overview:
+
+PMU overflow/NMI capture
+    -&gt; per-CPU fixed sample rings
+    -&gt; fold/mining kthread
+    -&gt; immutable lease builder
+    -&gt; smp_store_release(task-&gt;lease_ptr)
+    -&gt; sched_ext eBPF scx_bpf_lease_read_v1()
+    -&gt; BPF policy chooses one candidate from shortlist
+    -&gt; scx_bpf_lease_commit_v1()
+       -&gt; validate cookie + expiry + current legality
+       -&gt; either commit requested CPU
+       -&gt; or force default legal dispatch
+
+Internal object layout:
+- struct scx_lease_gen_kern_v1
+  - rcu_head rcu
+  - cpumask legal_mask   (kernel-only; never exposed directly to BPF)
+  - struct scx_lease_desc_v1 desc
+
+BPF-visible struct scx_lease_desc_v1 fields and units:
+- abi_version:u16 = 1
+- len:u16 = sizeof(desc_v1)
+- generation:u32 = per-task monotonically increasing lease generation
+- flags:u32 = validity and optional-hint flags
+- task_cookie:u64 = stable task identity used by kfuncs
+- lease_cookie:u64 = opaque SipHash(task_cookie, generation, seqs, boot_nonce)
+- publish_mono_ns:u64 = CLOCK_MONOTONIC timestamp in ns at publication
+- expiry_mono_ns:u64 = absolute CLOCK_MONOTONIC deadline in ns
+- cpuset_seq:u32 = seq bumped on cpuset-authority change
+- hotplug_seq:u32 = seq bumped on CPU online/offline authority change
+- topology_seq:u32 = seq bumped on sched-domain or LLC topology rebuild
+- mining_seq:u32 = seq of histogram-derived cutpoints used for classification
+- llc_id:u16, numa_id:u16 = placement locality identifiers
+- hybrid_class:u8 = 0 unknown, 1 performance, 2 efficient, 3 SMT-shared
+- phase_class:u8 = 0 unknown, 1 compute_dense, 2 l2_bound, 3 llc_streaming, 4 dtlb_bound, 5 mixed
+- hugepage_affinity:u8 = 0 unknown, 1 neutral, 2 thp_beneficial, 3 hugepage_strong
+- candidate_cnt:u8 = 0..8
+- preferred_cpu:s16 = best candidate or -1
+- fallback_cpu_hint:s16 = safe hint for low-cost fallback or -1
+- candidate_cpu[8]:u16 = ranked CPU IDs
+- score_q10[8]:u16 = normalized rank score 0..1024
+- perf_cap_q10[8]:u16 = normalized performance capacity 0..1024
+- energy_cap_q10[8]:u16 = normalized energy efficiency 0..1024
+- l2_bucket[8], llc_bucket[8], dtlb_bucket[8]:u8 = classifier buckets used for transparency and debugging
+
+Memory-ordering contract:
+- Writers fully initialize desc and legal_mask, then publish the pointer with smp_store_release().
+- Readers use rcu_read_lock() plus rcu_dereference()/smp_load_acquire() before copying desc.
+- Because desc_v1 is fixed-size and immutable after publication, readers need no retry loop and cannot observe torn variable-length fields. Variable-sized cpumask exposure is intentionally excluded from v1 to preserve the single-snapshot property.
+
+Lifetime and stale-value rules:
+- Published lease objects are RCU-reclaimed only after pointer replacement and grace period.
+- On task exit, the task&#x27;s lease pointer is nulled with release semantics and the last object is freed via RCU.
+- BPF cannot safely reuse cached descriptors across generations because commit requires exact task_cookie plus lease_cookie match; any descriptor from an old generation, old seq tuple, or expired deadline is rejected and mapped to fallback.
+- Unknown abi_version or unknown enum values are treated as unsupported and force fallback rather than heuristic interpretation.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Kernel lease core: Add built-in sched_ext lease support in kernel/sched/ext so kfunc availability does not race with module unload. If modular packaging is required, pin active BPF links and refuse provider unload until all lease kfunc users detach, then wait for an RCU grace period before unregistering.
+
+2. Capture path: Add per-CPU ring buffers and perf overflow handlers. Enforce a static event set, minimum sample period, and hard interrupt-rate cap. If PMU availability is missing on a CPU or the cap is exceeded, mark optional phase hints unavailable and continue publishing capacity-only leases.
+
+3. Bounded fold/mining path: Implement the fixed-capacity phase table and histogram mining worker. Eviction is bounded and explicit: overwrite only entries idle beyond a threshold such as 50 ms; otherwise drop and count. No unbounded hash tables, no per-sample allocation, and no sleeping locks in overflow context.
+
+4. Authority and serialization: Maintain seq counters under existing serialized update paths rather than from the scheduler hot path. cpuset_seq is incremented only while cpuset authority is being updated under cpuset serialization; hotplug_seq is incremented only during CPU hotplug state transitions; topology_seq is incremented only during sched-domain or LLC topology rebuild serialization. The lease builder may run under cpus_read_lock() plus RCU to observe a stable snapshot, but it never runs under rq-&gt;lock and never takes cpuset or topology locks in any sched_ext fast path. At commit time, legality is authoritative in-kernel: the helper checks cpu_active(chosen_cpu), current task allowance, and current sequence tuple before placement.
+
+5. rq-lock interaction rule: Restrict scx_bpf_lease_read_v1() and scx_bpf_lease_commit_v1() to non-rq-locked sched_ext hooks such as select_cpu and pre-dispatch enqueue paths. The verifier rejects these kfuncs from hooks that execute under rq-&gt;lock. The commit helper itself does not take cpuset_mutex, sched topology locks, or CPU hotplug write-side locks; it uses lockless sequence checks and current legality tests only, preventing lock inversion with rq-&gt;lock.
+
+6. Mandatory fallback semantics: Make lease commit non-bypassable for lease-aware tasks. Once a task is marked lease-aware, direct BPF dispatch without either scx_bpf_lease_commit_v1() or scx_bpf_lease_default_v1() is rejected by the sched_ext core. Error mapping is deterministic: ESTALE, EEXPIRED, EINVALCPU, ECOOKIE, EABI, or EILLEGAL all trigger default legal dispatch, not silent failure. Default legal dispatch means local DSQ if current CPU is legal; else core default select_cpu result; else global DSQ. Because the helper never retries a bad lease generation, the task is always enqueued somewhere legal in O(1) helper invocations.
+
+7. Hugepage and LLC dependent feature: Add an optional memory notifier that sets a bounded hugepage evidence bit when the task runs in THP or hugetlb-backed VMAs. The lease builder combines that with DTLB-walk pressure and LLC locality to bias ranking toward CPUs within the LLC domain already associated with the task&#x27;s recent large-page working set. If the feature is unavailable, hugepage_affinity remains neutral and the independent claim still stands.
+
+8. BPF policy contract: The reference BPF scheduler reads the descriptor, checks abi_version == 1, ignores any optional field whose corresponding flag is absent, selects a CPU from candidate_cpu[0..candidate_cnt-1], and commits. If candidate_cnt == 0, abi_version is unknown, or any enum value is outside the known range, the BPF program must invoke scx_bpf_lease_default_v1(). This ensures older policies fail safe on newer kernels.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Correctness validation:
+- Race tests that repeatedly toggle cpusets, offline/online CPUs, and rebuild sched domains while tasks continuously obtain and commit leases; assert no illegal CPU placement, no use-after-free, and no missing enqueue.
+- Memory-model tests using stress and KCSAN-style instrumentation to confirm that readers never observe partially initialized desc_v1 fields and never require retry loops.
+- Lifetime tests that exit tasks, detach BPF programs, and churn leases while RCU grace periods are delayed.
+
+Performance validation:
+- Measure hot-path overhead of read plus commit against a sched_ext baseline; target no PMU reads and no topology walks in the hot path, with helper cost stable regardless of topology size because candidate lists are fixed-size.
+- Bound telemetry cost by configuration: &lt;= 2000 PMU interrupts/sec/CPU, 32-byte records, 4096-record per-CPU rings, max 256 drained samples per worker wake. Demonstrate worst-case CPU overhead remains below a configurable budget such as 1 percent per sampled CPU; when exceeded, the kernel auto-degrades to capacity-only leases.
+
+Workload validation:
+- Hybrid-core latency workloads: hackbench, netperf, nginx, memcached, and database request traces to show reduced tail latency and better CPU-class matching.
+- Memory-bound and hugepage-sensitive workloads: THP-enabled RocksDB, Redis, STREAM-style memory tests, and an HPC or astrophysical simulation representative of FLASH-like hugepage usage to show fewer harmful migrations across LLC domains and reduced DTLB/L2 miss penalties.
+- Compare against baselines using only arch_scale_cpu_capacity(), only HFI/ITMT, only topology/LLC affinity, and no lease mechanism.
+
+Fallback validation:
+- Inject stale cookies, expired timestamps, unknown abi versions, illegal CPUs, and outdated sequence tuples; verify the task always reaches a legal DSQ and never livelocks even when every lease attempt fails.
+
+Compatibility validation:
+- Verify enum forward compatibility by running an older BPF policy against a kernel that emits a new optional enum value; expected behavior is deterministic fallback, not mis-scheduling.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A computer-implemented scheduling method for Linux sched_ext comprising: generating, for a task, an immutable lease generation containing an opaque lease cookie, an expiry timestamp, one or more legality sequence values derived from cpuset, CPU-hotplug, and topology authority, and a fixed-size ranked CPU candidate shortlist; exposing the lease generation to an eBPF scheduler through a read-only kfunc; and requiring placement to occur through a kernel commit helper that revalidates legality and, upon any stale, expired, mismatched, unsupported, or illegal lease condition, performs default legal dispatch instead of the requested placement.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein PMU overflow handlers in NMI context record only bounded bucketized sample records into fixed per-CPU rings and perform no allocation, no topology lookup, no pid-keyed aggregation, and no scheduler-facing state mutation, and wherein all attribution and phase classification occurs in deferred context.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein task phase classification uses bounded data mining comprising fixed-size sliding histograms and percentile-derived cutpoints versioned by a mining sequence value that is embedded in the immutable lease generation.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the lease generation includes locality metadata comprising LLC-domain identity and a hugepage-affinity class derived from DTLB-walk pressure and large-page execution evidence, and wherein those fields affect candidate ranking but are optional dependent hints rather than required validity conditions.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the immutable lease generation is published by release semantics, consumed by acquire semantics under RCU read-side protection, and copied as a fixed-size descriptor with no variable-length fields exposed to eBPF, thereby avoiding seqcount-style retry loops while preventing torn reads.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein lease read and lease commit kfuncs are restricted to sched_ext hook contexts that are not under rq-&gt;lock, and wherein the commit helper is non-bypassable for lease-aware tasks so that every failed lease resolution deterministically maps to local legal dispatch, kernel default CPU selection, or global DSQ fallback.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: PMU event availability and semantics vary across x86 generations. Mitigation: define a minimal supported event matrix, publish capability flags in lease flags, and degrade to capacity-only leases when a requested event set is unavailable.</li><li style='margin-bottom:6px;'>Risk: Sampling overhead could erase scheduler gains. Mitigation: enforce minimum sampling periods, hard per-CPU interrupt-rate caps, bounded ring sizes, bounded drain counts, and automatic temporary disable of optional phase mining when overhead budget is exceeded.</li><li style='margin-bottom:6px;'>Risk: Frequent cpuset or hotplug churn can make leases expire before use. Mitigation: short explicit expiries, exact sequence cookies, O(1) fallback with no retry loop, and capacity-only ranking when sequence churn is high.</li><li style='margin-bottom:6px;'>Risk: Misclassification of memory-bound tasks could bias placement incorrectly. Mitigation: use coarse stable enums, versioned mining cutpoints, optional hint flags, and default-safe behavior when evidence confidence is low or unknown.</li><li style='margin-bottom:6px;'>Risk: Prior-art overlap from exposing capacity or perf data to scheduling policy. Mitigation: keep the independent claim narrowly focused on immutable lease generation plus authoritative kernel commit and fallback semantics, and position PMU mining, LLC locality, and hugepage affinity as dependent claims.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Linux sched_ext documentation and kfunc model</li><li>Linux cpuset, CPU hotplug, and sched_domain topology documentation</li><li>Linux arch_scale_cpu_capacity(), thermal pressure, util_est, and uclamp documentation</li><li>Intel Thread Director / Intel HFI / ITMT related public scheduler-capacity documentation</li><li>Intel 64 and IA-32 Architectures Optimization Reference Manual, section 22.8.5.3 L2 Cache Misses</li><li>Intel performance monitoring event reference for retired instructions, cycles, L2 miss, LLC miss, and DTLB walk events</li><li>Linux Transparent Huge Pages and hugetlb documentation</li><li>On Using Linux Kernel Huge Pages with FLASH, an Astrophysical Simulation Code</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 2.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The legality/invalidation model is still underspecified: without a precise definition of cookies, update sites, and commit-time checks, a stale lease can appear valid across concurrent cpuset/hotplug/topology changes and lead to illegal dispatch.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact locking context for (a) lease snapshot read kfunc(s) and (b) the mandatory commit helper. You must state whether rq-&gt;lock is held, whether preemption is disabled, whether RCU read-side critical sections are allowed there, and explicitly forbid any sleeping/locking that can invert with rq-&gt;lock (cpuset locks, topology rebuild locks, percpu rwsem, etc.).</li><li style='font-size:13px;margin-bottom:4px;'>Make the cookie/generation scheme concrete and provably race-free: identify which kernel events bump which counters (cpuset effective mask changes, CPU online/offline, sched_domain rebuild, root_domain changes), whether counters are global/per-cgroup/per-root_domain, and the memory-ordering rules (WRITE_ONCE/READ_ONCE, release on publish, acquire on consume). If cpuset state isn’t represented by a single global monotonically increasing seq, you need a different validity contract.</li><li style='font-size:13px;margin-bottom:4px;'>Do not imply RCU publication or allocation from NMI/perf overflow context. PMU overflow handlers must only do bounded, lockless per-CPU writes (no alloc, no call_rcu, no locks that aren’t NMI-safe). Specify the exact ring buffer primitive and barriers used, and how the deferred worker handles CPU hotplug (draining per-CPU data, stopping sampling, and avoiding use-after-free on offline CPUs).</li><li style='font-size:13px;margin-bottom:4px;'>A ‘legal-placement lease’ cannot be purely global/topology-based: cpuset legality and affinity are task-specific (p-&gt;cpus_ptr, cgroup/cpuset effective masks, possible CPU mask). The commit helper must validate against the task’s current effective allowed mask and CPU state (cpu_online/active) at commit time; a generation tied only to global cpuset/topology is insufficient.</li><li style='font-size:13px;margin-bottom:4px;'>Specify how per-CPU / per-node immutable objects survive CPU hotplug and teardown: what owns the objects, how they’re replaced (rcu_assign_pointer), and how they’re freed (call_rcu) without readers observing freed memory. Also define the NULL/invalid snapshot behavior so BPF cannot rely on a lease always existing.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: As written, the “must-use commit helper + kernel revalidation + fallback” may be seen as an obvious restatement of existing sched_ext/kfunc “kernel validates BPF choice” patterns unless the ABI/object semantics, invalidation model, and claim boundaries are made concrete and clearly non-overlapping with prior sched_ext dispatch validation and existing generation/cookie techniques.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the concrete ABI surface: exact fixed-size struct(s) copied to BPF (fields, widths, alignment), max candidate count (if any), and the kfunc signatures (read/get lease, commit/dispatch). Without a precise value-object definition, novelty collapses into “validated CPU choice,” which is likely anticipated.</li><li style='font-size:13px;margin-bottom:4px;'>Prove the “must-use” property technically: specify how the design prevents bypass (e.g., prohibit direct dispatch kfuncs unless accompanied by a lease token; or embed an unforgeable lease handle checked by the kernel). If BPF can still call an existing dispatch-to-cpu helper directly, the lease becomes optional and not a differentiator.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify the legality model and what is being snapshotted: cpuset effective mask, hotplug online mask, root-domain identity, SMT/LLC domains, and NUMA constraints. Specify exactly which constraints are enforced at commit time vs. implied by the lease envelope; otherwise this reads like generic “re-check cpuset/hotplug” prior art.</li><li style='font-size:13px;margin-bottom:4px;'>Make the invalidation/cookie mechanism non-obvious and race-safe: identify which kernel events bump which generation counters, how they are serialized (seqcount/atomic64/RCU), and how BPF observes them (release/acquire rules). Provide a minimal happens-before argument that prevents torn/ABA reuse of a lease across topology rebuilds.</li><li style='font-size:13px;margin-bottom:4px;'>Constrain and separate dependent features (microprofile/PMU hints) from the core claim: explicitly state that the invention works with no PMU at all, and that PMU classification outputs are low-cardinality enums with bounded update rate. Otherwise prior art around perf_event sampling + scheduler heuristics will be used to dilute novelty.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Make the Xeon co-design hook explicit: specify how the lease derives/normalizes Intel HFI/ITMT capacity classes (and what happens when HFI is absent/disabled), so the ABI clearly advances Intel hybrid-server competitiveness vs. generic “capacity” signals.</li><li style='font-size:13px;margin-bottom:4px;'>Define the ABI precisely (struct layout, fixed byte size, versioning, endianness, enum cardinalities, and “unknown” semantics) to keep the snapshot verifier-safe and stable across kernel upgrades and vendor SKUs.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify legality cookies and invalidation sources: name the exact kernel state transitions that bump generation/cookies (cpuset effective mask, cpu_online_mask/hotplug, sched_domain rebuild, rd/NUMA changes) and guarantee commit-helper checks are lock-safe under rq-&gt;lock.</li><li style='font-size:13px;margin-bottom:4px;'>Add a NUMA/SNC story for server value: specify whether the lease is per-NUMA node / per-root-domain, and how it composes with memory locality (hugepages, remote memory, CXL tiers) to avoid optimizing LLC while regressing DRAM hop latency.</li><li style='font-size:13px;margin-bottom:4px;'>Bound the microprofile pipeline operationally (ring sizes, sample rate caps, CPU overhead budget, worst-case memory, cgroup isolation, and attack surface) so hyperscalers can enable it without perf/DoS risk.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Side-channel / multi-tenant safety is underspecified: even “enum microprofile labels + confidence” derived from PMU can leak workload phase/class across cgroups/containers. Specify hard gating (e.g., perf_event_paranoid / CAP_PERFMON, per-cgroup enable, and a clear rule for guests/VMs) and ensure labels are never produced from unprivileged-controlled perf contexts.</li><li style='font-size:13px;margin-bottom:4px;'>NMI/perf overflow handling details need a concrete safety contract: define exactly what is written in NMI context, prove bounded writes (no locks, no allocations, no per-task pointer chasing), and define how attribution to a task avoids UAF and PID recycling (e.g., use stable task_cookie, refcounting, or only attribute in sched context).</li><li style='font-size:13px;margin-bottom:4px;'>The lease invalidation/cookie model needs precise memory-ordering and race semantics: specify which seqcount/RCU mechanisms back “cpuset/hotplug/topology cookies,” how BPF snapshot copies are synchronized (release/acquire points), and how the commit helper behaves under concurrent cpuset change + CPU hotplug + rq migration without taking sleeping locks.</li><li style='font-size:13px;margin-bottom:4px;'>Define forward-progress and determinism of the fallback path: what exactly is “default legal dispatch” in sched_ext terms (which helper, which constraints), and how do you prevent pathological retry loops or policy-induced starvation when leases expire rapidly under churn.</li><li style='font-size:13px;margin-bottom:4px;'>ABI stability and verifier constraints need to be nailed down: fix the snapshot struct layout/size, alignment, and versioning (BTF, feature flags) so older BPF programs fail safely; explicitly forbid exposing kernel pointers/IDs that are not stable across rebuilds or namespaces (e.g., raw CPU topology IDs).</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact publication/consumption memory-ordering rules for the committed generation (e.g., seqlock vs RCU vs explicit smp_store_release/smp_load_acquire on a commit cookie).</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Spell out how eligibility descriptors remain valid across CPU hotplug, cpuset updates, and topology rebuilds. If you publish CPU IDs/bitmaps, you must guarantee they are either (a) </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the required fallback path precisely and prove forward progress: what exact hook is invoked when the lease is expired/mismatched, and what constraints does it obey (e.g., mu</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify the update context and locking: where does UPDATE→NORMALIZE run (workqueue? per-cpu kthread?), what locks are taken, and how do you avoid lock inversion with scheduler locks</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define lease expiry semantics in kernel time terms (jiffies vs ktime) and handle time discontinuities (suspend/resume, timekeeping changes). Also define behavior when expiry trigger</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the exact concurrency primitive for “generation-sealed” publication (e.g., per-CPU double-buffer + atomic generation header with release-store, or seqcount_t with reader ret</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define object lifetime rules: where the lease storage lives (per-CPU static, per-node, RCU-allocated), how it is reclaimed, and how BPF/kfunc access is prevented from racing with CP</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make legality authoritative in-kernel: the “legal placement envelope” must be derived from cpuset constraints, cpu_active/online masks, and sched_domain/topology state under the rig</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Detail the mandatory fallback path semantics: what is the exact kernel-enforced action when the lease is stale/expired/illegal (e.g., dispatch to local CPU, default select_cpu, enqu</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify where “task microprofile” is collected and at what IRQ context: PMU overflow handlers can run in NMI context; any aggregation/classification must be NMI-safe, bounded, and m</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux scheduler using x86 eBPF microarchitecture features
+</footer>
+</div></body></html>

@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] Policy-Domain AVX Ratio-Limit Pressure and Physical-Core Coo</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-21231c3e860d &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Policy-Domain AVX Ratio-Limit Pressure and Physical-Core Cooldown Bias for Linux Power Governors</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux power management using x86 AVX-512 microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>AVX-512 Power-Pressure Bridge for schedutil and intel_pstate</li><li style='font-size:13px;'>AVX-512 Frequency-License Domain Scheduler</li><li style='font-size:13px;'>AVX-512 Cooldown Residency Bridge for cpuidle and intel_idle</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | OPTIMIZATIONS FOR INTEL® AVX, INTEL® AVX2, &amp; INTEL® FMA &lt;&gt; intel_opt_manual | SOFTWARE OPTIMIZATION FOR INTEL® AVX-512 INSTRUCTIONS
+  MMR Score:    0.7782</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>Introduce an x86 vector-limit provider that reads current-status AVX attenuation reasons from `MSR_CORE_PERF_LIMIT_REASONS` or the exact model-specific equivalent already surfaced by Intel `perf_limit_reasons` diagnostics, combines that runtime signal with boot-discovered AVX2 and AVX-512 ratio-limit tables, builds RCU-managed physical-core or explicitly wider-scope domain objects, converts the active limit into a bounded scheduler-capacity pressure consumed exactly once when `schedutil` computes the `map_util_freq()` capacity term, and reuses the same domain cooldown timestamp as an `atomic64_t` and `seqcount` backed ranking-only bias for `menu` and `TEO` so Linux stops asking for unattainable turbo and avoids overly deep C-states during post-AVX-512 recovery windows.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The invention is a Linux kernel control-plane bridge between Intel AVX2/AVX-512 microarchitectural ratio limiting and generic OS power policy. Existing Intel facilities expose raw performance-limit reasons for diagnostic</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Heavy AVX2 and especially AVX-512 regions on Intel x86 can trigger hardware-managed frequency ratio limits that outlive the last vector instruction. Linux power management today largely reacts to demand rather than to an explicit statement from the hardware that a lower ceiling is temporarily in force. As a result, `schedutil` can keep requesting a turbo frequency that the hardware will not honor, especially when a scalar task wakes on the SMT sibling of a core that just executed AVX-512. The result is request overshoot, oscillation between requested and attainable frequency, wasted package power, and unfair latency for scalar follow-on work.
+
+The scope of the hardware limit is also not per task and not reliably per logical CPU. On current Intel server parts the AVX license or attenuation effect is at least shared by the physical core across SMT siblings, and future telemetry sources may report a wider coupling domain such as die or package. A correct kernel design therefore cannot infer pressure from task state, PMU sampling, or XSTATE ownership alone.
+
+A second problem appears in cpuidle. Immediately after a clipped AVX-512 phase, the core may re-enter idle just before scalar cleanup or sibling work returns. Existing idle governors may pick a deep C-state because they see only generic idle-history signals, not a recent vector-induced cooldown shared by the physical core. That creates avoidable exit-latency penalties at exactly the moment the core is recovering from a hardware-enforced vector downclock event.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Intel optimization manuals describe that AVX and AVX-512 execution can reduce attainable frequency, and some Intel parts expose raw `perf_limit_reasons` or `MSR_CORE_PERF_LIMIT_REASONS` style diagnostics. That is still not a Linux control abstraction. Those interfaces are vendor-specific, expose raw reason bits rather than a scheduler-unit scalar, and do not define how the signal should be keyed to physical cores, aggregated to `cpufreq` policies, shaped with hysteresis and cooldown, or consumed without double counting. `intel_pstate` diagnostic plumbing may surface the bits, but it does not create a generic kernel signal with explicit domain semantics, deterministic decay, or a formal contract for cross-subsystem consumption.
+
+Existing Linux scheduler mechanisms also miss the target. PELT utilization, `util_est`, `uclamp`, and frequency invariance model runnable demand; thermal pressure models a generic capacity loss; none of them represents a hardware-declared AVX-specific ratio cap. PMU- or task-based inference is both noisy and semantically wrong because the hardware restriction is shared and can persist after the causative instructions retire.
+
+On the idle side, `menu` bases prediction on observed idle durations and interactivity correction, `TEO` ranks states from timer-event hit and miss history, and `intel_idle` demotion tables are static heuristics. None uses an explicit current-status AVX limit bit, none keys cooldown to the shared physical-core domain, and none applies a bounded ranking-only bias after PM QoS, target residency, exit latency, and next-timer checks. The gap is therefore a topology-correct, formally bounded, vendor-neutral kernel abstraction for explicit AVX ratio limiting that can safely feed both `schedutil` and cpuidle without changing existing eligibility semantics.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention adds a generic kernel abstraction named here a vector-limit provider, with an x86 Intel implementation. The provider is enabled only on models where two conditions are true at boot: `(1)` a current-status telemetry source exists for active core frequency limiting due to vector-license or transition attenuation, using `MSR_CORE_PERF_LIMIT_REASONS` or the exact model-specific equivalent already used by Intel `perf_limit_reasons` reporting, and `(2)` the platform exposes the corresponding scalar, AVX2, and AVX-512 ratio ceilings through CPUID-model tables or model-specific ratio-offset registers. Only the current-status half of the telemetry is used for control; sticky logged bits are ignored because they indicate historical rather than current limiting. If the model cannot document both semantics and scope, the feature is disabled rather than guessed.
+
+The provider computes a stable sharing key for each online CPU as `(scope, package_id, die_id, cluster_id, core_type, core_id, policy_cookie)`. For present AVX license telemetry the default `scope` is `CORE`, so both SMT siblings share one domain object. If a future Intel source explicitly reports a wider coupling scope, the implementation can select `DIE`, `PACKAGE`, or `POLICY`; if scope is unknown, no domain object is created. Domain membership is rebuilt on CPU hotplug and on `cpufreq` policy rebuild under `cpus_read_lock()` plus a provider mutex, and the resulting tables are published to readers with RCU. A `cpufreq` policy stores an RCU pointer to the set of intersecting domains, and policy aggregation is strictly `max(domain_pressure)` because a shared policy cannot satisfy a request above its most constrained member.
+
+Scalar math is explicit and testable. Let `Rscalar` be the boot-time scalar ratio baseline for the policy, and let `Ravx2` and `Ravx512` be the corresponding AVX-capped ratios. At each refresh, the telemetry selects `Ractive` from `{Rscalar, Ravx2, Ravx512}` according to whether no vector limit, AVX2 limit, or AVX-512 limit is currently asserted. The instantaneous normalized severity is `raw_q10 = clamp(((Rscalar - Ractive) * 1024) / max(1, Rscalar), 0, 1024)`. The exported scheduler-unit pressure is `pressure = DIV_ROUND_CLOSEST(raw_q10_eff * SCHED_CAPACITY_SCALE, 1024)`.
+
+A per-domain finite-state machine shapes oscillatory telemetry into a bounded signal. Parameters are explicit: `N_on = 2`, `N_off = 2`, `sample_period_ns = max(250000, transition_delay_ns / 4)`, `min_clip_ns = 200000`, `min_cooldown_ns = 200000`, and `max_cooldown_ns = 2000000`. On an active sample, the state enters `CLIPPED`, `peak_q10 = max(peak_q10, raw_q10)`, `cooldown_span_ns = clamp(min_cooldown_ns + peak_q10 * 1800000 / 1024, min_cooldown_ns, max_cooldown_ns)`, and `cooldown_until_ns = now + min_clip_ns + cooldown_span_ns`. After `N_off` inactive samples, the state becomes `COOLDOWN`, and the effective severity is `raw_q10_eff(now) = DIV_ROUND_UP(peak_q10 * max(cooldown_until_ns - now, 0), cooldown_span_ns)`. If no new active telemetry arrives, `cooldown_until_ns` is never extended, `max(cooldown_until_ns - now, 0)` decreases monotonically under monotonic time, and therefore the exported pressure cannot be prolonged by scheduler or governor behavior. Only new active telemetry may raise the signal.
+
+The generic interface contract is intentionally narrow and vendor-neutral. The x86 code lives in `arch/x86/kernel/cpu/vector_limit.c` with declarations in `include/linux/vector_limit.h`. It exports `arch_scale_vector_pressure(policy_cpu)` returning `0 .. SCHED_CAPACITY_SCALE` and `cpuidle_vector_rank_bias_ns(cpu, predicted_ns, now_ns)` returning a bounded nanosecond bias. Updates are owned by the arch provider and happen only from non-sleeping local-CPU refresh points such as `schedutil` update context, scheduler tick, or idle exit; readers never touch hardware. Runtime topology pointers are RCU-protected. Multi-field state snapshots use `seqcount_latch_t`, and `cooldown_until_ns` is stored in `atomic64_t` with monotonic-max update semantics so cpuidle readers cannot observe torn 64-bit timestamps even on 32-bit or weakly ordered architectures.
+
+Consume-exactly-once correctness is explicit. `schedutil` applies the pressure only where it computes the capacity term supplied to `map_util_freq()`: `effective_max = max(1, arch_scale_cpu_capacity(cpu) - arch_scale_thermal_pressure(cpu) - arch_scale_vector_pressure(policy_cpu))`. The signal is not injected into `arch_scale_cpu_capacity()`, `arch_scale_freq_capacity()`, PELT, `uclamp`, EAS placement, or thermal-pressure accounting. RT and DL frequency updates that already flow through `schedutil` see the same single `effective_max`, but there is no second composition point elsewhere, so double counting is structurally prevented.
+
+The cpuidle embodiment reuses the same domain state without changing eligibility. `now_ns` comes from `ktime_get_mono_fast_ns()`, which is monotonic and immune to wall-clock adjustments. `remaining_ns = now_ns &lt; cooldown_until_ns ? cooldown_until_ns - now_ns : 0`. `predicted_ns` is clamped to non-negative `u64`. The ranking-only bias is `bias_ns = min(predicted_ns &gt;&gt; 2, min(remaining_ns, 250000))`, and `rank_predicted_ns = predicted_ns - bias_ns`. This guarantees no underflow, no negative predicted time, and a hard cap of both 25 percent of the governor&#x27;s own prediction and 250 microseconds absolute. `menu` and `TEO` call the helper only after their normal PM QoS, target residency, exit latency, and next-timer filters have already produced the eligible state set. The bias is then used only inside the ranking score. A state that is ineligible before the helper remains ineligible after the helper, so the invention cannot bypass existing latency or QoS constraints indirectly.
+
+Suspend and resume behavior is defined. Because `ktime_get_mono_fast_ns()` does not move backward under wall-clock adjustment, stored deadlines remain ordered during runtime. Because AVX ratio limiting cannot legitimately survive system suspend, a PM notifier clears all domains on suspend and resume, preventing stale cooldown timestamps after long sleep intervals.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>ASCII control flow:
+
+x86 boot / hotplug
+  -&gt; detect AVX ratio tables + current perf-limit telemetry semantics
+  -&gt; build `vector_limit_domain` objects keyed by `(scope, package, die, cluster, core_type, core_id, policy_cookie)`
+  -&gt; publish domain tables with RCU
+
+local CPU refresh path (`schedutil` update / tick / idle exit)
+  -&gt; rate-limit by `sample_period_ns`
+  -&gt; read current vector-limit reason MSR on the local CPU only
+  -&gt; classify mode: `NONE | AVX2 | AVX512`
+  -&gt; compute `raw_q10`
+  -&gt; update FSM snapshot under `seqcount_latch`
+  -&gt; update `atomic64_t cooldown_until_ns`
+
+policy read path (`schedutil`)
+  -&gt; RCU lookup intersecting domains for `policy-&gt;related_cpus`
+  -&gt; `policy_pressure = max(effective_pressure(domain, now))`
+  -&gt; `effective_max = base_capacity - thermal_pressure - policy_pressure`
+  -&gt; `map_util_freq(util, effective_max)`
+
+idle read path (`menu` / `TEO`)
+  -&gt; read cached domain snapshot only
+  -&gt; `bias_ns = cpuidle_vector_rank_bias_ns(cpu, predicted_ns, now_ns)`
+  -&gt; rank among already-eligible states using `predicted_ns - bias_ns`
+
+Pseudocode:
+
+for each online CPU c:
+    if !telemetry_supported(c) or !ratio_table_supported(c):
+        continue
+    scope = detect_scope(c)   // CORE by default; DIE/PACKAGE/POLICY only if explicitly reported
+    if scope == UNKNOWN:
+        continue
+    key = make_key(scope,
+                   topology_physical_package_id(c),
+                   topology_die_id(c),
+                   topology_cluster_id(c),
+                   x86_core_type(c),
+                   topology_core_id(c),
+                   cpufreq_policy_cookie(c))
+    domain = lookup_or_create(key)
+    cpumask_set_cpu(c, domain-&gt;cpus)
+
+for each cpufreq policy p:
+    p-&gt;vector_domains = { d | cpumask_intersects(d-&gt;cpus, p-&gt;related_cpus) }
+
+refresh_domain(cpu, now_ns):
+    if now_ns &lt; this_cpu_read(next_sample_ns):
+        return
+    mode = read_current_vector_limit_mode(cpu)
+    raw_q10 = ratio_to_q10(mode)
+    write_seqcount_latch_begin(&amp;domain-&gt;seq)
+    update_fsm(domain, mode, raw_q10, now_ns)
+    write_seqcount_latch_end(&amp;domain-&gt;seq)
+    this_cpu_write(next_sample_ns, now_ns + sample_period_ns)
+
+policy_pressure(policy, now_ns):
+    maxp = 0
+    rcu_read_lock()
+    for each domain d in policy-&gt;vector_domains:
+        maxp = max(maxp, effective_pressure(d, now_ns))
+    rcu_read_unlock()
+    return maxp
+
+Locking contract:
+- runtime read paths take no scheduler locks and no cpuidle governor locks;
+- runtime read paths use only RCU, seqcount retry, and atomic64 reads;
+- topology rebuild uses `cpus_read_lock()` plus a provider mutex and then RCU swap;
+- cpuidle never performs MSR reads, remote calls, or scheduler lock acquisition.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Add `include/linux/vector_limit.h` with generic stubs and two exported helpers: `arch_scale_vector_pressure(int cpu)` and `cpuidle_vector_rank_bias_ns(int cpu, u64 predicted_ns, u64 now_ns)`. Keep vendor reason codes private to x86.
+
+2. Implement the Intel provider in `arch/x86/kernel/cpu/vector_limit.c`. Parse boot-time ratio ceilings from documented CPUID or model tables, map supported models to the exact current-status performance-limit reason bits, and refuse enablement on models where either ratio data or scope semantics are ambiguous. Reuse only documented current-status bits for control; leave sticky logged bits to diagnostics.
+
+3. Create `vector_limit_domain` objects and policy-domain attachment tables. Build and rebuild them in CPU hotplug and cpufreq policy callbacks using `cpus_read_lock()` plus a provider mutex, publish the new tables with RCU, and include `core_type` in the key so heterogeneous packages cannot alias P-core and E-core identifiers.
+
+4. Implement the non-sleeping refresh path. Reads happen only on the local CPU, rate-limited by `sample_period_ns`, and write the state machine under `seqcount_latch_t` while storing `cooldown_until_ns` in `atomic64_t`. Use `ktime_get_mono_fast_ns()` for all deadlines. Register a PM notifier that clears all domains on suspend and resume.
+
+5. Integrate with `schedutil` at the single composition point where the governor computes the `max` capacity term that is passed to `map_util_freq()`. Do not modify PELT, `uclamp`, EAS, thermal pressure, or invariance paths. That preserves consume-exactly-once semantics.
+
+6. Integrate with `menu_select()` and `teo_select()` only after each governor has formed the eligible state set from PM QoS, target residency, exit latency, and next-timer constraints. Feed `rank_predicted_ns` only into the ranking score. Do not alter eligibility checks, demotion tables, or `intel_idle` state-disable logic.
+
+7. Add tracing and observability as diagnostics only, for example tracepoints that expose mode transitions, exported pressure, and cooldown horizon. Do not use debugfs or tracing interfaces as the control plane. The runtime control plane remains the internal provider API.
+
+8. Add KUnit and hotplug tests for ratio math, state-machine monotonicity, RCU rebuild correctness, and cpuidle bias bounds. Add selftests or trace-based benchmarks for mixed scalar/AVX2/AVX-512 workloads on SMT-on, SMT-off, shared-policy, and heterogeneous-topology systems.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>The validation plan proves both feasibility and boundedness.
+
+A. Arithmetic and state-machine correctness:
+- Unit-test `raw_q10`, `pressure`, `cooldown_span_ns`, and `bias_ns` for edge cases including `Rscalar = 1`, `raw_q10 = 0`, `raw_q10 = 1024`, oscillatory `AVX512 &lt;-&gt; NONE` telemetry, and very small or zero `predicted_ns`.
+- Prove `0 &lt;= pressure &lt;= SCHED_CAPACITY_SCALE`, `0 &lt;= bias_ns &lt;= min(predicted_ns / 4, 250000)`, and `rank_predicted_ns &gt;= 0`.
+- Prove monotonicity: if no new active telemetry is observed, `cooldown_until_ns` is not extended and exported pressure is non-increasing with time.
+
+B. Concurrency and topology correctness:
+- Stress CPU hotplug while repeatedly rebuilding policy attachments and verify that RCU readers in `schedutil`, `menu`, and `TEO` never dereference freed domain objects.
+- Run lockdep and KCSAN with forced refresh traffic to prove that cpuidle paths do not take scheduler locks and that scheduler paths do not take cpuidle governor locks.
+- Exercise 32-bit and weakly ordered configurations or litmus-style tests to verify that `atomic64_t cooldown_until_ns` cannot be read torn.
+
+C. Functional performance measurements:
+- Benchmarks with AVX-512 bursts followed by scalar wakeups on the SMT sibling; mixed AVX2 and scalar threads inside one shared `cpufreq` policy; and package-level throughput under bursty vector phases.
+- Compare baseline Linux versus the invention on frequency-request overshoot, actual attained frequency, package power, energy per transaction, and p95/p99 wakeup latency.
+- For cpuidle, compare state-selection distributions and wake latencies with `menu` and `TEO`, confirming that the bias only shifts ranking among already-eligible states and does not systematically suppress deep idle under common scalar workloads.
+
+D. Platform and lifecycle coverage:
+- Test on Intel servers with AVX2 only, AVX-512 capable SKUs, SMT enabled and disabled, policies spanning multiple cores, and heterogeneous topologies where `core_type` differs.
+- Validate suspend/resume by asserting that all cooldown state is cleared and no stale bias survives across sleep transitions.
+
+Success criteria are: fewer futile max-frequency requests during vector cooldown, lower package energy during mixed vector/scalar phases, no regressions in non-AVX workloads, no lock-order issues, and a mathematically bounded cpuidle bias that never overrides PM QoS or latency eligibility.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A method in a Linux kernel for managing processor power on an x86 system, comprising: reading explicit current-status AVX ratio-limit telemetry from a model-specific performance-limit source; combining the telemetry with boot-discovered scalar, AVX2, and AVX-512 ratio ceilings; constructing a shared domain object keyed to a documented hardware sharing scope that includes at least a physical core; converting the active ratio ceiling into a bounded scheduler-capacity pressure; aggregating the pressure to a `cpufreq` policy by a maximum-over-intersecting-domains rule; and consuming the pressure exactly once in a scheduler governor frequency-selection path.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the bounded scheduler-capacity pressure is produced by a finite-state machine having `BASELINE`, `CLIPPED`, and `COOLDOWN` states, wherein an active vector-limit sample stores a peak severity and a cooldown deadline, and wherein the exported pressure decays as a deterministic function of monotonic time such that, absent new active telemetry, the pressure is non-increasing and cannot be prolonged by governor read behavior.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the scheduler governor is `schedutil`, and wherein the pressure is applied only to the effective capacity term passed to a frequency-mapping function and is not inserted into PELT utilization, utilization clamping, energy-aware scheduling placement, frequency-invariance computation, or thermal-pressure accounting, thereby preventing double counting across scheduler subsystems.</li><li style='margin-bottom:8px;'>The method of claim 1, further comprising exposing from the same shared domain object a read-only cooldown timestamp and deriving therefrom a bounded idle-state ranking bias for a cpuidle governor, wherein the bias is capped by both an absolute nanosecond limit and a fractional limit of the governor&#x27;s own predicted idle duration, and wherein the bias is applied only after PM QoS, target residency, exit latency, and next-timer eligibility checks so that no idle state becomes newly eligible because of the bias.</li><li style='margin-bottom:8px;'>A kernel apparatus comprising: an x86 provider that maps vendor-specific AVX performance-limit reason bits and ratio tables into a vendor-neutral interface; RCU-published domain tables for CPU hotplug and `cpufreq` policy changes; `seqcount`-protected runtime snapshots and an `atomic64_t` cooldown deadline for lock-free readers; and consumer hooks in `schedutil`, `menu`, and `TEO`, wherein runtime cpuidle reads perform no MSR access and acquire no scheduler locks.</li><li style='margin-bottom:8px;'>A method for topology-correct domain detection in a heterogeneous x86 processor, comprising deriving a stable key from at least scope, package identifier, die identifier, cluster identifier, core type, core identifier, and policy cookie; assigning each online CPU to a vector-limit domain only when the telemetry source documents the sharing scope; rebuilding the domains under CPU hotplug and policy reconfiguration; and disabling the feature when the scope is unknown.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: Intel model differences may expose different performance-limit reason encodings or ratio-table semantics. Mitigation: enable only from an explicit model whitelist with documented bit definitions and ratio sources; disable the provider on ambiguity instead of attempting heuristic decoding.</li><li style='margin-bottom:6px;'>Risk: runtime MSR reads could add overhead on scheduler paths. Mitigation: refresh only on the local CPU, rate-limit reads with `sample_period_ns`, guard the entire feature with a static key, and make cpuidle consume only cached state rather than hardware reads.</li><li style='margin-bottom:6px;'>Risk: incorrect scope detection could mis-aggregate pressure across CPUs. Mitigation: make `CORE` the default only for telemetry explicitly documented as core-shared, include `core_type` in the domain key for heterogeneous packages, support wider scopes only when firmware or hardware enumerates them, and disable the feature when scope is unknown.</li><li style='margin-bottom:6px;'>Risk: the cpuidle bias could steer too aggressively away from deep states. Mitigation: cap `bias_ns` to both 25 percent of the governor&#x27;s own prediction and 250 microseconds absolute, apply it only after existing eligibility filters, and expose tracing so platform owners can validate that deep idle remains reachable under non-AVX workloads.</li><li style='margin-bottom:6px;'>Risk: stale cooldown state after suspend or CPU hotplug could create false pressure. Mitigation: clear all domains on suspend and resume, rebuild domain tables on hotplug and policy changes under RCU publication rules, and keep reader paths lock-free so no stale pointer survives grace-period retirement.</li><li style='margin-bottom:6px;'>Risk: interaction with thermal pressure or frequency invariance could accidentally double count capacity loss. Mitigation: define a single composition point inside `schedutil` and prohibit feeding vector pressure into any other scheduler or cpufreq capacity pipeline.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Intel 64 and IA-32 Architectures Optimization Reference Manual, sections discussing AVX, AVX2, and AVX-512 frequency behavior and transition attenuation.</li><li>Intel Software Developer&#x27;s Manual and model-specific register documentation for `MSR_CORE_PERF_LIMIT_REASONS` or the exact equivalent surfaced by Intel `perf_limit_reasons` diagnostics.</li><li>Linux kernel documentation and source for `cpufreq` `schedutil`, including the `map_util_freq()` capacity mapping path.</li><li>Linux kernel documentation and source for cpuidle governors `menu` and `TEO`, including eligibility checks based on PM QoS, target residency, exit latency, and next-timer constraints.</li><li>Linux x86 topology and hotplug infrastructure, including physical package, die, cluster, SMT sibling, and heterogeneous core-type identification.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the sharing domain precisely and prove it matches the hardware limit: AVX/“turbo license” throttling may be per-physical-core (SMT siblings share frequency) but can also be constrained by package-level power/thermal limits. You need an explicit domain construction rule (core vs die vs package) with a safe fallback when topology/PMU/MSR evidence is ambiguous, otherwise you will misattribute cooldown and bias the wrong CPUs.</li><li style='font-size:13px;margin-bottom:4px;'>Lockless design needs a concrete correctness story for the cpuidle and schedutil fast paths: specify exactly which primitives are used where (e.g., RCU read-side + seqcount_latch or raw_seqcount + atomic64 deadline) and under what context (IRQs disabled, preempt disabled). Provide reader/writer rules and prove no torn reads (time + scalar) and no writer starvation during hotplug/topology rebuild.</li><li style='font-size:13px;margin-bottom:4px;'>Telemetry acquisition must not be done in scheduler/idle fast paths. Reading PMU counters (or perf events) and/or MSRs per tick/selection is too expensive and may require constraints (counter multiplexing, virtualization, permissions). You need a sampling/aggregation point (e.g., per-CPU periodic work, scheduler tick, or cpufreq transition notifier) and a bounded update rate, plus behavior when counters are unavailable or unreliable.</li><li style='font-size:13px;margin-bottom:4px;'>‘Exact-once’ pressure composition in schedutil must be formally integrated with existing clamps and pressures: clarify interaction with thermal_pressure, uclamp.{min,max}, util_est, and frequency invariance. If you subtract capacity, ensure it doesn’t double-penalize tasks already limited by uclamp_max or thermal pressure, and that it preserves monotonicity of map_util_freq() inputs.</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug and policy changes need explicit lifecycle handling: when cpufreq policies merge/split, when SMT is toggled, and when CPUs go offline/online, ensure domain objects are reclaimed safely (RCU grace periods) and that stale bias/pressure is cleared or bounded so offline CPUs can’t pin a domain in cooldown indefinitely.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:3</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Key novelty hinges on “explicit Intel AVX license telemetry” (PMU/MSR/HFI) being reliably available to in-kernel policy code without reusing perf tooling or duplicating existing intel_pstate/thermal-pressure style mechanisms; as written, the telemetry acquisition, stability guarantees, and claim boundary vs existing pressure/limits are underspecified.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Narrow and harden the claim boundary: today it reads like a general “extra pressure” similar to existing thermal pressure / frequency invariance / intel_pstate limiting. Specify exactly what is new (e.g., a distinct AVX-license ceiling signal), why it is not already represented by APERF/MPERF invariance, intel_pstate perf_limit_reasons, or existing scheduler capacity clamping, and explicitly exclude generic downclock detection to avoid obviousness.</li><li style='font-size:13px;margin-bottom:4px;'>Define a concrete, upstream-plausible telemetry pipeline: which exact MSR(s)/PMU event(s) are read in-kernel, at what cadence, by which CPU, and under what privilege/availability constraints. If using PMU events (CORE_POWER.*_TURBO_LICENSE), explain how you avoid depending on perf_event infrastructure or conflicting with user perf; if using MSR_CORE_PERF_LIMIT_REASONS, enumerate model/stepping fallbacks and how “equivalent” is discovered safely.</li><li style='font-size:13px;margin-bottom:4px;'>Prove “exact-once” composition in schedutil is non-leaky: identify the single insertion point (e.g., map_util_freq()/get_next_freq path) and show how you prevent double-counting with (a) arch_scale_freq_capacity/frequency invariance, (b) thermal pressure, (c) uclamp/rt bandwidth, and (d) intel_pstate/max_freq limits. Provide a simple algebraic model showing the final freq selection remains monotone and bounded.</li><li style='font-size:13px;margin-bottom:4px;'>Sharing-domain correctness is a major risk: AVX ratio limiting may be per-core, per-SMT-core, or broader on some SKUs. You must define the domain construction rule (SMT siblings? core? die/package?) and justify it against x86 topology data; include hotplug behavior (publish/unpublish via RCU) plus what happens during topology changes (offline/online) to avoid stale pressure affecting unrelated CPUs.</li><li style='font-size:13px;margin-bottom:4px;'>cpuidle “ranking-only bias” still risks being prior-art-adjacent to existing menu/TEO heuristics and driver demotion logic. Make the bias mathematically bounded and explicitly non-overriding (cannot pick an otherwise-illegal state), and provide a rationale that the input signal (AVX cooldown) is not derivable from idle history alone—otherwise it looks like an obvious heuristic tweak.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Telemetry definition is underspecified and may be non-portable across Xeon generations: precisely enumerate the supported signal sources (MSR_CORE_PERF_LIMIT_REASONS vs PMU CORE_POWER.LVL*_TURBO_LICENSE vs APERF/MPERF inference), include per-model capability discovery/fallback, and define how conflicting signals are fused into one domain scalar.</li><li style='font-size:13px;margin-bottom:4px;'>The exact-once schedutil integration point needs a concrete contract to avoid double counting with existing pressure signals (thermal pressure, freq invariance, util_est, uclamp): specify the unit (capacity clamp vs util scaling vs max freq clamp), where it is applied in map_util_freq()/get_next_freq(), and how it interacts with uclamp_max so latency-sensitive tasks are not unintentionally throttled.</li><li style='font-size:13px;margin-bottom:4px;'>Domain formation must be nailed down: define the topology key (physical core, LLC, die, package) for AVX ratio limits on target Xeon SKUs, and specify how domains update on CPU hotplug/CPUID topology changes; add explicit rules for SMT sibling sharing and cpufreq policy mask mismatches (e.g., hybrid/clustered policies).</li><li style='font-size:13px;margin-bottom:4px;'>Cooldown arithmetic is described but not bounded formally: provide a monotonic, saturating state machine with maximum penalty duration, explicit decay function, and proof that read-side sampling cannot extend cooldown; include time source selection (sched_clock/ktime_get_mono_fast_ns) and overflow behavior.</li><li style='font-size:13px;margin-bottom:4px;'>cpuidle impact needs guardrails for fleet operators: quantify/limit bias magnitude so it cannot override next-timer/latency constraints, and define how the bias is applied in both menu and TEO without creating divergent behavior; include a measurable KPI plan (package C-state residency, tail latency, energy/op) to justify Xeon competitiveness claims.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Telemetry collection + consumption semantics are not specified tightly enough to rule out information leaks (cross-task/tenant) and fast-path instability (MSR/PMU reads, hotplug lifetime) on production kernels.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define a strict security model for the telemetry: ensure no new user-visible side channel is created (e.g., via tracepoints, debugfs/sysfs counters, or perf exposure) that would let unprivileged code infer co-runner AVX phases. If any interface is required, gate it behind CAP_SYS_ADMIN (or stricter), and document what is observable.</li><li style='font-size:13px;margin-bottom:4px;'>Avoid MSR/PMU reads in scheduler/cpuidle fast paths: require that any expensive sampling (MSR_CORE_PERF_LIMIT_REASONS, PMU events, APERF/MPERF) happens in a bounded periodic worker, per-CPU tick, or existing slow-path hook, and that schedutil/cpuidle consume only a precomputed scalar with READ_ONCE().</li><li style='font-size:13px;margin-bottom:4px;'>Specify the exact “consumed exactly once” integration point in schedutil and prove it can’t be double-counted with existing signals (arch_scale_freq_capacity(), thermal pressure, uclamp, HFI/ITMT). Concretely state whether the AVX ceiling clamps max_freq, reduces util-&gt;capacity mapping, or modifies invariant capacity—and ensure only one of those happens.</li><li style='font-size:13px;margin-bottom:4px;'>RCU + seqcount + atomic64 correctness needs a concrete read/write protocol: cpuidle governors may run with interrupts disabled; ensure writers never run in contexts that can deadlock, and readers use read_seqcount_begin/retry (or switch to seqlock/RCU-only) to avoid torn domain state during hotplug/topology rebuild.</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug/topology lifetime rules must be nailed down: define how domain objects are created/destroyed across CPU offline/online, SMT toggles, and cpufreq policy reinit. Use CPUHP state callbacks and ensure RCU grace periods cover all readers before freeing domain memory.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define a kernel-valid telemetry source and update path: reading MSRs/perf-limit-reason bits must not happen in schedutil’s fast path or under rq locks. Specify where the signal is s</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the exact concurrency model for per-core → per-policy aggregation: which data are per-CPU vs per-policy, what are the writers/readers, and what primitives are used (atomic_t</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify how the new pressure composes with existing invariance/pressure mechanisms (arch_scale_freq_capacity(), arch_scale_thermal_pressure(), uclamp, util_est). You must prove the </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make the hysteresis/min-dwell rules concrete and monotonic: define bounds, timebase (ktime_get_mono_fast_ns vs jiffies), and the exact state machine so the signal is stable yet resp</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Upstream interface needs to be precise: if you add a new generic governor-consumed hook, specify the API surface (function name, header, units, semantics) and how non-supporting pla</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the hint mechanism precisely (ABI + semantics): is it prctl(), sched_attr, cgroup, arch_prctl, or a new uapi? Specify who may set/clear it, whether it is inheritable across f</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the physical-core keying and lifetime rules: how you map CPUs to a shared “core” object across SMT (and how you behave on systems without SMT, with offline siblings, or with</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Provide a concurrency-safe update/read design for cooldown_until: the update path will be hit from scheduler/task context and cannot sleep. Use an explicit primitive (atomic64_t wit</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prove boundedness and correctness of the bias arithmetic: define exact clamp limits (ns), how it composes with predicted idle duration, and guard against underflow/overflow and nega</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify where the timestamp comes from and how it is compared: use a stable time source (ktime_get_ns/ktime_get_mono_fast_ns) and define behavior across suspend/resume and clock adj</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux power management using x86 AVX-512 microarchitecture features
+</footer>
+</div></body></html>

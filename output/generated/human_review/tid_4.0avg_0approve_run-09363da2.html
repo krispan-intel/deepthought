@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] APIC-Ordered Managed-IRQ Affinity Leasing with Capability-Ga</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-09363da26124 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>APIC-Ordered Managed-IRQ Affinity Leasing with Capability-Gated Legacy-INTx Fallback and Verified Completion-Metadata Mobility</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux device driver using x86 APIC microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Cluster-Aware MSI-X Vector Leasing via APIC Topology Contracts</li><li style='font-size:13px;'>CPU-Qualified Legacy-Interrupt Elision Contract for MSI-First Drivers</li><li style='font-size:13px;'>x2APIC Cluster-Local Completion Arenas Backed by Large Direct-Map Windows</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: X86_FEATURE_APIC &lt;&gt; apic_driver
+  MMR Score:    0.7830</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A kernel policy layer derives stable IRQ-locality leases from Linux CPU topology and, on x86 systems with X86_FEATURE_APIC and an active local-APIC driver, refines only the ordering of otherwise eligible domains using APIC-visible package, LLC, and x2APIC-cluster attributes; it snapshots a root-complex interrupt-capability descriptor before pci_alloc_irq_vectors_affinity(), treats requested affinity and observed effective affinity as distinct states so lease migration commits only after authoritative irq_desc effective-mask observation, deterministically reduces wide effective masks into stable locality keys with hysteresis and rate limiting, blocks impossible legacy INTx fallback without toggling shared wiring, and rebinds driver-declared movable completion metadata through an enforced QUIESCE-&gt;DRAIN-&gt;SWAP-&gt;PUBLISH-&gt;RESUME protocol spanning hardirq, threaded IRQ, NAPI, and blk-mq contexts with RCU publication and model-specific retirement.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is not ordinary IRQ affinity, irq_affinity_notify, irq_get_effective_affinity_mask(), blk-mq CPU mapping, or driver-specific pointer swapping. The invention is a coupled kernel mechanism with four coordinated</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>High-queue-count Linux drivers for NICs, NVMe, storage HBAs, accelerators, and similar devices increasingly rely on managed MSI/MSI-X placement for throughput and latency determinism. On x86, the realized performance depends on local-APIC delivery, irq_matrix pressure, interrupt remapping, CPU hotplug, housekeeping and cpuset constraints, and driver queue resizing. Existing kernel facilities expose pieces of this problem: requested and effective affinity masks, affinity notifiers, per-CPU allocation helpers, blk-mq CPU mapping, XPS/RPS, NAPI steering, and ad hoc driver callbacks. They do not provide a unified kernel contract that simultaneously (a) derives stable, topology-ordered locality domains, (b) treats requested affinity and observed effective delivery as separate states, (c) gives pci_alloc_irq_vectors_affinity() a concrete source-of-truth for whether legacy INTx fallback is actually permitted, and (d) safely relocates only the software completion metadata whose hot cachelines should follow verified effective IRQ locality. The practical result is locality churn, stale assumptions after remapping or hotplug, unnecessary remote cacheline traffic, and driver-specific rebinding logic that cannot reliably synchronize hardirq, threaded IRQ, NAPI, and blk-mq readers.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft asserts a kernel-enforced QUIESCE-&gt;DRAIN-&gt;SWAP-&gt;PUBLISH-&gt;RESUME rebinding contract across hardirq/threaded/NAPI/blk-mq, but does not specify a locking + lifetime model that is actually valid under concurrent IRQ migration, IRQ teardown (free_irq/pci_free_irq_vectors), and in-flight softirq/workqueue activity; without this, the “enforced” guarantee is not implementable safely.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact serialization points with IRQ core state: what lock(s) are held when sampling “committed effective affinity” (irq_desc-&gt;lock? irq_get_desc_lock()), and how you avoid races with irq_set_affinity(), irq_migrate_all_off_this_cpu(), CPU hotplug, and managed-vector reprogramming. “Observe effective mask after commit” must be tied to a concrete notifier/hook point in kernel/irq/*, not a best-effort polling of irq_data_get_effective_affinity_mask().</li><li style='font-size:13px;margin-bottom:4px;'>Make the completion-metadata lifetime rules mechanically safe: specify which context(s) may dereference the metadata pointer (hardirq handler, threaded handler, NAPI poll, blk-mq completion, tasklet/softirq), and which quiesce primitive blocks each of those contexts. In particular, synchronize_irq() only covers interrupt handlers; it does not by itself drain NAPI polls already scheduled, net_rx_action softirq backlog, or blk-mq completions running on other CPUs. You need explicit, per-subsystem drain barriers (e.g., napi_disable() + ensure no scheduled poll; blk_mq_quiesce_queue() + ensure completion paths cannot still reference old metadata) before rcu_assign_pointer() publication.</li><li style='font-size:13px;margin-bottom:4px;'>Prevent deadlocks and sleeping-in-atomic: the state machine must never call sleepable drains (napi_disable(), blk_mq_quiesce_queue(), synchronize_rcu()) from atomic context or while holding irq_desc locks. Specify that all transitions run from a dedicated workqueue with a strict lock ordering against irq_desc-&gt;lock, PCI device locks, netdev locks, and blk-mq queue locks.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify how “immutable, versioned legacy-INTx capability descriptors finalized before child probe” stays correct under dynamic events (ACPI hotplug, VFIO/virtualization topology changes, PCIe AER reset/retrain, surprise removal). If truly immutable, you must define when a new “generation” is created, how readers detect generation mismatch, and how pci_alloc_irq_vectors_affinity() handles devices probed under an older generation without violating the no-toggle/shared-wiring constraint.</li><li style='font-size:13px;margin-bottom:4px;'>The descriptor read-side needs a concrete RCU scheme: where is rcu_read_lock() held during pci_alloc_irq_vectors_affinity() and probe paths, and how are updates performed (rcu_assign_pointer + kfree_rcu)? Also, pci_lock_rescan_remove() is not a universal mutual exclusion mechanism for all call sites; specify the real update exclusion (device_lock, pci_bus_sem, or a new lock) and prove that alloc/free paths cannot observe partially updated descriptors.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Novelty is vulnerable unless you precisely distinguish your “kernel-enforced contract” from existing irq affinity notifiers + driver-managed pointer swaps and from existing PCI/IRQ quirk + fallback logic; right now the boundary between “new mechanism” and “integration of known primitives” is not crisply claimable.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Nail down the *exact* kernel hook points that make “committed effective delivery locality” authoritative (e.g., after irq_activate_and_startup(), after irq_do_set_affinity()/irq_set_affinity_locked(), after irq_chip-&gt;irq_set_affinity(), after interrupt remapping programming). Specify what happens when effective affinity is unknown/unsupported or changes asynchronously (irqbalance, CPU hotplug, irqchip reinit). Without a precise commit point and notification semantics, this reads like existing irq_set_affinity_notifier()-based designs.</li><li style='font-size:13px;margin-bottom:4px;'>Define concrete data structures and invariants for the “versioned, immutable legacy-INTx capability descriptor”: where it lives (pci_host_bridge vs pci_bus vs pci_dev), what fields exist (affirmative allow/prohibit facts, provenance, generation id), what locks/RCU protect it, and what events can create a *new generation* (rescan, hotplug bridge add/remove, firmware reparse, virtualization reset). ‘Immutable’ must be technically enforceable in code.</li><li style='font-size:13px;margin-bottom:4px;'>The QUIESCE-&gt;DRAIN-&gt;SWAP-&gt;PUBLISH-&gt;RESUME state machine needs a correctness spec per execution context: (a) hardirq handler in-flight, (b) threaded IRQ handler in-flight, (c) NAPI poll already scheduled/running on another CPU, (d) blk-mq completions already queued/running. Spell out the minimal required barriers (synchronize_irq vs disable_irq vs irq_set_affinity + synchronize_irq ordering; napi_disable semantics; blk_mq_quiesce_queue scope). Otherwise it will be attacked as an obvious “RCU pointer swap + synchronize_irq” pattern.</li><li style='font-size:13px;margin-bottom:4px;'>Your deterministic cpumask-to-locality reduction algorithm is currently a narrative. Provide a *fully specified* algorithm: inputs (requested mask, effective mask, topology generation), outputs (key type + id), tie-breakers, stability rules, and bounded update frequency. Also state how you avoid violating cpuset/isolcpus constraints and how you handle wide masks that span NUMA nodes/LLCs without making the result arbitrary.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify how this interacts with existing IRQ core concepts: managed interrupts, irqdomain/MSI domains, MSI-X per-vector affinity, irq_move_masked_irq(), and irq_affinity_notify. If your mechanism adds a new notifier, justify why existing notifiers cannot provide the same post-commit guarantee (or specify the missing kernel invariant you add).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact provenance and merge rules for the “immutable legacy-INTx capability descriptor” (ACPI tables, MCFG/ECAM presence, interrupt remapping state, hypervisor-paravirt signals, DMI quirks). Specify a precedence order and an explicit ‘unknown’ state; otherwise pci_alloc_irq_vectors_affinity() can incorrectly reject viable fallback on real Xeon platforms with incomplete firmware reporting.</li><li style='font-size:13px;margin-bottom:4px;'>Nail down the exact kernel notification point for “committed effective delivery locality”: which event(s) guarantee the irq_desc-&gt;irq_data effective mask is final (activation vs post-move), and how you avoid races with irq_set_affinity(), irq_migrate_all_off_this_cpu(), CPU hotplug, and irqbalance. Without a precise commit point, the QUIESCE-&gt;DRAIN sequence can trigger on transient masks and thrash.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the deterministic cpumask-to-locality reduction algorithm precisely (dominance metric, tie-breakers, handling of discontiguous masks, SMT siblings, isolated CPUs, housekeeping CPUs, and NUMA+LLC conflicts). Also define what happens when topology IDs change across microcode/BIOS updates or when x2APIC cluster IDs are not meaningful under virtualization.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify the scope of “APIC locality API”: is locality computed from sched/topology (preferred) or APIC IDs (dangerous for ABI stability)? If you expose APIC-derived identifiers, document stability constraints under xAPIC vs x2APIC, IRTE remapping, and vCPU migration; otherwise drivers may treat it as a routing contract.</li><li style='font-size:13px;margin-bottom:4px;'>The metadata rebinding state machine needs explicit correctness contracts per context: which drains are mandatory vs optional (synchronize_irq() is insufficient for NAPI/blk-mq alone), how you prevent deadlocks if quiesce hooks sleep while holding locks used in completion paths, and how you guarantee forward progress under high interrupt rates (e.g., bounded drain timeouts or migration backoff).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact concurrency/locking model for the immutable INTx capability descriptor (update points, who can mutate it, and how readers in probe + pci_alloc_irq_vectors_affinity() get a consistent snapshot). Be explicit about RCU vs mutex coverage, generation IDs, and memory ordering so drivers never see a partially-built descriptor.</li><li style='font-size:13px;margin-bottom:4px;'>Harden the QUIESCE-&gt;DRAIN-&gt;SWAP-&gt;PUBLISH-&gt;RESUME protocol against deadlocks and incomplete draining: specify which contexts may call into it (process context only), the required lock ordering (IRQ core locks, netpoll/NAPI locks, blk-mq queue locks), and what constitutes “drained” for threaded IRQ + NAPI polls + blk-mq completions already in flight.</li><li style='font-size:13px;margin-bottom:4px;'>Specify strict lifetime rules for “completion metadata” objects and all pointer reads: require RCU read-side protection at every dereference site, document whether synchronize_rcu() vs call_rcu() is mandatory per model, and prove no UAF occurs if an interrupt fires concurrently with SWAP/PUBLISH or if a driver unloads mid-migration.</li><li style='font-size:13px;margin-bottom:4px;'>Nail down the cpumask→locality reduction algorithm edge cases (empty masks, masks spanning isolated/housekeeping CPUs, hotplug mid-reduction, SMT siblings, LLC ID instability across microcode/firmware). Provide deterministic tie-breakers and a topology-generation check that forces a safe fallback key when topology data is stale.</li><li style='font-size:13px;margin-bottom:4px;'>Compatibility/regression control: clearly define the default policy when the descriptor is “unknown” (must not break existing INTx fallback behavior), precedence rules among firmware/platform/hypervisor/quirk sources, and the exact failure mode (error codes, dmesg rate-limited diagnostics) when fallback is rejected.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define *hard* correctness criteria for asserting “legacy INTx definitively disallowed” and make them mechanically auditable. Concretely: the hint must only be set from explicit plat</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Preserve existing pci_alloc_irq_vectors() semantics for caller-provided flags. If MSI/MSI-X allocation fails and PCI_IRQ_LEGACY was requested, current behavior may fall back to INTx</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Locking/lifetime: a per-host-bridge hint is shared across devices and potentially accessed in hotplug/rescan contexts. Make it immutable after bridge registration, or protect it wit</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Granularity validation: confirm that “host-bridge scoped” is sufficient. INTx routability can be broken by intermediate bridges, firmware routing tables, or virtualization policy; i</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Quirk safety: if you add “known-broken bridge/firmware quirk” support, require a fail-safe escape hatch (module param or cmdline to disable the quirk) because misapplied quirks will</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact concurrency contract for metadata access (hardirq vs threaded vs NAPI vs process context): specify whether readers use RCU (rcu_read_lock) or per-CPU pinning, where</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the quiesce protocol per completion model with ordering guarantees: e.g., for hardirq handlers you likely need synchronize_irq() after disabling the irq (or masked vector) b</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify what “effective MSI/MSI-X affinity” means in code: which mask is authoritative (irq_data effective_affinity vs requested affinity), how you detect changes (notifier vs polli</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The “immutable legacy-INTx capability descriptor” conflicts with PCI hotplug/rescan/ACPI reconfiguration: define descriptor lifetime, update rules, and locking (pci_bus_sem/device_l</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Root-complex/bridge-scoped INTx gating must be race-safe with pci_alloc_irq_vectors_affinity(): spell out how you serialize capability reads vs vector allocation and fallback decisi</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux device driver using x86 APIC microarchitecture features
+</footer>
+</div></body></html>

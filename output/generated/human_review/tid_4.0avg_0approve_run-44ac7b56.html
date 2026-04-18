@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] Topology-Aware Phase Hinting for Linux sched/fair via NMI-Sa</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-44ac7b566555 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Topology-Aware Phase Hinting for Linux sched/fair via NMI-Safe Signature Logging, Seqcount-Latched RAPL Window Fusion, and Offline-Mined Threshold Codebooks</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux scheduler using x86 RAPL microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Deferred Phase Attribution Layer for RAPL-Aware Fair Scheduling</li><li style='font-size:13px;'>RAPL Pressure Domain for LLC-Scoped Scheduler Capacity Control</li><li style='font-size:13px;'>RAPL-Weighted Energy Debt Ledger for Cgroup Fair Scheduling</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: Use of Data Mining in Scheduler Optimization &lt;&gt; intel_opt_manual | 22.8.5.3 L2 Cache Misses . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+  MMR Score:    0.7778</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>Collect a fixed-width 64-bit per-task PMU signature in perf PMI/NMI using a same-CPU nested-safe ring, fuse it off the hot path with seqcount-latched x86 RAPL package-or-die windows and topology generation metadata, infer coarse phase classes through an offline-mined fixed-point threshold codebook, and let sched/fair consume the result only inside select_task_rq_fair()/wake_affine() near-ties as a symmetric +/-8 capacity-unit bias with a 32-unit tie gate, 2 ms default RAPL cadence, 8 ms staleness cutoff, and zero effect on affinity, cpuset, NUMA, asym_packing, SMT, uclamp, thermal pressure, energy_model/EAS, or EEVDF vruntime.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The defendable novelty is not generic perf sampling, not generic RAPL telemetry, and not generic scheduler tuning. It is a kernel-resident contract with precise safety boundaries: (1) a same-CPU nested-PMI/NMI logging pr</div>
+    <div class="pill"><strong>Feasibility:</strong> All required pieces map cleanly onto existing kernel mechanisms. perf event groups already support PMI overflow collection of architectural events; per-CPU memory and atomic64 oper</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux sched/fair makes many wakeup placements between CPUs that are already legal and already close according to existing load, capacity, and topology signals. In those near-tie cases, the current scheduler largely lacks a safe way to express that a task is in a coarse phase such as compute burst, cache-miss-heavy, branchy control, or power-cap-sensitive memory streaming, and it also lacks a bounded package-or-die pressure signal derived from actual x86 RAPL windows. Existing signals such as utilization, util_est, uclamp, thermal pressure, and energy_model/EAS each solve a different problem: runnable demand estimation, policy clamps, thermal capacity reduction, or energy-cost search. None of them provide a scheduler-safe bridge from per-task PMU phase signatures plus package-scoped energy windows into a hard-bounded tie-break that respects EEVDF fairness intent and never overrides hard placement rules. The resulting opportunity is largest on multi-die and hybrid x86 systems, where two CPUs can look nearly equal to the wakeup path while one belongs to a pressure-limited package or a topology class that is a systematically worse match for the task&#x27;s current phase.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>The gap versus known mechanisms is specific and narrow. Thermal pressure reduces effective CPU capacity after thermal throttling or similar capacity loss; it is not a learned phase hint and is not derived from a seqcount-latched RAPL contract. EAS/energy_model uses platform energy-cost tables during CPU selection; it is not a per-task PMI/NMI phase signature pipeline and does not claim a package-or-die cap-pressure scalar with validity, staleness, confidence, and generation semantics for lockless sched/fair readers. Prior RAPL-based scheduling papers generally optimize broader placement or throttling policy and do not specify an in-kernel single-writer snapshot publication contract, an RCU generation-safe domain map, or a near-tie-only bounded wakeup bias whose maximum influence is formally smaller than the tie gate. Intel Thread Director-class hardware classification also does not claim this Linux kernel software contract, the task cookie lifetime model, or the requirement that the classifier&#x27;s output be consumed only as a symmetric bounded tie-break after cpuset, affinity, NUMA, asym_packing, SMT, uclamp, thermal pressure, and EAS have already had priority. The data-mining aspect is likewise narrower than generic ML: offline mining produces a finite threshold codebook that executes as fixed-point comparisons in kernel and can be audited, versioned, and bounded.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention is a scheduler-safe bridge with four contracts.
+
+1. PMU signature contract. A perf event group samples per task on an instructions-based overflow period of 131072 retired instructions. The group uses architectural or generic x86 core events with stable cross-Xeon semantics: instructions, cpu-cycles, ref-cycles, cache-misses, and branch-misses. In PMI/NMI, the handler emits a fixed-width 64-bit signature word:
+[63:60] sig_ver,
+[59:56] caps,
+[55:48] sample_log2,
+[47:36] ipc_q12,
+[35:24] mpki_q12,
+[23:12] br_mpki_q12,
+[11:0] freq_q12.
+Normalization is fixed-point: ipc = instructions/max(cycles,1), mpki = 1000*cache_misses/max(instructions,1), br_mpki = 1000*branch_misses/max(instructions,1), freq = cycles/max(ref_cycles,1). Each field is clipped to a documented range and quantized to Q0.12. If an optional event is unsupported, the corresponding caps bit is cleared and the codebook falls back to a compatible lower-dimensional table. No model-specific uncore or SKU-fragile events are required in-kernel.
+
+2. NMI-safe logging contract. The PMI/NMI path writes a sample to a per-CPU ring using a 64-bit reservation ticket and per-slot sequence numbers so nested interrupts on the same CPU cannot corrupt ordering. The record contains {ticket, task_cookie, exec_epoch, cpu, local_clock_ns, sig64}. The handler never takes task references, never allocates, and only resolves the current task to a stable non-reused cookie. Cookie-to-context resolution happens later under RCU in process context.
+
+3. RAPL domain snapshot contract. A single writer thread per RAPL domain samples package or die energy every 2 ms by default using ktime_get_mono_fast_ns() as the timebase. For each sample, let dt_ns = now_ns - prev_ns. If dt_ns &lt; 500000 ns or dt_ns &gt; 20000000 ns, the sample is marked invalid and does not advance the filtered pressure. Let raw bits be B and modulus M = 2^B. Let dE_uj = ((raw_now - raw_prev) mod M) * energy_unit_uj. Let p_inst_uw = dE_uj * 1000000000 / dt_ns. Let p_ref_uw = pl1_uw if pl1_uw &gt; 0 else pl2_uw if pl2_uw &gt; 0 else 0. If p_ref_uw == 0 or the domain is unavailable, then confidence = 0 and cap_pressure = 0 by definition so the scheduler bias becomes zero. Otherwise define cap_inst = clamp((p_inst_uw/p_ref_uw - 0.85)/0.15, 0, 1). This yields a scalar in [0,1] that is explicitly not utilization: it measures proximity to the domain power cap, not runnable demand. The published filtered pressure is an EMA: cap_pressure_t = 0.75*cap_pressure_{t-1} + 0.25*cap_inst, stored as Q16 in [0,65535]. If PL2 is present and p_inst_uw exceeds PL2 by more than 5 percent, confidence is reduced because the sample is likely bursty or policy-shifted. Every published snapshot includes {seqcount, topo_generation, timestamp_ns, dt_ns, p_inst_uw, pl1_uw, pl2_uw, cap_pressure_q16, confidence_q16, flags}. Readers retry on seqcount until they observe a self-consistent tuple.
+
+4. Scheduler integration contract. Active consumption happens only in the wakeup path, specifically in select_task_rq_fair() after the normal legality filters and after the existing wake_affine/idle-capacity logic has narrowed selection to two already-legal CPUs. There is no active use in periodic load balance, newidle balance, or nohz balance. Let BaseA and BaseB be the existing scheduler comparison values expressed in SCHED_CAPACITY_SCALE units and passed to the helper from the native wakeup code while it already holds or has computed the needed stable state. The phase helper never performs extra rq-load reads. The helper is enabled only if abs(BaseA - BaseB) &lt;= TIE_DELTA, with TIE_DELTA = 32 and BIAS_MAX = 8. Let pref_i in {-1.0,-0.5,0,+0.5,+1.0} be the offline-mined phase preference for candidate i, based on the task phase class, CPU capacity bucket, and package-or-die locality class. Let conf_i = min(task_confidence, domain_confidence_i) in [0,1], and let stale_i = 0 if either task hint age &gt; 4 ms or domain snapshot age &gt; 8 ms or generation mismatches, else 1. Define bias_i = clamp(round(8 * stale_i * conf_i * pref_i) - round(4 * stale_i * conf_i * cap_pressure_i), -8, +8). Then Adj_i = Base_i + bias_i. Because bias_i is clamped, |Adj_i - Base_i| &lt;= 8 for every candidate and the pairwise phase influence can never exceed 16. Hysteresis is explicit: if prev_cpu is one candidate, keep prev_cpu unless the alternate candidate exceeds it by at least HYST_DELTA = 4. This prevents ping-pong on repeated wakeups. The helper returns the existing scheduler choice unchanged whenever cpuset, affinity, NUMA placement, asym_packing priority, SMT policy, uclamp, thermal pressure, or EAS have already made the candidates non-equivalent or when the tie gate is not met.
+
+5. Topology and hotplug contract. Domain enumeration prefers die domains when available and otherwise falls back to package domains. A phase_domain_map object contains an array of domain descriptors plus a per-CPU map {domain_id, topo_generation, capacity_bucket}. The map is rebuilt on CPU hotplug or topology regeneration and published with rcu_assign_pointer(). Old maps and old domain descriptors are freed only after synchronize_rcu(). Scheduler readers enter rcu_read_lock(), fetch the per-CPU map entry, read the domain snapshot with a seqcount retry loop, and reject any snapshot whose topo_generation does not match the current map generation. Readers therefore never dereference freed domain state and never mix generations.
+
+6. Offline mining contract. The codebook is mined offline from traces gathered under shadow mode. Training labels are throughput-per-watt and latency outcomes for legal placements under controlled workloads including memory-streaming, cache-thrashing, branchy control, and Linpack-like compute bursts on homogeneous and heterogeneous x86 systems. The deployed kernel artifact is a small threshold table, for example 32 to 64 entries, versioned by sig_ver and topology class. No floating point, no runtime model loading, and no online learning are required.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>High-level data flow:
+
+PMI/NMI on current task
+    |
+    v
++-------------------------+
+| per-CPU nested-safe     |
+| phase_sig_ring          |
+| {ticket,cookie,epoch,   |
+|  cpu,ts,sig64}          |
++-------------------------+
+    |
+    | deferred worker (RCU cookie lookup)
+    v
++-------------------------+        +------------------------------+
+| phase_ctx per task      |&lt;------&gt;| offline-mined threshold      |
+| {phase_class,conf,age,  |        | codebook in rodata           |
+|  last_update,word32}    |        | {sig_ver,bins,pref table}    |
++-------------------------+        +------------------------------+
+           ^                                     |
+           |                                     |
+           |                                     v
+           |                        classify(sig64, topology class)
+           |
++-------------------------+
+| per-domain RAPL writer  |
+| sleepable kthread only  |
+| every 2 ms default      |
++-------------------------+
+    |
+    v
++-------------------------+
+| phase_rapl_snapshot     |
+| seqcount-published      |
+| {gen,ts,dt,power,PL1,   |
+|  PL2,cap_q16,conf,flags}|
++-------------------------+
+    |
+    | lockless read + retry
+    v
++--------------------------------------------------------------+
+| select_task_rq_fair() wakeup path only                       |
+| 1. existing scheduler computes legal candidates              |
+| 2. if hard constraints differ -&gt; return existing choice      |
+| 3. if abs(BaseA-BaseB) &gt; 32 -&gt; return existing choice        |
+| 4. read task hint + two domain snapshots under RCU/seqcount  |
+| 5. if stale/invalid/gen mismatch -&gt; return existing choice   |
+| 6. Adj_i = Base_i + clamp(round(8*conf*pref_i)               |
+|                           - round(4*conf*cap_i), -8, +8)     |
+| 7. if prev_cpu candidate and alt &lt; prev + 4 -&gt; keep prev     |
+| 8. else choose max(Adj_i)                                    |
++--------------------------------------------------------------+
+
+Publication and lifetime rules:
+- Scheduler readers take no locks, use seqcount retry for consistent u64+timestamp pairs, and tolerate 32-bit tearing by retrying until the snapshot is stable.
+- RAPL writers are single-writer per domain; write_seqcount_begin/end serialize publication.
+- CPU-to-domain maps are RCU-published and generation-tagged; mismatched generations force zero influence.
+- If candidates are SMT siblings of the same core, the phase bias is forced to zero to avoid over-interpreting package-level pressure for per-thread SMT contention.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Add a CONFIG_SCHED_PHASE_HINTS feature with three modes: trace-only, shadow-score, and active. Trace-only logs signatures and RAPL snapshots only. Shadow-score computes bias but does not alter placement. Active enables the bounded wakeup tie-break.
+
+2. Implement the per-CPU PMI/NMI ring. Use a fixed power-of-two slot count, a 64-bit reservation ticket, per-slot sequence numbers, and release/acquire ordering. On overflow, increment a drop counter and set a confidence-degraded bit in the task context. Do not take task references in NMI.
+
+3. Introduce task cookies and phase_ctx objects. task_cookie is allocated once per task lifetime and invalidated on exec by incrementing exec_epoch. Store phase_ctx in an RCU-managed rhashtable keyed by cookie. Deferred workers resolve ring samples to phase_ctx and update a packed hint word containing {phase_class, confidence_q8, last_update_ns, sig_ver}.
+
+4. Define the exact PMU contract in code and documentation. Use an instructions overflow leader with a fixed period of 131072. Group followers are cpu-cycles, ref-cycles, cache-misses, and branch-misses. Quantize to the documented 64-bit signature layout. If cache-misses or branch-misses are unavailable, clear caps bits and route to a smaller codebook instead of changing format.
+
+5. Implement the RAPL writer as a freezable kthread or delayed work item pinned to a housekeeping CPU per domain. The writer may sleep and may call into powercap/intel_rapl internals, but it must not do so while holding rq locks, cpuset locks, cpuhp locks, topology mutexes, or the phase-domain-map mutex. Provider interaction is one-way: the writer calls energy-read helpers, computes pressure, and publishes via seqcount. No scheduler path ever calls the provider directly.
+
+6. Build phase_domain_map generation logic. Enumerate die domains first; if no die domain exists for a CPU, map it to the package domain. Store per-CPU capacity_bucket derived from arch_scale_cpu_capacity() so the codebook can distinguish homogeneous versus hybrid buckets without overriding asym_packing. On hotplug or topology rebuild, allocate a new map, populate it completely, then publish with rcu_assign_pointer() and bump topo_generation. Free old maps after synchronize_rcu().
+
+7. Add the sched/fair hook only in the wakeup path. The helper should be called from select_task_rq_fair() only after the existing fair scheduler has already identified two legal candidates and computed the native base comparison values. Do not use it in load_balance_fair(), newidle_balance(), or periodic balancing. Pseudocode:
+
+if (!active_mode)
+    return base_choice;
+if (!same_hard_constraints(cpuA, cpuB))
+    return base_choice;
+if (abs(BaseA - BaseB) &gt; 32)
+    return base_choice;
+read task_hint under READ_ONCE;
+read domA and domB via RCU + seqcount retry;
+if (invalid || stale || generation mismatch)
+    return base_choice;
+biasA = clamp(round(8*confA*prefA) - round(4*confA*capA), -8, +8);
+biasB = clamp(round(8*confB*prefB) - round(4*confB*capB), -8, +8);
+AdjA = BaseA + biasA;
+AdjB = BaseB + biasB;
+if (cpuA == prev_cpu &amp;&amp; AdjB &lt; AdjA + 4)
+    return cpuA;
+if (cpuB == prev_cpu &amp;&amp; AdjA &lt; AdjB + 4)
+    return cpuB;
+return AdjB &gt; AdjA ? cpuB : cpuA;
+
+8. Handle corner cases explicitly. Use modular wrap arithmetic for RAPL energy. Use monotonic time only. Mark invalid any dt outside [0.5 ms, 20 ms]. If PL1 is zero or unknown, set confidence to zero; if only PL2 is known, allow a degraded-confidence fallback. If virtualization hides or emulates RAPL unreliably, keep trace-only PMU phase data but force scheduler bias to zero. If SMT sibling comparison is the only difference, force zero bias. If either signal stream is stale, invalid, or low confidence, consume nothing.
+
+9. Keep the codebook small and auditable. Store it in read-only kernel memory, keyed by sig_ver and topology class. The codebook should output only coarse phase_class and per-bucket pref values, never a continuous utilization-like number.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Correctness and fairness: run active mode only after trace-only and shadow-score have shown stable behavior. Verify no changes to vruntime, EEVDF eligibility, task weight handling, or hard affinity semantics. Add scheduler tracepoints to confirm the helper is called only in the wakeup path and only when abs(BaseA-BaseB) &lt;= 32.
+
+2. Locking and lifetime: use lockdep, RCU stall detection, and hotplug stress to verify that scheduler readers never sleep, never take locks, and never dereference freed domain state. Repeatedly online/offline CPUs and rebuild topology while sampling RAPL and perf events. Confirm generation mismatch causes zero influence rather than mixed snapshots.
+
+3. Snapshot integrity: inject artificial seqcount retries and torn 64-bit reads in test instrumentation to prove readers only consume consistent {timestamp, power, cap_pressure, generation} tuples. Validate that no scheduler path calls into powercap/intel_rapl directly.
+
+4. Counter math: force small synthetic wrap intervals and altered power limits to validate modular energy arithmetic, dt anomaly rejection, PL1/PL2 runtime changes, and zero-confidence fallback for missing domains. Measure cap_pressure_q16 to confirm it always remains in [0,65535].
+
+5. Overhead: measure PMI cost, ring drops, worker backlog, RAPL writer CPU time, and scheduler delta on hackbench, schbench, tbench, kernel build, and netperf. Target less than 1 percent scheduler-path overhead in shadow mode and near-zero additional rq lock hold time because the helper performs no extra rq-state reads.
+
+6. Workload outcomes: train and test on mixed workloads including STREAM, memcached, RocksDB or PostgreSQL OLTP, nginx or RPC microservices, Linpack/HPL bursts, and hybrid P/E systems with control threads plus compute threads. Compare baseline, shadow-score, and active modes for tail latency, throughput, and performance per watt.
+
+7. Policy interactions: explicitly test cpusets, NUMA binding, uclamp_min/uclamp_max, asym_packing, SMT enabled/disabled, thermal pressure events, and EAS-enabled builds. Confirm the phase helper has zero effect whenever those mechanisms already produce a non-tie or disallow a candidate.
+
+8. Ping-pong resistance: run wake-heavy microbenchmarks with alternating producer/consumer bursts and verify that the 4-unit hysteresis materially reduces migration oscillation relative to a no-hysteresis variant.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A Linux scheduler method in which per-task phase information is captured in perf PMI or NMI as a fixed-width normalized PMU signature using a same-CPU nested-safe reservation-ticket ring, resolved later through a non-reused task cookie and exec-epoch invalidation, and consumed only outside interrupt context.</li><li style='margin-bottom:8px;'>A power-domain publication method in which package or die x86 RAPL telemetry is sampled by a single sleepable writer, converted through explicit wrap-safe energy-delta and monotonic-time math into a bounded cap-pressure scalar in [0,1], and published to lockless scheduler readers as a seqcount-latched snapshot containing timestamp, power-limit metadata, confidence, and topology generation.</li><li style='margin-bottom:8px;'>A wakeup-placement method for sched/fair in which the scheduler applies the phase hint only when two already-legal candidate CPUs are within an explicit near-tie threshold in the same units as the scheduler&#x27;s native comparison metric, and in which each candidate receives a symmetric bounded bias whose absolute value is clamped to a fixed maximum smaller than the near-tie threshold.</li><li style='margin-bottom:8px;'>The method of claim 3, wherein the scheduler retains the previous CPU unless an alternate candidate exceeds the previous CPU by a second explicit hysteresis threshold, thereby preventing wakeup ping-pong while preserving EEVDF vruntime, eligibility, and all hard placement constraints.</li><li style='margin-bottom:8px;'>A topology-validity method in which CPUs map to die domains when present and package domains otherwise, the CPU-to-domain map is RCU-published with a generation number on hotplug or topology rebuild, and scheduler readers reject mismatched generations without dereferencing freed domain state.</li><li style='margin-bottom:8px;'>A codebook-based classification method in which mined offline traces of PMU signatures and RAPL windows are compiled into a finite fixed-point threshold table versioned by signature format and topology class, allowing kernel inference without floating point, online training, or per-task energy attribution.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: Prior-art overlap with generic RAPL-aware scheduling. Mitigation: claim the narrow combination of seqcount-latched domain snapshot semantics, generation-safe topology mapping, fixed-width PMI signature contract, and near-tie-only bounded sched/fair consumption rather than generic power-aware scheduling.</li><li style='margin-bottom:6px;'>Risk: SKU fragility from model-specific PMU events. Mitigation: require only architectural or generic core events for the in-kernel signature and use capability bits plus codebook versioning for optional dimensions; keep uncore or model-specific detail offline only.</li><li style='margin-bottom:6px;'>Risk: Lock inversion or scheduler interference through powercap/intel_rapl. Mitigation: isolate all provider interaction in a sleepable writer that never runs under rq, cpuhp, or topology locks, and forbid any scheduler path from calling provider APIs directly.</li><li style='margin-bottom:6px;'>Risk: Stale or noisy telemetry causing incorrect placement. Mitigation: binary staleness gates at 4 ms for task hints and 8 ms for RAPL, confidence degradation on ring drops or dt anomalies, EMA smoothing on cap-pressure, and automatic zero influence on invalid inputs.</li><li style='margin-bottom:6px;'>Risk: Wakeup migration oscillation. Mitigation: hard clamp bias to +/-8, require a 32-unit tie gate before activation, and add a 4-unit prev_cpu hysteresis so the feature can only perturb true near-ties.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Linux kernel sched/fair wakeup placement paths, including select_task_rq_fair() and wake_affine() semantics.</li><li>Linux kernel RCU and seqcount/seqlock patterns for lockless readers and coherent multi-field snapshot publication.</li><li>Linux powercap and intel_rapl infrastructure for package and die energy accounting.</li><li>Intel 64 and IA-32 architectures software developer documentation for RAPL MSRs, power units, and architectural performance monitoring events.</li><li>Linux perf subsystem support for event groups, overflow sampling, and generic hardware PMU events such as instructions, cpu-cycles, cache-misses, branch-misses, and ref-cycles.</li><li>Linux scheduler documentation and prior art around thermal pressure, util_est, uclamp, asym_packing, SMT interactions, and energy_model/EAS to distinguish the claimed bounded near-tie mechanism.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Specify the exact scheduler call sites and context constraints: if you touch both wake placement and busiest-group tie resolution, document which functions (e.g., select_task_rq_fair()/wake_affine() vs load-balance paths) read the snapshot, and prove the read path cannot sleep, cannot take external locks, and is bounded (no unbounded retry loops) under rq locks and/or preempt-disabled sections.</li><li style='font-size:13px;margin-bottom:4px;'>Define the publication pattern precisely: if using a “seqcount-latched double buffer”, commit to a concrete primitive (seqcount_t vs seqcount_latch_t) and show the reader algorithm (read_seqcount_begin/retry with READ_ONCE on the active buffer index). Avoid mixed-generation reads across multiple fields (p, confidence, timestamp, domain_id, generation) without a single sequenced critical section.</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug/topology correctness needs a full lifecycle spec: how the cpu-&gt;domain map is rebuilt, when generation increments, how readers reject mismatched generations, and how old maps/snapshots are freed (RCU grace period) so no CPU can dereference freed domain objects during concurrent CPU offline/online or topology rebuild.</li><li style='font-size:13px;margin-bottom:4px;'>RAPL math must be kernel-realistic: energy counters can wrap and may reset across power events; you need explicit wrap-safe delta logic, minimum dt handling, and rules for rejecting samples on counter anomalies. Also state which limit (PL1/PL2/other) is used and what happens when limits are unavailable or change asynchronously.</li><li style='font-size:13px;margin-bottom:4px;'>Bounded influence claims must be tied to existing sched/fair comparators: define the ‘near-tie’ metric in terms of actual kernel quantities (capacity_orig, capacity, util, asym packing adjustments, thermal_pressure, uclamp). Ensure the bias cannot accidentally bypass existing asym_packing/SMT/thermal/uclamp decisions due to being applied before those transforms or by biasing a quantity that later feeds those transforms.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: High overlap risk with existing energy/thermal-aware scheduling concepts unless the claims are tightened around the specific publication+generation contract and a provable “cannot change non-tie outcomes” gating rule.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten the novelty boundary versus known Linux mechanisms (thermal_pressure, EAS/energy_model, schedutil) and prior “RAPL-aware scheduling” papers: explicitly claim the *contract* (seqcount-latched multi-field domain snapshot + RCU cpu→domain map + topology-generation invalidation) and the *formal* near-tie-only gating property, not “using RAPL for scheduling” broadly.</li><li style='font-size:13px;margin-bottom:4px;'>Define the cap-pressure scalar p precisely and deterministically: exact dE/dt math (wrap handling, unit normalization), which power limit is used (PL1 vs PL2 vs none), smoothing/filter choice (time constant), confidence computation, and how missing/unstable limits or counter jitter forces p→0/no-op. Right now p is underspecified and could be argued obvious/implementation-dependent.</li><li style='font-size:13px;margin-bottom:4px;'>Provide a concrete, auditable proof/argument for “cannot alter non-tie outcomes”: specify the exact comparison points, the near-tie threshold metric (capacity units, which capacity: rq capacity, cpu_capacity, arch_scale_cpu_capacity?), and ensure the maximum bias is strictly bounded relative to the gate in code (including hysteresis) so it cannot flip decisions outside the defined tie region.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify topology-generation lifecycle and hotplug correctness: which kernel events bump generation, how readers detect mixed-generation dereferences, and how the RCU-published cpu→domain mapping is rebuilt without deadlocks with powercap/intel_rapl locks. Without this, ‘generation-safe’ is an assertion, not a defensible claim element.</li><li style='font-size:13px;margin-bottom:4px;'>Spell out the exact data structure and publication scheme (seqcount-latched double buffer layout, field atomicity rules, timestamp source, staleness cutoff behavior) and confirm scheduler readers never retry excessively on contention (worst-case retry bound / backoff), otherwise the “bounded overhead” story is weak.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft is incomplete/truncated and does not yet pin down the exact cap-pressure math, scheduler compare points, and proof that the bias cannot flip non-tie outcomes across all relevant sched/fair paths.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the cap-pressure scalar precisely (inputs, units, and corner cases): which limit is authoritative (PL1 vs PL2 vs no-limit), how you compute wrap-safe dE/dt, how you smooth (EWMA vs windowed average), and how you map to p∈[0,1] with confidence. Provide explicit formulas and constants.</li><li style='font-size:13px;margin-bottom:4px;'>Prove the &#x27;cannot change non-tie outcomes&#x27; property with concrete bounds tied to existing sched/fair comparisons. Specify the exact near-tie metric (capacity units vs effective_capacity vs util/capacity), the threshold, and ensure the maximum bias is strictly below the smallest decision margin in both integration points (wake placement and busiest-group tie resolution).</li><li style='font-size:13px;margin-bottom:4px;'>Specify the exact integration sites and ordering in kernel code (e.g., select_task_rq_fair() sub-branch, wake_affine(), load-balance group selection). Clarify how you guarantee cpuset/affinity/NUMA/asym_packing/SMT/thermal_pressure/uclamp constraints are evaluated first and never overridden by the bias.</li><li style='font-size:13px;margin-bottom:4px;'>Detail the domain mapping and topology-generation semantics: how package vs die is chosen on multi-tile Xeon, how SNC/sub-NUMA clusters interact (or explicitly do not), what constitutes a &#x27;generation change&#x27; (CPU hotplug, topology rebuild, microcode update?), and how readers reject mixed-generation snapshots safely.</li><li style='font-size:13px;margin-bottom:4px;'>Address observability and fleet deployability: add a concrete debug surface (tracepoint or sched_debug hook) to show p, staleness, confidence, chosen domain, and applied bias so hyperscalers/OEMs can validate behavior under Xeon power caps without new userspace ABI.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define and constrain the side-channel surface: even without a new userspace ABI, scheduling decisions that depend on package/die cap-pressure can become a covert channel (unprivileged tasks modulate power to influence placement and infer co-runners). Add an explicit threat model plus mitigations (e.g., disable by default, require CAP_SYS_ADMIN to enable, hard no tracepoint/debugfs exposure of per-domain pressure, optional per-cgroup opt-in, and rate-limit/quantize pressure to reduce signaling bandwidth).</li><li style='font-size:13px;margin-bottom:4px;'>Make the publication and lifetime rules unambiguous: specify the exact ordering between (a) publishing the new cpu-&gt;domain RCU map, (b) bumping topology-generation, and (c) publishing seqcount snapshot fields. Readers must never combine an old map with a new generation or vice versa. Document required barriers and use rcu_dereference()/rcu_assign_pointer() plus seqcount read-retry correctly.</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug/topology rebuild safety: ensure the writer never dereferences domain pointers that can disappear during CPU hotplug or RAPL driver unregister. You need a clear state machine for domain availability and a quiescent-state strategy (RCU + refcount or driver-level get/put) so removal cannot race with sampling.</li><li style='font-size:13px;margin-bottom:4px;'>Time/energy math robustness: specify wrap-safe dE, handle dt==0, handle suspended sampling (long sleeps) without producing extreme pressure, and define behavior if energy units change or counters report 0/err. Clamp inputs before smoothing; avoid division overflow; document fixed-point format and bounds.</li><li style='font-size:13px;margin-bottom:4px;'>Scheduler integration invariants: precisely define the &#x27;near-tie&#x27; metric (which capacity, which normalization, and where it’s computed) and prove the bias cannot flip any non-tie outcome under all asymmetry/uclamp/thermal_pressure interactions. Explicitly exclude RT/DL/stop classes and confirm no impact on EEVDF state or rq locking rules.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define a concrete lockless snapshot mechanism that is scheduler-hotpath safe: prefer seqcount_latch (or a single atomic packed value + acquire/release) over an open-ended seqcount r</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify writer serialization and context: RAPL/powercap sampling can sleep and must never run under rq locks or in atomic context. Make the updater a single-threaded workqueue/kthre</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make multi-field consistency explicit: if you publish {timestamp, domain_id, pressure, validity, generation}, readers must see a self-consistent set. Use WRITE_ONCE/READ_ONCE plus s</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Handle counter wrap and limit changes rigorously: RAPL energy units and wrap periods vary; compute deltas with proper modular arithmetic, reject negative/implausible deltas, and res</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define topology mapping correctness: package-scoped telemetry must map to scheduler placement scopes without violating cpusets/affinity/ASym packing constraints. Provide an explicit</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact sched/fair decision points you will touch (e.g., select_task_rq_fair()/wake_affine() vs. load-balance paths) and specify the precise comparison math; “near-tie” mus</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prove and enforce a hard bound on influence that is symmetric across candidate CPUs: the bias must be clamped to a fixed maximum delta and must not depend on reading unstable state </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Detail the locking/ordering model for publishing snapshots: readers in scheduler hot paths must not take locks, must tolerate 32-bit tearing of u64 fields, and must use seqcount/seq</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify what powercap/intel_rapl callback context guarantees are relied on: the updater thread may sleep, but must not call into paths that take global locks contended by scheduler </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Hotplug/topology correctness: specify how package/die domains are enumerated, how CPUs map to domains, and how generation changes are published; readers must reject mismatched gener</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux scheduler using x86 RAPL microarchitecture features
+</footer>
+</div></body></html>

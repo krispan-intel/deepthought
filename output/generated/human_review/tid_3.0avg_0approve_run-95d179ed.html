@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 3.0] Freshness-Revalidated PEBS PMD Ledger for Ranking-Only Trans</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-95d179ed4133 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 3.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Freshness-Revalidated PEBS PMD Ledger for Ranking-Only Transparent Hugepage Selection</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux memory management using x86 PEBS microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>PEBS-to-MGLRU Folio Heat Bridge</li><li style='font-size:13px;'>PEBS NUMA Locality Ledger</li><li style='font-size:13px;'>Sub-PMD PEBS Heatmaps for THP Morphing</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | USING PERFORMANCE MONITORING EVENTS &lt;&gt; Comparative study of performance of parallel Alpha Beta Pruning for   different architectures
+  MMR Score:    0.7819</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>An opt-in Linux kernel subsystem captures Intel PEBS load samples in the existing perf PMI flow into bounded per-CPU NMI-safe rings, revalidates each sample later with an mm_cookie plus vma_epoch contract and a no-fault page-table walk, aggregates the result into capped per-mm 2 MiB locality ledgers, and uses those ledgers only to rank already-eligible khugepaged collapse candidates and already-queued deferred-split candidates without changing THP correctness, eligibility, or reclaim semantics.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The inventive step is not PEBS observability alone and not generic profile-guided huge pages. The novelty is a kernel-resident protocol that makes precise-address PEBS samples safe and useful for memory-management advice</div>
+    <div class="pill"><strong>Feasibility:</strong> The design is Linux-feasible because it piggybacks on the existing x86 perf/PEBS overflow path, adds only O(1) numeric copying in NMI, stores no raw task or mm pointers in interrup</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux Transparent Hugepage policy still relies primarily on software-visible recency and sparsity signals such as referenced and young bits, collapse-scan heuristics, and underused-page detection. Those signals reveal little about which 2 MiB windows are actually responsible for backend memory stalls, whether the expensive accesses are spread across enough 4 KiB pages to justify hugepage reach, or whether the hot accesses are confined to a tiny fragment that should instead remain splittable. The practical problem is therefore not correctness of THP itself, but poor ordering of work: khugepaged may spend scan budget collapsing windows with weak stall locality, while deferred-split may retain or process hugepages in an order that does not reflect true microarchitectural value.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Existing perf mem and PEBS mechanisms are observability tools, not freshness-safe in-kernel policy inputs. DAMON-style advisors observe coarse access patterns over ranges and epochs, but they do not combine precise sampled load addresses, latency weight, and data-source metadata with a proofable invalidation contract across exec, unmap, split, merge, and protection changes. Academic profile-guided hugepage work generally assumes offline or user-space profiling and does not define a kernel-safe NMI capture path, a deferred non-faulting resolver with bounded contention behavior, or a ranking-only integration that leaves all THP eligibility and reclaim semantics untouched. The gap is therefore a safe bridge from precise hardware samples to mm policy advice, not sampling itself.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Phase 1 adds CONFIG_X86_PEBS_THP_ADVISOR, the mm context fields, global cookie allocator, live-mm XArray, and vma_epoch bump sites in mm initialization, exec, exit, mprotect, munmap, mremap, and VMA adjust helpers. Phase 2 adds the per-CPU ring and perf overflow callback plumbing in the x86 Intel PEBS path, plus opt-in controls and counters. Phase 3 adds the resolver kthread, retry FIFO, no-fault walk helper, and mapping classifiers. Phase 4 adds the PMD-window ledger, lazy decay, LRU eviction, global shrinker, and memcg accounting hooks. Phase 5 adds ranking hooks to khugepaged local candidate batching and deferred-split local batch selection, guarded by a static branch so the disabled path compiles to zero-score stubs. Phase 6 adds selftests and microbenchmarks: freshness invalidation across exec and munmap, NMI ring overflow accounting, contention drop or retry behavior, disabled-path semantic equivalence, and workload studies on database, JVM, and memory-tiered benchmarks.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Correctness validation has four layers. First, kernel selftests exercise cookie rollover on exec, epoch bumps on split and merge, and teardown races with forced task exit while samples are in flight. Second, stress tests force mmap_lock and PTL contention and verify bounded retry counts, drop counters, and absence of sleeping-lock warnings. Third, semantic equivalence tests compare THP behavior with the static key disabled and confirm identical collapse eligibility decisions, split eligibility decisions, sysfs policy effects, and tracepoint sequences except for the absence of advisor counters. Fourth, performance validation measures collapse success rate, TLB miss reduction, backend stall cycles, tail latency, and memory overhead on representative server workloads, with separate experiments for local DRAM-only and tiered-memory systems. The intended proof is not that every PEBS sample is preserved, but that every consumed sample is fresh, correctly attributed, and used only as ranking advice.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 3.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The core correctness contract relies on mm_cookie and a VMA-epoch mechanism that are not concretely specified as real, race-free kernel primitives (lifetime, update points, ordering), so the proposed “freshness revalidation” is not yet implementation-correct.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define an actual mm identity primitive: if “mm_cookie” is intended to be a unique, non-reused mm generation, specify where it lives (mm_struct field), how it is allocated (atomic64 global), how it changes across fork/exec, and how you prevent PID/mm reuse from passing freshness checks.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the VMA-epoch model precisely: is it per-mm generation, per-VMA generation, or both? You must enumerate ALL update sites that affect VA→PA/permissions/hugepage state (mmap/munmap, mprotect, mremap, VMA split/merge, THP collapse/split, madvise) and state the required memory-ordering between updates and reader validation.</li><li style='font-size:13px;margin-bottom:4px;'>The “no-fault page-table walk” must be spelled as a strict non-faulting translation procedure (no GUP/follow_page that can fault). Describe exactly which walkers/APIs are used and how you handle swap, migration entries, device-private, pte_special, and transient THP/PMD instability—dropping samples on ambiguity rather than forcing attribution.</li><li style='font-size:13px;margin-bottom:4px;'>Task/mm reacquisition by (pid/tid, start_boottime) is fragile under PID reuse and exec/exit races. You need an explicit RCU + reference protocol (find under rcu_read_lock, get_task_struct, then get_task_mm / mmget_not_zero) and an explicit rule for samples taken concurrently with exec/mm teardown.</li><li style='font-size:13px;margin-bottom:4px;'>NMI/PMI ring-buffer correctness is underspecified: you must handle nested NMIs, torn writes, and producer/consumer ordering on weakly ordered CPUs. Provide a concrete per-CPU record lifecycle (reserve/commit with seq or state word) and show that the consumer cannot observe partially written records (smp_store_release / smp_load_acquire or equivalent).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Key novelty boundaries depend on undefined/unspecified mechanisms (mm_cookie + vma_epoch) and missing concrete claims/hook definitions, creating high overlap risk with DAMON-style access monitoring and existing perf/AutoNUMA guidance concepts.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define precisely what &quot;mm_cookie&quot; is in Linux terms (field/source, width, uniqueness, lifetime) and how it is obtained safely in worker context; if it does not already exist, you must specify how it is generated, when it changes (fork/exec/exit), and how it avoids PID/TID reuse misattribution.</li><li style='font-size:13px;margin-bottom:4px;'>Replace the vague &quot;vma_epoch&quot; with a concrete implementation: where the epoch counter lives (per-mm vs per-VMA), which code paths increment it (mmap/munmap/mprotect/VMA split/merge, THP split/collapse), and how readers validate it without taking heavy locks; otherwise the freshness contract is not enabling and is easily anticipated by prior art.</li><li style='font-size:13px;margin-bottom:4px;'>Prior-art overlap: DAMON already provides kernel-resident access sampling/aggregation and can feed policy decisions (including THP-related or reclaim ordering). You must articulate claim-limiting differences beyond &quot;uses PEBS&quot;—e.g., the NMI-safe scalar-only capture + deferred no-fault resolver + specific freshness invalidation protocol—otherwise novelty collapses into obvious substitution of signal source.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the exact integration hook points and prove &quot;ranking-only&quot; in code: name functions and demonstrate the advisory signal only permutes candidate ordering after eligibility checks, never alters thresholds, and never forces actions. Without this, the disclosure reads like generic &quot;use heat to influence THP/NUMA&quot; which is heavily predated.</li><li style='font-size:13px;margin-bottom:4px;'>The non-faulting page-table walk needs a concrete, kernel-correct recipe (APIs used, lock ordering, and what counts as &quot;drop&quot; conditions). As written, it risks accidental faults (e.g., touching PTEs that trigger migration/NUMA/protnone handling) or lock interactions with khugepaged/reclaim; you need a rigorous safety argument and bounded retry policy.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the freshness contract precisely: where mm_cookie comes from (existing vs new field), how vma_epoch is stored (per-mm vs per-VMA), and the exact update sites (mmap/munmap, mprotect, VMA split/merge, THP split/collapse, fork/exec/exit). Add a single authoritative spec + invariants so reviewers can prove “stale samples never influence ranking.”</li><li style='font-size:13px;margin-bottom:4px;'>NMI/PMI capture path needs a concrete, upstream-credible implementation: specify which x86 perf PEBS overflow hook you modify, exact fixed sample layout, ring sizing policy, nested NMI behavior, and the release/acquire protocol proof against torn records on all supported Xeon microarchitectures.</li><li style='font-size:13px;margin-bottom:4px;'>AutoNUMA/tiering claims are too hand-wavy: enumerate the exact hook points (functions/files) where you will consume ranking hints, and define the mapping from PERF_SAMPLE_DATA_SRC to actionable locality classes (local DRAM vs remote socket vs CXL/mem-tier). Include fallback behavior when data_src is missing/ambiguous across Xeon generations.</li><li style='font-size:13px;margin-bottom:4px;'>The per-folio advisory cache complicates lifetime and migration correctness (split, migrate, compaction, swap). Either remove it for v1 (keep only mm-scoped PMD-window ledger) or specify refcounting/invalidations and prove it cannot pin folios or add contention in reclaim paths.</li><li style='font-size:13px;margin-bottom:4px;'>Upstream acceptance risk: “kernel-owned perf events” must respect perf_event_paranoid/PMU multiplexing and not degrade userspace perf. Specify a gating model (static key + sysctl + cgroup opt-in) and how you avoid conflicts with existing perf users on production Xeon fleets.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Side-channel / data exposure: explicitly constrain the PEBS pipeline to be kernel-owned and non-exporting (no tracepoints/debugfs/perf record emission of addresses/data_src correlated with tasks). Define what, if anything, is observable to unprivileged users; otherwise this becomes a cross-process access-pattern oracle.</li><li style='font-size:13px;margin-bottom:4px;'>Freshness contract is underspecified: define exact semantics and update sites for `vma_epoch` (munmap, mprotect, VMA split/merge, remap, mlock, madvise, khugepaged collapse/split, fork/exec/exit). Without a complete epoch update matrix, stale samples can be misattributed and cause unsafe ranking decisions.</li><li style='font-size:13px;margin-bottom:4px;'>Crash-risk in deferred resolver: detail the no-fault page-table walk rules (no GUP-fast that can fault, no speculative deref of absent entries, bounded retries, and safe handling of THP/devmap/swap/PTE special cases). Include explicit requirements for `mmap_read_trylock` failure handling and for avoiding PTL hold-time blowups.</li><li style='font-size:13px;margin-bottom:4px;'>DoS/latency risk under PEBS storms: add hard rate limiting and backpressure (per-cpu ring sizing, drop policy, max work per time slice, and disable-on-overflow safeguards). Otherwise a hostile workload can induce sustained irq_work/kthread pressure and system-wide tail latency regressions.</li><li style='font-size:13px;margin-bottom:4px;'>Compatibility guarantees: state CPU/VM coverage (PEBS availability, precise_ip constraints, data_src meaning across Xeon generations, microcode quirks, virtualization/guest behavior). Provide a strict fallback path that compiles and runs correctly when PEBS or required sample fields are unavailable.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define a *provably safe* mm attribution model for NMI/PMI sampling: if you record a user VA you must also capture a stable mm reference/identity (e.g., mmget_not_zero(current-&gt;mm) o</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] “Non-faulting page-table reads with correct locking” needs concrete APIs and lock ordering: walking page tables must not fault (reject/skip on missing PTE), must handle PMD-mapped T</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Side-metadata lifetime rules are underspecified: you need an explicit storage choice (page_ext vs xarray/rhashtable keyed by (mm, huge_pfn/head folio)) and *mandatory* hooks to clea</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Ensure THP advisory consumption cannot introduce deadlocks or regress hot paths: do not hold mmap_lock while acquiring folio_lock/lru_lock (respect existing mm/THP lock hierarchy), </li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Specify the exact metadata mechanism and lifecycle: choose and justify one of (a) page_ext/page_owner-style sidecar, (b) folio-&gt;private with dedicated type, (c) xarray keyed by folio</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define a concrete, upstream-plausible identity scheme: “mm_cookie” and “VMA-epoch” must be unforgeable, non-reusable across mm lifetime, and cheap to sample in NMI. A plain pointer </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The deferred resolver’s “non-faulting page-table walk” needs a precise locking contract: state whether you take mmap_read_lock(mm) (or trylock) for the whole walk, and which page-ta</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Task/mm lifetime re-acquisition must be race-proof: in NMI you cannot safely take references to task/mm. In the worker, RCU lookup of task must be followed by a real reference (get_</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Ledger memory ownership and teardown must be explicit: if the ledger is per-mm, specify allocation point (mm_init / first sample) and free point (mmput final), and how readers (khug</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Interaction points with khugepaged and deferred-split must not violate existing locking/ordering: specify where ranking hints are read (under what locks), and ensure you do not crea</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux memory management using x86 PEBS microarchitecture features
+</footer>
+</div></body></html>

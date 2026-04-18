@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 5.0] Iomap-Authored PMD EPT Contract with Address-Space Retire Fe</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-6b54a2a38c77 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 5.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Iomap-Authored PMD EPT Contract with Address-Space Retire Fence and Deny-Only Churn Ledger for Guest-Mappable FS-DAX</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux file system using x86 EPT microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>EPT-Granule Alignment Contract for Guest-Mappable File Extents</li><li style='font-size:13px;'>Iomap-EPT Extent Epoch Ledger for Coalesced Invalidation</li><li style='font-size:13px;'>PAT-EPT Memtype Concordance Table for File-Backed DAX</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: Automatic Datapath Optimization using E-Graphs &lt;&gt; intel_opt_manual | GENERAL OPTIMIZATION GUIDELINES
+  MMR Score:    0.7778</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A filesystem-authored, per-address_space 2 MiB contract lets KVM consider 2 MiB EPT leaves for virtio-fs or other FS-DAX guest mappings only when a PMD-sized file window is fully aligned, PFN-contiguous, PAT-class-uniform, and share-stable, while a separate per-window churn ledger can only veto optional promotion; every PFN-changing mutation first publishes UNSTABLE or NOHUGE with release ordering, then starts KVM retire on all overlapping VMAs, quarantines old PFNs until remote EPT invalidation completion, and only then permits PFN reuse and republishes a new contract.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The invention is not a generic KVM sequence retry and not a simple hugepage heuristic. It is a new bridge between the filesystem&#x27;s extent truth and x86 EPT admission: an iomap-authored PMD-window proof object keyed by ad</div>
+    <div class="pill"><strong>Feasibility:</strong> The mechanism is implementable with existing Linux primitives: address_space interval tracking through mapping-&gt;i_mmap, xarray lookup keyed by PMD pgoff, immutable RCU-published re</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Guest mapping of host files through virtio-fs DAX or other FS-DAX-backed VM memory typically falls back to 4 KiB EPT because safe 2 MiB EPT installation requires more than GPA alignment. For a specific PMD-sized file-offset window, the host must know that: (1) the window is entirely inside i_size; (2) it maps one 2 MiB-aligned, physically contiguous PFN run; (3) the EPT memory type is uniform across the run; (4) reflink, COW, dax-layout conversion, long-term pinning, dirty-log constraints, badblock remap, or sharing semantics will not make the run unstable mid-window; and (5) any concurrent truncate, punch-hole, collapse-range, insert-range, remap, or media-failure path cannot recycle those PFNs until all stale huge EPT leaves are gone. Existing KVM huge-leaf admission sees HVA and PFN state too late and too indirectly; existing filesystem mutation code knows extent truth but cannot express it to KVM in a lockless, PMD-granular, machine-checkable form or wait on a KVM completion object before old PFNs are reused.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Current KVM invalidation sequencing, including mmu_invalidate_seq and mmu_notifier retry rules, is keyed to mm and HVA invalidation, not to address_space plus PMD file windows. It tells KVM when to retry after address invalidation, but it does not tell KVM whether a given file-offset PMD window is extent-contiguous, partial-EOF, reflink-unsafe, memtype-mixed, or temporarily unstable because a filesystem transaction is shifting offsets. Likewise, DAX PMD fault paths can opportunistically map large pages when alignment is obvious, but they do not provide a reusable, per-window contract consumable by KVM across guest mappings. Most importantly, prior art does not provide a filesystem-visible retire cookie whose meaning is: every KVM instance mapping this file range has zapped any covering huge EPT leaf and completed the remote invalidation required before those old PFNs may be reassigned. That is the topological void between filesystem truth and x86 EPT datapath optimization.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>Introduce a filesystem-owned auxiliary object per DAX-capable address_space, referred to here as fsdax_ept_state, containing two PMD-granule xarrays keyed by pmd_index = pgoff &gt;&gt; (PMD_SHIFT - PAGE_SHIFT). The first xarray stores immutable, RCU-published contract records for windows that are currently eligible candidates for 2 MiB EPT. The second xarray stores deny-state records for windows that are temporarily unstable or permanently no-huge. KVM consumes these objects only at huge-leaf admission sites for guest-backed file mappings.
+
+A contract record contains: contract_seq, stable_epoch, base_pgoff, pfn0, npages=512, memtype_class, share_class, perm_mask, and blocker_bits. Valid contract publication means the filesystem has proven, for that exact 2 MiB file window, that the file range is fully populated by a single aligned extent run, lies wholly within i_size, resolves to a contiguous DAX PFN run, has one EPT-safe cacheability class, and is not currently subject to reflink/COW or other blockers captured in blocker_bits.
+
+A deny record contains: deny_state in {UNSTABLE_TEMP, NOHUGE_PERM}, reason code, deny_seq, and optional expiry or age metadata. The deny ledger is authoritative only in the negative direction.
+
+For any mutation that can change PFN ownership or PMD eligibility, the filesystem performs: publish deny state with release ordering; increment topology_epoch; enumerate overlapping VMAs from mapping-&gt;i_mmap; request KVM retire for those HVA ranges and obtain a retire cookie; quarantine the old PFN run; complete extent mutation; wait on the retire cookie in sleepable context after dropping blocking FS locks; then either republish a new VALID contract or leave the window absent or NOHUGE_PERM. KVM may install a 2 MiB EPT leaf only if the deny ledger does not veto, a VALID contract is present, and all existing KVM-side checks still succeed.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>Core objects:
+1. fsdax_ept_state (anchored in the DAX inode or address_space private extension)
+2. contract_xa: xarray keyed by PMD file window
+3. deny_xa: xarray keyed by PMD file window
+4. retire_cookie: refcounted completion object spanning all overlapping KVM mappings discovered through mapping-&gt;i_mmap
+
+Proposed record layout:
+- struct dax_ept_contract {
+    u64 contract_seq;
+    u64 stable_epoch;
+    pgoff_t base_pgoff;
+    u64 pfn0;
+    u16 npages;
+    u8 state;          // VALID or NOHUGE_PERM
+    u8 memtype_class;  // WB, WC, UC_MINUS, UNKNOWN, implementation-defined EPT-safe class
+    u8 share_class;    // EXCLUSIVE_STABLE, SHARED_STABLE, REQUIRES_4K
+    u8 perm_mask;      // guest-visible R/W/X envelope
+    u32 blocker_bits;  // REFLINK, COW, MIXED_EXTENT, PARTIAL_EOF, LONGTERM_PIN, DIRTYLOG, HWPOISON, LAYOUT_BREAK
+    struct rcu_head rcu;
+  }
+- struct dax_ept_deny {
+    u64 deny_seq;
+    u8 deny_state;     // UNSTABLE_TEMP or NOHUGE_PERM
+    u8 reason;
+    u16 age;
+    struct rcu_head rcu;
+  }
+
+KVM admission rule:
+- deny_xa says UNSTABLE_TEMP or NOHUGE_PERM =&gt; force 4 KiB path
+- else contract_xa must contain VALID
+- then KVM still performs existing checks: memslot alignment, dirty logging constraints, current PFN run still matches, EPT memtype still legal, and retry rules under current invalidate sequence
+- only then may a 2 MiB EPT leaf be installed
+
+ASCII flow:
+
+filesystem extent truth
+      |
+      v
++--------------------+
+| iomap / DAX hooks   |
++--------------------+
+      |
+      +--&gt; publish deny_xa[window]=UNSTABLE_TEMP
+      +--&gt; replace contract_xa[window]=ABSENT or NOHUGE_PERM
+      +--&gt; topology_epoch++
+      |
+      v
++--------------------+      walk mapping-&gt;i_mmap      +------------------+
+| retire orchestrator| ------------------------------&gt; | KVM VMAs / mms   |
++--------------------+                                  +------------------+
+      |                                                        |
+      | obtain retire_cookie                                   | zap huge SPTE/EPT
+      |                                                        | remote TLB flush
+      v                                                        v
+quarantine old PFNs --------------------------------------&gt; retire complete
+      |
+      v
+commit new extents / new iomap mapping
+      |
+      +--&gt; if fully eligible: publish new contract_xa[window]=VALID
+      +--&gt; else leave absent or NOHUGE_PERM
+
+Lifetime rules:
+- records are immutable after publish; writers replace entire record, never mutate in place
+- publication uses xa_store plus RCU pointer replacement; freeing uses kfree_rcu
+- inode eviction or unmount marks fsdax_ept_state dead, swaps out xarray roots, denies future huge promotion, and defers freeing until both RCU grace and outstanding retire_cookie references drain</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Phase 1: add fsdax_ept_state and PMD-window keying in the iomap DAX path, with publication helpers that can compute VALID versus ABSENT/NOHUGE_PERM from extent metadata, i_size, dax capability, and memtype class.
+
+Phase 2: wire deny publication into every PFN-changing path for DAX-capable filesystems: truncate, hole punch, collapse or insert range, reflink/remap exchange, dax layout transitions, and badblock remap. Build the per-inode PFN quarantine list so old runs cannot be recycled early.
+
+Phase 3: implement retire orchestration. Walk mapping-&gt;i_mmap to resolve overlapping VMAs, aggregate subranges by mm or KVM instance, create retire_cookie objects, and signal completion only after huge-leaf zap plus remote invalidation finish. Explicitly forbid waiting while holding blocking filesystem transaction locks.
+
+Phase 4: patch the KVM huge-EPT admission sites for file-backed mappings so they consume deny_xa first, then contract_xa, then existing KVM checks. The KVM code path must contain a mechanical &#x27;deny only&#x27; assertion for deny_xa and must retain all existing retry and correctness checks.
+
+Phase 5: add bounded reclaim for cold entries, RCU-safe teardown, and statistics: promotions attempted, promotions denied by contract absence, promotions denied by UNSTABLE, retire wait latency, and quarantine backlog.
+
+Phase 6: optimize only after correctness is proven, for example by caching explicit NOHUGE_PERM entries for hot partial-EOF windows and batching retire requests for adjacent PMD windows.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Correctness validation:
+- Prove the invariant that stale, missing, or evicted metadata cannot create a wrong huge mapping because the default action is denial and the existing KVM zap plus retry logic still applies.
+- Add race tests where KVM repeatedly faults a PMD window while another thread performs truncate, hole punch, reflink, collapse-range, insert-range, and badblock remap on the same file.
+- Verify that old PFNs are never returned to the allocator until retire_cookie completion.
+
+Performance validation:
+- Measure 2 MiB EPT hit rate, EPT walk reductions, and guest-visible p95 or p99 latency for DAX-backed file access inside VMs.
+- Compare baseline late PFN-only promotion against contract-guided admission under churn-heavy workloads.
+- Measure memory overhead of contract_xa and deny_xa under sparse files and random access with reclaim enabled.
+
+Concrete race timeline to demonstrate benefit:
+1. A PMD window is VALID and KVM promotes it to a 2 MiB EPT leaf.
+2. A host thread punches a 4 KiB hole in the middle of that window.
+3. Revised design publishes UNSTABLE before extent change and requests retire; any concurrent KVM refault sees deny_xa=UNSTABLE and maps 4 KiB only.
+4. Existing KVM zap and flush retire the stale huge leaf; retire_cookie completes.
+5. The filesystem commits the new split extent layout. No new VALID contract is published because the window is now mixed.
+6. KVM remains on 4 KiB entries until a later mutation recreates a full eligible run.
+
+This prevents promote-zap oscillation that current KVM logic alone does not suppress, because current logic can retry after each invalidation but still lacks a filesystem-authored temporary veto tied to in-flight extent churn.
+
+Regression validation:
+- Confirm no behavior change for non-DAX files, anonymous memory, or filesystems that do not publish fsdax_ept_state.
+- Confirm that when KVM ignores the new ABI, correctness remains identical to baseline and only the optimization is lost.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A method for enabling large nested-page mappings of guest-accessible file-backed DAX memory, comprising: publishing, by a filesystem, an immutable PMD-granule contract keyed by address_space and PMD-aligned file offset, the contract encoding contiguous PFN-run identity, alignment, PAT or EPT-safe memtype class, and share-stability semantics for a full 2 MiB file window; and permitting installation of a 2 MiB EPT leaf only when the contract is valid and independent KVM correctness checks also succeed.</li><li style='margin-bottom:8px;'>The method of claim 1, further comprising maintaining a separate per-window deny ledger whose states include UNSTABLE_TEMP and NOHUGE_PERM, wherein the ledger is consumed by KVM strictly as a negative filter that can suppress optional huge-leaf promotion but cannot itself authorize such promotion.</li><li style='margin-bottom:8px;'>The method of claim 1, further comprising, before any PFN-changing filesystem mutation affecting a PMD file window, publishing an ineligible or unstable state with release ordering, initiating retirement of all overlapping KVM mappings discovered by walking mapping-&gt;i_mmap, quarantining old PFNs, and allowing PFN reuse only after a retire completion object signals that stale huge mappings have been zapped and remote invalidation has completed.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein contracts and deny records are stored in xarrays keyed by PMD file window, published as immutable RCU-protected records, reclaimed with grace-period deferral, and detached on inode eviction or unmount so lockless KVM readers either observe a fully formed record or no record.</li><li style='margin-bottom:8px;'>A system comprising a DAX-capable filesystem, an address_space-scoped PMD contract store, a deny-only churn ledger, and a KVM retire-fence provider, wherein the system suppresses promote-zap oscillation during truncate, punch-hole, collapse-range, insert-range, reflink, remap, layout-break, or media-remap events while preserving baseline correctness when contract metadata is absent or stale.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: deadlock between filesystem mutation locks and KVM MMU locks. Mitigation: prohibit retire_cookie waiting while holding i_rwsem exclusive or extent transaction locks; quarantine PFNs first, then wait in sleepable post-commit context.</li><li style='margin-bottom:6px;'>Risk: memory growth from per-window metadata on sparse files. Mitigation: lazy allocation, absence-as-deny semantics, capped per-inode entry counts, and eviction of cold NOHUGE_PERM and VALID entries under pressure.</li><li style='margin-bottom:6px;'>Risk: a KVM site accidentally treats ledger state as positive proof. Mitigation: centralize admission in one helper with a hard-coded sequence of deny check -&gt; contract check -&gt; existing KVM checks, and add assertions or code review gates that prevent bypass.</li><li style='margin-bottom:6px;'>Risk: incomplete mutation coverage leaves stale windows marked stable. Mitigation: route every PFN-changing DAX mutation through shared prechange and postchange helpers and include collapse-range, insert-range, reflink, remap, layout conversion, and badblock paths in the mandatory hook set.</li><li style='margin-bottom:6px;'>Risk: memtype classification drift across devices or architectures. Mitigation: scope the invention to x86 EPT-capable systems and require UNKNOWN or mixed memtype to deny huge promotion.</li><li style='margin-bottom:6px;'>Risk: retire latency reduces mutation throughput. Mitigation: quarantine PFNs and wait after dropping blocking locks, batch adjacent PMD windows into one retire_cookie, and keep baseline 4 KiB mapping available during churn.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Linux mmu_notifier and KVM invalidation sequencing documentation and source paths for retry semantics</li><li>Linux DAX and iomap design documentation for filesystem-authored extent truth</li><li>address_space i_mmap interval-tree mechanisms for discovering VMAs mapping file ranges</li><li>x86 Intel SDM material covering EPT memory type behavior and PAT interactions</li><li>Linux KVM TDP MMU large-SPTE admission paths and remote TLB invalidation behavior</li><li>FS-DAX and virtio-fs deployment patterns that expose host file windows directly to guests</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 5.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define a concrete concurrency contract for the deny-ledger: exact writer/reader ordering (e.g., smp_store_release on state publish vs. smp_load_acquire in KVM) and whether readers rely on RCU alone or also seqcount/atomic state. You must guarantee the UNSTABLE/NOHUGE publication becomes visible before any extent/PFN topology change that could make a PMD EPT leaf unsafe to even attempt.</li><li style='font-size:13px;margin-bottom:4px;'>Specify complete writer coverage: enumerate all FS-DAX / iomap mutation entry points that can change PFNs, contiguity, sharing (reflink/COW), or eligibility (truncate/hole-punch, extent split/merge, dax page fault write paths, collapse/insert, swapext, remap, etc.). Missing any path makes the ledger unreliable and risks oscillation or pointless promotion attempts.</li><li style='font-size:13px;margin-bottom:4px;'>Provide an explicit lifetime/UAF avoidance plan for ledger objects keyed by (address_space*, pmd_index): how entries are freed (RCU grace period), how address_space teardown (inode eviction) is handled, and how you prevent pointer reuse causing stale deny state to be observed by KVM after mapping reuse.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify lock ordering to avoid deadlocks: filesystem mutation paths often hold inode locks and may traverse mapping-&gt;i_mmap structures; KVM hugepage admission holds kvm-&gt;mmu_lock and may take mmu_notifier paths. Document a lock hierarchy that avoids cycles between inode/i_rwsem, mapping-&gt;i_mmap_rwsem (or equivalent), mmu_notifier callbacks, and KVM mmu_lock.</li><li style='font-size:13px;margin-bottom:4px;'>Define reader integration points precisely: identify the exact x86 KVM path(s) where the deny check happens (TDPMMU vs shadow MMU), and ensure the check cannot sleep and does not add contention in the hot fault path (RCU read-side critical section constraints, preemption model, and avoidance of allocations).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: As written, the core mechanism is still too close to existing “don’t use hugepages” hinting (VM_NOHUGEPAGE/MADV_NOHUGEPAGE, KVM hugepage suppression heuristics) and mmu_notifier retry patterns; you must precisely specify the new data object, its publication rules, and the exact KVM decision point to make the novelty non-obvious and clearly non-duplicative.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the ledger record schema and semantics precisely: enumerate states (e.g., UNSTABLE_TEMP vs NOHUGE_PERM), their transitions, and the required memory ordering (e.g., release on writer, acquire on KVM reader) so this cannot be characterized as an ordinary flag or seq retry.</li><li style='font-size:13px;margin-bottom:4px;'>Nail down the write-side integration points in FS-DAX/iomap: list the exact mutation entry points that must set UNSTABLE_TEMP before any PFN topology change becomes visible to MM/KVM (truncate, punch hole, reflink/COW break, extent remap, dax mapping invalidation). Without this, the “filesystem-authored” novelty collapses into best-effort hinting.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the KVM consumption point and gating logic: which x86 KVM path checks the ledger (e.g., EPT huge-leaf install path), what inputs it uses (address_space + PMD-aligned file offset index), and prove it is deny-only (cannot authorize huge mappings) to avoid being attacked as redundant with existing contiguity/memtype checks.</li><li style='font-size:13px;margin-bottom:4px;'>Differentiate clearly from existing per-VMA/anon THP policy: explain why VM_NOHUGEPAGE/MADV_NOHUGEPAGE (and any file/THP policy hooks) cannot express per-file-offset PMD windows and why that distinction is necessary for virtio-fs/FS-DAX guest-mappable mappings.</li><li style='font-size:13px;margin-bottom:4px;'>Add concrete claims that anchor novelty to (address_space, PMD-window index) + RCU-readable deny ledger + publication-before-mutation requirement + KVM consult-at-admission-only behavior. Right now the draft leaves too much in narrative form, making it easy to read onto prior art.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Spec is incomplete at the kernel-interface level (missing concrete API signatures, state machine, and exact KVM hook points), so it is not yet reviewable for correctness/perf risk.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact deny-ledger state machine (UNSTABLE_TEMP vs NOHUGE_PERM), lifetime/eviction rules, and memory-ordering guarantees (RCU publication + acquire loads, seqcount retry rules) so KVM never observes a “stable” state before FS mutation is globally visible.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the completion fence semantics precisely: what event constitutes completion (e.g., after KVM zaps SPTEs + executes required remote TLB flush/INVEPT on all relevant vCPUs), how intersecting mappings across multiple VMs are tracked, and where the wakeup occurs in arch/x86 KVM MMU code paths without introducing deadlocks under mmu_lock.</li><li style='font-size:13px;margin-bottom:4px;'>Make memtype gating concrete: define how WB-uniformity is computed for a PFN-range under PAT/MTRR (and any memtype overlays), and ensure the result matches what EPT will actually encode; otherwise you risk false negatives/positives and hard-to-debug perf cliffs on Xeon.</li><li style='font-size:13px;margin-bottom:4px;'>Detail interactions with KVM features that already constrain huge leaves (dirty logging, access tracking, write-protect for live migration, TDP vs shadow MMU): the deny ledger must only suppress optional promotion and must not mask cases where KVM would otherwise split for functional reasons.</li><li style='font-size:13px;margin-bottom:4px;'>Enumerate all FS/DAX mutation entry points that must bracket with prepare/finish (truncate, punch hole, reflink/COW, extent remap, dax-iomap write fault paths) and define required range rounding to PMD windows to avoid missed suppression during multi-step mutations.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact ledger lifecycle and concurrency rules: who allocates/owns it (address_space vs inode vs dax_device), how entries are published/updated/removed (RCU + seqcount? xarray + xa_lock?), and what memory-ordering guarantees KVM relies on (e.g., RELEASE publish of state before dax/iomap extent mutation becomes visible).</li><li style='font-size:13px;margin-bottom:4px;'>Specify all writer call sites that must bracket instability epochs (truncate, hole-punch, reflink/COW break, dax_layout_busy_page, dax iomap writeback paths, fs freeze/thaw) and how you ensure coverage for filesystem-specific mutation entry points; missing a path risks promote/zap oscillation or subtle memtype/PFN topology mismatches.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify the KVM integration point: which x86 EPT huge-leaf admission site(s) consult the deny-only ledger, under what locks (mmu_lock, srcu, rcu), and prove the read is non-sleeping, bounded, and cannot take filesystem locks—otherwise you risk deadlocks or latency spikes in the fault path.</li><li style='font-size:13px;margin-bottom:4px;'>Add an explicit stability-state model (e.g., UNSTABLE_TEMP vs NOHUGE_PERM) with transition rules, timeouts/hysteresis, and worst-case behavior; without a decay/refresh policy, a transient UNSTABLE could become a permanent performance DoS due to lost &#x27;finish&#x27; updates or error unwinds.</li><li style='font-size:13px;margin-bottom:4px;'>Address side-channel and compatibility concerns: the deny-only filter can still create guest-observable timing differences correlated with host FS mutation patterns; document threat model (multi-tenant VMs) and ensure the feature is opt-in/guarded (mount option, sysctl, static key) with conservative defaults and clean fallback on non-x86/non-KVM.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact concurrency primitive for the “locklessly readable” epoch (e.g., atomic64_t + acquire/release, seqcount_t, or RCU-protected struct). You must specify memory-orderin</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the keying and range model precisely: what is the canonical unit (page index? pgoff? 2 MiB-aligned chunks?), how are ranges represented (interval tree vs fixed-size buckets)</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Enumerate all topology-changing file operations that MUST bump the epoch (truncate, fallocate punch/insert/collapse, reflink/CoW, extent swap/remap, dax layout breaks, fs freeze/tha</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify the locking/ordering with existing VM/FS locks to avoid ABBA: e.g., interactions among i_rwsem, mapping-&gt;invalidate_lock, dax/iomap locks, and KVM’s mmu_lock. Even as a “hin</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define wraparound and livelock behavior: if the epoch increments frequently during long multi-step mutations, KVM may starve huge promotion indefinitely. Provide a policy (backoff, </li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact concurrency contract for ledger updates vs. KVM reads: use a concrete mechanism (e.g., xarray entries updated with xa_lock + RCU for readers, or per-window seqcount</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Pin down object lifetime: keying by (struct address_space *, pgoff window) requires guaranteeing address_space and ledger backing storage cannot be freed/reused while KVM may still </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the precise ordering relative to mmu_notifier callbacks: if the filesystem sets UNSTABLE &#x27;before MM-visible topology changes&#x27;, you must ensure it happens-before any path tha</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify scope: if this is intended for FS-DAX / virtio-fs DAX only, restrict attachment points to DAX-mapped address_spaces and define which operations must bracket with UNSTABLE (t</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Bound resource usage and eviction: a per-PMD-window ledger can explode on sparse files and random access. You need a reclamation strategy (e.g., only track windows that were ever hu</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux file system using x86 EPT microarchitecture features
+</footer>
+</div></body></html>

@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 3.0] Generation-Validated RCU AMX State-Carry Hint Plane for Boun</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-3aace47a2a9e &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 3.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Generation-Validated RCU AMX State-Carry Hint Plane for Bounded Tie-Break Linux CPU Placement</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux scheduler using x86 AMX microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Sched-AMX Scoreplane for Hierarchical CPU Placement</li><li style='font-size:13px;'>AMX Xstate-Class Domains for Eager-Safe Task Clustering</li><li style='font-size:13px;'>AMX Capacity-Envelope Solver for Root-Domain Overbooking Control</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | INTEL® 64 AND IA-32 PROCESSOR ARCHITECTURES &lt;&gt; A Disk Scheduling Algorithm Based on ANT Colony Optimization
+  MMR Score:    0.7748</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A Linux scheduler extension derives a per-task AMX state-carrying bit from authoritative saved user xstate—true when canonical XTILECFG or XTILEDATA is non-init—updates that bit at exec, fork-state copy, sigreturn, ptrace xstate writes, XFD AMX disable, xstate reset, and outgoing FPU save boundaries, maintains exact rq-local AMX runnable membership under rq-&gt;lock via a per-task on-rq latch, asynchronously publishes immutable per-root_domain favored and cold CPU masks with topology, cpuset, hotplug, and root-domain generations plus TTL via RCU, and lets CFS consume only that task bit, an rq scalar, and an optional validated mask pointer as a deterministic saturation-aware tie-break among already-eligible equal-rank CPUs.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is not generic heavy-task placement; it is a kernel-credible AMX-specific publication and consumption contract with explicit correctness boundaries. First, the per-task hint is defined against authoritative s</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>On x86 systems with Intel AMX, a task that carries non-init tile state has materially heavier user xstate than scalar-only tasks. Repeated cross-CPU or cross-LLC migration of such tasks can increase non-init XSAVE/XRSTOR traffic, disrupt tile-local reuse, and amplify tail latency in mixed AMX plus latency-sensitive workloads. Linux currently lacks a precise, low-overhead, architecture-defined way to tell the scheduler that a task&#x27;s saved user fpstate is AMX state-carrying and to use that fact only as a bounded placement hint. Any viable design must avoid XSAVE-buffer parsing in scheduler hot paths, avoid kernel_fpu_begin()/kernel_fpu_end() in wakeup or pick paths, preserve rq locking and scheduler-class invariants, survive hotplug/cpuset/topology churn, remain correct across exec/fork/exit, sigreturn, ptrace xstate mutation, XFD feature disable/enable, and fpstate reset/discard, and account for security leakage from deterministic AMX-aware placement in shared environments.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Known scheduler work on AVX-512 &#x27;heavy task&#x27; handling, cache-hot packing, load-balance heuristics, NUMA locality, and accelerator-aware placement does not define an AMX-specific correctness contract around saved user xstate. Existing ideas generally classify tasks heuristically from instruction mix, frequency side effects, or recent CPU use; they do not define the architectural predicate for AMX non-init state, do not resolve the XTILECFG versus XTILEDATA corner cases, and do not specify which kernel path is authoritative when fpstate is copied, discarded, reset, restored from a signal frame, or rewritten by ptrace. They likewise do not define a scheduler-safe producer/consumer split in which x86 FPU/xstate code owns hint production while the scheduler consumes only immutable metadata and rq-local scalars. Nor do they publish per-root_domain placement masks with explicit topology/cpuset/hotplug/root-domain generation validation, TTL expiry, fallback semantics, SMT/core-sched-aware caps, or tenant-leak mitigation. The gap is therefore a kernel-credible AMX xstate contract plus bounded tie-break usage, not merely another packing heuristic.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>Introduce an AMX state-carrying hint pipeline with exact producer rules, rq-local runnable accounting, and an asynchronously rebuilt root-domain hint plane.
+
+1. Architectural predicate and invariant.
+- Add a scalar task field, e.g. thread.amx_state_carrying, and define it precisely: it is 1 iff the task&#x27;s authoritative saved user fpstate, after normal xstate canonicalization and init-state elision handling, would restore XTILECFG or XTILEDATA in non-init architectural state on the next user return.
+- The predicate is based on xstate metadata that denotes non-init components, not on compacted-buffer presence. Compacted buffers may omit init components, so &#x27;component present in buffer&#x27; is not sufficient. The authoritative test is whether the saved xstate marks XTILECFG non-init or XTILEDATA non-init after canonicalization.
+- XTILEDATA non-init alone implies state-carrying=true even if XTILECFG appears init in an intermediate image; that combination is treated as logically AMX state-carrying and the recompute path may normalize metadata so the cached bit never becomes stale-false.
+- The hint is not about transient hardware register contents and is never derived by scheduler code.
+
+2. Authoritative producer update points.
+- Exec/new-mm path: when execve replaces the task image and x86 thread/FPU state is reinitialized, set amx_state_carrying=0.
+- Fork/clone path: after x86 FPU state copy for the child, recompute the child&#x27;s bit from the copied saved fpstate; if the child starts from a clean/init fpstate representation, set 0. Parent remains unchanged.
+- Exit path: dequeue removes scheduler relevance; the field may be cleared before final free only for debug hygiene, not for functional correctness.
+- sigreturn/rt_sigreturn: after restoring user xstate from the signal frame, recompute the bit from the newly authoritative saved fpstate before returning to user mode.
+- ptrace regset write: on NT_X86_XSTATE or equivalent xstate write, recompute immediately from the written image; ptrace reads do not mutate the bit.
+- XFD AMX disable or any feature-mask contraction that invalidates/discards XTILE* user state: set 0 at the point the task&#x27;s authoritative saved fpstate is reset or AMX components become architecturally unavailable. Re-enable alone does not set 1; only a later restore/save/write that creates non-init XTILE* state can do that.
+- FPU save/materialization boundary: when the outgoing task&#x27;s live user AMX state is materialized into its saved fpstate during context-switch/FPU ownership handoff, recompute and publish the bit there. This is the only place where live register contents may indirectly affect the bit, and it occurs inside x86 FPU code, not scheduler code.
+- Any explicit fpstate reset, init, discard, or XRSTOR-to-init style path that canonicalizes XTILE* back to init clears the bit.
+- This makes x86 FPU/xstate code the sole producer and prevents stale-true/stale-false cases because every path that can create, copy, rewrite, or destroy authoritative saved XTILE* state also recomputes the scalar hint.
+
+3. Exact runqueue accounting.
+- Add rq-&gt;amx_runnable_nr and a per-task latch p-&gt;sched_amx_on_rq.
+- Define membership narrowly: a task contributes to rq-&gt;amx_runnable_nr only while it is a FAIR runnable entity queued on that rq and p-&gt;thread.amx_state_carrying==1.
+- Under rq-&gt;lock, enqueue performs a 0-&gt;1 transition on p-&gt;sched_amx_on_rq and increments rq-&gt;amx_runnable_nr once; dequeue performs a 1-&gt;0 transition and decrements once. No transition, no counter change.
+- Migration: decrement on source detach under source rq-&gt;lock, increment on destination attach under destination rq-&gt;lock, following existing migration locking. The counter is rq-local only and need not be globally atomic across both locks.
+- Sleep/block, cgroup bandwidth throttle dequeue, class change away from FAIR, exec/exit dequeue, and affinity-driven dequeue all remove membership and decrement exactly once.
+- Unthrottle or wake re-enqueue increments exactly once.
+- A debug invariant uses WARN_ON_ONCE/SCHED_WARN_ON semantics to flag any attempt to decrement when p-&gt;sched_amx_on_rq==0 or rq-&gt;amx_runnable_nr==0; the design goal is no silent underflow and no double counting.
+
+4. Asynchronous per-root_domain AMX hint plane.
+- Maintain an immutable RCU object per root_domain, e.g. struct sched_amx_plane { cpumask favored_mask; cpumask cold_mask; u64 topo_gen; u64 cpuset_gen; u64 hotplug_gen; u64 rd_gen; unsigned long expires_jiffies; u16 amx_core_cap; u32 tie_salt; }.
+- Generation meanings are explicit: topo_gen bumps when sched topology inputs change; cpuset_gen bumps when effective cpuset partitioning changes CPUs visible to a root_domain; hotplug_gen bumps on CPU online/offline transitions; rd_gen bumps whenever sched domains/root_domains are rebuilt or a root_domain is replaced.
+- Counters are stored as atomic64_t or equivalent monotonic scalars, bumped under the owning subsystem&#x27;s existing serialization, read with READ_ONCE/atomic64_read, and snapshotted by the plane builder under cpus_read_lock so the published object is self-consistent.
+- A deferred worker in process context rebuilds the plane on meaningful AMX runnable deltas, on topology/cpuset/hotplug/root-domain generation changes, or on TTL expiry. No plane build occurs inside rq-&gt;lock or wakeup hot paths.
+- favored_mask contains CPUs in the smallest LLC-local set that already hosts most AMX runnable pressure but is still below cap; cold_mask contains CPUs in the same root_domain that currently have zero AMX runnable pressure and are available as expansion targets. When SMT or core scheduling is enabled, mask computation is done at whole-core granularity so sibling threads of a physical core share the same cap decision.
+- TTL is short, e.g. 4 ms or another admin-tunable small interval. If the plane is absent, expired, or any stored generation mismatches current generations, hot paths ignore both masks and fall back immediately to baseline scheduling behavior.
+
+5. Bounded scheduler integration points and comparator.
+- The mechanism applies only to CFS placement decisions, not to RT/DL semantics and not to pick_next_task_fair vruntime ordering.
+- Integration points are explicit: (a) select_task_rq_fair() during wakeup placement after baseline allowed-CPU filtering and after affinity/cpuset/NUMA/asym/uclamp/thermal checks, (b) wake_affine()-style equal-rank decisions when baseline logic leaves prev_cpu and target_cpu tied, (c) select_idle_sibling()/select_idle_cpu() when several idle choices remain baseline-equal, and (d) find_idlest_group()/find_idlest_cpu() and load-balance candidate ranking only when baseline load metrics tie.
+- The AMX comparator is applied only among already-eligible CPUs that baseline code considers otherwise equal. A representative deterministic key for AMX tasks is: key(cpu) = (saturated(cpu), not_in_favored(cpu), spread_phase_and_not_in_cold(cpu), rq-&gt;amx_runnable_nr, cpu_index_mixed_with_tie_salt). Any earlier baseline difference short-circuits the AMX comparator.
+- saturated(cpu)=1 when that CPU or its physical core has reached amx_core_cap. Default cap is 1 AMX state-carrying task per physical core when SMT or core scheduling is enabled, otherwise 1 per logical CPU unless an admin explicitly raises it.
+- If all candidate CPUs are saturated, if the plane is invalid, or if the task is not AMX state-carrying, the scheduler uses the unmodified baseline tie-break.
+- Because the comparator never changes eligibility and never changes vruntime accounting, the mechanism cannot introduce starvation beyond baseline CFS behavior. Under sustained AMX load, saturation causes the bias to collapse toward baseline/spread behavior rather than intensifying packing, so fairness regressions are bounded.
+
+6. Security model and anti-pathology rules.
+- Threat model: a co-resident observer could infer that another task or cgroup is AMX state-carrying from CPU-choice patterns, LLC contention, or wakeup timing. This is a placement-observable leak, not a direct data-exposure bug, but it matters for shared-hosting profiles.
+- Mitigations: default-off global enable behind a static key/sysctl; optional per-cgroup opt-in so only trusted workloads participate; deployment guidance to disable the feature on mutually untrusted shared hosts; optional dithering using tie_salt when several CPUs have identical comparator keys; and documentation of observables and trust assumptions.
+- Latency guardrails: if rd-wide AMX pressure crosses a threshold, if favored CPUs exceed cap occupancy, or if measured wakeup latency for protected workloads regresses past an admin threshold, the builder expands favored_mask, prefers cold_mask, or suppresses AMX bias for that root_domain until the next rebuild window.
+- SMT/core-sched interaction: when core scheduling is enabled, the mechanism operates at whole-core granularity and never uses AMX bias to choose a sibling thread in a way that violates existing core-sched cookie constraints; when SMT is enabled without trusted tenancy, policy should default to off.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>Control plane and data plane are deliberately separated.
+
+ASCII overview:
+
+[exec / fork-copy / sigreturn / ptrace xstate SET / XFD disable / fpstate reset]
+                                |
+                                v
+                 [x86 FPU/xstate recompute amx_state_carrying]
+                                |
+                                v
+                [enqueue/dequeue FAIR task under rq-&gt;lock]
+                                |
+              +-----------------+-----------------+
+              |                                   |
+              v                                   v
+   [p-&gt;sched_amx_on_rq 0&lt;-&gt;1 latch]      [rq-&gt;amx_runnable_nr +/- 1]
+              |                                   |
+              +-----------------+-----------------+
+                                |
+                                v
+                 [deferred root_domain plane worker]
+            snapshots: rq AMX counts + topo_gen + cpuset_gen
+                       + hotplug_gen + rd_gen + SMT/core-sched mode
+                                |
+                                v
+            [build favored_mask, cold_mask, amx_core_cap, tie_salt, TTL]
+                                |
+                                v
+                     [RCU publish rd-&gt;sched_amx_plane]
+                                |
+                                v
+  CFS equal-rank tie sites read only: {task bit, rq scalar, plane pointer if valid}
+                                |
+                                v
+   select_task_rq_fair / wake_affine tie / select_idle_sibling / find_idlest_cpu
+
+Data structures:
+- Per task: thread.amx_state_carrying, sched_amx_on_rq.
+- Per rq: amx_runnable_nr.
+- Per root_domain: RCU pointer to sched_amx_plane.
+- Global or subsystem-scoped monotonic generations: topology, cpuset, hotplug, root-domain rebuild.
+
+Hot-path read contract:
+1. Read p-&gt;thread.amx_state_carrying.
+2. Read candidate rq-&gt;amx_runnable_nr.
+3. RCU-dereference rd-&gt;sched_amx_plane, validate TTL and generations.
+4. If any validation fails, ignore plane and use baseline tie-break.
+
+This keeps all cpumask construction, generation synthesis, and pressure aggregation out of atomic scheduler paths.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Phase 1 - producer correctness in x86 FPU/xstate paths.
+- Add the per-task amx_state_carrying field and a small helper in x86 FPU/xstate code that recomputes it from authoritative saved fpstate metadata after canonicalization.
+- Wire that helper into exec reset, fork/clone fpstate copy, sigreturn restore, ptrace xstate write, XFD-disable/reset/discard paths, and the outgoing-user-state save/materialization boundary.
+- Add selftests or trace validation for stale-true/stale-false edge cases, especially XTILEDATA-non-init with XTILECFG appearing init in intermediate representations.
+
+Phase 2 - rq-local accounting and scheduler plumbing.
+- Add rq-&gt;amx_runnable_nr and p-&gt;sched_amx_on_rq.
+- Update CFS enqueue/dequeue/migration/throttle/class-change transitions so the counter reflects FAIR runnable membership only under rq-&gt;lock.
+- Add debug assertions for underflow and duplicate membership.
+
+Phase 3 - root_domain RCU plane.
+- Introduce sched_amx_plane, generation counters, and a deferred rebuild worker.
+- Hook rebuild triggers to sched-domain/root-domain rebuild, cpuset effective-mask changes, CPU hotplug, and meaningful AMX pressure delta/TTL expiry.
+- Compute favored_mask and cold_mask at LLC/core granularity with SMT/core-sched-aware caps.
+
+Phase 4 - bounded CFS tie-break integration.
+- Insert AMX comparator hooks only in equal-rank decision sites in kernel/sched/fair.c: wakeup CPU selection, idle sibling selection, and idlest-candidate ties.
+- Ensure baseline eligibility masks and ranking semantics run first and remain authoritative.
+- Add sysctl/static-key gating and optional cgroup policy surface for opt-in.
+
+Phase 5 - observability and rollout.
+- Add tracepoints and counters for hint transitions, plane publication, plane invalidation, tie-break invocations, same-LLC versus cross-LLC AMX migrations, and wakeup-latency impact.
+- Roll out in shadow mode first: compute hint and plane, log would-have-chosen CPU, but do not alter placement until measurements confirm no fairness or latency regressions.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Hypotheses.
+1. For AMX-heavy tasks, the mechanism reduces cross-LLC migrations of AMX state-carrying tasks versus baseline CFS.
+2. For mixed workloads, non-init XTILEDATA save/restore events per unit of useful AMX work decline because fewer migrations force state movement.
+3. For latency-sensitive non-AMX services co-located with AMX jobs, p95/p99 wakeup latency does not regress materially because bias saturates and falls back to baseline under pressure.
+4. Under SMT or core scheduling, whole-core caps avoid sibling over-concentration.
+
+Instrumentation.
+- Add new tracepoints such as sched_amx_hint_transition, sched_amx_plane_publish, sched_amx_plane_reject(reason=expired|gen_mismatch|disabled), and sched_amx_tiebreak(task,candidate_cpu,chosen_cpu,reason).
+- Count same-LLC and cross-LLC migrations for AMX state-carrying tasks.
+- Count outgoing FPU save and restore events where saved user xstate is AMX non-init.
+- Track rq-&gt;amx_runnable_nr histograms, favored-mask occupancy, cold-mask usage, and latency-guard suppression events.
+
+Workloads.
+- Xeon AMX-capable platforms such as Sapphire Rapids or Emerald Rapids.
+- oneDNN or similar BF16/INT8 inference/training microbatches that repeatedly carry tile state.
+- Mixed deployments with latency-sensitive services such as nginx/envoy/memcached or RPC microservices pinned to overlapping root_domains/cpusets.
+- Stress cases: rapid cpuset repartitioning, CPU hotplug churn, signal-heavy workloads using sigreturn, ptrace xstate mutation, and XFD enable/disable transitions.
+
+Success criteria.
+- Reduced cross-LLC AMX migrations and reduced non-init XTILEDATA save/restore counts relative to baseline.
+- Stable or improved AMX throughput.
+- No statistically meaningful starvation signal, no fairness drift in CFS vruntime distributions, and no sustained p99 latency regression beyond an admin-set bound.
+- Zero observed stale-bit mismatches in trace validation: whenever authoritative saved fpstate is init, amx_state_carrying must be 0; whenever XTILECFG or XTILEDATA is non-init, it must be 1.
+
+Negative testing.
+- Verify that absent, expired, or generation-mismatched planes produce exact baseline CPU placement.
+- Verify that cpuset, affinity, NUMA, asymmetry, uclamp, thermal pressure, RT, and DL decisions dominate and are never overridden by AMX logic.
+- Verify that shared-host policy disables the feature and that tie dithering changes only exact-equality tie outcomes.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A computer-implemented scheduling method for an x86 operating system, comprising maintaining for each task a scalar AMX state-carrying indicator that is asserted only when authoritative saved user xstate would restore XTILECFG or XTILEDATA in non-init architectural state, wherein the indicator is recomputed on exec reset, fork-state copy, signal-return xstate restore, ptrace xstate write, AMX feature disable/reset, and outgoing user-state save materialization.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein runqueue AMX pressure is represented by a per-runqueue AMX runnable counter updated exclusively under runqueue locking and guarded by a per-task on-runqueue latch so that sleep, wake, migration, throttle, and scheduler-class transitions cannot double-count or underflow the counter.</li><li style='margin-bottom:8px;'>The method of claim 1, further comprising asynchronously constructing, outside scheduler hot paths, an immutable per-root-domain AMX hint-plane object comprising at least a favored CPU mask, a cold CPU mask, a topology generation, a cpuset generation, a CPU hotplug generation, a root-domain rebuild generation, a time-to-live value, and a saturation cap, and publishing the object via read-copy-update.</li><li style='margin-bottom:8px;'>The method of claim 3, wherein a CFS wakeup or load-balance placement path consumes only the task AMX state-carrying indicator, one or more runqueue AMX runnable counters, and the per-root-domain AMX hint-plane object if and only if the object is present, unexpired, and generation-valid, and otherwise falls back to unmodified baseline placement behavior.</li><li style='margin-bottom:8px;'>The method of claim 4, wherein AMX-aware placement is restricted to deterministic tie-breaking among already-eligible equal-rank CPUs after existing affinity, cpuset, NUMA, asymmetry, uclamp, thermal, and scheduler-class constraints have been applied, such that the AMX-aware logic cannot alter baseline eligibility or pick-next fairness ordering.</li><li style='margin-bottom:8px;'>The method of claim 3, wherein saturation caps and whole-core accounting are made SMT/core-scheduling aware so that AMX state-carrying tasks are not over-concentrated on sibling hardware threads, and wherein a security policy selectively disables or dithers the AMX-aware tie-break for shared-tenant deployments.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: stale task hints across unusual xstate mutations. Mitigation: make x86 FPU/xstate code the sole producer, enumerate every authoritative update path, and trace-validate hint transitions against saved fpstate snapshots.</li><li style='margin-bottom:6px;'>Risk: runqueue counter corruption under migration, throttle, or class changes. Mitigation: use a per-task sched_amx_on_rq latch, update only under rq-&gt;lock, and add underflow/double-entry debug assertions.</li><li style='margin-bottom:6px;'>Risk: over-packing AMX tasks increases latency for co-located services. Mitigation: cap AMX occupancy per logical CPU or per physical core, expand favored masks when pressure rises, and suppress bias when latency guardrails trip.</li><li style='margin-bottom:6px;'>Risk: deterministic CPU choice leaks which task or cgroup is AMX state-carrying. Mitigation: default-off global policy, optional per-cgroup opt-in, shared-host disable guidance, and optional dithering only within exact-equality ties.</li><li style='margin-bottom:6px;'>Risk: stale favored/cold masks after topology, cpuset, or hotplug changes. Mitigation: carry monotonic topology/cpuset/hotplug/root-domain generations in each RCU plane and ignore any plane that is expired or generation-mismatched.</li><li style='margin-bottom:6px;'>Risk: interference with SMT or core scheduling. Mitigation: whole-core saturation accounting, no override of core-sched cookie rules, and policy-default disable for untrusted SMT-sharing configurations.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual, x87/SSE/AVX/AMX extended state and XSAVE-family architecture.</li><li>Intel AMX architectural programming references describing XTILECFG, XTILEDATA, XFD interaction, and init versus non-init tile state.</li><li>Linux kernel arch/x86 FPU/xstate implementation and signal/ptrace xstate handling documentation and source commentary.</li><li>Linux kernel scheduler documentation for CFS wakeup placement, sched domains, root domains, load balancing, and rq locking invariants.</li><li>Linux cpuset and CPU hotplug documentation describing effective mask changes and scheduling-domain rebuild interactions.</li><li>Linux core scheduling and SMT-related documentation for security and sibling-placement constraints.</li><li>Benchmark literature and vendor guidance for AMX-enabled oneDNN or similar BF16/INT8 workloads on Xeon platforms.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 3.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Pin down the producer-side update points by concrete kernel functions (not just events): enumerate the exact arch/x86 FPU/xstate call sites where the cached XTILECFG/XTILEDATA non-init bits transition, and ensure you cover both restore-to-user paths (sigreturn, ptrace regset writes) and discard/reset paths (exec, xstate init/clear, XFD disable).</li><li style='font-size:13px;margin-bottom:4px;'>Specify the concurrency model for the cached per-task bits vs rq-local AMX runnable accounting: require WRITE_ONCE/READ_ONCE on the task bits, define which lock(s) serialize bit flips with enqueue/dequeue (rq-&gt;lock and/or p-&gt;pi_lock), and state the memory-ordering expectation so the scheduler never observes a bit transition without the matching rq counter adjustment.</li><li style='font-size:13px;margin-bottom:4px;'>Define precisely what &quot;authoritative XSTATE metadata&quot; means in Linux terms (e.g., xfeatures in fpstate, xsave header state) and explicitly exclude unsafe sources (live registers, XSAVE buffer scanning, heuristics) to avoid sleeping/locking hazards on scheduler hot paths.</li><li style='font-size:13px;margin-bottom:4px;'>Make the RCU root_domain preference object validation rules mechanically checkable: list the exact generation counters to compare (topology rebuild, cpuset effective mask, hotplug, root_domain rebuild) and mandate rcu_read_lock() + rcu_dereference() usage in CFS tie sites, with an immediate fallback on mismatch/expiry.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify interaction with core scheduling / SMT: if you propose per-runqueue &quot;runnable tile counters&quot;, state whether the accounting must be per-CPU, per-core, or core-sched cookie constrained, otherwise the bias can violate whole-core placement constraints even if it only breaks ties.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten the novelty boundary vs known AVX/AMX/&quot;heavy task&quot; placement heuristics: explicitly claim the producer/consumer contract (arch-owned authoritative hint + scheduler-only tie-break) and disclaim generic cache-hot packing, energy-aware scheduling, and utilization-based CPU selection; add a short prior-art contrast paragraph to preempt obviousness re: existing per-task SIMD usage tracking and x86 FPU state flags.</li><li style='font-size:13px;margin-bottom:4px;'>Define the exact architectural predicate for &quot;non-init&quot; XTILECFG/XTILEDATA using kernel-real metadata names and semantics (e.g., xfeatures, xstate_header.xfeatures, init-state handling). Specify whether XTILEDATA non-init implies XTILECFG non-init (or not) and how partial restores, init optimization, and compaction affect the predicate so the hint cannot be argued as a vague heuristic.</li><li style='font-size:13px;margin-bottom:4px;'>Enumerate concrete, verifiable update sites (functions/files) where the cached bits must change, and justify completeness: exec/fork copy, sigreturn/rt_sigreturn restore, ptrace regset write, xstate reset/discard paths, XFD enable/disable/first-use, and context save/restore boundaries. Without a grounded list, the core novelty claim (closing stale-bit holes) is vulnerable.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the synchronization model for transitions while runnable: when/where the hint bit may flip relative to enqueue/dequeue, how rq-local counters remain exact under migration (double-rq locking), and how you prevent transient negative/double counts across sleep/throttle/class switches. Provide pseudocode or invariants for the on-rq latch and counter updates.</li><li style='font-size:13px;margin-bottom:4px;'>Constrain the consumer integration points more precisely: name the CFS codepaths and the exact stage where the tie-break is applied (after allowed CPU mask filtering, after asymmetric capacity/thermal/uclamp filtering, etc.). Otherwise a reviewer can argue it implicitly changes eligibility or fairness. Also define determinism policy (salt/dither) and how it interacts with reproducibility requirements.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Fill in the missing core sections (Problem / Proposed Invention / Architecture / Implementation Plan / Claims) with concrete, reviewable specifics: what exact scheduler KPI is targeted (AMX restore count? cross-LLC migrations? p99 latency?), what workloads on Xeon (AMX BF16/INT8 inference + latency services), and what measurable acceptance criteria/regressions are allowed.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten the producer-side definition of “authoritative non-init XTILE*” to match actual kernel-tracked state: specify which xstate metadata you key off (e.g., xfeatures bits vs “init optimization”/compact-format semantics) and explicitly handle the lazy-FPU model (state may be ‘live’ but not yet materialized in memory). As written, “first-use/XFD made live state non-init before the next save” is underspecified and risks being unimplementable without new arch bookkeeping.</li><li style='font-size:13px;margin-bottom:4px;'>Enumerate the exact hook points (by function/files) where the cached task bit must be set/cleared to avoid staleness: fork/clone fpstate copy, exec/fpu reset, sigreturn restore, ptrace regset write, xfd enable/disable transitions, and xstate discard paths. Also specify ordering/locking (task lock vs fpu lock vs rq-&gt;lock) and how cross-CPU updates are synchronized so rq-local counters never go negative or double-count under migration.</li><li style='font-size:13px;margin-bottom:4px;'>Define the rq-local “AMX runnable pressure” contract precisely: what counts as runnable (CFS only or all fair entities?), how throttling/cgroup bandwidth and class switches affect the counters, and how you avoid interacting incorrectly with core-sched/SMT (whole-core accounting vs sibling CPU accounting).</li><li style='font-size:13px;margin-bottom:4px;'>The RCU root_domain hint object needs a concrete validity model: what generation sources exist today (topology rebuild, cpuset effective masks, hotplug, root_domain rebuild), where they are incremented, and how TTL is chosen to avoid pathological oscillation. Add a fallback policy for rapid hotplug/cpuset churn to prevent repeated publish/free cycles.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Security/compat story is not yet fully pinned down: without a precise, audit-ready definition of the AMX “non-init” predicate across all xstate init/compaction/XFD transitions and a strict policy for untrusted co-tenancy (SMT/core-sched), the hint plane risks silent misclassification (fairness/perf regressions) and new co-location side-channels.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten the architectural predicate: explicitly specify how “non-init” is determined from authoritative xstate metadata for XTILECFG/XTILEDATA (init-state handling, xfeatures mask semantics, compacted vs standard XSAVE layout) and ensure the definition is invariant across kernel versions so user ABI expectations aren’t accidentally coupled to internal fpstate representation.</li><li style='font-size:13px;margin-bottom:4px;'>Prove and document hint-bit update completeness: enumerate the exact kernel producer sites and map them to real symbols (exec/new-mm reset, fork copy, sigreturn restore, ptrace regset write, XFD enable/disable/first-use, xstate discard/reinit, and *all* save-out boundaries). Call out lazy/eager FPU paths and corner cases (task exit, coredump/regset reads, KVM or context management helpers) where state can be created/discarded without the listed hooks.</li><li style='font-size:13px;margin-bottom:4px;'>Runqueue accounting must be formally race-safe: define how rq-local AMX runnable counters are updated when the hint bit flips while the task is enqueued, during migration (double rq locks), during cgroup throttling/unthrottling, and across sched_class changes. Add explicit invariants (no underflow/overcount) and require lock coverage (rq-&gt;lock) for every transition.</li><li style='font-size:13px;margin-bottom:4px;'>Side-channel/co-tenancy: the scheme can intentionally bias co-location (or anti-co-location) and may increase information leakage about AMX usage or amplify contention-based leakage. Make the default policy safe for shared hosts: require core scheduling / SMT isolation gating, provide a “no-SMT-bias” mode, and ensure any dithering/salt cannot be externally learned as a stable fingerprint.</li><li style='font-size:13px;margin-bottom:4px;'>RCU hint object validation needs hardening: ensure generation/TTL checks are monotonic, O(1), and cannot livelock under frequent cpuset/hotplug churn. Specify safe publication/teardown (rcu_dereference, call_rcu) and define behavior under root_domain rebuild races so the scheduler never dereferences freed masks or uses stale pointers on hot paths.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact lifecycle of the per-task “tile-state-carrying” boolean: which code paths set/clear it (first AMX use, XRSTOR/XRSTORS init-state optimizations, execve, exit, signal</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify locking + memory-ordering between arch/x86 FPU state transitions and scheduler readers. If the scheduler reads the hint locklessly, you need at minimum READ_ONCE()/WRITE_ONC</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Per-runqueue “tile-carrying accounting” must be defined in terms of scheduler events and protected by rq-&gt;lock. Clarify whether counters change on enqueue/dequeue, context_switch, o</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] RCU-published CPU hint mask: detail allocation, update, and reclamation (cpumask_var_t lifetime, call_rcu/free_rcu), and how you guarantee readers never observe CPUs that went offli</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Scheduler integration points must be explicitly bounded to avoid policy violations: enumerate the exact functions where the bias applies (e.g., select_task_rq_fair, wake_affine, fin</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">yellow_card_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specialist review failed - automated fallback</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Prior-art overlap risk with existing “AVX-512 heavy/expensive context” scheduler patchsets: you must explicitly contrast against AVX-512 frequency-throttling/expensive-context approa</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Define the exact architectural predicate and kernel representation: specify which internal xstate metadata bit(s) constitute “non-init” for XTILECFG and XTILEDATA (e.g., xfeatures/xs</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Specify authoritative update points concretely and prove completeness: enumerate the exact arch/x86 FPU/xstate transitions that can create/destroy tile non-init (XSAVE, XRSTOR, fpsta</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] RCU object lifecycle needs a correctness spec: define the generation counters you validate against (topology rebuild, cpuset effective mask changes, CPU hotplug) and where they live;</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux scheduler using x86 AMX microarchitecture features
+</footer>
+</div></body></html>

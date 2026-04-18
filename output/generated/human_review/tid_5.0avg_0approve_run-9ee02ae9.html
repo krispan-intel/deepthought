@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 5.0] Verifier-Derived Synchronization Contract Vectors with Stabl</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-9ee02ae9ce0b &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 5.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Verifier-Derived Synchronization Contract Vectors with Stable-Admissibility Resolution for x86 eBPF JIT and Primitive-Equivalent Deterministic Fallback</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux synchronization using x86 eBPF microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>PEBS-Governed Lock-Class Spin Broker for mutex and rwsem</li><li style='font-size:13px;'>Cache-Domain Tag Broker for blk-mq Storage BPF</li><li style='font-size:13px;'>IFUNC-Style Synchronization Contract Resolution for x86 BPF JIT</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: ECHO-3DHPC: Advance the performance of astrophysics simulations with   code modernization &lt;&gt; FnF-BFT: Exploring Performance Limits of BFT Protocols
+  MMR Score:    0.7813</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A Linux synchronization optimization in which the eBPF verifier emits an immutable per-program Synchronization Contract Vector (SCV) whose entries carry a normative Linux primitive-family identifier, verifier proofs, context and lifetime constraints, and a one-time x86 admissibility class; the x86 JIT then resolves each site exactly once to either a contiguous non-movable inline primitive-equivalent template or a call-equivalent thunk/helper fallback, using only globally stable x86 features and mitigation-safe predicates, with no semantic drift across PREEMPT_RT, IRQ, NMI, RCU, or instrumentation configurations.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is not generic verifier fact propagation, generic JIT template selection, or ordinary CPU feature gating. The new mechanism is a kernel-owned verifier-to-JIT contract ABI in which each synchronization-relevan</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>eBPF programs now sit on hot synchronization paths in Linux: map value ownership transfer, reference publication, queue and ring index advancement, state handoff between process and interrupt context, and coordination between BPF programs and surrounding kernel subsystems. On x86, these paths are sensitive not only to atomic instruction choice but also to microarchitectural details such as LOCKed operation behavior, split-lock penalties, CMPXCHG16B availability, TSO ordering assumptions, and mitigation/runtime instrumentation state. Existing choices are too coarse. Always routing through helpers is safe but adds call overhead and obscures architecture-specific ordering opportunities. Letting the x86 JIT opportunistically inline raw atomics from local instruction context is also insufficient because it does not carry forward verifier-proven facts about address provenance, object lifetime, alignment, context legality, or tooling requirements, and it provides no formal mechanism to prevent later JIT passes or runtime patching from splitting, probing, or otherwise perturbing an ordering-critical sequence. The result is either unnecessary overhead or a risk of backend-specific semantic drift under PREEMPT_RT, KCSAN/KASAN/KCOV, ftrace/trampoline attachment, split-lock detection, and evolving mitigation policy.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Prior art covers individual pieces but not their claimed combination or boundaries. Existing verifier logic already proves safety for many pointer classes and rejects invalid memory access, but it does not externalize those proofs into an immutable per-program synchronization contract table with a normative Linux primitive-family identifier and explicit fallback policy. Existing x86 BPF JIT logic already chooses instruction encodings based on opcode width and CPU capabilities, but it does not resolve synchronization sites through a one-time admissibility table tied to stable, non-revocable x86 features, nor does it carry a no-motion/no-splitting region constraint through every JIT and late-patching phase. Existing kernel atomics and LKMM primitives define semantics, but they are not used as named contract targets inside a verifier-to-JIT ABI. Existing alternatives/static_call/ftrace/text_poke mechanisms patch kernel text, but they do not provide a BPF-specific contract that says a given synchronization site must remain contiguous, non-probed, and semantically identical whether realized inline or through a thunk/helper. Existing helper side-effect tracking also does not specify call-equivalence across inline, out-of-line, and instrumented paths for PREEMPT_RT, NMI, IRQ, RCU, and sanitizer configurations.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Synchronization Contract Vector schema.
+Each verified program receives an immutable sidecar table in bpf_prog_aux, for example:
+struct bpf_sync_contract_entry {
+  u32 insn_idx;
+  u16 region_len_insns;
+  u8 linux_primitive_id;
+  u8 width_code;
+  u8 memory_order;
+  u8 addr_class;
+  u8 align_log2;
+  u8 lifetime_class;
+  u8 ctx_mask_allowed;
+  u8 ctx_mask_required;
+  u8 rcu_requirement;
+  u8 proof_mask;
+  u8 admissibility_class;
+  u8 fallback_kind;
+  s16 fixed_field_off;
+  u32 btf_type_id;
+  u32 map_type_id;
+};
+The key field is linux_primitive_id, a normative identifier naming the intended Linux primitive family rather than a generic optimization hint. Example values are SCV_PRIM_ATOMIC_FETCH_ADD, SCV_PRIM_ATOMIC_CMPXCHG, SCV_PRIM_ATOMIC_XCHG, SCV_PRIM_SMP_LOAD_ACQUIRE, SCV_PRIM_SMP_STORE_RELEASE, SCV_PRIM_SMP_MB, and optional SCV_PRIM_ARCH_CMPXCHG128 only when the kernel already exposes a named 128-bit arch primitive. memory_order is one of RELAXED, ACQUIRE, RELEASE, ACQ_REL, FULL. addr_class is one of MAP_VALUE_GLOBAL, MAP_VALUE_PERCPU, TRUSTED_BTF_OBJ, KPTR_FIELD, or OTHER_REJECTED. lifetime_class distinguishes refcounted object, map-owned stable storage, RCU-protected object field, and unsupported transient storage. proof_mask encodes verifier-proven facts such as PROOF_NONFAULTING, PROOF_NATURAL_ALIGN, PROOF_CACHELINE_CONTAINED, PROOF_CONST_OFFSET, PROOF_TRUSTED_BASE, PROOF_NO_SLEEP, and PROOF_RCU_HELD.
+
+2. How verifier computes eligibility.
+The verifier identifies synchronization-relevant sites from existing BPF_ATOMIC instructions, from verifier-recognized helper/kfunc call sites that already denote Linux atomic or barrier semantics, and from any future pseudo-insn lowered before final verification. For each site it derives fields from concrete verifier state, not free-form inference:
+- Address class comes from register base type: PTR_TO_MAP_VALUE or PTR_TO_MAP_VALUE_ADJ with a fixed non-null base may become MAP_VALUE_GLOBAL; PTR_TO_BTF_ID or PTR_TO_BTF_ID_OR_NULL may become TRUSTED_BTF_OBJ only if the kfunc prototype and BTF metadata mark the pointee as trusted kernel memory and the path proves non-null; PERCPU storage is marked MAP_VALUE_PERCPU and is ineligible for global-atomic primitive families in the initial version.
+- Alignment comes from reg-&gt;off, var_off/tnum low-bit proof, object layout alignment, and fixed field offset. Inline eligibility requires natural alignment for the primitive width. For LOCKed widths that may trigger split-lock or cacheline-straddle penalties, the verifier additionally proves cacheline containment when object layout and constant offset allow it; otherwise the site is marked inline-ineligible and forced to fallback.
+- Lifetime and RCU requirements come from pointer provenance and program attach type. A field reachable only under rcu_read_lock() receives RCU_REQUIRED. A map value with stable lifetime under map refcounting receives MAP_OWNED_STABLE. A transient pointer or unresolved dynptr slice is rejected or routed to helper if a legal helper exists.
+- Context masks are derived from program type and attach point: TASK, SOFTIRQ, HARDIRQ, NMI, PREEMPT_RT, and SLEEPABLE_FORBIDDEN. A site that may execute in NMI cannot resolve to an instrumented thunk that is not NMI-safe.
+- Width is limited to 1, 2, 4, and 8 bytes for generic atomic families; 16 bytes is permitted only for a named arch primitive family when CX16 is admissible and 16-byte alignment is proven.
+If a synchronization operation is semantically legal in BPF but inline proofs fail, the verifier does not reject solely for optimization reasons; it emits an SCV entry with admissibility_class forcing fallback. The verifier rejects only when the underlying operation itself has no legal kernel-semantic realization for that pointer/type/width/context combination.
+
+3. One-time x86 admissibility resolution rule.
+After verification, and only after x86 alternatives and system-wide capability intersection are final, x86_bpf_resolve_sync_contracts() evaluates each entry once using:
+ADMISSIBLE(entry) = primitive_supported(entry.linux_primitive_id, entry.width_code)
+  &amp;&amp; proofs_satisfied(entry.proof_mask)
+  &amp;&amp; context_supported(entry.ctx_mask_allowed, prog_attach_context)
+  &amp;&amp; tooling_policy_supported(entry)
+  &amp;&amp; stable_feature_whitelist_satisfied(entry)
+  &amp;&amp; mitigation_safe_template_exists(entry);
+The stable_feature_whitelist is intentionally narrow and testable. It includes only architectural TSO assumptions plus globally stable x86 capability bits whose availability is not expected to be revoked by post-load mitigations or per-task toggles, such as CX8 and, when system-wide present, CX16. It explicitly excludes RTM/HLE and any feature whose usability is known to change under microcode or mitigation policy. The resolver uses cpu_feature_enabled()/system-wide capability intersection after alternatives patching, not speculative per-task state, and only for whitelist members. Because templates are restricted to ordinary LOCK/CMPXCHG/MFENCE/load/store sequences whose correctness does not depend on spectre-family toggles, IBRS/IBPB/STIBP/SSBD/MDS/TAA/BHI/retbleed/SLS mitigations do not invalidate the load-time choice. If a future kernel build changes the whitelist, newly loaded programs see the new table; existing programs remain correct because no admitted template relied on revocable features.
+
+4. Exact inline-template versus thunk/helper contract.
+Resolution outcome is stored per entry as RES_INLINE_TEMPLATE, RES_INSTRUMENTED_THUNK, RES_NOINSTR_THUNK, or RES_EXISTING_HELPER. Selection order is deterministic: first admissible inline template, else admissible thunk, else existing helper, else verifier rejection only if no legal semantic realization exists.
+- Inline template means a contiguous byte sequence emitted as one JIT region and documented as equivalent to the named Linux primitive family for atomicity, tearing, and ordering.
+- Instrumented thunk means a fixed out-of-line kernel symbol compiled to call the same Linux primitive family through normal kernel APIs so that KCSAN/KASAN/KCOV/lockdep behavior matches existing kernel practice. This path is allowed only when ctx_mask excludes NMI and any other context that forbids such instrumentation.
+- Noinstr thunk means a dedicated notrace/noinstr/non-sleeping thunk for NMI/hardirq legality. It never sleeps, never takes mutexes, never calls back into BPF, and performs only the named atomic/LKMM primitive plus minimal register marshaling.
+- Existing helper is the final semantics-preserving path when instrumentation policy, width, provenance, or context prevent both inline and thunk realization.
+All three realizations are call-equivalent by construction: they have the same memory-order guarantee under LKMM, the same atomicity/tear-free behavior for the admitted width, the same fault behavior (none on admitted trusted memory), the same sleepability prohibition, and the same RCU/preemption preconditions as recorded in the SCV entry.
+
+5. Non-movable JIT region enforcement.
+The verifier tags the source instruction and copies region metadata into bpf_insn_aux_data.sync_region_id plus a JIT-side jit_ctx.sync_regions[] table carrying [start_insn, end_insn, resolution, forbid_probe, forbid_patch_inside]. During x86 emission, emit_sync_region() outputs the full region contiguously and returns byte offsets recorded in the final prog aux metadata. Every pass must honor the region: constant blinding may only use a pre-approved blinded template variant for the whole region, not split immediates inside it; prologue/epilogue insertion occurs only outside region boundaries; direct-tail-call patch sites are placed outside sync regions; exception-table or NOP sled insertion cannot occur inside a region; kprobe/ftrace/fprobe registration rejects interior addresses; and any future text_poke-style rewrite of JIT text must target only designated patch slots outside sync regions. This makes the barrier concrete even if current x86 BPF JIT performs limited classic motion, because the hazard addressed is not just algebraic reordering but later splitting, probing, or patch-site insertion around an ordering-critical sequence.
+
+6. Lifetime, ownership, and RCU rules.
+The SCV table is allocated during program finalization, stored as aux-&gt;sync_contracts, marked immutable before JIT emission, and owned by bpf_prog_aux. Executing JIT text does not dereference SCV memory; it uses fully resolved inline code or fixed thunk/helper call targets. The SCV sidecar is therefore metadata for load-time resolution and optional diagnostics only. It is freed together with bpf_prog_aux in the same deferred program teardown path and under the same grace-period discipline used for JIT text and fprobe/trampoline detachment, e.g. bpf_prog_put() -&gt; deferred free -&gt; RCU/tasks-trace grace period -&gt; free JIT image and SCV sidecar. Because no runtime instruction embeds a direct SCV pointer, there is no fast-path UAF vector even during program replacement.
+
+7. Alignment and rejection rules.
+For inline atomic families, natural alignment is mandatory. width 1 always passes alignment; width 2 requires 2-byte proof; width 4 requires 4-byte proof; width 8 requires 8-byte proof; width 16 requires 16-byte proof plus CX16 admissibility and a named 128-bit primitive family. If natural alignment or constant-offset proof is missing but a helper/thunk exists, fallback is mandatory and explicit. If the operation would violate the named primitive family&#x27;s legality assumptions altogether, such as a 16-byte cmpxchg on an object class without 16-byte alignment guarantee or on an unsupported address class, the verifier rejects the program rather than silently weakening semantics.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>The system is intentionally split into portable verifier facts and x86-only realization:
+
+Verifier / Load-Time Path
+-------------------------
+[BPF insn stream]
+      |
+      v
+[Verifier sync-site recognizer]
+      |
+      +--&gt; computes base type, non-faulting proof, fixed offset, width, alignment,
+      |    cacheline containment, context mask, RCU requirement, lifetime class
+      v
+[Immutable SCV in bpf_prog_aux]
+      |
+      +--&gt; entry[0..N-1]: {linux_primitive_id, memory_order, addr_class,
+      |                    align_log2, proof_mask, ctx_mask, rcu_requirement,
+      |                    admissibility_class, fallback_kind}
+      v
+[x86 admissibility resolver]
+      |
+      +--&gt; consults stable-feature whitelist: TSO baseline, CX8, optional CX16
+      +--&gt; ignores revocable features: RTM/HLE/etc.
+      +--&gt; checks mitigation-safe template catalog
+      v
+[Per-entry resolution]
+  |            |                 |
+  |            |                 +--&gt; RES_EXISTING_HELPER
+  |            +--------------------&gt; RES_NOINSTR_THUNK
+  +---------------------------------&gt; RES_INLINE_TEMPLATE / RES_INSTRUMENTED_THUNK
+
+JIT / Runtime Path
+------------------
+[jit_ctx.sync_regions[]]
+      |
+      +--&gt; region boundaries copied into bpf_insn_aux_data and final image metadata
+      +--&gt; forbid_probe + forbid_patch_inside flags
+      v
+[emit_sync_region()]
+  | contiguous template only |
+  | no interior blinding     |
+  | no prologue splice       |
+  | no tail-call patch slot  |
+  | no extable/nop insert    |
+      v
+[Final JIT text]
+  | fast path never dereferences SCV |
+  | inline or thunk/helper target only |
+      v
+[Deferred teardown]
+  --&gt; detach trampolines/fprobes --&gt; RCU/tasks-trace grace period --&gt; free JIT image + SCV
+
+Representative primitive mapping table:
+- SCV_PRIM_SMP_LOAD_ACQUIRE   -&gt; x86 plain load + acquire-preserving template equivalent to smp_load_acquire()
+- SCV_PRIM_SMP_STORE_RELEASE  -&gt; x86 release-preserving template equivalent to smp_store_release()
+- SCV_PRIM_ATOMIC_FETCH_ADD   -&gt; x86 LOCK XADD template or thunk/helper equivalent to atomic_fetch_add_*()
+- SCV_PRIM_ATOMIC_CMPXCHG     -&gt; x86 LOCK CMPXCHG/CMPXCHG16B template or equivalent thunk/helper
+- SCV_PRIM_SMP_MB             -&gt; x86 full barrier template equivalent to smp_mb()
+
+The novelty-bearing bridge is the SCV plus resolution machinery, not any single opcode.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Verifier changes.
+Add a synchronization-site recognition pass in kernel/bpf/verifier.c after pointer/type stabilization and before final subprog/JIT decisions. Extend bpf_insn_aux_data with sync_region_id and sync_contract_index. Emit struct bpf_sync_contract_table into bpf_prog_aux, mark it immutable once verification succeeds, and plumb through verifier-derived facts: base register type, constant offset, tnum alignment proof, object/BTF alignment, map type, lifetime class, and attach-context mask.
+
+2. Core metadata and lifetime plumbing.
+Add aux-&gt;sync_contracts, aux-&gt;nr_sync_contracts, and final-image byte-offset metadata for sync regions in kernel/bpf/core.c. Free SCV sidecar from the same deferred path that frees JIT text, after the grace period already used for safe program disposal and trampoline detachment.
+
+3. x86 admissibility resolver.
+In arch/x86/net/bpf_jit_comp.c add a template catalog keyed by linux_primitive_id, width, memory_order, and context class. Add x86_bpf_resolve_sync_contracts() that runs after alternatives/capability intersection are settled and before final emission. The resolver must consult only the stable-feature whitelist (TSO baseline, CX8, optional CX16) and reject any template that depends on revocable features or dynamic policy.
+
+4. Non-movable region machinery.
+Represent each contracted site as a region object in jit_ctx.sync_regions[]. Update every relevant emission phase so the region is contiguous and sealed: hardening/constant blinding chooses whole-region variants only; prologue/epilogue insertion is outside region bounds; any tail-call immediate patch slots are emitted outside the region; no debug NOP island or exception metadata is inserted inside the region. Expose region byte ranges to probe-registration code so kprobe/fprobe/ftrace reject interior addresses.
+
+5. Thunk library.
+Implement two families of out-of-line symbols in arch/x86 or kernel/bpf: instrumented thunks that call ordinary Linux atomic APIs for task/softirq-safe contexts, and notrace/noinstr thunks for NMI/hardirq-safe contexts. Both families must be non-sleeping, must not recurse into BPF, and must preserve the SCV-defined RCU and preemption assumptions. The thunk ABI passes data pointer, width/order selector, and value operands in fixed registers; no SCV pointer is passed.
+
+6. Deterministic fallback semantics.
+Encode per-entry resolution in readonly aux metadata for observability and debugging. Expose debug output through bpftool or tracepoints as contract index -&gt; primitive id -&gt; inline/thunk/helper resolution -&gt; reason code, so portability is explicit and deterministic rather than implicit.
+
+7. Selftests.
+Add BPF selftests covering map-value atomics, trusted BTF object fields, RCU-required object access, PREEMPT_RT-safe attach types, NMI attach types, sanitizer-enabled kernels, split-lock-sensitive offsets, and CX16/no-CX16 systems. Each test should assert not just functional correctness but the expected resolution mode and region-sealing behavior.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. LKMM equivalence tests.
+For every primitive family and memory order, run litmus-style producer/consumer and compare-exchange tests comparing inline template, instrumented thunk, noinst thunk, and helper fallback against the corresponding Linux primitive semantics. Include acquire/release/full-barrier publication cases and verify no weaker outcome appears.
+
+2. Context legality matrix.
+Exercise task, softirq, hardirq, NMI, and PREEMPT_RT kernels. Confirm that sites whose ctx_mask includes NMI never resolve to instrumented thunks, and that no fallback path sleeps or takes incompatible locks.
+
+3. Verifier proof coverage.
+Create tests that vary pointer class, nullability, constant offset, tnum alignment, BTF field alignment, per-cpu/global map classes, and RCU-held/not-held states. Confirm inline eligibility only when every required proof bit is present, fallback when semantics remain legal but proofs are insufficient, and verifier rejection only when no legal realization exists.
+
+4. Stability under patching/instrumentation.
+Enable KCSAN, KASAN, KCOV, ftrace, and BPF trampolines. Verify region byte ranges are reported as non-probeable, that thunk/helper targets remain semantically identical under instrumentation, and that no interior patch site exists within sealed regions. Confirm that alternatives/static_call/text_poke activity outside the JIT image does not change contract resolution.
+
+5. Microarchitectural corner cases.
+Run split-lock-sensitive tests by placing fields near cacheline boundaries, confirm inline rejection or fallback when cacheline containment is not proven, verify CX16-gated 16-byte contracts only on systems with system-wide CX16, and confirm no contract uses RTM/HLE even when present.
+
+6. Lifetime and teardown.
+Stress load/unload, program replacement, map lifetime churn, and fprobe attachment/detachment while synchronization-heavy programs execute. Confirm JIT code never dereferences freed SCV metadata and that deferred freeing after grace period prevents use-after-free.
+
+7. Performance validation.
+Measure hot-path latency and throughput for map-value synchronization workloads against helper-only baseline on representative x86 servers. Attribute improvement only to admitted inline templates; fallback paths should match existing semantics and near-existing overhead.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>1. A computer-implemented method for eBPF program preparation in a Linux kernel, comprising: identifying synchronization-relevant instructions or verifier-recognized helper/kfunc sites; computing, by a verifier, for each site an immutable Synchronization Contract Vector entry including a normative Linux primitive-family identifier, a memory-order field, a width field, an address-space class, an alignment proof, a lifetime class, a context mask, and a proof mask; storing the entries in per-program auxiliary metadata; and prohibiting subsequent mutation of the entries before JIT realization.</li><li style='margin-bottom:8px;'>2. The method of claim 1, wherein an x86 resolver evaluates each Synchronization Contract Vector entry exactly once at load time against a stable-feature admissibility table limited to non-revocable x86 capabilities and mitigation-safe template definitions, and deterministically selects one of: a contiguous inline primitive-equivalent template, an instrumented out-of-line thunk, a noinst out-of-line thunk, or an existing helper path.</li><li style='margin-bottom:8px;'>3. The method of claim 2, wherein each selected inline realization is emitted as a non-movable JIT region whose boundaries are represented in instruction auxiliary metadata and JIT-region metadata such that constant blinding, prologue or epilogue insertion, tail-call patching, exception or NOP insertion, probing, and text patching are disallowed from splitting or inserting code within the region.</li><li style='margin-bottom:8px;'>4. The method of claim 2, wherein the instrumented thunk, the noinst thunk, and the existing helper path are constrained to be call-equivalent to the primitive-family identifier recorded in the Synchronization Contract Vector entry with respect to LKMM ordering, atomicity, tearing behavior, fault behavior, RCU preconditions, and sleepability restrictions.</li><li style='margin-bottom:8px;'>5. A Linux kernel data structure comprising a per-program immutable Synchronization Contract Vector stored in bpf_prog_aux, the vector being freed only in the deferred program teardown path after the grace period used for safe disposal of JIT text and program attachments, wherein executing JIT text does not embed direct pointers to entries of the vector.</li><li style='margin-bottom:8px;'>6. The method of claim 1, wherein inline admissibility further requires verifier proof of natural alignment and, for LOCKed x86 templates above a configured width threshold, verifier proof that the target field does not straddle a cacheline boundary, and wherein lack of such proof causes deterministic fallback unless the underlying synchronization operation has no legal semantic realization, in which case the verifier rejects the program.</li></ol>
+  <h3>Claim Confidence</h3><ul><li style='margin-bottom:6px;'>Claim 1: high confidence. Distinct because prior verifier fact propagation does not define an immutable per-program contract table with a normative Linux primitive-family identifier and explicit context/lifetime/proof fields for synchronization sites.</li><li style='margin-bottom:6px;'>Claim 2: high confidence. The exact one-time stable-admissibility resolution rule materially narrows the invention and separates it from generic JIT CPU feature gating.</li><li style='margin-bottom:6px;'>Claim 3: medium-high confidence. Non-movable region enforcement across blinding, patching, and probe phases is concrete and implementation-specific, not a generic cautionary statement.</li><li style='margin-bottom:6px;'>Claim 4: medium-high confidence. The call-equivalence requirement across inline, instrumented thunk, and noinst thunk provides a defensible correctness boundary not usually spelled out in BPF JIT prior art.</li><li style='margin-bottom:6px;'>Claim 5: medium confidence. The data-structure/lifetime claim is narrower but valuable for infringement mapping because it ties immutability, storage location, and RCU-safe teardown together.</li><li style='margin-bottom:6px;'>Claim 6: medium-high confidence. The combination of verifier-proven cacheline containment and deterministic fallback provides a concrete microarchitectural admissibility detail beyond ordinary alignment checks.</li></ul>
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: prior-art challenge that the design is an obvious combination of verifier facts and JIT templates. Mitigation: anchor claims on the exact SCV schema, the normative primitive-family identifier, the stable-admissibility table, and the non-movable region enforcement across late-patching/probing phases.</li><li style='margin-bottom:6px;'>Risk: feature-stability arguments may be attacked as vague. Mitigation: define an explicit whitelist limited to TSO baseline, CX8, and optional system-wide CX16, and expressly exclude RTM/HLE and any revocable or mitigation-sensitive feature.</li><li style='margin-bottom:6px;'>Risk: instrumentation and PREEMPT_RT semantics may diverge between inline and fallback paths. Mitigation: separate instrumented and noinst thunk families, encode context legality in SCV, and require call-equivalence to named Linux primitives as a contractual invariant.</li><li style='margin-bottom:6px;'>Risk: alignment and split-lock corner cases could undermine correctness or performance claims. Mitigation: make natural alignment and, where configured, cacheline-containment proof mandatory for inline LOCKed templates; otherwise force deterministic fallback or reject if no legal primitive exists.</li><li style='margin-bottom:6px;'>Risk: lifetime bugs if JIT text references SCV metadata. Mitigation: prohibit runtime dereference of SCV entries from JIT code and free SCV only in the same deferred teardown path as JIT text after grace period.</li><li style='margin-bottom:6px;'>Risk: overbreadth around unsupported pointer classes. Mitigation: limit admissible address classes to verifier-proven non-faulting kernel-owned memory such as stable map values and trusted BTF object fields, and explicitly exclude user, packet, stack, and unresolved dynptr memory.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Linux kernel memory-barriers documentation and LKMM model materials.</li><li>Linux x86 atomic and cmpxchg primitive implementations, including CX8/CX16 capability-gated paths.</li><li>Linux kernel eBPF verifier and x86 BPF JIT implementation files for verifier state, aux metadata, and JIT emission pipeline.</li><li>Linux kernel documentation and code around RCU-safe bpf_prog lifetime, deferred freeing, trampolines, and program teardown.</li><li>Linux kernel documentation for PREEMPT_RT, noinstr/notrace constraints, KCSAN/KASAN/KCOV instrumentation behavior, and split-lock detection.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 5.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft asserts “non-movable ordering regions” and LKMM/call-equivalence across late JIT/patching/instrumentation, but it does not yet specify an enforceable mechanism that actually prevents motion/splitting under existing x86 BPF JIT rewrite + text patching realities; without that, the correctness claim is not auditable.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact *context legality model* and how the verifier proves it: which prog types can hit SCV sites (NMI/perf, IRQ, preemptible, BH-disabled, RT mutex contexts). Any primitive that can sleep or take locks must be explicitly excluded, and the SCV entry must encode “may_sleep”/“in_nmi” style constraints with hard verifier enforcement.</li><li style='font-size:13px;margin-bottom:4px;'>The “non-faulting kernel-owned objects” requirement is underspecified and currently unrealistic without a concrete lifetime rule: you must state precisely which pointer classes qualify (map value? percpu map value? kptr? btf_id trusted pointers?) and how the verifier proves both *no page fault* and *no UAF* under concurrent free (RCU/refcount/perc-CPU pinning).</li><li style='font-size:13px;margin-bottom:4px;'>Spell out the *call-equivalence contract* against existing Linux primitives in kernel terms (e.g., mapping to specific atomic APIs and barrier semantics). You must cover atomicity/tearing, address dependency, compiler barriers vs CPU fences, and LKMM obligations for each memory order; otherwise “named primitive-family identifier” is ambiguous.</li><li style='font-size:13px;margin-bottom:4px;'>Reconcile “resolved once at load time; no hot-path CPUID branching” with CPU hotplug, heterogeneous microcode/mitigation toggles, and alternative patching: specify what counts as “stable, non-revocable” features on x86-64 and which mitigations/instrumentation configs are allowed to change codegen post-load (or must be prohibited for these sites).</li><li style='font-size:13px;margin-bottom:4px;'>Describe how region immobility is enforced through *all* JIT passes that can rewrite or patch instructions (constant blinding, tail-call patching, fentry/fexit trampolines, kprobes/ftrace/text_poke). A hand-wavy “metadata” claim is not enough; you need a concrete invariant checked in each pass plus failure behavior (reject program vs force helper fallback).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten the novelty boundary vs existing verifier→JIT metadata: today the verifier already records rich per-insn facts (alignment/ptr-type/bounds in insn_aux_data) and the x86 JIT already does multi-pass rewriting (blinding, patching). You must explicitly state what is new (e.g., a normative primitive-family ID + call-equivalence contract + immutability + region non-movability guarantees) and why existing aux-data + template selection cannot provide the same guarantee.</li><li style='font-size:13px;margin-bottom:4px;'>Define the SCV entry schema precisely and minimally: enumerate fields (primitive-family ID, width, memorder, address space, alignment proof, faultability, context mask, RCU/lifetime constraints, policy/version) with exact encodings and how each is derived from verifier state. Right now it reads like a concept but not an implementable ABI between components.</li><li style='font-size:13px;margin-bottom:4px;'>Your “stable-feature admissibility” requirement is underspecified and is a prior-art risk (looks like routine CPU-feature gating). You need a concrete rule set for what is “non-revocable” on x86 (and how you treat mitigations, microcode changes, and alternatives patching), plus a correctness argument for why load-time resolution remains valid across CPU hotplug / heterogeneous features.</li><li style='font-size:13px;margin-bottom:4px;'>Region non-movability must be reconciled with real JIT mutation points: constant blinding, tail-call fixups, bpf_jit_poke/patching, trampolines (fentry/fexit), and probe attachment can all rewrite code. Specify the mechanism (region table + hard invariants checked at each pass) and enumerate which existing passes are constrained and how you avoid breaking them.</li><li style='font-size:13px;margin-bottom:4px;'>Call-equivalence to Linux atomics/LKMM primitives needs a formal mapping: specify exactly which primitives are in-scope (e.g., atomic_fetch_add_relaxed/acquire/release, cmpxchg variants, smp_* fences), and define equivalence on (atomicity/tearing), (ordering), (fault behavior), (preempt/irq/nmi legality), and (instrumentation side effects). Without this, the claim is vulnerable as “just another JIT lowering choice.”</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact SCV schema and admissibility whitelist boundaries: enumerate primitive-family IDs, allowed memory orders, and the precise x86 “stable feature” set (e.g., baseline x86-64 + mandatory flags) and explicitly exclude revocable/mitigation-sensitive behaviors (TSX, HLE/RTM, microcode-dependent fast strings, etc.). Include a policy versioning/compat story so Xeon generations can add templates without semantic drift.</li><li style='font-size:13px;margin-bottom:4px;'>Make “non-faulting kernel-owned objects” verifier-proofable: specify which pointer classes qualify (PTR_TO_MAP_VALUE, PTR_TO_BTF_ID, percpu, etc.), what constitutes non-faulting under vmalloc/KASAN/KFENCE/KCSAN, and how the verifier proves alignment/tear-free access for 4/8-byte ops across all configs. Without this, the correctness claim (fault behavior + context legality) is underspecified.</li><li style='font-size:13px;margin-bottom:4px;'>Region immobility must be enforceable across *all* late transformations: describe how the JIT marks SCV sites so constant blinding, tail-call patching, bpf trampoline/fentry/fexit, text_poke, and ftrace/kprobes cannot split/hoist/sink instructions across the ordering region. Provide a post-pass validator (or metadata checks) that fails load if region integrity is violated.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify PREEMPT_RT/IRQ/NMI legality per primitive family: some Linux ‘atomic’/locking primitives have context constraints (sleeping locks under RT, raw vs regular spinlocks, NMI-safe variants). The SCV must encode context masks precisely and the call-equivalence contract must reference the *right* primitive (e.g., raw_* where required) to avoid RT/NMI regressions.</li><li style='font-size:13px;margin-bottom:4px;'>Specify call-equivalence testing/auditing: propose how you will mechanically validate LKMM-equivalence and fault/context preservation (litmus tests + KCSAN/KASAN instrumentation modes). Without a verification plan, the “no semantic drift across instrumentation configurations” claim is hard to defend for upstream acceptance.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact “stable-feature admissibility” whitelist and its revocation/mitigation semantics: on x86, microcode/mitigation state (TAA/MDS, retpoline/IBRS/IBT, LFENCE-serializing behavior assumptions, etc.) can change across boots/configs. You need a concrete rule for which features are considered non-revocable, how the resolver records the policy version, and what happens when mitigations are toggled (boot params, static keys) after load.</li><li style='font-size:13px;margin-bottom:4px;'>Specify a side-channel threat model and hard constraints for generated sequences: ensure templates/stubs do not introduce speculation gadgets (especially around conditional branches, indirect calls, or load-to-use forwarding) and that helper/stub paths remain mitigation-safe under CONFIG_RETPOLINE, IBT/CET, and spectre-v2 defenses. Explicitly state whether any sequence is allowed to touch potentially secret-dependent memory or timing in attacker-controlled contexts.</li><li style='font-size:13px;margin-bottom:4px;'>Make the verifier eligibility criteria mechanically checkable: “non-faulting kernel-owned objects” must be tied to specific verifier-known pointer types (e.g., PTR_TO_MAP_VALUE with bounded offset and proven alignment) and must exclude any path that could fault (vmalloc/module text? kptr to freed object? speculative NULL?). Include how lifetime is proven across RCU, bpf_timer callbacks, and map element replacement, and how refcounting/pinning is enforced.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify crash-safety for context legality across PREEMPT_RT, IRQ, and NMI: many atomic/barrier primitives are context-sensitive (may disable preemption, rely on lockdep, or be illegal in NMI). The SCV entry’s context mask needs a precise mapping to allowed primitives, and the fallback must be guaranteed non-sleeping and NMI-safe (or must be rejected at verify time).</li><li style='font-size:13px;margin-bottom:4px;'>Region immobility must be reconciled with existing JIT and kernel text patching realities: constant blinding, tail-call patching, trampoline attachment, ftrace/kprobes, livepatch, and text_poke can rewrite or relocate instruction ranges. You need a concrete mechanism proving that synchronization sequences cannot be split/hoisted/sunk by (a) multi-pass JIT transforms and (b) external instrumentation/patching, or else define acceptable exceptions and how equivalence is preserved.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the “stable-feature” admissibility rule in terms of existing x86 cpufeature APIs and invariants (e.g., cpu_feature_enabled()/static_cpu_has()) and explicitly guarantee: (a) f</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The proposal hinges on “call-equivalent to existing Linux atomic/LKMM primitives” but does not specify a complete mapping. You need an explicit contract→primitive table (e.g., cmpxc</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] “Forbid code motion across contract sites” must be enforced against the actual x86 BPF JIT pipeline (multi-pass emission, fixups, constant blinding, any peephole/rewrites). You need</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] By bypassing the C atomic APIs you may lose KCSAN/KASAN/DEBUG_ATOMIC_SLEEP-style instrumentation and any arch-specific debugging hooks that ride on the normal atomic primitives. Eit</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify fault/exception and speculation-mitigation interactions: emitted sequences must not depend on instructions whose effective behavior is altered by mitigations (or assume barr</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the SCV ABI precisely (entry layout, versioning, endianness, extensibility, and what constitutes the normative semantics). Today it’s described conceptually; you need a concr</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The claim “verifier-proved, non-faulting kernel-owned memory” is currently unsafe/vague. You must specify exactly which BPF memory classes qualify (map value, percpu map value, kptr</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Explain how LKMM correctness is preserved when mapping to “named existing Linux atomic/LKMM primitives.” You must define the equivalence relation: which C-level primitive semantics </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The “stable CPU features that cannot later be revoked by mitigations or runtime toggles” needs a concrete admissibility policy. On x86, behavior can change via alternatives, IBT/CET</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Non-movable ordering blocks must be enforced against *all* relevant JIT/patching phases (constant blinding, prologue/epilogue insertion, tail-call patching, exception table / nop sl</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux synchronization using x86 eBPF microarchitecture features
+</footer>
+</div></body></html>

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 4.0] </title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-0a208f6a3fc2 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — yellow_card_revise</div>
+</div>
+
+<section class="card">
+  <h1></h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux power management using x86 TDX microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>PLN-Mediated TDX Power-Pressure Channel</li><li style='font-size:13px;'>TDH.VP.ENTER Residency Descriptor for Halt-Poll Elision</li><li style='font-size:13px;'>TDX Exit-Signature Broker for intel_idle Demotion Bias</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | POWER OPTIMIZATION FOR MOBILE USAGES &lt;&gt; X86_FEATURE_PLN
+  MMR Score:    0.7783</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> </div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Existing Linux cpuidle governors predict idle duration from timer and wake-history signals, while KVM halt-poll and PLE-style heuristics target guest halt or spin behavior. None of those mechanisms consumes the host-visible TDX exit taxonomy that occurs immediately before a CPU may drop into the idle task after short host handling. As a result, a CPU that just handled a burst of fast TDX exits may still select an unnecessarily deep C-state, increasing return-to-vCPU latency and causing avoidable power-performance oscillation.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>{&#x27;instrumentation&#x27;: [&#x27;aggregate hint_armed_count, hint_consumed_count, hint_expired_count, migration_drop_count, budget_throttle_count&#x27;, &#x27;trace exit-to-vcpu-reentry deltas in a privileged validation build only&#x27;, &#x27;measure C-state residency via cpuidle and x86 residency counters&#x27;, &#x27;measure package and core energy via RAPL&#x27;, &#x27;measure scheduler wake-to-run latency and vCPU re-entry latency&#x27;], &#x27;test_matrix&#x27;: [&#x27;pinned TDX VM with interrupt-heavy microbursts&#x27;, &#x27;pinned TDX VM with shared-I/O emulation bursts&#x27;, &#x27;mixed host background load with no TDX activity&#x27;, &#x27;non-TDX KVM workloads&#x27;, &#x27;CPU hotplug during active TDX workload&#x27;, &#x27;forced vCPU migration to confirm state drop behavior&#x27;, &#x27;power-limited platform with X86_FEATURE_PLN gating active&#x27;], &#x27;success_metrics&#x27;: [&#x27;reduced p95 and p99 exit-to-reentry latency for qualifying TDX bursts&#x27;, &#x27;no material energy regression outside the configured duty-cycle budget&#x27;, &#x27;no policy change for non-TDX workloads when static key is inactive&#x27;, &#x27;zero clamp persistence across CPU offline and online transitions&#x27;, &#x27;zero use-after-free findings in teardown tests&#x27;], &#x27;failure_modes_and_mitigations&#x27;: [{&#x27;failure_mode&#x27;: &#x27;over-clamping increases power draw&#x27;, &#x27;mitigation&#x27;: &#x27;duty-cycle budget, one-shot consumption, PLN gating, and threshold decay&#x27;}, {&#x27;failure_mode&#x27;: &#x27;under-clamping gives no latency benefit&#x27;, &#x27;mitigation&#x27;: &#x27;tune family weights and expiry windows using privileged validation counters&#x27;}, {&#x27;failure_mode&#x27;: &#x27;oscillation between armed and expired states&#x27;, &#x27;mitigation&#x27;: &#x27;saturating score, threshold crossing hysteresis, and rolling budget enforcement&#x27;}, {&#x27;failure_mode&#x27;: &#x27;migration causes false prediction&#x27;, &#x27;mitigation&#x27;: &#x27;strict pinning or immediate event drop on cpu mismatch, with no remote transfer&#x27;}]}</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Per-CPU attribution is unsafe unless you *explicitly* prevent migration while writing the hint. The KVM vCPU thread can migrate between exit classification and per-CPU store; you must wrap the write side with preempt_disable()/preempt_enable() (or get_cpu()/put_cpu()) and use this_cpu_ptr()/raw_smp_processor_id() so the hint cannot land on the wrong CPU.</li><li style='font-size:13px;margin-bottom:4px;'>The proposed seqcount-protected record needs a concrete, kernel-valid reader/writer context model. cpuidle governor code may run with different IRQ/preempt states than KVM exit code; specify and implement the exact primitives (e.g., raw_seqcount_t + write_seqcount_begin/end on writer; read_seqcount_begin/retry on reader) and ensure all fields are covered with no torn reads (especially if any 64-bit timestamp is read on 32-bit builds).</li><li style='font-size:13px;margin-bottom:4px;'>Do not couple into cpuidle internals from the KVM/TDX run-exit path. The only safe interface is: KVM updates a minimal per-CPU hint; cpuidle governor reads it during -&gt;select(). Any attempt to poke governor state, driver state, or tick/nohz decisions from the KVM path risks lock inversion and subtle scheduler/idle correctness bugs.</li><li style='font-size:13px;margin-bottom:4px;'>Expiration/arming semantics must use a monotonic time source that remains valid across deep idle and tickless operation. Specify the exact clock (e.g., ktime_get_mono_fast_ns() vs local_clock() vs TSC) and the ordering rules; otherwise the envelope can spuriously persist (over-clamping) or expire too early (no benefit) under NO_HZ and deep C-state residency.</li><li style='font-size:13px;margin-bottom:4px;'>TEO-derived integration must preserve cpuidle governor invariants: state selection must still respect latency constraints (PM QoS), tick broadcast requirements, and driver state flags. Define precisely where the clamp is applied (e.g., cap max_deep_state index after TEO computes expected residency) and ensure reflect/update paths remain consistent.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Novelty/overlap risk: the core idea (use recent VM-exit/entry behavior to avoid deep C-states) may be argued as an obvious specialization of existing KVM halt-polling / adaptive polling + cpuidle governor history (e.g., TEO) tuning. You need a crisp, claim-ready distinction that is not just “different signal source,” e.g., a specific TDX-exit-family taxonomy + bounded feature-vector + expiring shallowing-only envelope semantics that cannot be achieved by existing haltpoll knobs or TEO’s recent-idle heuristics without TDX-aware instrumentation.</li><li style='font-size:13px;margin-bottom:4px;'>Missing concrete technical disclosure: feasibility sections are blank and the draft does not yet specify exact hook points, data structures, and call sequence. You should name the exact KVM TDX run/exit locations where exit families are classified, the exact cpuidle governor callback(s) where the envelope is applied, and the precise per-CPU record layout (fields, widths, saturation limits, expiration rule) so the invention is more than an architectural sketch.</li><li style='font-size:13px;margin-bottom:4px;'>Claims are incomplete: you describe “key claim element” but provide no structured independent claim and no dependent claims. Add at least (1) an independent method claim covering classification→vector aggregation→envelope application, (2) a system claim covering per-CPU state + governor integration, and (3) dependent claims for seqcount lockless transfer, package-budget gating (PLN), rate limiting, and opt-out controls for shared-package multi-tenant scenarios.</li><li style='font-size:13px;margin-bottom:4px;'>Security/non-leakage needs sharper boundaries: you assert guardrails (no guest-private operands/addresses), but you should explicitly define what exit-family identifiers are allowed, what is excluded, and why the resulting feature vector is not a side channel that meaningfully increases cross-VM inference. Include threat model and constraints (e.g., not exported via tracing by default, no per-VM attribution, coarse bucketing, hard cap on update frequency).</li><li style='font-size:13px;margin-bottom:4px;'>Correctness interactions with cpuidle/nohz: applying an “envelope” inside a TEO-derived governor can subtly break tick/nohz decisions and latency constraints unless you specify how it composes with target residency, latency constraints, and tick-stopping heuristics. Define the invariant: envelope can only restrict candidate states (never force deeper), and must respect existing latency QoS and tick dependencies.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Add a concrete, quantitative success metric section (e.g., tail-latency p99/p999 on TDX re-entry, package power, residency shifts) and specify baseline comparisons vs TEO, haltpoll, and PM QoS so the Xeon value story is unambiguous.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify interaction with existing power/latency knobs (intel_idle vs acpi_idle, HWP/EPP, tick/nohz, scheduler idle injection) to ensure the proposed envelope cannot destabilize governor invariants or regress non-TDX workloads on mixed hosts.</li><li style='font-size:13px;margin-bottom:4px;'>Define an explicit exit-family taxonomy source-of-truth (which host-visible TDX exits in KVM qualify, how they are bucketed, and what is excluded) and show how it remains stable across microcode/TSX/VMX revisions to preserve patent/implementation robustness.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Side-channel/tenant-isolation risk: a per-CPU/per-package idle-envelope driven by TDX exit bursts can become a cross-VM or cross-cgroup timing/power signal on shared cores/packages. You must specify hard isolation rules (e.g., disable when SMT enabled or when core/package hosts mixed-tenant workloads), and document exactly which placements are supported without information leakage.</li><li style='font-size:13px;margin-bottom:4px;'>Compatibility risk with cpuidle invariants: claiming a “TEO-derived governor variant” is not enough. You must define precisely how the envelope composes with existing tick/nohz decisions, latency constraints, and menu/teo heuristics, and guarantee the clamp never violates PM QoS latency requirements or increases residency prediction error in non-TDX workloads.</li><li style='font-size:13px;margin-bottom:4px;'>Crash/UAF risk in lifecycle: you assert “no persistent pointers” and “no use-after-free surface,” but the draft omits concrete ownership and teardown sequencing (vCPU thread migration, CPU hotplug, KVM VM destruction, TDX module unload). Provide exact data structure lifetimes, RCU vs refcounting decisions, and which hooks clear per-CPU records on all teardown paths.</li><li style='font-size:13px;margin-bottom:4px;'>Concurrency correctness is underspecified: “seqcount-protected scalar record with explicit preemption, IRQ, and memory-order rules” needs explicit rules. Specify reader contexts (idle loop vs governor), writer contexts (KVM exit path), whether writers can run in NMI/IRQ-disabled sections, and the exact barriers needed to avoid torn reads or stale window-expiry decisions.</li><li style='font-size:13px;margin-bottom:4px;'>Signal sanitization needs a verifiable taxonomy: the exit-family buckets must be proven not to encode guest-private operands (addresses, instruction-specific details). Enumerate the exact TDX exit reasons used, prove bounded cardinality, and ensure constant-time aggregation independent of guest-controlled values to avoid amplifying TAA-style timing leakage.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact concurrency model: where exit-burst accounting runs (TDX vCPU thread vs. hardirq/NMI vs. preemptible context), and prove the producer/consumer are CPU-local. If the</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the per-CPU data structure and required ordering: use this_cpu_* with preempt_disable() (or raw_cpu_* with strict rules) and document whether cpuidle reads occur with IRQs d</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] PM/QoS plumbing may not be safe in the hot TDX run/exit path unless it is strictly non-sleeping and bounded. You must either (a) prove the exact QoS update call path is atomic/non-b</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Handle CPU hotplug and idle-state transitions: on CPU offline/online, reset any per-CPU constraints and ensure no stale &#x27;latency clamp&#x27; persists. Also ensure constraints expire even</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Rate-limiting/expiry must be defined in terms of a clock that is safe and cheap in this path. If you use ktime_get* on every exit, quantify overhead; if you use sched_clock, address</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define and enforce CPU-locality precisely: a KVM vCPU thread can migrate between exits, while cpuidle_select() runs in the idle task on whatever CPU is going idle. If you require “s</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify a correct lockless synchronization scheme between writer (TDX exit context) and reader (idle-path): you need to state whether updates are strictly same-CPU only. If same-CPU</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Place the hook at a kernel-safe point: cpuidle_select() and governors may be invoked with interrupts disabled and must not take sleeping locks. The draft says “bounded, non-sleeping</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify interaction with existing governors (menu/TEO), tick/nohz, and haltpoll: a post-governor clamp in cpuidle_select() can invalidate governor invariants (predicted residency, t</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Hotplug and lifecycle correctness is underspecified: “CPU-hotplug reset” needs exact hooks (CPUHP state), and you must cover teardown when KVM vCPUs are destroyed, TDX module unload</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux power management using x86 TDX microarchitecture features
+</footer>
+</div></body></html>

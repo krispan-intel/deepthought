@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 4.0] RCU Futex Home Directory and Topology-Domain rwsem Ledger wi</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-909e0bc588f2 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>RCU Futex Home Directory and Topology-Domain rwsem Ledger with Refcount-Pinned Entries, Dual-Bucket Rehome, Writer-Pending Gate, and One-Shot Wake Affinity Tokens</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux synchronization using x86 CXL microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>CXL Home-Aware Futex Shards with WAITPKG Park Windows</li><li style='font-size:13px;'>Fabric-Domain Reader Ledgers for rw_semaphore on CXL-Tiered x86 Hosts</li><li style='font-size:13px;'>Lock-Home Tokens for Topology-Aware mutex and rwsem Wake Placement</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: Optimizing the hybrid parallelization of BHAC &lt;&gt; intel_opt_manual | OPTIMIZING FOR SIMD INTEGER APPLICATIONS
+  MMR Score:    0.7716</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A kernel synchronization framework uses an RCU-readable per-private-futex home entry and an embedded bounded-domain rwsem ledger keyed by x86 LLC, NUMA, and CXL latency classes so wait, wake, reader drain, and wake placement remain correct while placement adapts by publish-new/drain-old indirection rather than in-place waiter migration or scheduler override.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The core novelty is a pair of updateable kernel-internal rendezvous layers that preserve Linux synchronization semantics while making locality decisions hardware-aware and bounded. For private futexes, a per-key home dir</div>
+    <div class="pill"><strong>Feasibility:</strong> The design is implementable as a bounded extension of existing Linux primitives rather than a new scheduler or locking subsystem. It reuses private futex key derivation, futex buck</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Static futex bucket hashing and CPU-oblivious reader indication create avoidable remote metadata traffic when the threads contending on a synchronization object migrate across LLC, package, NUMA, or CXL latency domains. On multi-socket x86 systems, especially with asymmetric HMAT/SLIT distances or CXL-attached memory, a private futex can become hot on CPUs that are remote from the bucket lock currently serving it, and a writer waiting behind many readers can pay drain work proportional to CPU count or unbounded reader bypass if new readers continue to enter after writer intent. The kernel challenge is to adapt placement without violating rendezvous reachability, rwsem fairness, existing scheduler legality, PREEMPT_RT constraints, or wake ordering.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Legacy futex hashing provides deterministic rendezvous but not an updateable per-key home handle with explicit lifetime, bounded dual-location drain, and a proof-friendly guarantee that concurrent wake paths search at most one active and one draining bucket. Existing wake-affinity logic such as WF_SYNC, wake_affine, wake_wide, and TTWU_QUEUE can bias CPU placement, but it is not driven by a synchronization-object-owned token emitted only after waiter selection and cannot safely claim ownership of lock semantics. Linux percpu_rwsem is also not the same invention: it is a specialized API and implementation optimized around per-CPU reader indication, not a generic rwsem-preserving topology-domain ledger with writer-intent gating, migration-safe per-acquire unlock tokens, fixed domain bounds independent of CPU count, and banked topology-generation handling. The gap is therefore a causal bridge from x86 and CXL locality signals to Linux synchronization objects that is bounded, semantics-preserving, and explicit about legality and lifetime.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The disclosure has two coordinated embodiments.
+
+1. Private futex home directory. A private futex key, derived using the same normalized key material already used for private futex lookup, indexes an RCU-readable home directory entry allocated only on first contention. The home entry contains the normalized key, a stable home_cookie, an active bucket identifier, an optional draining bucket identifier, a topology-generation snapshot, a refcount pinned by enqueued waiters, and a small contention/locality summary. Waiters and wakers first resolve the home entry, not the bucket directly. Rehome never migrates enqueued waiters in place. Instead, under the old bucket lock and home-entry serialization, the kernel publishes a new active bucket, marks the prior bucket as draining, and increments the home_cookie generation. New waiters enqueue only into the new active bucket. Wakes, timeout dequeue, and signal dequeue scan the active bucket and, if non-null, the draining bucket; once the draining bucket no longer contains waiters for that home entry, the draining pointer is cleared and the home entry returns to single-bucket mode. The bound is therefore two buckets per key during rehome.
+
+2. Topology-domain rwsem ledger. Each rw_semaphore optionally embeds a fixed-size ledger with MAX_SYNC_DOMAINS padded counters in each of two banks. Each bank carries a topo_gen, valid slot map version, and reader counters. A writer-pending flag is part of the semaphore and is set with release ordering at writer intent time before the writer may queue for ownership. A reader fastpath is allowed only while writer_pending is clear and the semaphore is ledger-enabled. On success, the reader reserves a task-local token slot, increments the counter for the active bank and the current CPU&#x27;s compressed locality domain, rechecks writer_pending and bank validity, and on success stores a token containing sem address, sem_cookie, bank id, slot id, topo_gen, and nesting instance. up_read uses that stored token, not current CPU topology, to decrement the exact bank and slot used at acquire time. Thus migration, preemption, and CPU hotplug do not mis-account readers. If topology changes, the semaphore can flip to the other bank with a new topo_gen while the old bank drains, again bounding writer scan to at most two banks.
+
+3. One-shot wake locality token. When a futex wake or rwsem wake has already selected a specific waiter or reader batch according to existing primitive semantics, the code may attach an opaque token to the wake_q element for that task. The token carries only advisory placement data: preferred locality-domain id, emitting CPU, home_cookie or sem_cookie, topo_gen, and a short policy tag. The scheduler may consult it only after legality checks, only for fair-class CPU selection, and only as a tie-break between otherwise legal CPUs. The token is dropped after the wake attempt and never persists in task_struct.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>Top-level flow:
+
+Private futex path
+------------------
+userspace uaddr
+   |
+   v
+normalize private futex key (mm identity + aligned uaddr)
+   |
+   v
+RCU home table lookup/create on contention
+   |
+   +--&gt; home_entry{home_cookie, active_bucket, draining_bucket?, topo_gen, refcnt}
+            |
+            +--&gt; enqueue waiters only in active_bucket
+            |
+            +--&gt; wake/timeout/signal scan active_bucket and draining_bucket only
+            |
+            +--&gt; rehome = publish new active_bucket; old becomes draining; no waiter migration
+
+rwsem path
+----------
+down_read()
+   |
+   v
+check writer_pending == 0 ?
+   |
+   +-- no --&gt; base rwsem path
+   |
+   +-- yes --&gt; active_bank = ledger.bank_sel
+                 topo = rcu_dereference(sync_topology_map)
+                 slot = topo.cpu_to_slot[this_cpu]
+                 inc ledger.bank[active_bank].slot[slot]
+                 recheck writer_pending/bank validity
+                 success -&gt; store task-local token {sem, sem_cookie, bank, slot, topo_gen, nesting_id}
+                 fail -&gt; dec and fallback
+
+up_read()
+   |
+   v
+lookup matching token for this sem in current task-local token table
+   |
+   v
+dec exact ledger.bank[token.bank].slot[token.slot]
+
+writer path
+-----------
+down_write() intent
+   |
+   v
+smp_store_release(writer_pending, 1)
+   |
+   v
+existing rwsem queueing/selection remains authoritative
+   |
+   v
+before ownership, wait until:
+  - base rwsem state permits writer ownership, and
+  - all counters in active bank and optional draining bank are zero
+   |
+   v
+writer unlock clears writer_pending only if no queued/active writer remains
+
+scheduler integration
+---------------------
+primitive wake selects waiter(s) first
+   |
+   v
+optional wake_q token attached transiently
+   |
+   v
+select_task_rq_fair():
+  1. intersect with p-&gt;cpus_ptr, cpuset, migration rules, class hooks
+  2. run normal wake_affine / wake_wide / load-balance logic
+  3. if result is tied or within configured tie threshold, token may prefer a CPU inside the already legal candidate set
+  4. otherwise ignore token
+
+x86/CXL locality compression
+----------------------------
+raw inputs: package_id, llc_id, numa_node, HMAT/SLIT distance, optional CXL HMAT/CDAT latency class
+compressed slot id: locality_class(package_id, llc_id, latency_class) capped at MAX_SYNC_DOMAINS</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Add sync topology compression layer.
+   - Build sync_topology_map from x86 package_id, llc_id, NUMA node, and HMAT/CDAT-derived latency class.
+   - Compress to at most MAX_SYNC_DOMAINS slots; publish with RCU and topo_gen.
+
+2. Implement private futex home directory.
+   - Add home table keyed by normalized private futex key.
+   - Allocate home entries from a slab cache on first contention.
+   - Extend futex wait/wake/timeout/signal paths to resolve the home entry first.
+   - Implement rehome as publish-new/drain-old dual-bucket transition with no waiter migration.
+   - Track preferred domain from recent waiter/waker activity and topology map.
+
+3. Implement wake_q locality token.
+   - Extend wake_q element or a wake_q sidecar with an opaque token structure.
+   - Emit token only after the primitive has selected the waiter(s) to wake.
+   - Consume token only in fair-class CPU selection after legality checks and existing wake-affine heuristics.
+
+4. Implement rwsem ledger.
+   - Add sem_cookie, writer_pending, active_bank, and two banks of padded counters to rwsem under a config guard.
+   - Add a task-local token table allocated with task lifetime, accessed only by current.
+   - Add reader fastpath checks, increment-and-recheck logic, and token recording.
+   - Add writer-intent gating and bounded drain before write ownership.
+   - Add bank rollover on topology change.
+
+5. Fallback and observability.
+   - Expose counters for rehome count, dual-bucket dwell time, rwsem bank rollover count, fastpath fallback reasons, and token ignore reasons.
+   - Disable feature per object or globally when token table overflow, domain compression overflow, or unstable topology is detected repeatedly.
+
+6. PREEMPT_RT and lockdep review.
+   - Keep lock ordering unchanged.
+   - Audit that no new sleeping lock is taken in atomic context and that scheduler interactions remain advisory only.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Correctness validation.
+   - Futex: concurrent wait/wake/requeue-excluded timeout/signal races under forced rehome, ensuring no waiter is lost and wake scans at most two buckets.
+   - rwsem: litmus tests proving no sharded reader enters after writer_pending becomes visible, no writer starvation with back-to-back writers, and correct reader accounting under task migration.
+   - Scheduler: verify token never selects a CPU outside p-&gt;cpus_ptr or cpuset-allowed mask and never changes waiter selection order.
+
+2. Kernel-internal validation.
+   - lockdep, KCSAN, KFENCE, and PREEMPT_RT builds.
+   - CPU hotplug storm with topology-map rebuilds while readers hold old-generation tokens.
+   - Fault injection for token-table overflow, bank rollover races, and forced fallback.
+
+3. Performance validation.
+   - futex microbenchmarks with contended private futexes bouncing across LLC and socket boundaries, including CXL-tiered memory placement.
+   - rwsem reader-heavy and mixed reader/writer workloads comparing base rwsem, disabled-ledger fallback, and enabled ledger.
+   - Tail-latency measurement for wake-to-run and writer acquisition under asymmetric HMAT/CDAT distances.
+
+4. Regression criteria.
+   - No semantic regressions in futex ABI or rwsem ordering.
+   - No measurable scheduler legality violations.
+   - On platforms with more than MAX_SYNC_DOMAINS classes, graceful fallback with no worse than baseline behavior.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>1. A kernel method for private futex synchronization comprising: deriving a normalized private futex key; resolving the key to an RCU-readable home entry having a home cookie, an active bucket identifier, and at most one draining bucket identifier; enqueuing new waiters only in the active bucket; and during a concurrent wake, timeout, or signal path, searching the active bucket and the draining bucket, whereby bucket reassignment is accomplished by publishing a new active bucket and draining an old bucket without in-place waiter migration.</li><li style='margin-bottom:8px;'>2. The method of claim 1, wherein the home entry is refcount-pinned by enqueued waiters and reclaimed only after removal from the home table and completion of an RCU grace period.</li><li style='margin-bottom:8px;'>3. The method of claim 1, wherein selection of the active bucket is based on a compressed locality domain derived from x86 LLC identity, NUMA information, and CXL latency-class information obtained from firmware tables.</li><li style='margin-bottom:8px;'>4. A kernel method for rwsem synchronization comprising: maintaining, for a semaphore, an embedded ledger of reader counters organized as at most two banks of at most MAX_SYNC_DOMAINS padded locality-domain counters; setting a writer-pending gate before relying on bounded reader drain for a writer; preventing any new sharded reader fastpath acquisition once the writer-pending gate is set; and granting write ownership only after both existing rwsem ownership conditions and all counters in the active and draining banks reach zero.</li><li style='margin-bottom:8px;'>5. The method of claim 4, wherein a successful reader fastpath acquisition stores, in task-local state, a token containing a semaphore cookie, a bank identifier, a locality-domain slot identifier, and a topology-generation identifier, and reader unlock decrements the exact bank and slot indicated by the stored token regardless of CPU migration after acquisition.</li><li style='margin-bottom:8px;'>6. The method of claim 5, wherein the semaphore cookie changes on semaphore reinitialization so that stale task-local tokens referencing a reused semaphore address are rejected.</li><li style='margin-bottom:8px;'>7. The method of claim 4, wherein topology change is handled by publishing a new topology generation and flipping an active bank while retaining the prior bank as a draining bank, thereby bounding mixed-generation drain work to no more than two banks.</li><li style='margin-bottom:8px;'>8. The method of claim 4, wherein if the number of compressed locality domains exceeds MAX_SYNC_DOMAINS or task-local token capacity is unavailable, the kernel falls back to base rwsem behavior for that acquisition.</li><li style='margin-bottom:8px;'>9. A kernel wake-placement method comprising: selecting a waiter to wake according to existing futex, mutex, or rwsem semantics; attaching a transient locality token to a wake_q entry only after said waiter has been selected; and applying the token only after intersecting scheduler legality constraints, wherein the token can only break ties among already legal candidate CPUs and cannot alter waiter selection or fairness.</li><li style='margin-bottom:8px;'>10. The method of claim 9, wherein the locality token is ignored when existing wake-spread or load-balance heuristics indicate that locality bias would violate balance or policy invariants.</li><li style='margin-bottom:8px;'>11. A system implementing claims 1 through 10 on an x86 platform with CXL-attached memory, wherein locality-domain compression uses package, LLC, NUMA, and firmware-published memory latency classes to minimize remote synchronization metadata traffic while preserving Linux synchronization semantics.</li><li style='margin-bottom:8px;'>12. A non-transitory machine-readable medium storing kernel code that, when executed, performs the methods of claims 1 through 11.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: Home-entry churn or excessive rehome oscillation on phase-changing workloads. Mitigation: hysteresis on rehome triggers, minimum dwell time before a second rehome, and immediate fallback to fixed legacy hashing after repeated oscillation.</li><li style='margin-bottom:6px;'>Risk: rwsem token table overflow in deeply nested reader code. Mitigation: fixed small task-local table with precise overflow fallback to base rwsem for that acquisition; no correctness dependency on token allocation success.</li><li style='margin-bottom:6px;'>Risk: Prior-art challenge against percpu_rwsem. Mitigation: claims require generic rwsem queue preservation, writer-intent gating before ownership, per-acquire migration-safe token binding, and a bounded domain cap independent of CPU count.</li><li style='margin-bottom:6px;'>Risk: Scheduler reviewers reject any hint that looks like a policy override. Mitigation: token is post-selection only, wake_q-scoped, fair-class-only, and ignored unless normal legality and heuristic tie conditions are already satisfied.</li><li style='margin-bottom:6px;'>Risk: PREEMPT_RT incompatibility. Mitigation: no new sleeping locks on hot paths, no new cross-subsystem lock nesting, local-only task token writes, and explicit RT/lockdep validation.</li><li style='margin-bottom:6px;'>Risk: CPU hotplug or HMAT/CDAT churn leaves stale topology references. Mitigation: RCU-published topology maps, topology generations in tokens, and two-bank draining so old-generation tokens remain valid until counters reach zero.</li><li style='margin-bottom:6px;'>Risk: Side-channel concern from exposing fine-grained topology preference. Mitigation: token remains kernel-private, carries only compressed domain ids rather than raw latency values, and is discarded immediately after wake placement.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Linux private futex key derivation and non-PI futex wait/wake paths</li><li>Linux wake_q batching and fair-class select_task_rq_fair wake placement rules</li><li>Linux scheduler heuristics including WF_SYNC, wake_affine, wake_wide, and TTWU_QUEUE-related paths</li><li>Linux generic rwsem semantics and waiter ordering requirements</li><li>Linux percpu_rwsem as adjacent but distinct prior art</li><li>x86 package and LLC topology identifiers exposed by the kernel</li><li>ACPI SLIT/HMAT and CXL CDAT/HMAT latency information for memory-tier locality classification</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft does not yet specify a complete concurrency + memory-ordering contract for the writer-intent gate vs. reader admission/ledger updates; without that, it risks either admitting post-intent readers (writer quiescence not bounded) or falsely rejecting/losing readers (unlock/accounting corruption).</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Specify the exact reader fast-path algorithm with required atomic ops and barriers: how the reader observes the writer-intent gate, how it increments/decrements the per-domain counter, and the precise retry/fallback rule to prevent a race where a reader enters after intent is set but before the writer’s drain snapshot (must guarantee: after intent closes, no new sharded readers can become invisible to the writer).</li><li style='font-size:13px;margin-bottom:4px;'>Define token lifecycle for nested read locks and migration: rwsems allow repeated down_read by the same task (not recursive in the lock sense, but nesting happens); you need an explicit per-thread token stack/table ABI (push on acquire, pop on unlock), plus hard rules for misuse detection (wrong-wrapper unlock, missing token, unlock out of order).</li><li style='font-size:13px;margin-bottom:4px;'>RCU generation/bank reclamation must be concretely safe: show how topology banks are published, how old banks are retired (call_rcu vs synchronize_rcu), and how you avoid sleeping in invalid contexts. Also specify that a token’s {bank,generation} remains valid until all in-flight readers using it are done, including under CPU hotplug and topology updates.</li><li style='font-size:13px;margin-bottom:4px;'>Writer-intent gate integration with core rwsem semantics must be pinned down: when exactly is intent set/cleared relative to rwsem’s internal count/owner/wait_list, how it interacts with optimistic spinning, and how you preserve writer-preference and FIFO wake ordering while preventing new fast-path readers from bypassing queued writers.</li><li style='font-size:13px;margin-bottom:4px;'>PREEMPT_RT and lock ordering: ensure the design does not introduce raw-spinlock reliance, long preempt-disabled sections, or new lockdep-invalid lock ordering between the wrapper gate/ledger and rwsem internals (e.g., wait_lock). Document which locks/atomics are used on each path and which contexts (IRQ-disabled, preemptible) are supported.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten novelty over prior art by explicitly contrasting with percpu_rwsem (global/per-cpu reader indicators) and existing rwsem optimistic spinning: claim the per-semaphore bounded domain ledger + per-acquire token + writer-intent gate as the inseparable combination, and disclaim unbounded per-cpu/per-node counters.</li><li style='font-size:13px;margin-bottom:4px;'>Nail down the token contract: where it is stored/returned (stack value vs per-task table), how it is validated (wrapper identity/cookie, gen id), and the exact failure path when topology generation is retired before unlock; otherwise enablement details look like an implementation gap that prior art could cover.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the domain derivation algorithm and caps (LLC/package/CXL class mapping, MAX_LEDGER_DOMAINS selection, what happens when HMAT/CDAT is absent/changes) and give a concrete rule for flipping fallback_mode that avoids livelock under rapid hotplug/topology churn.</li><li style='font-size:13px;margin-bottom:4px;'>Bounded-drain needs a precise proof sketch: show that writer-intent gate closure + dual-generation ledger implies a finite drain set and preserves rwsem writer-preference/wait-order invariants; otherwise examiners may treat it as a routine sharded-reader optimization.</li><li style='font-size:13px;margin-bottom:4px;'>For the wake hint embodiment, constrain it to post-waiter-selection only and enumerate the exact legality checks and exclusion conditions to avoid overlap with existing wake_affine/wake_wide/NUMA balancing heuristics; otherwise it risks being viewed as an obvious scheduler hint.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact topology-to-domain mapping algorithm (LLC/package/NUMA/CXL latency classes): which kernel data sources are authoritative (x86 topology, ACPI HMAT, CXL CDAT), how domains are numbered/stabilized across hotplug, and how you handle partial/absent HMAT/CDAT (must specify deterministic fallback).</li><li style='font-size:13px;margin-bottom:4px;'>Specify the writer-intent gate state machine precisely: when it closes/open (trylock/slowpath/upgrade/downgrade), how it interacts with rwsem optimistic spinning and writer handoff, and prove it preserves rwsem writer-preference + wait-order invariants (especially back-to-back writers and reader recursion).</li><li style='font-size:13px;margin-bottom:4px;'>Detail token lifecycle + nesting: where the per-acquire token is stored (stack vs per-task), how nested read locks on different wrappers are handled, and how unlock validates wrapper identity without introducing new shared writable per-task fields or lockdep false positives.</li><li style='font-size:13px;margin-bottom:4px;'>Provide the memory-ordering/RCU rules for dual-generation banks: publication barriers, reader fastpath loads, writer drain scanning, and safe reclamation timing so no in-flight token can reference freed/repurposed cachelines (must include explicit happens-before edges).</li><li style='font-size:13px;margin-bottom:4px;'>Quantify overhead and set caps with rationale: MAX_LEDGER_DOMAINS/MAX_LIVE_GENS sizing, cache footprint, scan cost under frequent writers, and the exact conditions that flip fallback_mode (and whether fallback is per-instance, per-CPU, or global).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Compatibility/API risk: the design requires a per-acquire token returned to the caller, which is not how rwsem APIs are typically consumed (down_read()/up_read() are tokenless). Specify the exact wrapper API surface, how call sites store the token across sleep/interruptible paths, and add hard validation (cookie/version checks) so corrupted/stale tokens cannot crash the kernel or unlock the wrong ledger.</li><li style='font-size:13px;margin-bottom:4px;'>RCU generation safety is underspecified: you need a concrete reclamation and lifetime model for retired banks (e.g., synchronize_rcu vs refcount pinning) that guarantees tokens remain valid across CPU hotplug, topology reclassification, and fallback_mode transitions. Also specify the required memory-ordering between publishing a new bank, closing/opening the writer gate, and reader increments/decrements to avoid missed-reader accounting (writer proceeding early) or permanent writer starvation.</li><li style='font-size:13px;margin-bottom:4px;'>Writer-intent gate can create denial-of-service or lockup scenarios if it is closed too broadly or without bounded wait guarantees. Define exactly when the gate flips (before queueing vs after), how nested/recursive readers are handled, how killable/timeout paths behave, and ensure forward progress under heavy reader churn (no livelock where writers keep gate-closed but never drain due to readers admitted via fallback or mis-ordered fast paths).</li><li style='font-size:13px;margin-bottom:4px;'>Wake-hint side-channel and policy interaction: even as a ‘legality-checked tie-break’, locality-biased placement based on LLC/NUMA/CXL classes can amplify timing/placement side channels (observable wake latency, CPU selection) and can conflict with fairness goals. You should explicitly constrain hints to: fair-class only, contended unlock only, no cross-cpuset, no overriding wake_affine/wake_wide/EAS decisions, and provide a clear “hint ignored” matrix so behavior is stable and auditable.</li><li style='font-size:13px;margin-bottom:4px;'>Topology cap/fallback thrash: exceeding MAX_LEDGER_DOMAINS or rapid topology churn can cause repeated fallback_mode flips that are externally inducible (workload-driven), risking performance instability and potentially prolonging writer hold times. Add hysteresis/rate limiting and specify that fallback does not strand outstanding tokens (old-token unlock must still be safe and accounted for).</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the exact concurrency contract for the hint: who writes it (unlock slowpath vs wake_q flush), who reads it (select_task_rq()/try_to_wake_up), and how it is cleared/invalidat</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define safe lifetime management for any side-table keyed by task pointer: you must tie entries to task_struct lifetime (e.g., RCU + put_task_struct, or task refcount pinning) and pr</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Provide explicit memory-ordering rules: hint write must be visible before the corresponding wakeup decision reads it (e.g., store-release on writer and load-acquire on reader, or em</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Integrate with existing scheduler legality correctly: show how the hint is ignored under cpus_ptr/cpuset constraints, migration-disabled, per-class select_task_rq hooks (RT/DL/stop)</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Avoid adding new cacheline bouncing on hot paths: a task_struct field touched on every contended wake can become a cross-CPU ping-pong point. If using task_struct, place it to minim</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define an exact carrier and lifetime model for the “one-shot wake hint”. Today wake_q entries don’t carry arbitrary metadata; if you extend wake_q or TTWU args, you must prove the h</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the locking context where the scheduler consumes the hint and keep it strictly O(1) and non-blocking. TTWU / select_task_rq_fair runs under tight locking (task pi_lock / rq </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Handle CPU hotplug and mask legality precisely: unlock_cpu may go offline between unlock and wake; hint must be ignored unless unlock_cpu is in cpu_active_mask and in p-&gt;cpus_ptr (a</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Be explicit about semantics for mutex vs rwsem: rwsem can wake readers vs writers based on state; your hint must not perturb fairness/ordering (e.g., do not bias rq choice in a way </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify interaction with existing wake-affine heuristics (WF_SYNC, wake_wide, ttwu_queue_wakelist/TTWU_QUEUE): if you add a new signal, document precedence and ensure it cannot over</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux synchronization using x86 CXL microarchitecture features
+</footer>
+</div></body></html>

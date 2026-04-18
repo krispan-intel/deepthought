@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 5.0] Package-Epoch Coordinator for Deferred x86 HWP Envelope Upda</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-7ad740b4c8cb &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 5.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Package-Epoch Coordinator for Deferred x86 HWP Envelope Updates from Perf and eBPF Phase Evidence</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux power management using x86 eBPF microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>BPF Power-Intent Lattice for IA32_HWP_REQUEST.EPP</li><li style='font-size:13px;'>Package Power-Credit Graph Bridging eBPF Pressure Vectors to Hybrid x86 HWP Domains</li><li style='font-size:13px;'>PEBS-Backed Residency Opportunity Window for cpuidle Governors</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: X86_FEATURE_HWP_EPP &lt;&gt; Report on energy-efficiency evaluation of several NWP model   configurations
+  MMR Score:    0.7808</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A kernel-resident package and die coordinator converts strictly bounded perf_event and eBPF phase evidence into generation-stamped HWP min/max/EPP envelopes, computed outside atomic context, then committed only through a new intel_pstate in-tree cpufreq actuator helper on the target CPU with readback auditing, hotplug-safe policy reacquisition, and deterministic precedence over existing Linux power knobs.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The invention is not generic PMU-guided tuning; it is a kernel contract that combines four properties not jointly provided by current Linux mechanisms: bounded O(1) evidence capture in NMI or hardirq context, an RCU-publ</div>
+    <div class="pill"><strong>Feasibility:</strong> The design stays within existing kernel safety boundaries because perf-side code only touches preallocated per-CPU slots and wake bits, all telemetry reads and optimization run in </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>On x86 systems with Intel HWP and EPP support, Linux exposes static or manually adjusted power preference knobs through intel_pstate and cpufreq, while perf_event and eBPF can observe phase changes at high rate. What is missing is a kernel-safe, hotplug-safe, policy-lifetime-safe mechanism that converts those observations into package-coherent HWP min/max/EPP updates without performing forbidden work in NMI or hardirq context, without caching stale cpufreq policy pointers, without racing sysfs or firmware authority, and without adding a second MSR writer that can conflict with intel_pstate, platform profile, thermal control, or out-of-band writers.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>The topological voids show the missing bridge: X86_FEATURE_HWP_EPP plus energy-efficiency evaluation suggests a direct kernel path from hardware energy preference controls to measurable efficiency regimes; eBPF flow analysis plus distributed optimal power flow suggests solving package power as a constrained multi-policy allocation problem rather than independent governor decisions; and legacy preference features such as LONGRUN-like semantics highlight that the missing element is not another knob, but a coordinated contract that maps package-domain headroom and per-phase demand into coherent per-policy envelopes. Existing governors, thermal frameworks, and powercap mechanisms do not define package and die membership invariants, generation counters, rate-limited deferred actuation, or out-of-band writer detection for HWP request fields.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention introduces a Deferred Intent Governor embedded in the kernel as a package and die aware coordination layer above perf evidence collection and inside the authority boundary of intel_pstate actuation. Per-CPU perf and eBPF sources populate fixed evidence banks; a package coordinator worker snapshots an RCU-published domain graph, gathers race-safe telemetry, computes a filtered headroom scalar, solves a constrained allocation across all policies sharing the same power domain, converts that allocation into per-policy HWP min/max/EPP envelopes, and commits the envelopes only through a new intel_pstate helper that runs on each target CPU, rechecks policy lifetime generations, merges with immutable admin and firmware limits, writes only managed HWP fields, and immediately audits readback to detect unknown writers. If topology, telemetry freshness, authority, or readback verification fails, the controller suppresses envelopes and restores baseline state rather than guessing.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>Data path and authority path:
+
+perf PMU overflow / perf-attached eBPF / tracing kfunc
+                |
+                v
+     [per-CPU evidence bank, fixed 64 classes, no allocation]
+                | set pending bit + irq_work
+                v
+      [domain worker on unbound workqueue, process context]
+                |
+                +--&gt; RCU read domain_table[domain_id]
+                |      domain = smallest shared cap domain
+                |      usually die if per-die RAPL exists, else package
+                |
+                +--&gt; snapshot telemetry_cache(domain_id)
+                |      RAPL energy delta, package cap, thermal pressure, HWP capability mask
+                |
+                +--&gt; constrained allocator O(p log p)
+                |      outputs envelope_i = {min_perf_pct, max_perf_pct, epp}
+                |
+                +--&gt; build commit_batch(batch_seq, domain_gen, policy_gen[])
+                               |
+                               v
+           per-policy commit queue, no global locks held across dispatch
+                               |
+                               v
+              smp_call_function_single(target_cpu, local_commit_cb)
+                               |
+                               v
+   intel_pstate_commit_hwp_envelope() in drivers/cpufreq/intel_pstate.c
+     - reacquire current policy
+     - verify policy_gen and domain_gen
+     - merge immutable limits and advisory baseline
+     - write managed HWP fields only
+     - read back IA32_HWP_REQUEST
+     - flag external_writer_detected on mismatch
+
+Managed fields: HWP_MIN_PERF, HWP_MAX_PERF, HWP_EPP. Unmanaged fields such as desired performance remain untouched unless the admin explicitly enables them.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Add a controller feature gate that requires x86 HWP plus EPP support and disables itself otherwise. 2. Add preallocated per-CPU evidence banks and the bounded bpf_x86_pm_phase_hint kfunc. 3. Add an RCU-published domain graph builder driven by CPU hotplug, cpufreq policy registration, powercap domain events, and platform profile changes. 4. Add a telemetry bridge that exposes lock-safe package or die snapshots to the worker. 5. Implement the O(p log p) allocator with class-specific EPP mapping tables and hysteresis. 6. Add intel_pstate_commit_hwp_envelope inside drivers/cpufreq/intel_pstate.c so all adaptive writes go through the in-tree actuator boundary. 7. Add tracepoints and audit counters for dropped samples, stale batches, writer conflicts, and SAFE rollback reasons. 8. Add sysfs or debugfs only for observability and enable or disable control, not as a second write path to HWP fields.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Validate correctness with kernel selftests and fault injection across four axes: context safety, topology churn, authority conflict, and efficiency gain. Context safety tests verify no sleeping or allocation in perf and eBPF paths and bounded work per sample. Topology tests repeatedly hotplug CPUs, rebuild cpufreq policies, change platform profile, and suspend or resume while asserting that stale batches never apply. Authority tests inject user EPP writes, min or max changes, and external MSR modifications, then confirm suppression, readback detection, and SAFE rollback. Efficiency tests on Xeon platforms under package caps compare baseline intel_pstate behavior versus package-coherent envelopes for OLTP, microservices, and inference, measuring throughput per watt, p99 latency, package power variance, and oscillation rate. Stability is accepted only if EPP transitions remain within the configured dwell and hysteresis budget and no domain sees partial-apply across sibling policies.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A kernel method for x86 power management comprising collecting bounded per-CPU phase evidence in perf or eBPF context, publishing the evidence to a deferred coordinator, computing package or die scoped HWP envelopes, and committing the envelopes solely through an intel_pstate in-tree cpufreq actuator path on the target CPU.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein the coordinator uses an RCU-published domain graph mapping cpufreq policies to shared package or die power domains, and invalidates any pending commit batch on a mismatch in domain or policy generation counters.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein the observation path performs only constant-time writes into preallocated per-CPU evidence banks and is prohibited from allocation, sleeping, cpufreq access, and MSR writes.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein headroom is derived from a race-safe telemetry cache refreshed in workqueue context from package power and thermal sources, and stale telemetry forces baseline-only SAFE mode.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein a deterministic O(p log p) constrained allocator distributes shared package headroom across multiple policies according to weighted urgency, hard bounds, and hysteresis rules to produce monotonic HWP min, max, and EPP envelopes.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein a kfunc ABI accepts bounded eBPF phase hints from perf, tracing, or scheduler attach points without permitting sleepable helpers, pointer arguments, or unbounded per-CPU work.</li><li style='margin-bottom:8px;'>The method of claim 1 wherein the target CPU local commit path reads back IA32_HWP_REQUEST after each write, detects out-of-band writers upon mismatch, and suppresses further adaptive writes by transitioning the affected policy to observe-only or SAFE rollback state.</li><li style='margin-bottom:8px;'>A non-transitory machine-readable medium storing instructions that cause a Linux kernel to perform the method of any preceding claim on an x86 platform supporting HWP and EPP.</li></ol>
+  <h3>Claim Confidence</h3><ul><li style='margin-bottom:6px;'>Claim 1: confidence=0.85, conflict_score=0.22</li><li style='margin-bottom:6px;'>Claim 2: confidence=0.87, conflict_score=0.18</li><li style='margin-bottom:6px;'>Claim 3: confidence=0.90, conflict_score=0.14</li><li style='margin-bottom:6px;'>Claim 4: confidence=0.82, conflict_score=0.20</li><li style='margin-bottom:6px;'>Claim 5: confidence=0.84, conflict_score=0.24</li><li style='margin-bottom:6px;'>Claim 6: confidence=0.80, conflict_score=0.26</li><li style='margin-bottom:6px;'>Claim 7: confidence=0.88, conflict_score=0.16</li><li style='margin-bottom:6px;'>Claim 8: confidence=0.78, conflict_score=0.28</li></ul>
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: external writers such as the msr driver or firmware can race managed HWP fields. Mitigation: readback auditing, external_writer_detected state, one-shot SAFE baseline reapply, and observe-only fallback.</li><li style='margin-bottom:6px;'>Risk: hotplug or cpufreq policy rebuild can invalidate cached state. Mitigation: store only cpu ids and generation tokens persistently, rebuild domain tables under RCU, and reacquire live policies at batch build and commit time.</li><li style='margin-bottom:6px;'>Risk: package telemetry may be missing or stale. Mitigation: internal snapshot bridge with freshness deadlines, baseline-only mode when stale, and policy-local fallback when powercap is absent.</li><li style='margin-bottom:6px;'>Risk: oscillation under bursty workloads. Mitigation: low-pass headroom filtering, minimum dwell, EPP and perf hysteresis, and switch-cost penalty in the allocator objective.</li><li style='margin-bottom:6px;'>Risk: hybrid-core asymmetry can make one EPP mapping invalid across classes. Mitigation: separate class-specific clamp tables and envelope translation for P-core and E-core policies within the same domain.</li><li style='margin-bottom:6px;'>Risk: user-visible knob fights. Mitigation: explicit precedence table, immediate suppression on user writes, baseline refresh, policy_gen bump, and delayed reentry into adaptive mode.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Linux intel_pstate and cpufreq architecture, especially the in-tree HWP request programming path in drivers/cpufreq/intel_pstate.c</li><li>Linux CPU hotplug and cpufreq policy lifetime rules</li><li>Linux perf_event and BPF execution-context constraints for NMI and hardirq safety</li><li>Intel HWP and EPP architectural semantics for IA32_HWP_REQUEST managed fields</li><li>Linux powercap and Intel RAPL provider model for package and die energy and limit telemetry</li><li>Linux thermal pressure and scheduler capacity reduction mechanisms</li><li>Distributed constrained allocation and weighted water-filling techniques adapted from optimal power-flow style formulations</li><li>Prior work on userspace power daemons and static EPP tuning, used here only as contrast to the kernel-resident single-path actuation contract</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 5.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact synchronization/lifetime model for the package/die/domain membership registry: how cpufreq_policy pointers are referenced (get/put vs RCU), how policies are removed on CPU hotplug/policy rebuild, and where domain_gen/policy_gen are incremented to prevent UAF/ABA under concurrent cpuhp + governor changes.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the actuation sequencing and locking boundaries inside intel_pstate: which existing locks (policy-&gt;rwsem, cpufreq core locks, intel_pstate internal locks) are held when generation-stamped envelopes are computed vs applied, and prove the apply path never sleeps in atomic context while still guaranteeing on-target-CPU MSR writes (e.g., via work_on_cpu/smp_call_function_single).</li><li style='font-size:13px;margin-bottom:4px;'>The “sole in-tree cpufreq actuator path” claim needs a concrete conflict model: userspace msr writes, SMM/firmware, and other kernel paths can touch IA32_HWP_REQUEST/EPP. You must define the readback-audit cadence, divergence thresholds, and exactly what &#x27;rollback&#x27; means (stop writing entirely vs force baseline) to avoid a write-fight loop.</li><li style='font-size:13px;margin-bottom:4px;'>Telemetry caching must be concretely non-blocking for all call sites: powercap/RAPL reads often require driver locks and can sleep. Define a dedicated snapshot worker, snapshot frequency, seqcount/RCU publication, staleness rules, and unit conversions (power/energy windows vs headroom scalar) so allocator never depends on a sleeping read.</li><li style='font-size:13px;margin-bottom:4px;'>The verifier-bounded eBPF hint ingress needs a kernel-realistic attachment point and program type constraints: which BPF prog type, which context object, whether the helper/kfunc is callable from preempt-disabled regions, and how TTL/rate limits are enforced without global locks or per-event allocations.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Core patent sections (Problem/Architecture/Implementation/Claims) are empty, and the “sole actuator/precedence” promise is not yet technically defensible against existing in-kernel, firmware, and userspace MSR writers.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact eBPF ingress contract: kfunc/helper prototype, allowed program types/attach points, units/encoding, TTL semantics, rate limits, per-CPU vs per-policy routing, and verifier-enforced bounds (no maps? no loops? max instructions?).</li><li style='font-size:13px;margin-bottom:4px;'>Make the “single in-tree actuator + deterministic precedence” implementable: enumerate all realistic foreign writers (msr.ko, turbostat tools, firmware/SMM, intel_rapl, platform_profile, energy_perf_bias, other kernel subsystems) and specify the readback-detection algorithm, suppression/rollback policy, and false-positive tolerance.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the package/die/RAPL domain binding precisely: mapping rules for cpufreq policies on hybrid x86, per-die RAPL domains, hotplug/policy rebuild transitions, and the locking/RCU scheme (who publishes generations, when, and how ABA is prevented).</li><li style='font-size:13px;margin-bottom:4px;'>Concretize the allocator: objective function, constraints (admin caps, uclamp, min_perf_pct/max_perf_pct, EPP bounds), stability/hysteresis rules, and how outputs translate to IA32_HWP_REQUEST fields without oscillation under noisy telemetry.</li><li style='font-size:13px;margin-bottom:4px;'>Telemetry boundary needs exactness: which counters (RAPL pkg/domain, thermal pressure), snapshot cadence, staleness thresholds, overflow handling, and how you avoid slow-path IO (e.g., MSR reads) in prohibited contexts.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Make the power-domain binding unambiguous: specify exactly how you map cpufreq policies to a shared control domain on Xeon (package vs die vs RAPL domain), including multi-socket, multi-die (sub-NUMA clustering), and hotplug/policy-rebuild edge cases; document the stable identifiers used and the fallback when powercap identity is missing.</li><li style='font-size:13px;margin-bottom:4px;'>Nail the eBPF ingress contract: define the concrete program type / kfunc (signature, units, TTL semantics, allowed call sites/contexts), rate-limiting, privilege model (e.g., CAP_SYS_ADMIN-only), and verifier constraints that prevent using the hook as a covert control plane or creating unbounded coordinator work.</li><li style='font-size:13px;margin-bottom:4px;'>Write an explicit precedence/merge matrix against existing Linux/x86 knobs: intel_pstate active vs passive, per-policy EPP sysfs, energy_perf_bias/EPB, uclamp + schedutil signals, thermal pressure, RAPL powercap, platform_profile, and firmware/BIOS/hypervisor writers; define deterministic resolution and the exact rollback conditions.</li><li style='font-size:13px;margin-bottom:4px;'>Strengthen the ‘single in-tree actuator’ claim with a concrete conflict model: define what readback divergence means (which MSRs/fields, tolerances, timing), how long suppression lasts, and how you avoid oscillation when firmware or a VMM periodically rewrites IA32_HWP_REQUEST.</li><li style='font-size:13px;margin-bottom:4px;'>Add Xeon-specific HW/SW co-design hooks: call out how this coordinates with HFI/ITMT and per-core heterogeneity (including hybrid where applicable), and clarify whether allocation weights can incorporate hardware feedback classes without creating a second scheduler.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The eBPF phase-hint ingress is described at a high level but does not yet specify a concrete privilege/LSM model and isolation rules, creating unbounded side-channel and integrity risk.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact BPF trust model: which program types are allowed, whether only kernel-shipped (BPF trampoline/kfunc-only) programs can run, whether CAP_BPF/CAP_SYS_ADMIN is required, and how LSM (bpf_lsm) gating is enforced. Without this, “kernel-owned eBPF hints” can accidentally become an unprivileged cross-tenant control/side-channel surface.</li><li style='font-size:13px;margin-bottom:4px;'>Specify a hard bound on runtime and execution points for the BPF hint path (e.g., only in process context, never in NMI/IRQ, explicit maximum instructions, no loops unless bounded, no helper set that can sleep/allocate). Also specify a strict rate-limit + TTL semantics that are enforced in-kernel even if the BPF program misbehaves.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify the single-writer/foreign-writer detection contract: which MSRs are read back (IA32_HWP_REQUEST, IA32_HWP_REQ?), how frequently, how divergence is attributed (firmware, BIOS, turbostat, other kernel paths), and what “rollback” does in terms of restoring admin baseline vs last-known-good. This must be deterministic to avoid oscillation and performance instability.</li><li style='font-size:13px;margin-bottom:4px;'>Document the locking + lifetime model for cpufreq policies and domain membership: how you prevent UAF when policies are rebuilt/hotplug occurs, what contexts read/modify the domain graph, and which primitives are used (RCU vs cpufreq locks vs SRCU). The draft mentions generation counters but not the concrete synchronization points required for crash safety.</li><li style='font-size:13px;margin-bottom:4px;'>Make telemetry access constraints explicit: RAPL/powercap reads must be non-blocking in the coordinator path (or performed strictly in a worker), must handle MSR access faults and CPU offline transitions, and must not create a new high-resolution side channel (e.g., per-cgroup inference via power snapshots). Provide minimum sampling interval and quantization requirements.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact execution mechanism for “process-context, on-target-CPU” EPP writes without violating cpufreq/intel_pstate locking: e.g., whether you use a per-CPU kthread, workque</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the serialization contract with intel_pstate: identify the precise lock(s) you will take (or existing serialized entrypoints you will reuse) so you do not create a second MS</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify memory-ordering and tearing rules for the per-CPU “phase evidence” snapshot: what are the writer contexts (NMI, hardirq, softirq, task) and what primitives are used (this_cp</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Handle CPU hotplug and policy rebind correctly: per-CPU deferred intents must be canceled/flushed on CPU offline, and the actuator must not dereference stale policy pointers. Descri</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define safety bounds and precedence semantics in kernel terms: how admin clamps interact with intel_pstate’s own min/max, energy_perf_bias/EPP sysfs knobs, and platform firmware con</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact concurrency/locking model and lock ordering across: cpufreq policy rebuild (policy-&gt;rwsem / cpufreq core locks), intel_pstate internal locks, CPU hotplug (cpuhp sta</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The “kernel-owned eBPF phase hints via narrow kfunc (not maps)” is underspecified and potentially unsafe: specify allowed prog types, call contexts (must exclude NMI/hardirq unless </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Membership model (“maps cpufreq policies onto shared RAPL/package domain”) needs a correctness proof under hotplug and policy splits/merges: specify whether membership is keyed by p</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] RAPL/thermal telemetry acquisition must be made race-safe and non-blocking in the governor/update path: specify where telemetry is read (workqueue vs. fast path), the staleness dete</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] “Deterministic O(p log p) constrained allocator” must be placed in a context that tolerates CPU hotplug and sysfs knob churn: specify update triggers, coalescing, and rate limiting;</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux power management using x86 eBPF microarchitecture features
+</footer>
+</div></body></html>

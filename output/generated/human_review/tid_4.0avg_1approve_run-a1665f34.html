@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 4.0] VMM-Mediated, Cookie-Bound, DoS-Hardened AMX Epoch Extent Hi</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-a1665f34d3b0 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>VMM-Mediated, Cookie-Bound, DoS-Hardened AMX Epoch Extent Hints for Biasing KVM TDP MMU 2 MiB Promotion</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux virtualization using x86 AMX microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>AMX Phase Descriptor Bridge for TDP MMU Superpage Promotion</li><li style='font-size:13px;'>VMX AMX Interrupt Window Broker Using TPR Shadow and Posted Interrupts</li><li style='font-size:13px;'>AMX Cohort Preemption Bridge Extending PV_VCPU_PREEMPTED for Barrier Admission</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: ALX: Large Scale Matrix Factorization on TPUs &lt;&gt; intel_opt_manual | 20.5.5.5 Convolution - Matrix-like Multiplications and Summations Equivalence . . . . . . . . . . . . . . . 20-17
+  MMR Score:    0.7771</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A VMM-opt-in paravirtual KVM ABI lets an AMX-aware guest publish short-lived, token-and-generation authenticated, 2 MiB-aligned GPA extents through a bound per-vCPU ring so that, only after all existing KVM hugepage legality predicates have already selected PMD eligibility, the TDP MMU may add a single bounded promotion bonus via O(1) direct-indexed per-memslot chunk metadata that is automatically suppressed or cleared on dirty logging, mmu_notifier invalidation, memslot replacement, protected-memory constraints, nested-virtualization policy failure, or split churn.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The novelty is not generic hugepage advice, not generic AMX scheduling, and not merely letting a guest express memory intent. The claimable bridge is a concrete three-party contract among guest AMX software, VMM, and KVM</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Virtualized AMX workloads such as BF16 and INT8 GEMM, tiled convolution lowering, recommendation inference, database vector scans, and matrix-factorization phases often execute in short compute epochs whose guest-physical working sets are stable at 2 MiB granularity for only a few milliseconds. Current KVM TDP MMU hugepage promotion is host-reactive: it derives PMD suitability from observed split, fault, and access history after the fact. The guest, however, knows before the hot phase begins which aligned GPA extents will be touched repeatedly. Under dirty logging, access tracking, memslot updates, nested virtualization, or repeated PMD split and re-promote cycles, KVM may miss that stable window and leave AMX kernels executing on fragmented 4 KiB SPTEs, paying avoidable nested page-walk cost, SPTE churn, TLB pressure, and refault overhead. The technical problem is therefore to expose short-lived guest phase knowledge to KVM without allowing the guest to force illegal hugepages, without introducing attacker-controlled lookup structures or unbounded host work, and without creating correctness holes during invalidation, memslot replacement, migration, or confidential-guest modes.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Existing host-side KVM heuristics decide second-level hugepage promotion from host-observed access history, not from a VMM-controlled guest signal tied to short AMX compute epochs. Guest THP, MADV_HUGEPAGE, and in-guest hugepage allocators affect only first-level mappings and do not securely express second-level intent to KVM. Userspace choices such as hugetlb-backed memory, THP-backed host memory, ballooning, Hyper-V or VMware enlightenments, or virtio memory hints either change backing indirectly or communicate different classes of memory-management intent; they do not define a secure, versioned, per-vCPU transport with explicit ring semantics, token and generation rebinding, per-memslot cookie binding, O(1) direct-index chunk metadata, explicit invalidation-coupled clearing, bounded TTL semantics, and a bias-only hook after all baseline KVM hugepage disallow predicates have already passed. No known mechanism combines VMM mediation, per-vCPU pinned transport attestation, memslot cookie replacement on KVM_SET_USER_MEMORY_REGION changes, quantitative rate and footprint limits, and a post-eligibility PMD bonus that never forces mapping changes and never schedules background promotion scans.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>Introduce an optional KVM feature named AMX Extent Hints. A cooperative guest runtime or paravirtual driver emits a descriptor at AMX phase boundaries, typically when switching to a new tiled GEMM, convolution, matrix-factorization, or analytical-vector epoch. The descriptor specifies a 2 MiB-aligned GPA start, a bounded chunk count, a bounded TTL, an epoch identifier, and a reuse class. The VMM must explicitly enable the feature at the VM level, mark eligible memslots, bind one transport ring per vCPU, and provision a per-vCPU token and channel generation. KVM drains descriptors only from the bound channel of the current vCPU, validates alignment, range, quotas, token, generation, and current memslot identity, and then stores accepted state in a preallocated per-memslot direct-index array keyed by memslot-relative 2 MiB chunk index. During TDP MMU large-page evaluation, after the normal code path has already determined that a PMD leaf is legally permissible, KVM may add a single constant score bonus if a live, non-expired, non-suppressed hint exists for the exact chunk. Hints never override dirty logging, NX hugepage restrictions, access tracking, max-page-level checks, mmu_notifier invalidation, nested virtualization policy, or protected-memory restrictions; they only help choose PMD where PMD is already allowed. Hints are ephemeral, non-migrated, automatically expired on wall-clock time, ignored during deschedule or guest stall once expired, and cleared or suppressed in O(1) or range-bounded time on invalidation events.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The concurrency/locking model for hint ingestion + fast-path consumption is underspecified; without a concrete plan it risks sleeping in the wrong context (e.g., under MMU locks) and/or racing memslot replacement/invalidation in ways that can yield stale or mis-indexed hints.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define a precise locking + context contract: where exactly does KVM ingest the ring (ioctl vs hypercall vs vmexit), and which locks may be held. In particular, do not perform guest-memory copies that can fault/sleep while holding spinlocks used in the TDP/MMU fault path (e.g., mmu_lock/tdp MMU locks). Spell out the lock ordering relative to mmu_notifier callbacks to avoid ABBA deadlocks.</li><li style='font-size:13px;margin-bottom:4px;'>Specify a race-free ring format: you need a seqlock/sequence-counter or similar scheme plus explicit memory-ordering rules so host reads of the shared hint page cannot observe torn descriptors or partially-updated head/tail. Also specify how token/generation rotation interacts with in-flight writes (e.g., reject-by-generation must not livelock a guest).</li><li style='font-size:13px;margin-bottom:4px;'>Make memslot cookie rebinding formally safe under SRCU: show how you compute memslot-relative 2M chunk indices and how you prevent use-after-free / slot-reuse ambiguity when memslots are replaced. At minimum, the cookie must be stored in the memslot object and compared under SRCU, and clearing must be coordinated with readers (RCU/SRCU, or atomic plane swap) so the fault path never dereferences freed plane pointers.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify invalidation-coupled clearing semantics and granularity: mmu_notifier invalidations are range-based; you need either (a) range-to-chunk targeted clearing that is safe and bounded, or (b) generation-bump suppression that guarantees correctness without O(n) scans. If you rely on range clearing, quantify worst-case cost and ensure it cannot be triggered into pathological CPU consumption by an unprivileged guest workload.</li><li style='font-size:13px;margin-bottom:4px;'>Handle confidential-guest memory correctly (TDX/SEV): KVM generally cannot read private guest memory. Your design must require the hint page be mapped as a shared GPA (and verify it via memslot attributes) or otherwise avoid any host reads of private pages. Also address whether the hint page content could become an information channel across trust boundaries.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the *exact* ABI and trust boundaries: ioctl/cap names, struct layout, ring entry format, endianness, alignment, and the precise meaning of “token” (capability vs keyed MAC). Without a concrete anti-replay/auth story, this risks collapsing into known “guest hints” art and/or being trivially spammable.</li><li style='font-size:13px;margin-bottom:4px;'>Make the memslot-generation cookie mechanism fully concrete: how it is generated, stored, compared, and rotated on *every* memslot change path (move, delete, overlap, attribute change). Specify which locks/SRCU domains protect it and prove stale hints cannot survive slot reuse across races.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the invalidation/clearing matrix with kernel events and call sites: mmu_notifier start/end, dirty logging enable/disable, write-protect for logging, hugepage split paths, nested/NPT/EPT mode switches, confidential guest transitions. Vague “invalidation-coupled clearing” is high risk of being judged obvious unless it is a tight, auditably complete state machine.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify novelty vs strong prior art in virt stacks: THP/hugetlb/madvise (host+guest), virtio-balloon free-page hinting/reporting, Hyper-V/VMware enlightenments, and existing KVM fast-path metadata (e.g., direct-index arrays/bitmaps). You need an explicit ‘not taught/suggested’ argument for *bias-only-after-legality* plus *cookie-rebound O(1) planes* as a combined contract.</li><li style='font-size:13px;margin-bottom:4px;'>Bound and rate-limit the DoS surface: maximum descriptors per vCPU per second, quota per memslot, eviction policy, and worst-case CPU cost under hostile guests. Also specify how ring harvesting is scheduled (vmexit vs workqueue) and ensure it cannot inflate TDP fault latency indirectly (lock contention, cacheline bouncing).</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten the ABI definition: specify the exact descriptor format (fields, alignment, endianness), maximum batch size per VM-exit, and the precise semantics of expiry (jiffies vs ktime, wrap handling) so KVM can validate without ambiguity.</li><li style='font-size:13px;margin-bottom:4px;'>Make DoS and side-channel boundaries explicit: define per-VM and per-memslot quotas, rate limiting per vCPU, and the exact cost model on the fault path (including worst-case memslot lookup) to ensure untrusted guests cannot amplify exits or induce cache-thrashing in the metadata planes.</li><li style='font-size:13px;margin-bottom:4px;'>Pin down the integration point in TDP MMU: identify the exact function/decision point where the bias is applied (post all existing disallow predicates), and clarify how it interacts with existing hugepage recovery/splitting heuristics to avoid oscillation or regressions in mixed workloads.</li><li style='font-size:13px;margin-bottom:4px;'>Add a clear policy story for nested virt + confidential VMs: enumerate which configurations are supported (e.g., TDX/SEV-SNP/nested EPT/NPT), what is forcibly disabled, and how migration/reset rotates tokens/generations to prevent stale-hint reuse across trust boundaries.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft does not yet specify a concrete, verifiable UAPI + concurrency/threat model, making it hard to prove it cannot introduce DoS, stale-hint correctness issues, or subtle locking bugs in the TDP fault path.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Specify the exact UAPI: ioctl numbers/capability gating, struct layout (versioning, padding, endianness, 32/64-bit compat), max descriptors per batch, and the precise guest-&gt;host publication mechanism (hypercall vs. shared-page polling vs. exit reason). Without this, compatibility and reviewability are not defensible.</li><li style='font-size:13px;margin-bottom:4px;'>Define and prove the concurrency model between (a) hint ingestion/clearing (mmu_notifier, memslot changes, dirty-log toggles) and (b) the TDP fault/PMD mapping decision: which locks (SRCU/RCU/spinlocks) protect planes, what memory ordering prevents torn cookie/expiry reads, and how you avoid use-after-free when memslots are replaced.</li><li style='font-size:13px;margin-bottom:4px;'>Add explicit DoS hardening: a malicious guest can spam hint updates or force frequent VM exits. You need per-vCPU rate limiting (time-based budget), per-VM quotas, bounded work per exit, and drop/overwrite semantics that guarantee O(1) worst-case CPU regardless of guest behavior.</li><li style='font-size:13px;margin-bottom:4px;'>Bound and justify memory overhead: preallocating validity/expiry/cookie planes per memslot scales with memslot size/2MiB. You need a hard cap (bytes or chunks), clear error handling on enable/memslot growth, and a compatibility story for large-memory VMs (otherwise enable can fail or cause host memory pressure regressions).</li><li style='font-size:13px;margin-bottom:4px;'>Strengthen stale-hint invalidation guarantees: precisely enumerate all events that must clear/suppress hints (memslot move/split/merge, KVM_SET_USER_MEMORY_REGION, mmu_notifier ranges, dirty logging enable/disable, protected/confidential-guest transitions, nested-virt mode changes, migration), and state whether clearing is eager (range-based) or generation-based—plus how you prevent old hints from re-binding after slot reuse.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact locking/RCU model for hint installation, lookup, and clearing. TDP mapping and hugepage promotion run under specific MMU locking constraints; your hint state must n</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make the memslot identity cookie robust across memslot mutations. KVM memslots can be replaced/resized; a cookie must incorporate (or be invalidated by) memslot generation/sequence </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the invalidation-driven suppression/clearing semantics precisely: which invalidation events clear which hint ranges (range_start/range_end? zap all for the memslot?), and ho</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prove the DoS envelope with hard limits and failure modes: maximum hinted extents per VM/vCPU, maximum update rate, TTL/expiry behavior, and what happens when the guest exceeds limi</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify correctness gates for when a hint may bias promotion. You must state that hints never override: dirty logging, NX hugepage restrictions, mmu_notifier invalidation state, acc</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact synchronization/memory-ordering contract for the paravirtual hint page (guest writes vs KVM reads): you need an explicit producer/consumer protocol (e.g., seqcount-</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify precisely how memslot-generation binding is implemented and raced: show where the generation/cookie is stored, under which lock it changes (slots_lock/SRCU), and how the TDP</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify invalidation coupling: which exact events clear/suppress hints (mmu_notifier invalidate_range_start/end, memslot move/resize, dirty-log enable/disable, write-protect, zap), </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prove the &#x27;bias-only&#x27; hook point cannot violate existing hugepage disallow rules under concurrency (e.g., dirty logging write-protect, NX hugepages constraints, access tracking/agin</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] DoS hardening is underspecified: you must bound per-vCPU submission rate and per-VM outstanding hinted chunks, and ensure hint consumption is strictly O(1) with no collision-driven </li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux virtualization using x86 AMX microarchitecture features
+</footer>
+</div></body></html>

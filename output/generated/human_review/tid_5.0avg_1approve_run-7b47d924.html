@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 5.0] Commit-Epoch Shared Journal Pages, Private Huge-Slab Control</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-7b47d924f182 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 5.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Commit-Epoch Shared Journal Pages, Private Huge-Slab Control State, and Ciphertext-Only Shadow Folios for TDX-Optimized Linux Filesystems</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux file system using x86 TDX microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>TDX Folio Exchange Descriptor for Confidential File I/O</li><li style='font-size:13px;'>SEPT-Aware Extent Promotion Bridge for PMD-Scale File Cache</li><li style='font-size:13px;'>TDX Journal Export Window for ext4 jbd2 Metadata Commits</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | CHAPTER 10 &lt;&gt; intel_opt_manual | RUNTIME PERFORMANCE OPTIMIZATION BLUEPRINT: INTEL® ARCHITECTURE OPTIMIZATION WITH LARGE CODE PAGES
+  MMR Score:    0.7612</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A TDX-aware Linux filesystem I/O architecture that reserves per-journal commit-epoch pools of fully initialized 4 KiB shared DMA carrier pages for ext4/jbd2 descriptor, revoke, and commit control blocks, keeps all conversion, wipe, and re-privatization in sleepable context, optionally publishes large folios only from fully completed ciphertext-only shadow ranges, and uses generation-tagged cancellation plus exact ordering preservation so stale completions cannot mutate invalidated folios or aborted transactions.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The defensible novelty is not generic bounce buffering, write batching, or page-cache sharing, but a confidential-memory-specific ownership and lifecycle model tuned to x86 TDX microarchitectural constraints: (1) a per-j</div>
+    <div class="pill"><strong>Feasibility:</strong> </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>In x86 TDX confidential VMs, most guest filesystem memory is private, but storage DMA targets memory that is explicitly shared with the host or hypervisor. That mismatch turns metadata-heavy Linux filesystem paths into conversion-dominated workloads: a 4 KiB journal descriptor or revoke block may cost more in page-state change latency, DMA setup, TLB disruption, cache pollution, and shootdown overhead than in formatting the bytes themselves. The pain is concentrated in ext4/jbd2 commit processing, where kjournald2 emits many short control-block writes under strict ordering rules, and in buffered encrypted I/O, where large folios would help throughput but plaintext must never transiently exist in shared memory. Existing Linux code has bounce pages, buffer_heads, bios, fscrypt bounce mechanisms, and general write batching, but it lacks a confidential-memory-aware lifetime object that binds shared-page ownership to a journal transaction or folio publish range, explicitly encodes which bytes may exist while shared, guarantees all shared bytes are initialized, preserves exact commit semantics, and prevents late completions from publishing or mutating objects that truncate, invalidate, or abort already made stale.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Prior art stops at generic staging pools, bounce buffers, encrypted I/O helpers, or journal batching. Those mechanisms do not claim or teach the confidential-memory constraint that page-state conversion must be done only on pages that are direct-mapped, DMA-capable, backend-convertible, and handled from sleepable context; they do not define a commit-epoch ownership model in which kjournald2 reserves a finite set of carrier pages spanning all descriptor, revoke, and commit blocks of one transaction; they do not specify a state machine that guarantees no uninitialized bytes are ever shared, that pages are converted before dma_map and only converted back after dma_unmap, and that all exits, including -EIO, abort, overflow, and conversion failure, end in wipe-and-reprivatize; and they do not solve the large-folio side by requiring full-range completion plus generation and mapping revalidation before publication. They also under-specify exact integration with jbd2 commit.c, the preservation of checksum timing and flush semantics, and the boundary between end_io atomic bookkeeping and any work that may sleep.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>{&#x27;journal_commit_epoch_pool&#x27;: &#x27;At the start of a commit, kjournald2 reserves a bounded number of 4 KiB carrier pages from a per-journal pool. Each carrier page has a descriptor recording transaction ID, generation, state, DMA address, length, checksum-ready flag, completion status, and retirement ownership.&#x27;, &#x27;private_huge_slab_control_state&#x27;: &#x27;The carrier descriptors, completion bitmaps, generation tables, pool freelists, and worker hot-path metadata are allocated from homogeneous fully private 2 MiB slabs or large mappings when available. Only private metadata uses huge pages; carrier pages themselves remain 4 KiB to match TDX conversion granularity and avoid mixed-sensitivity huge pages.&#x27;, &#x27;retirement_engine&#x27;: &#x27;A retirement worker or the commit thread performs wipe, dma_unmap completion retirement, shared-to-private conversion, and freelist return after atomic completion is observed.&#x27;, &#x27;optional_shadow_range_descriptor&#x27;: &#x27;For ciphertext-only buffered I/O, each candidate folio range has a descriptor with per-4 KiB completion bits, an expected-length map, mapping pointer, folio index, invalidate generation snapshot, refcount, and a single-shot work item for publish-or-retire.&#x27;}</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 5.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft stages read data into shared ingress pages without a hard guarantee that those pages contain ciphertext-only; if plaintext can ever land in shared pages, this violates the confidential-VM threat model.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Make ciphertext-only a mandatory precondition for using shared ingress pages: explicitly require an I/O path that returns ciphertext into ingress pages and performs decryption/transform only into guest-private pages; otherwise the design leaks file data to the VMM.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the exact descriptor lifetime/refcounting model across N bios: each bio must hold a reference; end_io must only atomically record completion and drop the ref; scheduling the worker must be one-shot (atomic flag) and must not allow the descriptor to be freed while work is pending.</li><li style='font-size:13px;margin-bottom:4px;'>Define the DMA sync/unmap ordering: ensure dma_unmap_* (or equivalent) happens before the worker reads ingress data, and add the required memory-ordering (e.g., smp_store_release in end_io + smp_load_acquire in worker) so bitmap/status updates and DMA visibility are coherent across CPUs.</li><li style='font-size:13px;margin-bottom:4px;'>The invalidation/truncation race handling is underspecified: tie the “generation tag” to real kernel primitives (e.g., address_space-&gt;invalidate_lock + i_size recheck) and document the lock/seq rules so publication cannot resurrect data after truncate, punch-hole, or invalidation.</li><li style='font-size:13px;margin-bottom:4px;'>Large-folio page-cache insertion must follow correct locking and conflict handling: hold folio_lock(), avoid holding any spinlock/irq-disabled state when calling filemap_add_folio() (can sleep), and define behavior on -EEXIST/partial overlap (fallback to base pages or abort) without leaving stray xa entries.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Novelty overlap risk: as written, the core idea reads close to existing “large folio readahead + completion bitmap + workqueue finalize” patterns. You must explicitly contrast against current kernel read pipelines (iomap/netfs/readahead) and prior “all-subpage-uptodate then publish” mechanics, and clearly state what *TDX-specific constraint* forces this bridge beyond conventional folio aggregation.</li><li style='font-size:13px;margin-bottom:4px;'>Define the exact publication semantics: `filemap_add_folio()` is not a drop-in for “single-shot multi-index publication” unless you specify how you handle multi-index coverage, xarray slot population, folio order alignment, and races with concurrent readers/faults. Provide the precise locking (mapping/i_pages, folio lock, invalidate lock) and what readers observe pre/post publish.</li><li style='font-size:13px;margin-bottom:4px;'>The invalidation model is underspecified: “mapping-scoped invalidate sequence and generation tag” needs a concrete source of truth (which sequence counter, where incremented on truncate/hole-punch/invalidate, what memory ordering). Specify which invalidation events must cancel promotion (truncate, punch-hole, writeback overwrite, reflink/COW, dax? direct-IO?) and how cancellation prevents stale completions from marking data uptodate.</li><li style='font-size:13px;margin-bottom:4px;'>TDX shared/private conversion details are missing: you need to pin down the API path used for shared ingress pages (e.g., TDX/SNP shared mapping, SWIOTLB, dma-direct encryption attributes), when acceptance happens for the private folio, and how you guarantee no shared aliases remain when publishing to page cache (including cache/TLB flush or arch hooks if required).</li><li style='font-size:13px;margin-bottom:4px;'>Min-max extent promotion policy is not actionable yet: define the objective function and inputs (extent length, alignment, folio orders allowed, memcg pressure, readahead window, xarray cost model, acceptance cost). Without a deterministic algorithm and thresholds, this looks like an optimization claim rather than an enabling invention.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Specify the exact promotion policy inputs/outputs (e.g., folio orders allowed, alignment rules, extent-length minimums, and hard caps under memory pressure) so the “min-max” decision is implementable and tunable for Xeon TDX acceptance cost vs xarray/dTLB tradeoffs.</li><li style='font-size:13px;margin-bottom:4px;'>Define the race-free invalidation model precisely: which sequence counter is used (mapping-wide vs inode-specific), when it is sampled (submission vs publish), and what locks are held at publish time to be correct under truncate/punch-hole/readahead readahead-cancel.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify the publication path constraints: document required locking/ordering around `filemap_add_folio()` for multi-index insertion, and how you prevent partially filled/short-read folios from becoming visible (including error propagation and retry behavior).</li><li style='font-size:13px;margin-bottom:4px;'>Address memory accounting and reclaim: how descriptors/ingress pages are mempooled, how folios are charged (cgroup), and how you avoid pinning too much DMA-capable shared memory under sustained read bursts.</li><li style='font-size:13px;margin-bottom:4px;'>Call out the DMA path assumptions explicitly (direct-mapped DMA vs SWIOTLB/IOMMU): if shared ingress pages must be DMA-addressable, define fallback behavior when the platform uses bounce buffering or disallows shared conversion for the chosen pages.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft does not define a confidentiality gate: staging buffered reads through shared ingress pages would expose plaintext for unencrypted files, violating confidential-VM guarantees unless ciphertext-only I/O is enforced.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define and enforce a hard confidentiality policy: shared ingress pages must never contain plaintext. Require ciphertext-only sources (e.g., fscrypt/dm-crypt pipeline where DMA sees ciphertext) or explicitly disable this path for unencrypted files; document exact gating conditions.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the synchronization and memory-ordering contract between bio_end_io bit updates and the worker’s reads (e.g., smp_store_release on completion state and smp_load_acquire in worker) so the worker never observes torn/stale bitmaps or status.</li><li style='font-size:13px;margin-bottom:4px;'>Make descriptor lifetime/cancellation unambiguous: use a refcount model covering (a) N bios, (b) one-shot work scheduling, (c) invalidation/truncate cancellation, and (d) error/short-read paths, to prevent UAF or double-free under concurrent completion and invalidation.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify invalidate/truncate race handling with actual pagecache locking APIs: capture and revalidate the correct generation/sequence (not just a conceptual tag), and take the right invalidate locks during publication to guarantee compatibility with truncation, hole-punch, and reclaim.</li><li style='font-size:13px;margin-bottom:4px;'>Publication semantics need a concrete failure strategy: filemap_add_folio() must ensure no existing folios occupy any covered index; if conflicts exist, either split the large folio, fall back to base pages, or abort cleanly without partially populating the xarray.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact lifetime/ownership and completion model for the staging pages: you must prevent reuse/conversion-back until *all* bios for descriptor/revoke/commit blocks have comp</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the locking and ordering constraints relative to jbd2’s commit state machine: prove that building control-block images into staging pages cannot race with transaction state </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify the confidential-memory conversion API and DMA correctness: private→shared must happen in sleepable context, but also must be paired with DMA mapping/unmapping rules (dma_ma</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Handle highmem / direct-map constraints: many conversion APIs (e.g., set_memory_decrypted/encrypted) assume direct-mapped kernel virtual addresses and may not support highmem pages.</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Integrate robust fallback and error handling without breaking journaling guarantees: if conversion fails, allocation fails, or I/O errors occur, you must fall back to the current bu</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact lifetime/ownership rules for staging pages across bio submission/completion (refcounting + journal abort path). In particular, ensure an abort cannot free/convert a</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Be explicit about context constraints: bio end_io may run in softirq; it must never call conversion APIs or anything that can sleep. Restrict end_io to atomic status recording + wak</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Guarantee no uninitialized bytes ever get shared: descriptor/revoke/commit images must be fully initialized (e.g., memset to 0 before filling fields) so padding does not leak guest-</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Preserve existing jbd2 ordering/flush semantics exactly (barriers, REQ_PREFLUSH/REQ_FUA usage, checksum finalization timing). The staging path must be observationally identical to b</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Audit interaction with DMA APIs under cc/TDX: conversion to shared must be compatible with dma_map_page() expectations (including swiotlb/IOMMU). Ensure you do conversion before dma</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux file system using x86 TDX microarchitecture features
+</footer>
+</div></body></html>

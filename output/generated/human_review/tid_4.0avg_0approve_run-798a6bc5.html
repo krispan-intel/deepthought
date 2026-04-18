@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] Per-CPU AMX Burst Hint for Latency-Constrained Cpuidle and B</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-798a6bc5cfa9 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Per-CPU AMX Burst Hint for Latency-Constrained Cpuidle and Budgeted Baseline-Relative HWP Bias</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux power management using x86 AMX microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>AMX Residency Vector Bridge for cpuidle and schedutil</li><li style='font-size:13px;'>AMX Power-Class Scheduler Domain Bridge</li><li style='font-size:13px;'>AMX FP16 Phase Descriptor Bridge for intel_pstate and RAPL</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | 20.5.5.5 Convolution - Matrix-like Multiplications and Summations Equivalence . . . . . . . . . . . . . . . 20-17 &lt;&gt; intel_opt_manual | INTEL® ADVANCED MATRIX EXTENSIONS (INTEL® AMX)
+  MMR Score:    0.7814</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>A lockless, per-CPU AMX-burst finite-state machine is rehydrated only from task-carried AMX recency metadata and advanced only on existing x86 kernel evidence paths, where AMX permission and XFD first-use can create a non-boosting PROBE state but only a saved-state XTILEDATA in-use indication observed after the normal FPU/xstate save path can create ACTIVE; the resulting effective hint is masked to the currently running task to prevent migration contamination, tightens a per-CPU cpu_device dev_pm_qos resume-latency request only in ACTIVE and COOLDOWN, and applies a desired_perf-only, additive, clamped, baseline-relative, token-budgeted HWP delta only inside the existing intel_pstate HWP update cadence, with explicit hotplug and suspend reset rules, no required PMU, no new userspace ABI, no forced XSAVE, and no periodic wakeups.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The inventive step is not the generic idea of boosting a CPU when activity is recent. The inventive step is a specific AMX-only evidence pipeline and a single shared abstraction reused across two different Linux power-ma</div>
+    <div class="pill"><strong>Feasibility:</strong> The mechanism is implementable with existing Linux x86 building blocks and does not require new sampling infrastructure. The only evidence sources needed are already touched by the</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>On AMX-capable x86 systems, tiled compute often arrives as microbursts separated by sub-millisecond to few-millisecond gaps. During those gaps, cpuidle may select a deep C-state whose exit latency is disproportionate to the next burst, while Intel HWP as driven by intel_pstate may not raise its requested performance until generic utilization becomes visible again. Existing generic signals are a poor fit. Iowait says little about a thread that is about to resume tile compute. Scheduler utilization often rises only after the next burst has already begun. AMX permission and XFD first-use are also insufficient by themselves because a task can request AMX or incur a one-time first-use fault without entering a sustained tile-compute phase. A practical kernel solution therefore must: use only evidence that the kernel already encounters for AMX permissioning and xstate correctness; distinguish AMX permission, first-use, and definitive tile-state use; avoid reading stale or unmaterialized xstate; avoid leaking a CPU-local hint to unrelated tasks after context switches or migration; avoid new timers, IPIs, or PMU dependence; avoid new userspace ABI; reset cleanly across CPU hotplug and suspend or resume; and never override explicit user, governor, thermal, or power-limit constraints.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Known Linux mechanisms cover adjacent but materially different functions. Dev PM QoS and cpu-device latency QoS can constrain allowed idle exit latency, and cpuidle governors already honor those constraints. Intel_pstate and HWP can bias performance requests. Linux x86 AMX support already covers permissioning, XFD first-use, signal and context semantics, and save or restore correctness. There is also broader art around reacting to generic demand signals, iowait boosts, and heavy ISA behavior. However, none of those mechanisms discloses the claimed combination of constraints and evidence. In particular, the prior art does not teach: a two-stage AMX-specific evidence ladder in which XFD first-use is intentionally non-definitive and only a subsequently saved XTILEDATA in-use indication qualifies as definitive AMX activity; task-carried AMX recency windows used to reconstruct an effective per-CPU state only for the currently running task so that migrated or unrelated tasks do not inherit boost; one shared AMX-burst abstraction reused at both the per-CPU cpu_device PM QoS control point and the intel_pstate HWP request formation point; baseline-relative re-centering of the HWP adjustment on every existing update rather than a sticky boosted baseline; and a hard per-CPU token budget that limits AMX-caused extra HWP writes without any new periodic work. Generic recent-utilization timers, iowait boosts, or ISA-detection heuristics cannot safely provide the same coupled cpuidle and HWP alignment because they do not know that AMX permission and XFD are insufficient evidence, do not inspect saved XTILEDATA use, and do not carry AMX provenance with the task to prevent scheduler-migration contamination.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>Maintain two tiny data structures: a task-carried AMX recency record and a per-CPU effective AMX power state record. The task record contains amx_probe_until_ns, amx_active_until_ns, amx_cooldown_until_ns, and amx_epoch. The per-CPU record contains effective_state, owner_epoch, qos_level_applied, hwp_tokens, and last_token_refill_ns. The effective state is always derived from the currently running task&#x27;s carried record, never from a stale CPU timer alone.
+
+Evidence ladder and exact signals:
+1. Eligibility gate: the task must have AMX permission or XCOMP enablement for XTILECFG and XTILEDATA. This gate alone causes no power action.
+2. PROBE evidence: when the current task hits the existing AMX XFD first-use path, set current-&gt;amx_probe_until_ns = now + 250 microseconds if the eligibility gate is satisfied. This enters PROBE only. XFD does not create ACTIVE.
+3. Definitive evidence: in the normal context-switch or FPU-save completion path, after the kernel has already materialized or updated the outgoing task&#x27;s saved xstate header or equivalent xfeatures mask, test whether XFEATURE_MASK_XTILEDATA is set. If yes, set prev-&gt;amx_active_until_ns = now + 2 milliseconds, prev-&gt;amx_cooldown_until_ns = now + 6 milliseconds, prev-&gt;amx_probe_until_ns = 0, and increment prev-&gt;amx_epoch. XTILECFG without XTILEDATA does not create ACTIVE.
+4. No forced save rule: if the current task&#x27;s AMX state still lives only in registers and no normal save has occurred, the mechanism waits. It never initiates an XSAVE solely to obtain evidence.
+
+FSM and transition rules:
+- OFF: default state. Output: no additional PM QoS tightening, no HWP delta.
+- PROBE: entered only when the running task has unexpired amx_probe_until_ns and no definitive window. Output: still no PM QoS tightening and no HWP delta. Purpose: remember that AMX first-use occurred recently while awaiting definitive use.
+- ACTIVE: entered when the running task has unexpired amx_active_until_ns. Output: tighten the per-CPU cpu_device dev_pm_qos resume-latency request to 20 microseconds and apply an HWP desired_perf delta of +6 units.
+- COOLDOWN: entered when amx_active_until_ns has expired but amx_cooldown_until_ns remains unexpired. Output: tighten the per-CPU cpu_device dev_pm_qos resume-latency request to 60 microseconds and apply an HWP desired_perf delta of +2 units.
+- Any state to OFF: immediate when the running task has no unexpired AMX window, when a different task without AMX recency is switched in, when the CPU goes offline, when the system suspends, when AMX is disabled, or when intel_pstate is not in active HWP mode.
+- ACTIVE refresh: every new definitive evidence event resets the task&#x27;s ACTIVE and COOLDOWN expiry windows.
+
+Anti-contamination and migration rules:
+- Definitive evidence is stamped onto the task, not only the source CPU.
+- On switch-out of an AMX task, the source CPU clears any effective owner unless the next task rehydrates the same epoch.
+- On switch-in, the destination CPU reconstructs its effective state solely from the incoming task&#x27;s timestamps and epoch. If the incoming task lacks AMX recency, the CPU enters OFF immediately even if the previous task on that CPU was in ACTIVE or COOLDOWN.
+- This makes the AMX hint task-scoped for provenance but per-CPU for consumption.
+
+Cpuidle control point and contract:
+- At CPU online, create one dev_pm_qos request attached to that cpu_device.
+- Update that request only when the effective AMX state changes. OFF and PROBE map to the default unconstrained value. ACTIVE maps to a 20 microsecond resume-latency target. COOLDOWN maps to a 60 microsecond target.
+- Because cpu-device PM QoS uses minimum semantics, the invention can only tighten the allowed latency relative to the default. If another client is already tighter, nothing is loosened or overridden.
+- On CPU offline or suspend, remove or reset the request so no policy leaks across lifetime events.
+
+HWP control point and contract:
+- Consume the effective AMX state only inside the existing intel_pstate HWP request formation path. No self-scheduled MSR writes are allowed.
+- Start from the baseline request the governor and intel_pstate would already have produced for that update. This is the re-centering step.
+- Bias only desired_perf. Leave EPP, max_perf, and the baseline min_perf unchanged.
+- Compute desired_perf_biased = clamp(baseline_desired_perf + delta, lower = max(baseline_min_perf, user_min_limit), upper = min(baseline_max_perf, thermal_cap, powercap_cap, user_max_limit)), where delta is 0 in OFF or PROBE, +6 in ACTIVE, and +2 in COOLDOWN.
+- If the clamp collapses the delta, the invention has no HWP effect for that update.
+- If baseline logic was already going to issue an HWP MSR write, the biased desired_perf may piggyback on that write without spending budget. If baseline logic would not write, an AMX-caused extra write is permitted only if a per-CPU token bucket has available credit.
+- Token bucket: refill lazily only when intel_pstate already runs, at one token per 10 milliseconds, capped at three tokens. No timer or IPI is created. If no token is available, the baseline request is used and the AMX delta is deferred or dropped.
+
+PMU policy:
+- No PMU signal is required for any claim of the core invention.
+- In an optional dependent embodiment, a model-whitelisted AMX activity counter may extend ACTIVE by at most 250 microseconds only if the event is known reliable for that model and the kernel successfully acquires explicit exclusive ownership of the counter resource; otherwise PMU corroboration is disabled. The core mechanism remains fully functional without PMU input.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>The design has four stages: existing AMX evidence capture, task-carried recency stamping, per-CPU effective-state rehydration, and bounded reuse by cpuidle and HWP.
+
+ASCII overview:
+
+current task
+   |
+   | existing AMX permission / XFD / xstate correctness paths
+   v
++------------------------------+
+|  Evidence capture            |
+|  - AMX permission gate       |
+|  - XFD first-use -&gt; PROBE    |
+|  - saved XTILEDATA -&gt; ACTIVE |
++------------------------------+
+               |
+               | stamp task-local windows only
+               v
++----------------------------------------------+
+| task_struct AMX recency record               |
+| probe_until | active_until | cooldown_until  |
+| epoch                                       |
++----------------------------------------------+
+               |
+               | on schedule-in of that task
+               v
++----------------------------------------------+
+| per-CPU effective AMX PM state               |
+| effective_state | owner_epoch | qos_level    |
+| hwp_tokens | last_token_refill_ns            |
++----------------------------------------------+
+        |                                   |
+        | state transition only             | existing intel_pstate update only
+        v                                   v
++---------------------------+      +--------------------------------+
+| cpu_device dev_pm_qos     |      | baseline HWP request          |
+| OFF/PROBE -&gt; default      |      | desired&#x27; = clamp(base+delta)  |
+| ACTIVE -&gt; 20 us           |      | delta only on ACTIVE/COOLDOWN |
+| COOLDOWN -&gt; 60 us         |      | token-budget extra writes     |
++---------------------------+      +--------------------------------+
+
+Transition table:
+- OFF -&gt; PROBE: running task hits AMX XFD first-use and probe_until not expired.
+- PROBE -&gt; ACTIVE: later switch-out or save path observes saved XTILEDATA in outgoing task.
+- PROBE -&gt; OFF: probe_until expires before definitive evidence.
+- ACTIVE -&gt; ACTIVE: new definitive evidence refreshes active_until and cooldown_until.
+- ACTIVE -&gt; COOLDOWN: active_until expires, cooldown_until still valid.
+- COOLDOWN -&gt; OFF: cooldown_until expires.
+- ANY -&gt; OFF immediately: switch to unrelated task without AMX recency, CPU offline, suspend, AMX disabled, or HWP path unavailable.
+
+Cheapness and correctness constraints:
+- The design never reads xcomp_bv as proof of use, because xcomp_bv expresses enabled layout, not dynamic use.
+- The design never forces XSAVE just to inspect XTILEDATA.
+- The design only tests the xfeatures mask after the existing save path has made that mask authoritative.
+- The per-CPU state is an effective consumption cache, not the source of truth; the task-carried timestamps are the source of truth for provenance and migration correctness.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Add a compact AMX recency record to the task&#x27;s x86 thread or FPU-adjacent metadata: probe_until_ns, active_until_ns, cooldown_until_ns, and epoch.
+2. Add a per-CPU amx_pm_state structure: effective_state, owner_epoch, last_qos_state, hwp_tokens, last_token_refill_ns.
+3. In the existing AMX XFD first-use handler, if the task has AMX permission for XTILECFG and XTILEDATA, set probe_until_ns = now + 250 microseconds. Do not set active_until_ns here.
+4. In the existing FPU or xstate save completion path used on context switch-out, after the saved xfeatures mask is authoritative, test XFEATURE_MASK_XTILEDATA. If set, stamp active_until_ns = now + 2 milliseconds, cooldown_until_ns = now + 6 milliseconds, clear probe_until_ns, and increment epoch. If only XTILECFG is present, do nothing beyond any existing AMX bookkeeping.
+5. In the schedule switch-in path, compute the incoming task&#x27;s effective state from its timestamps: ACTIVE if now &lt; active_until_ns, else COOLDOWN if now &lt; cooldown_until_ns, else PROBE if now &lt; probe_until_ns, else OFF. Write that state to the per-CPU record together with owner_epoch = task epoch. If the task has no recency, write OFF immediately.
+6. Wire state transitions to one cpu_device dev_pm_qos request per CPU. Create the request in CPU hotplug online, update it only on state changes, and remove or reset it on CPU offline and suspend.
+7. Extend the existing intel_pstate HWP request assembly path to snapshot the current CPU&#x27;s effective AMX state with READ_ONCE, compute the baseline request first, then apply the desired_perf-only delta and final clamp ordering. Reuse existing locking or serialization in intel_pstate for the final request write path.
+8. Implement the per-CPU token bucket in the HWP path itself. Refill tokens lazily from elapsed time since last_token_refill_ns. Allow piggyback on an already-needed baseline write without consuming a token. Only AMX-caused extra writes consume tokens.
+9. Add suppression checks: feature disabled when CPU lacks AMX, when AMX is administratively disabled, when intel_pstate is not in active HWP mode, or during hotplug and suspend transitions.
+10. Keep the fast path small. Non-AMX tasks should incur only a zero-metadata branch on switch-in; non-definitive AMX tasks should incur at most the existing XFD work plus timestamp stores; definitive evidence adds only one bit-test on an already-available xfeatures mask and a small metadata update.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Functional evidence ladder test: run an AMX-enabled process that requests permission but never executes tile instructions; confirm the state remains OFF. Then execute one AMX first-use fault without subsequent XTILEDATA save; confirm PROBE appears briefly but no cpuidle tightening or HWP delta is emitted. Then run a real tiled microkernel and confirm ACTIVE is entered only after saved XTILEDATA is observed.
+2. Migration contamination test: run an AMX microburst task on CPU A, migrate it to CPU B, and schedule an unrelated scalar workload on CPU A. Confirm CPU A drops to OFF immediately for the scalar task and CPU B rehydrates ACTIVE or COOLDOWN only for the migrated AMX task.
+3. Cpuidle behavior test: with ftrace or tracepoints, verify that the cpu_device dev_pm_qos request changes only on AMX state transitions and that governors avoid states whose exit latency exceeds the ACTIVE or COOLDOWN target while leaving tighter third-party QoS requests untouched.
+4. HWP composition test: compare baseline and biased IA32_HWP_REQUEST formation under user min or max constraints, thermal throttling, and powercap. Confirm desired_perf is the only field altered by the invention, that clamp ordering preserves all preexisting bounds, and that no write occurs when the clamp removes the delta.
+5. Write-budget test: create a workload that would cause frequent AMX recency but little baseline HWP churn. Confirm the token bucket caps AMX-caused extra writes to three burst writes and then at most one additional write per 10 milliseconds thereafter, while piggyback writes remain allowed.
+6. No-forced-XSAVE test: instrument the relevant xstate save path to confirm the mechanism never triggers an extra save solely for inspection and only reads xfeatures after the existing save path has already updated it.
+7. Hotplug and suspend test: online and offline CPUs and cycle suspend or resume while AMX tasks are present. Confirm all per-CPU effective states reset to OFF and dev_pm_qos requests are removed or restored to default with no stale tightening.
+8. Performance and energy study: benchmark bursty AMX GEMM or convolution loops with 200 microsecond to 3 millisecond gaps, measure tail latency to next-burst completion, idle-state residency, HWP request traces, package energy, and average power. Compare baseline, cpuidle-only, HWP-only, and combined invention modes to show that the shared AMX-specific abstraction delivers the intended alignment benefit.
+9. Regression study on non-AMX workloads: run scheduler-intensive scalar and AVX workloads and confirm the added overhead is negligible and that no state transitions or PM actions are emitted absent AMX evidence.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>A computer-implemented power-management method for an AMX-capable processor, comprising: recording, for a task, a non-definitive AMX probe window in response to an AMX first-use event handled by an existing XFD path; recording, for the task, a definitive AMX active window only in response to detecting XTILEDATA usage in a saved xstate representation produced by an existing save path; reconstructing, on a CPU running the task, an effective per-CPU AMX power state from the task&#x27;s recorded windows; tightening a per-CPU cpu_device resume-latency QoS request only when the effective per-CPU AMX power state is ACTIVE or COOLDOWN; and biasing an HWP request only when an existing intel_pstate HWP update path executes, wherein the HWP bias is additive relative to a baseline request for that update and is clamped below existing user, governor, thermal, and power-limit constraints.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the AMX first-use event and AMX permission are insufficient to create the ACTIVE state, and wherein XTILECFG without XTILEDATA is insufficient to create the ACTIVE state.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the effective per-CPU AMX power state is cleared immediately for an unrelated task on context switch-in, and wherein a migrated AMX task rehydrates the effective per-CPU AMX power state on a destination CPU from task-carried recency metadata, thereby preventing a source CPU from boosting a later unrelated workload.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the HWP bias alters only desired_perf, is recomputed from a newly computed baseline request on each HWP update, and any HWP write caused solely by the AMX bias is permitted only if a per-CPU token budget has available credit replenished without a periodic timer.</li><li style='margin-bottom:8px;'>The method of claim 1, wherein the per-CPU cpu_device resume-latency QoS request is created on CPU online, updated only on effective AMX state transitions, and removed or reset on CPU offline or system suspend so that no AMX-derived policy persists across hotplug or suspend lifetimes.</li><li style='margin-bottom:8px;'>A system comprising an AMX-capable x86 processor and a Linux kernel configured to execute the method of any preceding claim without requiring a PMU activity counter, without creating a new userspace ABI, and without forcing XSAVE operations solely for power-management inference.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>Risk: saved xstate may be stale if inspected before the kernel has materialized it from registers. Mitigation: inspect XTILEDATA only after the normal save completion path has already made the saved xfeatures mask authoritative; never force XSAVE for this feature.</li><li style='margin-bottom:6px;'>Risk: XFD first-use could create false positives if treated as definitive AMX activity. Mitigation: XFD only creates PROBE, which has no cpuidle or HWP output; ACTIVE requires later saved XTILEDATA evidence.</li><li style='margin-bottom:6px;'>Risk: per-CPU boosting could leak to unrelated workloads after a context switch or task migration. Mitigation: make task-carried recency timestamps the source of truth and reconstruct the effective per-CPU state only from the currently running task; clear OFF immediately for unrelated tasks.</li><li style='margin-bottom:6px;'>Risk: HWP bias may race with existing intel_pstate updates or policy changes. Mitigation: compute the AMX delta only inside the existing intel_pstate HWP request assembly path from a per-CPU snapshot, then apply final clamp ordering before the normal write decision.</li><li style='margin-bottom:6px;'>Risk: excessive HWP writes could create overhead or be viewed as routine aggressive tuning. Mitigation: no self-scheduled writes, piggyback on baseline writes when possible, and gate any AMX-caused extra write with a lazy per-CPU token bucket.</li><li style='margin-bottom:6px;'>Risk: PMU-based corroboration may conflict with perf, watchdogs, or model-specific counter availability. Mitigation: exclude PMU from the core invention entirely; if used in a dependent embodiment, require explicit exclusive ownership and a model whitelist with automatic fallback to the architectural path.</li><li style='margin-bottom:6px;'>Risk: prior-art overlap with generic boost heuristics or ISA-aware throttling. Mitigation: emphasize the claim limitations requiring the AMX-specific evidence ladder, the saved XTILEDATA definitive gate, task-carried provenance to prevent migration leakage, baseline-relative HWP re-centering, and the hard write budget.</li><li style='margin-bottom:6px;'>Risk: fixed timing windows may be suboptimal across platforms. Mitigation: describe the windows as internal kernel constants or model-tuned defaults while preserving the claim&#x27;s relative structure of non-definitive PROBE, bounded ACTIVE, and bounded COOLDOWN.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Intel 64 and IA-32 Architectures Optimization Reference Manual, sections covering Intel Advanced Matrix Extensions and matrix-like multiply or convolution mappings.</li><li>Intel architecture documentation for HWP request fields and IA32_HWP_REQUEST behavior.</li><li>Linux x86 FPU, xstate, and XFD support paths, including AMX permissioning and dynamic xfeature first-use handling.</li><li>Linux cpu_device dev_pm_qos and PM QoS infrastructure used by cpuidle governors.</li><li>Linux intel_pstate HWP request formation and policy limit composition.</li><li>Linux CPU hotplug and suspend or resume lifecycle hooks relevant to per-CPU state teardown and reinitialization.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft does not yet define a concurrency-safe, kernel-correct point to read/interpret XTILECFG/XTILEDATA from task fpstate without risking stale data, lock inversions, or reading fpstate while it is being modified (lazy-FPU, context-switch save/restore, or signal/ptrace paths).</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact locking/serialization for accessing `task-&gt;thread.fpu.fpstate`/xsave header bits (XTILECFG/XTILEDATA). You must not read fpstate concurrently with save/restore or user-triggered FPU state manipulation. Specify whether you rely on task switch path guarantees, `fpregs_lock()`, `fpu_lock`, or a documented post-save point where the memory image is stable.</li><li style='font-size:13px;margin-bottom:4px;'>Be explicit about which xstate image you trust: the in-memory xsave buffer can be stale if the state is still resident in registers (lazy restore/save models). Your text claims “already materialized after normal save path” but does not guarantee the read always occurs after that save; you need a hard rule: only sample immediately after `fpu__save()` (or equivalent) on switch-out, never on arbitrary switch-in.</li><li style='font-size:13px;margin-bottom:4px;'>Owner-qualification/migration safety needs a concrete lifetime model. If you store an epoch cookie in `task_struct`, you must handle task exit/free and PID reuse safely, and ensure per-CPU state cannot retain a pointer/identity to a freed task. Prefer storing only scalar IDs (e.g., a monotonically increasing per-task cookie) and clear state on `sched_switch`, `sched_process_exit`, and CPU hotplug.</li><li style='font-size:13px;margin-bottom:4px;'>Your “lockless per-CPU descriptor publication” needs a real synchronization primitive. If readers exist in intel_pstate update paths and writers exist in scheduler/context-switch paths, specify either per-CPU variables with preemption disabled, or seqcount/RCU with the exact writer rules. “READ_ONCE/seqcount-style” is insufficient—state what is protected, and prove readers cannot observe torn multi-field updates.</li><li style='font-size:13px;margin-bottom:4px;'>The cpuidle side must not call into any path that can sleep or take device locks from contexts that might be atomic. If you update a `dev_pm_qos_request` from scheduler hooks, document the callsites and confirm `dev_pm_qos_update_request()` (or the chosen API) is safe there; otherwise queue work to a safe context.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define (and prove) the exact correctness point where XTILEDATA evidence is read: you must only promote to ACTIVE after the outgoing task’s XSAVE buffer is guaranteed materialized (post-save path). Specify the exact hook(s) (e.g., context-switch save completion) and the memory ordering/READ_ONCE rules so you never read stale xfeatures bits while state is still live in registers.</li><li style='font-size:13px;margin-bottom:4px;'>Owner-qualification needs a concrete, race-safe identity model: specify what “owner epoch” is (task_struct pointer? pid? context-switch sequence cookie?) and how you prevent false carryover across exec/fork, task reuse, migration, and preemption. Include explicit clearing rules on switch to a non-owner runnable task vs switch to idle, and show how this interacts with NOHZ/full-dynticks and remote wakeups.</li><li style='font-size:13px;margin-bottom:4px;'>cpuidle integration is currently hand-wavy: name the precise mechanism you’ll steer (device PM QoS vs CPU latency QoS) and show that the chosen cpuidle governor actually consumes that constraint in state selection. If it’s a cpu_device dev_pm_qos resume-latency request, cite the exact lookup path used by menu/teo; otherwise this risks collapsing into known PM QoS latency tuning prior art.</li><li style='font-size:13px;margin-bottom:4px;'>HWP bias composition must be nailed down to avoid obvious prior-art overlap with existing intel_pstate heuristics: specify the exact fields you will touch (desired_perf only vs min_perf too), and the clamp ordering relative to user min/max, EPP, thermal, RAPL/powercap, and governor limits. If you touch min_perf, justify novelty vs existing min_perf boosting and ensure you cannot violate admin-set floors/ceilings.</li><li style='font-size:13px;margin-bottom:4px;'>The “token-bucket write budget” needs concrete semantics: where is the budget decremented (on MSR write attempt vs successful change), what refills it (time source), and how you guarantee no extra periodic work/wakeups. Without a precise definition, this looks like standard rate-limiting of an already-existing update path.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact kernel hook points and required invariants for “saved XTILEDATA evidence”: which functions update `task-&gt;thread.fpu.fpstate` and when is `xfeatures` guaranteed coherent without forcing XSAVE? Add a concrete rule like “only sample after context-switch save completion” (and name the symbols) to avoid reading stale-in-register tile state.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the ownership/migration model precisely: what is the task-carried metadata key (e.g., per-task epoch + cpu sequence), when is it cleared (exec/clone/fork?), and how do you prevent misattribution on fast migrations and lazy-FPU paths. Provide a minimal state machine table (OFF/PROBE/ACTIVE/COOLDOWN transitions, timeouts, and reset conditions).</li><li style='font-size:13px;margin-bottom:4px;'>Clarify cpuidle integration: “tighten CPU-device PM QoS latency bound” must map to a concrete interface (cpu_device dev_pm_qos vs per-cpu `pm_qos_request` vs governor latency constraint). State whether this affects menu governor target residency selection and how you prevent global QoS pollution or regressions for non-AMX latency-sensitive workloads.</li><li style='font-size:13px;margin-bottom:4px;'>On intel_pstate/HWP: be explicit about which fields you bias (`desired_perf` only vs `min_perf` too) and why. Biasing `min_perf` can materially raise steady-state power on Xeon; if you keep `min_perf` untouched, explain how you still get first-burst latency wins. Also define clamping order relative to user limits, thermal/powercap, and EPP logic in the actual compose/write path.</li><li style='font-size:13px;margin-bottom:4px;'>Make the token-bucket/write-budget enforcement concrete: token refill rate, burst size, and what constitutes a “token spend” (MSR write attempted vs value changed). Ensure correctness under concurrent updates (irq/workqueue) and show it cannot increase MSR write rate beyond existing intel_pstate cadence.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define and enforce the exact safety contract for reading `task-&gt;thread.fpu.fpstate` xfeatures (XTILECFG/XTILEDATA): access must occur only when the outgoing task’s state is guaranteed resident in memory and stable (correct locking/serialization vs lazy FPU, in-progress save, RT/preempt), otherwise you risk stale reads or hard-to-debug corruption.</li><li style='font-size:13px;margin-bottom:4px;'>Address cross-task/tenant side-channel + DoS risk: cpuidle latency tightening and HWP bias can be inferred by other workloads via frequency/latency observations, and an attacker could burn the token budget to force extra MSR writes/power. Add explicit policy controls (default-off in untrusted multi-tenant or require admin enable), ensure immediate clear on any non-owner switch, and consider SMT sibling implications.</li><li style='font-size:13px;margin-bottom:4px;'>Spell out intel_pstate/HWP composition ordering precisely: apply bias only after the baseline is fully composed, then clamp against *all* existing user/governor/thermal/powercap constraints; avoid touching max_perf/EPP; and guarantee no additional MSR writes when the post-clamp value is unchanged (to protect stability and MSR write rate).</li><li style='font-size:13px;margin-bottom:4px;'>Clarify cpuidle integration: a per-CPU `dev_pm_qos` resume-latency request can unintentionally override governor residency choices; bound ACTIVE/COOLDOWN windows, never tighten beyond user QoS constraints, and document/verify behavior across cpuidle governors and tick/nohz to avoid regressions.</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug/suspend/migration corner cases need a concrete state machine: handle CPU offline while owner task migrates, epoch/cookie rollover, and ensure QoS request lifetime is correct (no leaks/use-after-free) across CPU online/offline and suspend/resume ordering.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact serialization point in intel_pstate where you capture/update the “moving baseline” and apply deltas. Today multiple actors can trigger HWP writes (governor updates,</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Don’t read perf/PMU counters from contexts that can’t sleep or that can be preempted unpredictably. Specify whether counter reads happen in a periodic worker, in the existing update</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify domain alignment: Intel HWP/EPP programming is often per-logical-CPU but policy decisions are per-cpufreq policy (shared package/cluster constraints). A per-CPU “phase” must</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Hotplug and suspend/resume correctness: baseline re-centering and phase state must be reset or migrated safely on CPU offline/online and across driver re-init. Otherwise you risk st</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] MSR-write budgeting/rate limiting must be tied to the actual intel_pstate update cadence and existing deferred work. If you add extra writes on top of normal utilization-driven upda</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify the cpuidle constraint mechanism: most PM QoS latency knobs (e.g., PM_QOS_CPU_DMA_LATENCY) are global/system-wide, not per-CPU. If you truly need per-CPU behavior, specify t</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact, safe point to read AMX “definitive use” evidence. Reading task xstate bits at context-switch boundaries is only valid after the kernel has actually saved the outgo</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Scheduler hot-path safety: any state-machine update on context switch must be O(1), non-blocking, and must not take sleeping locks. Specify which locks are held (rq lock, preempt di</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prevent cross-task misattribution on a CPU: a per-CPU hysteresis can accidentally bias cpuidle/HWP for the *next* task after a switch. You need an explicit rule for clearing/decayin</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] XFD/first-use semantics: an XFD fault indicates attempted access to a dynamic xfeature, not sustained tile compute. If you use it as definitive evidence, constrain it (e.g., require</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux power management using x86 AMX microarchitecture features
+</footer>
+</div></body></html>

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[0/4 ★ 4.0] Topology-Keyed Managed-MSI Effective-Destination Evacuation </title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-08cdccadf4f4 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 0/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Topology-Keyed Managed-MSI Effective-Destination Evacuation Coupled to Commit-After-Success Wake-Deadline Publication for Delivery-Limited Power-Island Idle Residency</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux power management using x86 APIC microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>Topology-Derived x2APIC Power Domains for Cluster-Scoped Idle Consolidation</li><li style='font-size:13px;'>PM QoS to LAPIC TSC-Deadline Translation Layer for C-State-Aware Timer Programming</li><li style='font-size:13px;'>APIC Pending-Vector Quiet Windows for Predictive cpuidle Admission</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: ITG3200_REG_POWER_MANAGEMENT &lt;&gt; Towards Energy-Proportional Computing Using Subsystem-Level Power   Management
+  MMR Score:    0.7745</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>Construct a hotplug-versioned Linux power-island object from package, die, and LLC topology; when a kernel-observable detector shows that deep idle is being blocked primarily by interrupt delivery rather than runnable work, temporarily retarget only eligible managed MSI/MSI-X interrupts to an outside-island housekeeping anchor through the normal x86 effective-destination path (direct x2APIC destination update or interrupt-remapping IRTE update), and permit the deeper cpuidle choice only when tick/nohz has already published a commit-after-success earliest-wake snapshot keyed by topology, CPU-hotplug, and clockevent generations.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The invention is a coupled kernel system, not two unrelated tweaks. Its first half is a topology-keyed, rollback-safe managed-interrupt evacuation manager that moves only Linux-eligible managed MSI/MSI-X vectors out of a</div>
+    <div class="pill"><strong>Feasibility:</strong> The design is implementable with existing Linux and x86 machinery: topology from ACPI PPTT and x86 package, die, and LLC masks; cpuidle governor feedback and driver state tables; h</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Deep package, die, or LLC-cluster idle residency is often blocked not by runnable work but by interrupt delivery landing on CPUs inside an otherwise quiescent island. Linux has cpuidle, nohz, topology, irq affinity, MSI management, interrupt remapping, and timer broadcast machinery, but it lacks a topology-keyed runtime state machine that: (a) defines a power island concretely in Linux-visible terms; (b) distinguishes delivery-limited idle loss from activity-limited idle loss using kernel-observable evidence; (c) evacuates only safe managed MSI/MSI-X interrupts to effective destinations outside the island under concurrent affinity writers, hotplug, device removal, and vector migration; and (d) gives cpuidle a formally correct committed-next-expiry bound that remains valid across local-timer versus broadcast-timer ownership changes and clockevent replacement.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>N/A</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>N/A</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>{&#x27;risk&#x27;: &#x27;Upstream review resistance because the proposal spans cpuidle, tick, irqcore, and x86.&#x27;, &#x27;mitigation&#x27;: &#x27;Ship as the three modular patch series described above with hard interfaces and independent value.&#x27;}</li><li style='margin-bottom:6px;'>{&#x27;risk&#x27;: &#x27;Locality-sensitive queues may lose performance if retargeted too aggressively.&#x27;, &#x27;mitigation&#x27;: &#x27;Use conservative eligibility, ranked nearby anchors, optional driver quiet hints, minimum dwell, and immediate rollback on utilization rise.&#x27;}</li><li style='margin-bottom:6px;'>{&#x27;risk&#x27;: &#x27;Timer publication races could create false residency opportunity.&#x27;, &#x27;mitigation&#x27;: &#x27;Use commit-after-success publication only, explicit invalidation on device exchange and hotplug, and seqcount plus generation rejection.&#x27;}</li><li style='margin-bottom:6px;'>{&#x27;risk&#x27;: &#x27;Virtualization or posted interrupts may violate host ownership assumptions.&#x27;, &#x27;mitigation&#x27;: &#x27;Treat guest-forwarded or posted-interrupt-backed IRQs as explicitly ineligible.&#x27;}</li></ul></section>
+
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">0/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft asserts the contract is written/consumed strictly locally, but broadcast-timer arming and clockevent routing can be decided/armed under global tick-broadcast state and may involve remote CPUs; without a precise writer/ownership model, you risk publishing a per-CPU contract that is stale, remotely-written without proper ordering, or contradicts the actual wake route.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact publish points and success criteria: e.g., only after the relevant -&gt;set_next_event() (local) or tick_broadcast_set_event()/broadcast device programming (broadcast) returns success, and ensure failures/deferrals clear or bump an epoch. Today the draft says &#x27;post-success&#x27; but doesn’t pin to concrete call sites/return paths, which is where timer-route races actually live.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the writer/serialization model for seqcount: which contexts can write (hardirq, softirq, idle, process), which locks (clockevents_lock, tick_broadcast_lock) are held, and whether writers can be preempted/NMI-interrupted. If you rely on &#x27;reader has IRQs disabled&#x27;, you must still ensure writers cannot run concurrently on another CPU writing the same per-CPU record (broadcast routing is the obvious pitfall).</li><li style='font-size:13px;margin-bottom:4px;'>Make the timebase conversion precise and auditable: the contract claims CLOCK_MONOTONIC bounds, but clockevents are programmed in device cycles/ktime with various bases. You need a defined conversion point (ktime in nanoseconds) and a rule for TSC-deadline vs broadcast devices, plus what happens across suspend/resume (monotonic vs boottime semantics) so cpuidle never trusts a bound that can go backwards or become meaningless.</li><li style='font-size:13px;margin-bottom:4px;'>Handle CPU hotplug and clockevent replacement transitions rigorously: enumerate the invalidation epochs for CPU_DYING/DEAD, clockevents_exchange_device(), tick_broadcast_enter/exit, and nohz mode transitions. Require generation checks that prevent cpuidle from using a contract that predates a device swap or broadcast takeover, even if the seqcount snapshot is internally consistent.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify interaction with NO_HZ_FULL/isolcpus/housekeeping and tick dependency: cpuidle consuming the contract &#x27;strictly locally&#x27; must not reintroduce cross-CPU polling, but it also must not assume a local tick that has been offloaded. Document how the contract encodes &#x27;who owns the wake&#x27; when the CPU is isolated and wake is delivered via broadcast.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>You must sharply distinguish the “committed-expiry contract” from existing kernel state (e.g., clock_event_device::next_event, per-CPU tick_device bookkeeping, and tick_nohz_* exported sleep-length helpers). Add a concrete race/bug scenario showing why current fields are insufficient (e.g., clockevent exchange + broadcast enter/exit causing cpuidle to observe an uncommitted or superseded next_event).</li><li style='font-size:13px;margin-bottom:4px;'>Define the exact contract schema and invariants: fields, timebase (ns vs ktime_t), meaning of “committed bound” vs “armed expiry”, and the publication protocol (seqcount writer rules, memory ordering, and explicit generation/epoch bump rules). Include explicit rules for rejecting snapshots across (a) clockevents_exchange_device(), (b) tick_broadcast_* route flips, and (c) CPU hotplug/suspend transitions without storing unsafe pointers to clockevent devices.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the complete set of commit points and failure handling: where you publish on successful local APIC deadline programming vs successful broadcast arming, what happens on -ETIME/-EINVAL/-EBUSY returns, and how you prevent “publish-before-accept” in paths that may reprogram or cancel events immediately after programming.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify cpuidle consumption semantics and safety: exactly which idle-entry sites read it, under what context (IRQs disabled, preempt off), and how it interacts with NO_HZ_FULL, dynticks, and virtualization/guest modes. Provide a fallback path definition (when absent/stale) and ensure no new cross-CPU reads/polling are introduced.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten claim scope: keep Draft #2 narrowly centered on the committed-expiry contract; treat MSI evacuation and IRQ-quiet hints as separate dependent claims (or separate filings). Over-bundling increases prior-art overlap with existing IRQ affinity management + package C-state tuning work.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:2</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact commit points and required invariants: enumerate which paths count as “successful arming” (local APIC/TSC-deadline vs broadcast oneshot vs device swap) and specify what must be true at publish time (e.g., timer is armed in hardware or broadcast owner has accepted responsibility) to avoid publishing a contract that cpuidle will over-trust.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the timebase semantics precisely: if the contract is in CLOCK_MONOTONIC, document conversion rules from device-specific domains (ktime vs cycles) and how you guarantee monotonic correctness across suspend/resume, TSC instability, or clocksource changes; otherwise narrow scope to ktime_t (monotonic raw) and state constraints.</li><li style='font-size:13px;margin-bottom:4px;'>Make the generation/epoch model concrete: define which events bump which generations (CPU hotplug states, clockevents_exchange_device, tick_broadcast_enter/exit, suspend/resume, nohz mode toggles) and provide reader-side acceptance rules so cpuidle can deterministically reject stale or cross-route snapshots without cross-CPU reads.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify memory-ordering and lockless-read mechanics: choose seqcount vs raw_seqcount_t (or local-lock + seqcount) and document writer contexts (hardirq vs process vs stop_machine/hotplug) to ensure readers with IRQs disabled cannot livelock or observe torn route metadata.</li><li style='font-size:13px;margin-bottom:4px;'>If pairing with managed MSI/MSI-X evacuation, tighten the eligibility and rollback rules: explicitly list which IRQ types are movable (managed MSI/MSI-X only), how you exclude wakeup-critical, per-cpu, or isolated-CPU-bound vectors, and how you verify effective affinity on both x2APIC and interrupt-remapping (IRTE) systems before allowing deeper package C-states.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:0</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft asserts race-safety/compatibility but does not yet specify the exact commit points, invalidation epochs, memory-ordering rules, and data model (no pointers) needed to guarantee no stale timer-route state is consumed in idle across hotplug/suspend/clockevent exchange.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the contract’s publication semantics precisely: which exact functions constitute “post-success commit points” for local and broadcast arming (including all error/early-return paths), and what fields must be written atomically under seqcount so cpuidle can never observe a mixed route/expiry/generation state.</li><li style='font-size:13px;margin-bottom:4px;'>Avoid storing raw pointers (e.g., clock_event_device*, broadcast device, route owner structs) in the published snapshot; use stable IDs (enum route type + CPU + device name hash or monotonic generation) to prevent UAF when clockevents are exchanged or devices are freed during hotplug/suspend.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the timebase conversion guarantees: if you store expiry in CLOCK_MONOTONIC, document exactly where the monotonic timestamp is captured relative to programming (ktime_get_* variant), how you handle TSC deadline vs device delta modes, and how you avoid negative/overflow conversions on 32-bit or when NOHZ uses different units.</li><li style='font-size:13px;margin-bottom:4px;'>Spell out the invalidation model across CPU hotplug and suspend/resume: enumerate the CPUHP states where the contract must be invalidated, how generation bumps are ordered vs device swap, and how cpuidle must treat ‘in transition’ states (always conservative) to avoid deep-idle entry with a stale earlier wake bound.</li><li style='font-size:13px;margin-bottom:4px;'>Prove the reader-side safety constraints: cpuidle reads with interrupts disabled, but writers may run in hardirq/softirq/process contexts depending on path; document preemption/IRQ constraints for write_seqcount_* usage and add explicit barriers if any writer can run on a different CPU or if fields are updated outside the seqcount critical section.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the precise publisher(s) and ordering: identify the single place(s) where Linux has *already committed* the next expiry (local and/or broadcast) and publish the contract ther</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the synchronization primitive and contexts: if using seqcount/per-CPU sequence, state whether writers run with interrupts disabled, preemption disabled, or under tick/clocke</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Handle device/broadcast replacement races explicitly: clockevent switch (oneshot &lt;-&gt; periodic), tick broadcast enable/disable, CPU hotplug, and tick_nohz state changes must bump an </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Prove the time-domain invariant across conversions: define what clock domain the contract uses (ktime vs device cycles) and how you avoid rounding that violates “never later than co</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify interaction with NOHZ-full and housekeeping: cpuidle entry on NOHZ-full CPUs, remote tick dependencies, and stop_machine-like scenarios need a defined behavior. If the contr</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact writer/reader concurrency model and required barriers: if cpuidle reads locklessly (likely with IRQs disabled) while writers run from timer/tick paths, you must spe</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The proposal claims a “never later than committed-expiry” invariant but doesn’t state which timebase is authoritative (ktime_get_mono_fast_ns vs CLOCK_MONOTONIC vs raw/tsc-based) no</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Broadcast ownership transitions are underspecified: tick_broadcast (and NOHZ) has non-trivial state transitions during idle entry/exit and CPU hotplug; you must describe how the sna</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] CPU hotplug/suspend/resume safety: you need an explicit invalidation protocol for the per-CPU contract on CPU_DOWN_PREPARE/CPU_DEAD and clockevent replacement (clockevents_exchange_</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify where the snapshot is committed (the only legal publish points): if you publish before clockevents_program_event() succeeds (or before the broadcast device accepts the event</li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux power management using x86 APIC microarchitecture features
+</footer>
+</div></body></html>

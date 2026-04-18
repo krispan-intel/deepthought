@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>[1/4 ★ 4.0] Epoch-Safe PEBS Data-Source Attribution and Managed-IRQ Affi</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:20px;margin:0 0 10px;} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 10px;}
+    h3{font-size:14px;color:var(--muted);margin:14px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-block;margin:2px 4px 0 0;font-size:12px;}
+    .muted{color:var(--muted);} .stars{color:var(--star);}
+    ul,ol{margin:6px 0 0 18px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:7px 5px;font-size:13px;}
+  </style>
+</head>
+<body><div class="wrap">
+
+<div style="background:#f59e0b;color:#fff;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:12px;opacity:.85;">run-94d16eb9f5d4 &nbsp;|&nbsp; 3 DP rounds &nbsp;|&nbsp; 1/4 APPROVE &nbsp;|&nbsp; Avg 4.0/5</div>
+  <div style="font-size:18px;font-weight:700;margin-top:4px;">REVISE — fatal_flaw_revise</div>
+</div>
+
+<section class="card">
+  <h1>Epoch-Safe PEBS Data-Source Attribution and Managed-IRQ Affinity Transactions for blk-mq Completion Queues</h1>
+  <div class="muted" style="font-size:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px;margin-top:6px;">
+    <div><strong>Target:</strong> Optimize Linux block I/O using x86 PEBS microarchitecture features</div>
+    <div><strong>Generated:</strong> 2026-04-18</div>
+    <div><strong>System:</strong> DeepThought TVA</div>
+  </div>
+  <h3>Original Maverick Drafts</h3><ul><li style='font-size:13px;'>PEBS-scoped blk-mq Stall Translation Layer for Closed-Loop Dispatch Tuning</li><li style='font-size:13px;'>PEBS-derived Completion Coherency Translator for blk-mq and MSI-X Queue Affinity</li><li style='font-size:13px;'>PEBS-classified Folio-to-Bio Assembly Governor for Readahead and Plugging</li></ul>
+  <h3>Void Signal</h3><pre style="font-size:11px;background:#f8f9fa;padding:8px;border-radius:6px;white-space:pre-wrap;">Void #1: intel_opt_manual | APPLICATION PERFORMANCE TOOLS &lt;&gt; intel_opt_manual | USING PERFORMANCE MONITORING EVENTS
+  MMR Score:    0.7649</pre>
+</section>
+
+<section class="card">
+  <h2>1. Executive Summary</h2>
+  <h3>One-Liner</h3><div style='white-space:pre-wrap;line-height:1.7;'>An x86/Linux kernel mechanism that captures validated PEBS DS records at the perf drain point, binds each sample in NMI context to a compile-time `region_uid` plus generation-safe blk completion source cookies using per-CPU scope stacks and `(cpu, pmu_epoch, ctx_seq)`, converts Intel `PERF_SAMPLE_DATA_SRC` into a bounded `data_src_class`, and only when objective quality and IRQ-eligibility rules hold performs managed-mask-constrained `irq_set_affinity_and_hint()` transactions with ownership arbitration, dwell time, and automatic rollback.</div>
+  <div style="margin-top:8px;">
+    <div class="pill"><strong>Novelty:</strong> The inventive step is not merely using PMU data to retarget interrupts. The novelty is an inseparable kernel control contract with six cooperating elements: (1) consumption of validated x86 PEBS DS records at the perf/x8</div>
+    <div class="pill"><strong>Feasibility:</strong> The design is implementable as a bounded kernel feature: a small arch/x86 PEBS drain hook after perf has validated the DS record, preallocated per-CPU scope stacks and tuple rings </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Technical Invention Disclosure</h2>
+  <h3>2.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux blk-mq exposes queue depth, completion counts, and request latency, but it does not natively know whether completion execution for a given hardware queue is suffering remote-cache, remote-DRAM, or HITM-heavy memory behavior on the CPU that is actually servicing that completion path. Existing PEBS and perf facilities can sample these effects, yet they are architected as profiling tools and not as a kernel control input with correctness boundaries. The missing mechanism is a kernel-owned path that: (a) consumes only validated PEBS DS records rather than relying on interrupted RIP assumptions, (b) maps each record in NMI context to a stable tuple `{region_uid, source_cookie, hctx_cookie, cpu, pmu_epoch, ctx_seq, data_src_class}` without leaking attribution across nested interrupts, threaded handlers, softirq/NAPI callbacks, poll loops, migration, or CPU hotplug, (c) defers any blk-mq and IRQ resolution until process context and revalidates against live generations before acting, (d) applies only to truly dedicated managed completion IRQs that satisfy irq core rules, and (e) disables itself whenever PEBS quality is insufficient because of multiplexing, throttling, lost records, unsupported `data_src` bits, or external policy conflicts. Without that contract, PMU-driven IRQ steering is too error-prone for production kernels.</div>
+  <h3>2.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Prior art falls into four buckets, none of which provides the claimed mechanism. First, perf, PEBS, perf c2c, BPF, tracepoints, and kallsyms-based tools collect samples and can reveal memory-source locality, but they do not define an in-kernel actuation contract with validated DS-record capture, generation-safe blk source identities, or managed-IRQ constrained transactions. Second, irqbalance, manual `/proc/irq/*/smp_affinity` control, and driver-specific NVMe or MSI-X affinity logic steer interrupts using topology and load information, not a kernel-owned PEBS tuple that is revalidated against live blk-mq state before every decision. Third, static keys, tracepoints, BTF-based attribution, or generic code annotations can identify code regions, but they do not define a compile-time `region_uid` scheme with collision handling, module-build scoping, auditability, and NMI-safe scope stacks that survive nesting and hotplug. Fourth, research on interrupt steering and cache-aware placement generally teaches feedback control or topology heuristics, not the particular combination of `PERF_SAMPLE_DATA_SRC` classification, `(cpu, pmu_epoch, ctx_seq)` state isolation, tombstone-safe deferred revalidation, OFF/DEGRADED/ON signal gating, and ownership-aware managed-affinity transactions. The novel boundary is therefore the inseparable contract of tuple capture at validated PEBS drain, deferred revalidation against live blk/IRQ generations, quality-gated eligibility, and rollback-safe managed affinity control.</div>
+  <h3>2.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>The invention has six coordinated mechanisms.
+
+1. Validated PEBS drain capture and bounded `data_src_class` mapping. A hook at the x86 PEBS DS-record completion path consumes only records already accepted by perf as precise and non-corrupt. The hook reads `perf_sample_data::data_src` and classifies it into a bounded class set: `LOCAL_CORE_CACHE` for `PERF_MEM_LVL_L1`, `PERF_MEM_LVL_L2`, or `PERF_MEM_LVL_LFB` hits; `LLC_LOCAL` for `PERF_MEM_LVL_L3` hits without remote indication; `LOCAL_DRAM` for `PERF_MEM_LVL_LOC_RAM`; `REMOTE_CACHE` for `PERF_MEM_LVL_REM_CCE1` or `PERF_MEM_LVL_REM_CCE2`; `REMOTE_DRAM` for `PERF_MEM_LVL_REM_RAM1`, `PERF_MEM_LVL_REM_RAM2`, or RAM plus `PERF_MEM_REMOTE_REMOTE`; `HITM_LOCAL` or `HITM_REMOTE` when `PERF_MEM_SNOOP_HITM` is set, split by remote indication; `PMEM_OR_CXL` for `PERF_MEM_LVL_PMEM`; and `UNKNOWN` otherwise. If the PMU model lacks remote or HITM qualifiers, the mapping collapses to `COARSE_CACHE` or `COARSE_RAM`, the quality state cannot rise above DEGRADED, and actuation is disabled.
+
+2. Compile-time `region_uid` registry. Completion-path annotations use a macro such as `DECLARE_BLK_PEBS_REGION(name, path_type)` that emits a constant descriptor into a dedicated linker section. Each descriptor carries `{module_build_id64, source_file_crc32, local_region_index16 from __COUNTER__, path_type8, start_ip, end_ip}`. At boot or module load, the kernel sorts descriptors, rejects duplicate tuples before hashing, and computes a 128-bit `region_uid = SipHash(build_id || source_file_crc32 || local_region_index || path_type)`. Because module build ID is part of the key, IDs intentionally change across kernel or module rebuilds; there is no cross-upgrade ABI promise, which prevents stale persistent mappings from being reused after upgrades. The registry is read-only, emitted into the build manifest, and exported only for audit via a read-only kernel view, never as a hot-path control plane.
+
+3. Generation-safe blk completion-source registry. Each steerable `blk_mq_hw_ctx` registers a source entry `{source_cookie64, hctx_cookie64, irq, request_queue cookie, tagset cookie, src_gen64, baseline_managed_mask, driver_hint_mask, policy_owner}`. `src_gen64` increments on queue-map rebuild, controller reset, suspend/resume, IRQ re-request, namespace/controller rebind, or any blk-mq topology change that can invalidate prior source identity. Before teardown the entry is tombstoned and ownership is released; deferred aggregation discards any sample whose `{source_cookie, hctx_cookie, src_gen}` no longer resolves to the live registry entry.
+
+4. Formal no-cross-context-leakage invariant. Each CPU maintains an NMI-safe scope stack. Push points are placed around hardirq completion wrappers, threaded IRQ completion wrappers, softirq/NAPI completion batches, and poll completion batches. Every push increments a per-CPU 64-bit `ctx_seq` and stores `{region_uid, source_cookie, hctx_cookie, cpu, pmu_epoch snapshot, ctx_seq, scope_type}`. Hardirq and softirq paths are naturally pinned to the current CPU; threaded IRQ and poll batches execute under `migrate_disable()` for the annotated batch so the `(cpu, ctx_seq)` pair remains stable. Nested interrupts simply push another entry and restore the parent on pop. A PEBS sample may be attributed only if the same-CPU top-of-stack entry is live at drain time and later revalidates against the stored `pmu_epoch`, `ctx_seq`, and source generation. Otherwise the sample becomes unattributed and cannot influence control.
+
+5. `pmu_epoch` and quality-state gating. Each CPU has a 64-bit `pmu_epoch` that increments on PEBS event enable or disable, DS buffer reset or reprogramming, perf multiplex schedule-in or schedule-out of the controlling event, PMU throttling resets, CPU hotplug online or offline affecting the event, and any loss condition that can change sample interpretability. The controller maintains OFF, DEGRADED, and ON states per decision window. OFF applies when PEBS or `data_src` is unavailable, when no eligible managed vectors exist, when lost-sample ratio exceeds 5%, when event residency under multiplexing falls below 80%, when any eligible CPU lacks installed per-CPU state, or when epoch churn occurs inside the window. DEGRADED applies when only coarse cache-versus-RAM classification is available, when lost-sample ratio is between 1% and 5%, when residency is between 80% and 95%, when online CPU coverage is incomplete but above 50%, or when a recent ownership conflict occurred; DEGRADED is observe-only. ON requires full remote or HITM qualifiers, less than 1% lost samples, greater than 95% event residency, all eligible CPUs online and instrumented, and no policy conflict or hotplug transition in the last three windows. `pmu_epoch` and `ctx_seq` are both `u64`; if either counter ever approaches wrap, the feature forces OFF and requires reinitialization, eliminating ABA aliasing.
+
+6. Eligibility rules, managed-mask constrained transaction, and rollback. A completion IRQ is eligible for actuation only if `irq_desc` has exactly one action, `IRQF_SHARED` is absent, the vector maps one-to-one to one blk-mq data-queue `hctx`, the queue is not an admin queue, the path is not polled-only or NAPI-only, the descriptor is affinity-managed, the irq chip supports affinity changes, the descriptor is not per-CPU or otherwise immutable, and the driver has not declared internal completion steering ownership. Runtime detection uses the live IRQ descriptor, blk-mq source registry, queue type, and driver capability flags. The candidate target mask is computed as the intersection of the managed baseline affinity in `irq_data-&gt;common-&gt;affinity`, the housekeeping mask, the effective cpuset mask, the online CPU mask, any driver-provided hint mask, and a NUMA candidate mask derived from sustained remote-DRAM or remote-HITM evidence for that `hctx`. If the intersection is empty, actuation is rejected. The only steady-state retarget primitive is `irq_set_affinity_and_hint()`, invoked from process context by a controller workqueue. `disable_irq()` is never used for routine retarget because the invention relies on established IRQ affinity APIs rather than implicit vector remap. `synchronize_irq()` is reserved for teardown or ownership release after the controller has stopped issuing updates and after locks taken by the handler are dropped; it is never called from the same IRQ thread or from hot-path contexts. Ownership states are `NONE`, `DRIVER`, `PEBS`, and `EXTERNAL`. `PEBS` may claim ownership only after the vector has remained stable for multiple ON windows. Any external affinity change detected by notifier or effective-mask mismatch makes `EXTERNAL` win immediately, restores the baseline managed mask, increments `policy_epoch`, and places the vector in a 5-minute hold-down. Rollback also occurs if p99 completion latency regresses by more than 5% for 3 consecutive 10-second windows, throughput drops by more than 2% for 3 windows, eligibility is lost, or quality falls below ON. One retarget per vector per 60 seconds bounds oscillation.</div>
+  <h3>2.4 Architecture</h3><pre class='arch-pre'>The architecture is a narrow bridge from Intel PEBS evidence to blk-mq locality control.
+
+Control-flow diagram:
+
+boot or module load
+  -&gt; load compile-time region descriptors
+  -&gt; reject duplicate descriptor tuples
+  -&gt; derive audited `region_uid` values
+  -&gt; register steerable `blk_mq_hw_ctx` sources with `{source_cookie, hctx_cookie, irq, src_gen}`
+
+completion path enter
+  -&gt; hardirq / threaded IRQ / softirq-NAPI / poll wrapper
+  -&gt; push `{region_uid, source_cookie, hctx_cookie, cpu, pmu_epoch, ++ctx_seq}` onto same-CPU scope stack
+
+NMI PEBS drain
+  -&gt; perf validates DS record
+  -&gt; controller hook reads `data_src`
+  -&gt; map to bounded `data_src_class`
+  -&gt; snapshot top-of-stack on same CPU
+  -&gt; append minimal tuple to per-CPU ring
+
+process-context worker
+  -&gt; revalidate `source_cookie`, `hctx_cookie`, `src_gen`, `pmu_epoch`, `ctx_seq`
+  -&gt; aggregate by `hctx` and decision window
+  -&gt; evaluate OFF / DEGRADED / ON state machine
+  -&gt; if ON and IRQ is eligible:
+       target = managed baseline
+                &amp; housekeeping
+                &amp; cpuset effective mask
+                &amp; online mask
+                &amp; driver hint
+                &amp; NUMA candidate
+       -&gt; `irq_set_affinity_and_hint(irq, target)`
+       -&gt; dwell timer and rollback monitor
+
+completion path exit
+  -&gt; pop scope entry
+  -&gt; restore parent entry if nested
+
+Key invariants:
+- No sample crosses CPUs, epochs, or context frames.
+- No torn-down `hctx` can be acted upon because deferred aggregation revalidates `src_gen` and tombstone state.
+- No vector is moved unless it is dedicated, managed, and ownership-clean.
+- No debug or reporting interface is part of the control plane; audit views are read-only.</pre>
+  <h3>2.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Add a Kconfig-gated x86-only controller that depends on Intel PEBS support and `PERF_SAMPLE_DATA_SRC` availability. Keep the default mode observe-only.
+
+2. In the x86 perf PEBS DS-record drain path, after perf has validated the record, add a minimal hook that reads `perf_sample_data::data_src`, snapshots the per-CPU scope stack top, stamps the current `pmu_epoch`, and appends a fixed-size tuple to an NMI-safe per-CPU ring buffer. The hook exports no raw IP, virtual address, or physical address.
+
+3. Introduce `include/linux/blk_pebs.h` and a blk-mq controller implementation that provides region macros, per-CPU scope stack helpers, and source-registry APIs. Add opt-in wrappers for completion scopes in blk-mq aware drivers and transports: hardirq handler wrappers, threaded IRQ wrappers, softirq/NAPI completion batch wrappers, and poll batch wrappers. For threaded IRQ and poll batches, use `migrate_disable()` only around the annotated batch so the attribution key remains CPU-stable without pinning unrelated work.
+
+4. Implement the compile-time region registry loader and collision checker. Persist no region mapping across reboot or module rebuild; derive `region_uid` fresh each boot or module load from the descriptor tuple. Expose a read-only audit manifest and fail closed if collisions are detected.
+
+5. Implement the generation-safe source registry keyed by live `request_queue` and `blk_mq_hw_ctx` lifetime. Increment `src_gen` on queue-map rebuilds, controller reset, suspend/resume, IRQ re-request, and hotplug-driven queue topology changes. Tie per-CPU `pmu_epoch` increments to PEBS event enable/disable, DS reprogramming, perf multiplex schedule transitions, throttling resets, and CPU online/offline events.
+
+6. Implement the aggregation worker, quality state machine, and ownership-aware affinity transaction engine. Use `irq_set_affinity_and_hint()` for steady-state movement, reserve `synchronize_irq()` for teardown after ownership release, and attach an affinity notifier or equivalent effective-mask watcher so external changes win immediately. Rate-limit to one retarget per 60 seconds and enforce a 5-minute hold-down after rollback or external override.
+
+7. Enable actuation only for data queues that satisfy the dedicated managed-IRQ rules. Explicitly exclude shared vectors, admin queues, poll-only queues, NAPI-only completions, and drivers that declare internal steering ownership. All excluded paths still may contribute observe-only attribution if annotated.
+
+8. Land the feature in stages: first observe-only attribution and audit views, then quality-state gating and regression monitors, then managed-IRQ actuation for a limited set of opt-in storage drivers such as PCIe NVMe and virtual block transports that can prove one-vector-to-one-hctx completion ownership.</div>
+  <h3>2.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Correctness and concurrency validation. Build kernel tests that force nested hardirq, threaded IRQ, softirq/NAPI, and poll completion sequences and verify the invariant that a sample is attributed only when same-CPU stack liveness, `pmu_epoch`, `ctx_seq`, and `src_gen` all match. Include CPU hotplug during sampling, queue reset during aggregation, suspend/resume, and IRQ re-request cases.
+
+2. Negative eligibility validation. Confirm that shared IRQs, admin queues, polled mode, NAPI-only completion paths, non-managed vectors, per-CPU IRQs, immutable affinity domains, and drivers with internal steering ownership all remain observe-only and never enter the actuation state.
+
+3. PMU quality validation. Force perf multiplexing, PEBS throttling, lost-record injection, and model variations with missing remote or HITM bits. Verify OFF and DEGRADED transitions occur at the declared thresholds and that no actuation occurs until ON requirements are satisfied for three consecutive windows.
+
+4. Policy coexistence validation. Run with irqbalance, cpuset isolation, nohz_full housekeeping constraints, and manual affinity changes. Verify target masks are always the intersection of managed baseline, housekeeping, cpuset, online, driver hint, and NUMA candidate masks; verify external changes immediately revoke `PEBS` ownership and trigger rollback plus hold-down.
+
+5. Performance validation. On dual-socket NVMe, NVMe-oF, and virtio-blk systems, compare baseline versus observe-only versus actuation modes using mixed read and write workloads. Measure p50, p99, and p99.9 completion latency, IOPS, CPU cycles per I/O, remote-DRAM sample share, and remote-HITM sample share. Success criteria are reduced remote/HITM share and improved or neutral p99 latency without violating rollback thresholds.
+
+6. Safety validation. Confirm no raw IP or address data leaves the PEBS drain hook, confirm `synchronize_irq()` is invoked only from process-context teardown paths, and confirm counter wrap protection forces OFF rather than permitting aliasing.</div>
+</section>
+
+<section class="card">
+  <h2>3. Patent Claims</h2>
+  <ol><li style='margin-bottom:8px;'>1. A computer-implemented method in a Linux x86 kernel comprising: at a PEBS DS-record drain point, consuming only a PEBS record that a perf/x86 subsystem has already validated as precise; decoding `PERF_SAMPLE_DATA_SRC` into a bounded `data_src_class`; reading, in NMI context, a top entry of a same-CPU per-CPU completion scope stack; and appending to an NMI-safe buffer a tuple comprising `region_uid`, `source_cookie`, `hctx_cookie`, CPU identifier, `pmu_epoch`, `ctx_seq`, and `data_src_class`, while discarding the record when the stack entry is absent or invalid.</li><li style='margin-bottom:8px;'>2. The method of claim 1, wherein `region_uid` is produced from a compile-time registry emitted by annotation macros into a dedicated linker section containing a module build identifier, a translation-unit checksum, a local region index, and a path type, duplicate descriptor tuples are rejected at boot or module load, and the kernel derives a hashed identifier such that region identifiers intentionally change across kernel or module rebuilds to prevent stale policy reuse.</li><li style='margin-bottom:8px;'>3. The method of claim 1, further comprising maintaining a generation-safe completion-source registry that associates each `blk_mq_hw_ctx` with a `source_cookie`, `hctx_cookie`, IRQ number, baseline managed affinity mask, and `src_gen`, increments `src_gen` on queue-map rebuild, controller reset, suspend/resume, IRQ re-request, or hotplug remap, tombstones the entry before teardown, and in deferred aggregation ignores any sample whose cookies, generation, or IRQ association no longer resolve.</li><li style='margin-bottom:8px;'>4. The method of claim 1, wherein a sample is eligible to influence control only when a no-cross-context-leakage invariant is satisfied by same-CPU stack liveness, `pmu_epoch` equality, `ctx_seq` equality, and live source-generation revalidation, and wherein push and pop hooks are placed around hardirq, threaded IRQ, softirq/NAPI, and poll completion batches, with threaded IRQ and poll batches executing under `migrate_disable()` during an annotated batch.</li><li style='margin-bottom:8px;'>5. The method of claim 1, wherein actuation is conditioned on an objective quality state machine that remains OFF when PEBS data-source fields are unavailable, sample loss exceeds a first threshold, multiplex residency falls below a threshold, or CPU coverage is incomplete; remains DEGRADED when only coarse cache-versus-RAM classification is available or signal quality is intermediate; and reaches ON only when full remote or HITM qualifiers are available and recent windows satisfy declared loss, residency, coverage, and policy-stability thresholds.</li><li style='margin-bottom:8px;'>6. The method of claim 1, wherein a completion IRQ is eligible for actuation only when an IRQ descriptor has a single non-shared action, maps one-to-one to one blk-mq data-queue hardware context, excludes admin, polled, NAPI-only, or internally steered completion paths, is affinity-managed and affinity-settable by an IRQ chip, and a target CPU mask is computed as an intersection of a managed baseline affinity mask, a housekeeping mask, an effective cpuset mask, an online CPU mask, a driver hint mask, and a NUMA candidate mask derived from sustained remote memory-source evidence.</li><li style='margin-bottom:8px;'>7. The method of claim 6, wherein an affinity transaction is performed only from process context using `irq_set_affinity_and_hint()`, external affinity changes detected by notifier or effective-mask mismatch supersede controller ownership, rollback restores the baseline managed mask when latency or throughput regression thresholds are exceeded for a plurality of windows or when eligibility or quality is lost, and one retarget per dwell interval limits oscillation.</li></ol>
+  
+</section>
+
+<section class="card"><h2>4. Risks &amp; Mitigations</h2><ul><li style='margin-bottom:6px;'>SKU variability risk: some Intel CPUs expose only coarse `data_src` qualifiers. Mitigation: map to `COARSE_CACHE` or `COARSE_RAM`, cap quality at DEGRADED, and forbid actuation on those models.</li><li style='margin-bottom:6px;'>Attribution coverage risk: not every completion path is naturally wrapped. Mitigation: require explicit driver or transport opt-in for hardirq, threaded IRQ, softirq/NAPI, and poll batches, and treat uncovered paths as unattributed rather than guessed.</li><li style='margin-bottom:6px;'>Concurrency and hotplug risk: stale mappings can arise during queue reset, migration, or CPU offline events. Mitigation: use per-CPU `pmu_epoch`, per-CPU `ctx_seq`, per-source `src_gen`, tombstones, and fail-closed OFF transitions during hotplug churn.</li><li style='margin-bottom:6px;'>IRQ policy conflict risk: irqbalance, cpuset changes, or driver resets may concurrently alter affinity. Mitigation: use managed-mask intersection, effective-mask monitoring, explicit ownership states, immediate external-owner precedence, rollback, and a 5-minute hold-down.</li><li style='margin-bottom:6px;'>Oscillation risk: workloads may change faster than the controller can stabilize. Mitigation: require multiple ON windows before claim, permit at most one retarget per vector per 60 seconds, and roll back on sustained regression instead of on single-window noise.</li><li style='margin-bottom:6px;'>Latency overhead risk in NMI context: PEBS drain hooks must stay extremely small. Mitigation: write only a fixed-size tuple to preallocated per-CPU storage, export no raw addresses, and defer all blk/IRQ resolution and policy work to a process-context worker.</li><li style='margin-bottom:6px;'>Eligibility misclassification risk: shared vectors or internally steered drivers could be moved incorrectly. Mitigation: require single-action non-shared descriptors, one-to-one `hctx` mapping, managed affinity, and explicit driver capability flags before actuation.</li></ul></section>
+<section class="card"><h2>5. References</h2><ul><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual, Volume 3, sections covering PEBS and memory data-source reporting.</li><li>Linux `include/uapi/linux/perf_event.h` definitions for `PERF_SAMPLE_DATA_SRC` and `perf_mem_data_src`.</li><li>Linux x86 PMU and PEBS implementation under `arch/x86/events/intel/`.</li><li>Linux blk-mq core structures and queue lifecycle for `request_queue` and `blk_mq_hw_ctx`.</li><li>Linux generic IRQ affinity and managed IRQ semantics in `kernel/irq/` and `Documentation/core-api/irq/irq-affinity.rst`.</li><li>Operational behavior of irqbalance and external CPU-affinity policy agents with managed interrupts.</li></ul></section>
+
+<section class="card">
+  <h2>6. Debate Panel Review</h2>
+  <p class="muted" style="font-size:12px;">1/4 APPROVE · Avg 4.0/5 · 3 rounds · Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+  
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Actuation path needs a concrete deadlock-avoidance rule set: calling disable_irq()/enable_irq() must be forbidden from (a) the target IRQ’s threaded handler context, (b) any context holding locks taken by the handler, and (c) contexts that may be re-entered by that IRQ. Specify the exact lock ordering and the detection mechanism (e.g., comparing current to irq_desc-&gt;action thread, or per-IRQ ‘in-handler’ guards).</li><li style='font-size:13px;margin-bottom:4px;'>The attribution tuple and per-CPU context stack must be proven NMI-safe under concurrent updates from hardirq/softirq/threaded contexts. You need explicit rules for when ctx_seq increments, what is protected by local_irq_disable() vs preempt_disable(), and which fields require WRITE_ONCE/READ_ONCE plus ordering (smp_store_release/smp_load_acquire) so NMI reads never observe torn or mismatched region_uid/cookie/ctx_seq combinations.</li><li style='font-size:13px;margin-bottom:4px;'>Define the lifetime model for region_uid resolution across module unload and CPU hotplug: build-generated registries imply text/section lifetimes; if any region annotations can live in modules, you must provide a safe teardown (stop sampling first, then RCU-synchronize/flush workqueues, then unregister) to avoid post-unload region_uid reuse or stale revalidation.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify correctness of IRQ eligibility detection: “one-to-one dedicated MSI/MSI-X completion vector exists” must be checked against shared irq_desc actions, per-vector affinity constraints (managed interrupts), and drivers that internally steer completions (polling, adminq, or shared completion). Spell out the exact kernel-visible predicates and the fallback behavior when ambiguity exists (must be ineligible, not best-effort).</li><li style='font-size:13px;margin-bottom:4px;'>Quality gating must explicitly incorporate perf’s multiplexing/throttling/lost-sample signals as exposed by the perf core for the specific event (not global heuristics). Otherwise you can actuate on biased samples (e.g., partial CPU coverage, PEBS record drops, skid/precise_ip limitations) and make affinity changes that regress latency while still appearing ‘ON’.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:3</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: Key patent-defining sections (Problem / Proposed Invention / Architecture / Implementation Plan / Claims) are empty, so the novelty boundary and enforceable claim scope are not yet anchored to concrete kernel mechanisms and eligibility rules.</p><ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Pin down the exact &quot;validated PEBS DS record at the perf drain point&quot; hook: name the concrete function(s) and ordering guarantee (e.g., after PEBS record sanity checks but before sample delivery), and specify what &quot;validated&quot; excludes (unsupported format, bad size, unknown DS flags). Without this, the claimed attribution advantage over RIP-based inference looks like an implementation detail rather than a claimable constraint.</li><li style='font-size:13px;margin-bottom:4px;'>Define the compile-time `region_uid` registry mechanics precisely: how region IDs are emitted (macros + linker section), how uniqueness is enforced across built-in vs modules, how inline sites are handled, and what constitutes an &quot;eligible completion locus&quot;. Otherwise this reads like prior-art tracepoint-style static tagging and may be argued obvious.</li><li style='font-size:13px;margin-bottom:4px;'>Make the &quot;generation-safe blk completion source cookies&quot; concrete: what object is being named (hctx, hw queue, NVMe queue, IRQ vector), how the cookie is allocated and retired, and how you avoid dereferencing freed objects in NMI/PMI context. Include the exact lifetime/RCU or refcount scheme and what happens on queue teardown or CPU hotplug to prevent false attribution.</li><li style='font-size:13px;margin-bottom:4px;'>Specify the `(cpu, pmu_epoch, ctx_seq)` model with exact transitions: what increments `pmu_epoch` (event enable/disable, CPU offline/online, PEBS reset, counter reprogram), how `ctx_seq` is assigned for nested hardirq/threaded/softirq/poll contexts, and how migration is treated. Without explicit invariants and revalidation rules, the &quot;no-cross-context-leakage&quot; claim risks collapsing into generic per-CPU bookkeeping.</li><li style='font-size:13px;margin-bottom:4px;'>Quantify the quality gates/state machine: define measurable thresholds for OFF/DEGRADED/ON (lost samples, throttling, multiplexing ratios, partial CPU coverage, data_src coarseness) and require a minimum confidence window before actuation. If the gates are subjective, prior art (closed-loop tuning + hysteresis/rollback) will be used to argue obviousness.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Clarify the exact PEBS/DS record fields required for reliable HITM vs remote-DRAM classification across Xeon SKUs, and explicitly define the downgrade matrix (which data_src bits map to which data_src_class) so the feature is a predictable x86 differentiation lever.</li><li style='font-size:13px;margin-bottom:4px;'>Tighten the actuator safety contract: specify ordering/locking rules around disable_irq()/enable_irq(), whether synchronize_irq() is ever required for specific irqchip/drivers, and how you avoid retargeting from within the same IRQ thread or while blk-mq/NVMe holds queue locks.</li><li style='font-size:13px;margin-bottom:4px;'>Define the &#x27;one-to-one dedicated vector&#x27; eligibility test precisely for modern storage (NVMe MSI-X, shared vectors, CPU hotplug, virtualization/MSI remapping), and document how ownership arbitration coexists with irqbalance and managed IRQ masks without policy widening.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:10px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC:1</span>
+    </span>
+  </div>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Clarify and harden the TAA/side-channel stance: PEBS DS records can contain precise data linear addresses and other microarchitectural metadata. The draft says the tuple stores no pointers/addresses, but you must explicitly guarantee that no DS fields (e.g., data_linear_address) are persisted, exported (tracefs/debugfs/perf ring), or logged, and that any debug visibility is root-only and off by default.</li><li style='font-size:13px;margin-bottom:4px;'>Define the exact NMI/PMI safety contract: specify which per-CPU reads/writes occur in overflow context (e.g., this_cpu_ptr ring write + sequence update), how you avoid tearing (WRITE_ONCE/atomic), and how you prevent recursion/reentrancy if PEBS fires while already in the attribution path (nesting guard).</li><li style='font-size:13px;margin-bottom:4px;'>The proposed actuator transaction `disable_irq -&gt; irq_set_affinity -&gt; irq_set_affinity_hint -&gt; enable_irq` can cause latency spikes, lost completions, or deadlocks if invoked under the wrong context. You must specify the precise workqueue context, lock ordering, and explicit exclusions (never from the IRQ thread being steered; never while holding blk-mq queue locks; never with interrupts disabled), and add bounded time/attempt limits plus failure rollback paths.</li><li style='font-size:13px;margin-bottom:4px;'>Quality gating needs concrete, auditable thresholds and sources: define how you detect perf multiplexing/throttling/lost records and what minimum sample count/coverage is required before actuation; also specify how you handle PMU stop/start (event disable, CPU hotplug, suspend/resume) so you never act on stale epochs.</li><li style='font-size:13px;margin-bottom:4px;'>Compatibility guarantees are underspecified: enumerate required kernel subsystems and configs (managed interrupts, MSI/MSI-X, blk-mq, perf/x86/PEBS availability) and define behavior on unsupported CPUs (observe-only/OFF) including how you detect partial `PERF_SAMPLE_DATA_SRC` capability and how you map/&quot;downgrade&quot; without misclassification across Intel uarch generations.</li></ul>
+</div>
+</section>
+
+<section class="card"><h2>7. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define *exact* scope-tag storage and migration semantics. A purely per-CPU tag is incorrect if a tagged task migrates CPUs mid-scope (attribution follows the CPU, not the task). Eit</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify IRQ/softirq nesting rules. blk-mq work happens in mixed contexts (process context submission, softirq completions, hardirq paths in some drivers). You need an explicit model</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Your “seqlock-style snapshot” must be concretely implementable in NMI without unbounded retry. Use a seqcount/seqcount_latch-style pattern with WRITE_ONCE/READ_ONCE and barriers, ad</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify NMI/PMI safety of every operation in the overflow path: no allocations, no locking, no touching memory that can fault, no instrumentation that can recurse into perf again. R</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Actuation is underspecified: list the exact blk-mq knobs you will adjust and the required locking/quiesce protocol for each (e.g., queue freeze/quiesce, tagset updates, scheduler in</li></ul></details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:10px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;color:#64748b;font-size:13px;">Feedback (5 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the exact data structure and synchronization for the deferred-resolution registry: use RCU (and describe the grace period boundaries), include a generation counter tied to t</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Make the per-CPU ctx stack and ctx_seq updates explicitly NMI-safe on the same CPU: simple per-CPU increments/stack push-pop can tear when interrupted by NMI. Use a two-phase publis</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Justify and correct the IRQ quiesce transaction: disable_irq() is synchronous (waits for in-flight handlers) in many paths; pairing with synchronize_irq() may be redundant or can am</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define eligibility rules precisely for &quot;dedicated completion IRQs&quot;: how you detect shared IRQs, IRQF_NO_THREAD, polling/NAPI completions, and drivers that internally steer completio</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Integrate managed-IRQ constraints correctly: define how you compute the target cpumask as an AND of managed affinity, housekeeping/nohz_full constraints, and driver-provided hints; </li></ul></details>
+</div></section>
+
+<footer class="card muted" style="text-align:center;font-size:11px;">
+  DeepThought TVA · Human Review Queue · Optimize Linux block I/O using x86 PEBS microarchitecture features
+</footer>
+</div></body></html>
