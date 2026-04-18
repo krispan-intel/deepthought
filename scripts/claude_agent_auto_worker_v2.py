@@ -490,7 +490,7 @@ class ClaudeAgentAutoWorkerV2:
                     f"Debate Panel → PENDING_HUMAN_REVIEW: {run_id} | "
                     f"survived {rounds_done} rounds — human architect needed"
                 )
-                # Auto-generate HTML for human review
+                # Auto-generate HTML for human review (only if ≥1 APPROVE)
                 try:
                     # For retry runs, find the original run_id (strip -retryN suffix)
                     original_run_id = request.get("original_run_id", run_id)
@@ -505,29 +505,31 @@ class ClaudeAgentAutoWorkerV2:
                         all_scores = [float(r.get("score", 0)) for r in reviews.values()]
                         avg = sum(all_scores) / len(all_scores) if all_scores else 0
                         approves = sum(1 for r in reviews.values() if r.get("status") == "APPROVE")
-                        html_dir = Path("output/generated/human_review")
-                        html_dir.mkdir(parents=True, exist_ok=True)
 
-                        # New HTML with new run_id
-                        new_fname = f"tid_{avg:.1f}avg_{approves}approve_{run_id[:12]}.html"
-                        html = generate_tid_html(run_id, result, mav_data)
-                        (html_dir / new_fname).write_text(html)
-                        logger.info(f"Generated HTML: {new_fname}")
+                        if approves == 0:
+                            logger.info(f"Skip HTML (0/4 APPROVE): {run_id}")
+                        else:
+                            html_dir = Path("output/generated/human_review")
+                            html_dir.mkdir(parents=True, exist_ok=True)
 
-                        # Also overwrite the original HTML if this is a retry
-                        if original_run_id != run_id:
-                            # Find and replace the original HTML file
-                            orig_pattern = f"tid_*_{original_run_id[:12]}.html"
-                            orig_files = list(html_dir.glob(orig_pattern))
-                            if orig_files:
-                                orig_file = orig_files[0]
-                                orig_file.write_text(html)
-                                logger.info(f"Updated original HTML: {orig_file.name} → new result from {run_id}")
-                            else:
-                                # Original not found, copy with original run_id prefix
-                                orig_fname = f"tid_{avg:.1f}avg_{approves}approve_{original_run_id[:12]}.html"
-                                (html_dir / orig_fname).write_text(html)
-                                logger.info(f"Created replacement HTML: {orig_fname}")
+                            # New HTML with new run_id
+                            new_fname = f"tid_{avg:.1f}avg_{approves}approve_{run_id[:12]}.html"
+                            html = generate_tid_html(run_id, result, mav_data)
+                            (html_dir / new_fname).write_text(html)
+                            logger.info(f"Generated HTML: {new_fname}")
+
+                            # Also overwrite the original HTML if this is a retry
+                            if original_run_id != run_id:
+                                orig_pattern = f"tid_*_{original_run_id[:12]}.html"
+                                orig_files = list(html_dir.glob(orig_pattern))
+                                if orig_files:
+                                    orig_file = orig_files[0]
+                                    orig_file.write_text(html)
+                                    logger.info(f"Updated original HTML: {orig_file.name} → new result from {run_id}")
+                                else:
+                                    orig_fname = f"tid_{avg:.1f}avg_{approves}approve_{original_run_id[:12]}.html"
+                                    (html_dir / orig_fname).write_text(html)
+                                    logger.info(f"Created replacement HTML: {orig_fname}")
                 except Exception as exc:
                     logger.warning(f"HTML generation failed for {run_id}: {exc}")
             else:

@@ -323,8 +323,35 @@ if human_review > 0:
     print(f"│  → 🧑 PENDING HUMAN    {bar(human_review, base)} {human_review:4d}  ({pct(human_review, maverick):>4s})  ← Architect needed │")
 print(f"│                                                                      │")
 print(f"│  Jackpot Rate: {pct(approved, maverick):>4s}  ({approved}/{maverick})                                │")
+
+# Approve distribution breakdown (paper Table data)
+from collections import Counter
+approve_dist = Counter()
+total_revise = 0
+for f in glob.glob('data/completed_reviews/*.json'):
+    try:
+        d = json.load(open(f))
+        rid = d.get('run_id','')
+        if rid not in new_format_runs: continue
+        if d.get('chairman_result',{}).get('final_verdict') != 'REVISE': continue
+        reviews = d.get('reviews',{})
+        n = sum(1 for r in reviews.values() if r.get('status')=='APPROVE')
+        approve_dist[n] += 1
+        total_revise += 1
+    except: pass
+
+if total_revise > 0:
+    print(f"│                                                                      │")
+    print(f"│  REVISE breakdown (n={total_revise}):                                     │")
+    for k in sorted(approve_dist.keys(), reverse=True):
+        cnt = approve_dist[k]
+        pct_v = 100*cnt/total_revise
+        html_note = " ← HTML generated" if k >= 1 else " ← skipped (0 APPROVE)"
+        print(f"│    {k}/4 APPROVE: {cnt:3d} ({pct_v:4.1f}%){html_note:<22}    │")
+
 if human_review > 0:
-    print(f"│  🏆 Human Review Queue: {human_review} ideas survived all DP rounds           │")
+    html_count = len(glob.glob('output/generated/human_review/*.html'))
+    print(f"│  🏆 Human Review: {human_review} TIDs queued · {html_count} HTML files generated           │")
 
 # Pending queue depth (shows backlog)
 pending_m = len(glob.glob('data/pending_maverick/*.json'))
