@@ -337,6 +337,10 @@ with width derived from the spread of that distribution.  This
 operationalises non-obviousness: the band excludes the
 high-similarity tail (obvious combinations) and the low-similarity
 tail (unrelated noise) without hard-coded constants.
+Notably, the calibrated band is itself a \emph{domain characterisation}:
+it quantifies the pairwise semantic distance at which innovation
+typically occurs in the target technical space and will differ across
+domains.  Cross-domain comparison of these bands is left as future work.
 Scale parameters are omitted per confidentiality requirements.
 
 % ================================================================
@@ -470,17 +474,18 @@ Kernel ABI / notrace violation &   165 &  5.5\% \\
 \caption{Adversarial approval distribution across 139 REVISE candidates
   and 2,004 total Maverick candidates (new-format runs).}
 \label{tab:approval}
-\begin{tabular}{lrrrr}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrr}
 \toprule
-Approval & Count & \% of REVISE & \% of Maverick \\
+Approval & Count & \%/REVISE & \%/Maverick \\
 \midrule
-3/4 APPROVE &   1 &  0.7\% & 0.05\% \\
-2/4 APPROVE &   4 &  2.9\% & 0.20\% \\
-1/4 APPROVE &  29 & 20.9\% & 1.45\% \\
-0/4 APPROVE & 105 & 75.5\% & 5.24\% \\
+3/4 &  1 &  0.7\% & 0.05\% \\
+2/4 &  4 &  2.9\% & 0.20\% \\
+1/4 & 29 & 20.9\% & 1.45\% \\
+0/4 & 105 & 75.5\% & 5.24\% \\
 \midrule
-$\geq$1 APPROVE &  34 & 24.5\% & 1.70\% \\
-$\geq$2 APPROVE &   5 &  3.6\% & 0.25\% \\
+$\geq$1 & 34 & 24.5\% & 1.70\% \\
+$\geq$2 &  5 &  3.6\% & 0.25\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -719,14 +724,16 @@ formalization.  A unified \emph{organisational knowledge graph}
 that spans multiple engineering disciplines would allow TVA to
 surface cross-domain voids: ideas at the boundary between, say,
 a firmware subsystem and a compiler backend that neither team would
-discover in isolation.  Domain adaptation requires only reconfiguring the four specialist
-roles in the adversarial review committee: replacing the
-Kernel Hardliner and Prior-Art Shark with domain-appropriate
-reviewers (e.g., Clinical Researcher and Drug-Safety Expert for
-biomedical, Materials Physicist and Manufacturing Engineer for
-materials science) while keeping the same deterministic verdict
-rules.  The rest of the pipeline---void discovery, LLM generation,
-and revision loop---transfers unchanged.
+discover in isolation.  Domain adaptation involves two steps: (i)~reconfiguring the four
+specialist roles in the adversarial review committee with
+domain-appropriate reviewers (e.g., Clinical Researcher and
+Drug-Safety Expert for biomedical, Materials Physicist and
+Manufacturing Engineer for materials science), and
+(ii)~re-calibrating the marginality band $[\taulow, \tauhigh]$
+from a domain corpus, as the geometric distance at which innovation
+occurs varies across fields.  Both steps are data-driven and require
+no manual threshold tuning.  The rest of the pipeline---void
+discovery, LLM generation, and revision loop---transfers unchanged.
 At scale, this positions TVA as an
 \emph{enterprise-wide innovation radar}---systematically mapping
 the unexplored territory across an entire organisation's collective
