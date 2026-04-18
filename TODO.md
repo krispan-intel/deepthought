@@ -112,3 +112,30 @@ flowchart LR
 - [ ] P2: Implement TDX crawler based on Corpus Analyst recommendations
 - [ ] P2: Implement CXL crawler if ROI justifies
 - [ ] P3: Set up scheduled Metrics Analyst reports (cron job)
+
+## Paper: Topological Void Analysis (Industry Track)
+
+### Content TODO
+- [ ] Update Table 1 benchmark numbers with 1-week new-format run data (currently <2 days)
+- [ ] Add APPROVE case study if any TID reaches APPROVE after extended run
+- [ ] Run DP round 5 after C4 notation fix — verify Math reviewer recovers to 6
+- [ ] Switch to conference template (ACM sigconf / IEEE) before submission — fixes all layout issues
+
+### Math Fixes (from DP review)
+- [x] Fix C4 notation: cos(dense(k), C) instead of cos(k, C)
+- [x] Clarify C = m(dense(A), dense(B)) explicitly in C4
+
+### Completed
+- [x] Section 3: Design evolution (cosine → MMR → Queen formula → TVA)
+- [x] Section 4: Definition 1 with synthetic void midpoint C=m(A,B)
+- [x] Section 5: Geodesic midpoint = normalize(u+v), equidistance property
+- [x] Table 1 (funnel): new-format numbers (1,896 → 978 → 90 REVISE)
+- [x] Table 2 (taxonomy): 888 rejected, 6 categories
+- [x] Case Study 1: TSX+MGLRU (3/4 APPROVE, new-format, NF-01)
+- [x] Case Study 2: SCV for eBPF JIT (weak signal → strong idea)
+- [x] Revision traces in both case studies
+- [x] Discussion: REVISE-as-positive-evidence argument
+- [x] Discussion: Meta-evaluation (paper reviewed by its own DP)
+- [x] Discussion: IP protection / industry-track framing
+- [x] Future Work: Recursive Topological Expansion + downstream implementation + human-architect loop
+- [x] 4× DP review iterations completed
