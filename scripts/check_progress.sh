@@ -342,12 +342,14 @@ for f in glob.glob('data/completed_reviews/*.json'):
 
 if total_revise > 0:
     print(f"│                                                                      │")
-    print(f"│  REVISE breakdown (n={total_revise}):                                     │")
+    print(f"│  REVISE breakdown  n={total_revise} / Maverick={maverick}             │")
+    print(f"│  {'Approves':<12} {'Count':>5}  {'% of REVISE':>12}  {'% of Maverick':>13}  │")
     for k in sorted(approve_dist.keys(), reverse=True):
         cnt = approve_dist[k]
-        pct_v = 100*cnt/total_revise
-        html_note = " ← HTML generated" if k >= 1 else " ← skipped (0 APPROVE)"
-        print(f"│    {k}/4 APPROVE: {cnt:3d} ({pct_v:4.1f}%){html_note:<22}    │")
+        pct_r = 100*cnt/total_revise
+        pct_m = 100*cnt/maverick if maverick > 0 else 0
+        note = "★ HTML" if k >= 1 else "skip"
+        print(f"│  {k}/4 APPROVE   {cnt:5d}  {pct_r:>11.1f}%  {pct_m:>12.2f}%  {note}  │")
 
 if human_review > 0:
     html_count = len(glob.glob('output/generated/human_review/*.html'))
