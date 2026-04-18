@@ -221,27 +221,44 @@ echo ""
 # ─────────────────────────────────────────────────────────────────
 # 7. Pachinko Funnel (Stage-by-Stage Conversion)
 # ─────────────────────────────────────────────────────────────────
-echo "┌─ 7. 🎰 PACHINKO FUNNEL ──────────────────────────────────────────────┐"
+echo "┌─ 7. 🎰 PACHINKO FUNNEL (new-format runs only) ──────────────────────┐"
 echo "│                                                                      │"
 
 source .venv/bin/activate 2>/dev/null || true
 python3 << 'FUNNEL_EOF'
 import json, glob, os
 
-# Count completions at each stage
-maverick = len(glob.glob('data/completed_maverick/*.json'))
-professor = len(glob.glob('data/completed_professor/*.json'))
-rc = len(glob.glob('data/completed_reality_checker/*.json'))
-debate = len(glob.glob('data/completed_reviews/*.json'))
-
-# Professor pass rate (from completed professor files)
-prof_passed = 0
-prof_rejected = 0
-for f in glob.glob('data/completed_professor/*.json'):
+# New-format run IDs (void_context present in completed_maverick)
+new_format_runs = set()
+for f in glob.glob('data/completed_maverick/*.json'):
     try:
         data = json.load(open(f))
-        verdicts = data.get("verdicts", [])
-        if any(v.get("verdict") == "PASS" for v in verdicts):
+        if data.get('void_context'):
+            new_format_runs.add(data.get('run_id',''))
+    except:
+        pass
+
+def is_new(f):
+    try:
+        data = json.load(open(f))
+        rid = data.get('run_id','')
+        return rid in new_format_runs
+    except:
+        return False
+
+# Count completions — NEW FORMAT ONLY
+maverick = len(new_format_runs)
+professor = sum(1 for f in glob.glob('data/completed_professor/*.json') if is_new(f))
+rc        = sum(1 for f in glob.glob('data/completed_reality_checker/*.json') if is_new(f))
+debate    = sum(1 for f in glob.glob('data/completed_reviews/*.json') if is_new(f))
+
+# Professor pass rate
+prof_passed = prof_rejected = 0
+for f in glob.glob('data/completed_professor/*.json'):
+    if not is_new(f): continue
+    try:
+        data = json.load(open(f))
+        if any(v.get("verdict") == "PASS" for v in data.get("verdicts", [])):
             prof_passed += 1
         else:
             prof_rejected += 1
@@ -251,6 +268,7 @@ for f in glob.glob('data/completed_professor/*.json'):
 # RC verdict breakdown
 rc_approve = rc_revise = rc_reject = 0
 for f in glob.glob('data/completed_reality_checker/*.json'):
+    if not is_new(f): continue
     try:
         data = json.load(open(f))
         s = data.get('status', data.get('verdict', ''))
@@ -263,6 +281,7 @@ for f in glob.glob('data/completed_reality_checker/*.json'):
 # Debate verdict breakdown
 db_approve = db_revise = db_reject = 0
 for f in glob.glob('data/completed_reviews/*.json'):
+    if not is_new(f): continue
     try:
         data = json.load(open(f))
         cr = data.get('chairman_result', data)
@@ -273,17 +292,7 @@ for f in glob.glob('data/completed_reviews/*.json'):
     except:
         pass
 
-# Final approved from pipeline_runs
-approved = 0
-total_runs = 0
-if os.path.exists('data/processed/pipeline_runs.jsonl'):
-    with open('data/processed/pipeline_runs.jsonl') as f:
-        for line in f:
-            if not line.strip(): continue
-            total_runs += 1
-            r = json.loads(line)
-            if r.get('run_status') == 'APPROVED':
-                approved += 1
+approved = db_approve
 
 # Print funnel
 def pct(n, base):
