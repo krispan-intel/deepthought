@@ -431,12 +431,12 @@ class LLMClient:
         # Sonnet-class → gpt-5.2
         if "sonnet" in m:
             return "gpt-5.2"
-        # Haiku-class → gpt-4.1 (cheap/fast)
+        # Haiku-class → gpt-5.4 mini (supports --effort, cheap/fast)
         if "haiku" in m:
-            return "gpt-4.1"
-        # DeepSeek / Qwen fallbacks → gpt-4.1
+            return "gpt-5.4"
+        # DeepSeek / Qwen fallbacks → gpt-5.4
         if "deepseek" in m or "qwen" in m:
-            return "gpt-4.1"
+            return "gpt-5.4"
         # Default: use settings
         return settings.copilot_model or "gpt-5.4"
 
