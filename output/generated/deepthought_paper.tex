@@ -464,6 +464,39 @@ Kernel ABI / notrace violation &   165 &  5.5\% \\
 \end{tabular}
 \end{table}
 
+\begin{table}[t]
+\centering
+\small
+\caption{Adversarial approval distribution across 139 REVISE candidates
+  and 2,004 total Maverick candidates (new-format runs).}
+\label{tab:approval}
+\begin{tabular}{lrrrr}
+\toprule
+Approval & Count & \% of REVISE & \% of Maverick \\
+\midrule
+3/4 APPROVE &   1 &  0.7\% & 0.05\% \\
+2/4 APPROVE &   4 &  2.9\% & 0.20\% \\
+1/4 APPROVE &  29 & 20.9\% & 1.45\% \\
+0/4 APPROVE & 105 & 75.5\% & 5.24\% \\
+\midrule
+$\geq$1 APPROVE &  34 & 24.5\% & 1.70\% \\
+$\geq$2 APPROVE &   5 &  3.6\% & 0.25\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:approval} shows the adversarial approval distribution.
+The 75.5\% of REVISE candidates that received zero specialist approvals
+are filtered from the human-review queue---unanimous rejection signals
+that no specialist found the core concept defensible.  The remaining
+24.5\% ($\geq$1 APPROVE, 1.70\% of all Maverick candidates) represent
+the system's effective human-review yield: ideas where at least one
+domain expert identified genuine technical merit despite identifying
+issues requiring elaboration.  This stringent end-to-end conversion
+rate reflects the \emph{Driving-AI} philosophy: the value lies not
+in volume but in surfacing a small set of technically grounded
+candidates for expert follow-up.
+
 Three observations stand out.  First, 90.2\% of rejections are triggered
 by \texttt{fatal\_flaw\_reject} (at least one specialist identifies a
 blocking technical error), confirming that the committee is performing
