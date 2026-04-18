@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>TID-NF-001: Security-Gated x86 RTM Same-Lruvec Single-Folio MGLRU Rotati</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI","Noto Sans",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:22px;margin:0 0 10px;} h2{font-size:18px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 12px;} h3{font-size:15px;color:var(--muted);margin:16px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:4px 10px;display:inline-block;margin:3px 5px 0 0;font-size:13px;}
+    .stars{color:var(--star);letter-spacing:1px;}
+    .muted{color:var(--muted);}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:8px 6px;font-size:14px;}
+    ul,ol{margin:8px 0 0 20px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:14px;font-family:"Cascadia Code","Fira Code",monospace;font-size:12.5px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    .badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:700;color:#fff;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div style="background:#f59e0b;color:#fff;border-radius:14px;padding:18px;margin-bottom:14px;text-align:center;">
+    <div style="font-size:13px;opacity:.85;margin-bottom:4px;">TID-NF-001 &nbsp;|&nbsp; Debate Panel: 3 round(s) &nbsp;|&nbsp; 3/4 APPROVE &nbsp;|&nbsp; Avg Score: 3.0/5</div>
+    <div style="font-size:20px;font-weight:700;">REVISE &mdash; fatal_flaw_revise</div>
+  </div>
+
+  <section class="card">
+    <h1>Security-Gated x86 RTM Same-Lruvec Single-Folio MGLRU Rotation Capsule with Exhaustive Lruvec Mutation Sequencing and Fail-Closed Locked Revalidation</h1>
+    <div class="muted" style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;margin-top:8px;">
+      <div><strong>Run ID:</strong> run-40e5ec8f9f44</div>
+      <div><strong>Target:</strong> Optimize Linux memory management using x86 TSX microarchitecture features</div>
+      <div><strong>Generated:</strong> 2026-04-18</div>
+      <div><strong>System:</strong> DeepThought TVA</div>
+    </div>
+    <h3>Original Maverick Drafts</h3>
+    <ul style="font-size:13px;"><li style='font-size:13px;'>Bounded RTM Page-Table Commit Capsules for Linux Fault and Protection-Change Paths</li><li style='font-size:13px;'>PMU-Governed RTM Zone-Transition Layer for Per-CPU Page Allocator Refill and Free</li><li style='font-size:13px;'>RTM Reclaim-Commit Capsules for MGLRU Generation Rotation and memcg Active-Set Accounting</li></ul>
+  </section>
+
+  <section class="card">
+    <h2>1. Executive Summary</h2>
+    <h3>One-Liner</h3>
+    <div style='white-space:pre-wrap;line-height:1.7;'>For order-0 folios already pinned by an existing reference and remaining within one memcg-node lruvec, a default-off x86 RTM fast path samples only advisory MGLRU rotation hints under an exhaustive per-lruvec mutation-sequence contract, subscribes transactionally to the full lru_lock qspinlock word, re-derives folio identity, lruvec identity, generation, list membership, and exact accounting at the commit point with preemption and local interrupts disabled, and otherwise immediately falls back to the conventional lru_lock path whenever TSX policy, abort heuristics, or any revalidation predicate fails.</div>
+    <div style="margin-top:10px;">
+      <div class="pill"><strong>Novelty:</strong> The inventive core is not generic TSX lock elision and not generic seqcount plus lock. It is a Linux-mm-specific commit capsule for only same-lruvec, single-folio MGLRU rotations that explicitly separates advisory fields from correctness-critical sta</div>
+      <div class="pill"><strong>Feasibility:</strong> The design is implementable because it is deliberately narrow and preserves the existing locked path as the authority. The helper is entered only for order-0 folios for which the caller already holds </div>
+      <div class="pill"><strong>Commercial:</strong> The primary beneficiaries are Xeon-class cloud, virtualization, container, caching, and in-memory database fleets that already use MGLRU and observe lru_lock contention under reclaim-heavy or page-cac</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2. Scorecard (Maverick self-assessment)</h2>
+    <table>
+      <thead><tr><th>Dimension</th><th>Score</th><th>Rating</th></tr></thead>
+      <tbody>
+        <tr><td>Innovation</td><td>4/10</td><td class="stars">★★☆☆☆</td></tr>
+        <tr><td>Implementation Difficulty</td><td>5/10</td><td class="stars">★★☆☆☆</td></tr>
+        <tr><td>Commercial Value</td><td>4/10</td><td class="stars">★★☆☆☆</td></tr>
+        <tr><td>Technical Risk</td><td>4/10</td><td class="stars">★★☆☆☆</td></tr>
+        <tr><td>Prior-Art Risk</td><td>3/10</td><td class="stars">★☆☆☆☆</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>3. Technical Invention Disclosure</h2>
+    <h3>3.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Linux MGLRU improves reclaim quality, but the hot path that rotates a single folio between lrugen lists inside one lruvec is still serialized by lru_lock even when the caller already holds a stable folio reference and the actual mutation is only one unlink, one relink, and a small accounting update. On high-core-count x86 NUMA servers, many CPUs can concurrently discover that individual folios should be promoted, demoted, or retiered, yet each one-folio move still transfers the same lru_lock cacheline and nearby lrugen metadata between sockets. That lock transfer amplifies tail latency and reduces reclaim scalability. The challenge is that mm cannot simply perform lockless list moves: a staged move can become invalid if the folio is isolated for reclaim, compaction, or migration; if memcg ownership changes; if nid changes; if generation or tier membership changes; if memcg offline reparents the folio to a different lruvec; if memory hotplug rebuilds lruvec relationships; or if security policy disables TSX entirely. The problem to solve is therefore narrowly defined: reduce lru_lock hold time for same-lruvec, single-folio MGLRU rotations without weakening folio lifetime safety, memcg and node identity correctness, exact accounting correctness, forward progress under RTM aborts, or correctness when TSX is disabled, masked, or permanently force-aborting.</div>
+    <h3>3.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Known techniques leave a specific gap. qspinlock optimistic spinning and historical lock-elision work are generic lock-acquisition mechanisms; they do not define a memory-management-specific validity contract for a staged MGLRU move, do not require a caller-held folio reference for safe lockless sampling, and do not re-derive memcg, nid, lruvec, generation, tier, and exact accounting at the commit consistency point. Generic seqcount and seqlock patterns can cheaply invalidate stale observations, but seqcount plus conventional lock acquisition still leaves the full lru_lock handoff, hold time, and cacheline bouncing intact because the actual list mutation and accounting still happen only after the lock is acquired. Existing MGLRU lockless prechecks and heuristics are advisory only and stop short of committing the list move itself. Existing optimistic memory-reclamation work also fails to enumerate the exhaustive Linux-specific invalidation set required here: list membership changes, generation advancement, tier changes, isolate and putback, eviction and refault reinsertion, memcg migration or offline reparenting, node migration or lruvec rebuild, and order-eligibility transitions. The gap is a claim-ready mechanism that combines an exhaustive per-lruvec invalidation contract, a pinned-folio advisory capsule, a full-lockword qspinlock subscription, commit-point re-derivation of identity and accounting, and an immediate fail-closed fallback to the existing lru_lock path.</div>
+    <h3>3.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Scope: Only order-0, same-lruvec, single-folio MGLRU rotations that the baseline code would already execute under lru_lock are eligible. Cross-lruvec moves are never committed transactionally.
+2. Folio lifetime rule: The helper may be entered only when the caller already holds a live folio reference obtained outside the helper, such as from a page-cache, rmap, page-table, or reclaim walk. The helper never speculatively acquires a reference to an otherwise unpinned LRU folio.
+3. Advisory-only capsule: Under RCU read-side protection and a read-seqcount acquire of a per-lruvec mutation sequence, the helper samples only hints: sampled memcg, sampled nid, sampled lruvec pointer, sampled generation, sampled tier, sampled type, sampled zone, sampled source and destination list identities, and sampled sequence value. These hints are used only to decide whether an RTM attempt is worthwhile.
+4. Correctness-critical state: Inside RTM or, on fallback, under lru_lock, the helper recomputes from current memory the folio&#x27;s current memcg, nid, lruvec, generation, tier, type, order-0 eligibility, LRU eligibility, isolate status according to the same predicate the baseline path already trusts, source list, destination list, and exact page-count delta. No delta or destination chosen from the capsule is ever applied directly.
+5. Exhaustive mutation-sequence contract: Every MGLRU writer that can invalidate a staged same-lruvec move wraps its mutation with write-seqcount-begin and write-seqcount-end while holding lru_lock. Mandatory sequence coverage includes: list add, delete, or move into, out of, or between lrugen lists; generation advancement, promotion, demotion, or aging; tier changes driven by referenced or protection logic; isolate and putback for reclaim, compaction, migration, or activation and deactivation; eviction or refault reinsertion; memcg migration, memcg offline reparenting, or any ownership move between lruvecs; node migration, memory hotplug or offline, or lruvec rebuild; and any change in folio order or compound eligibility that would remove the operation from the order-0 scope. Cross-lruvec transitions bump both source and destination sequences.
+6. RTM commit lane: With preemption and local interrupts disabled, xbegin starts a transaction. The helper transactionally reads the full qspinlock word for lru_lock and proceeds only if the entire word is zero, thereby subscribing to locked, pending, and queued state on the actual lockword used by lock takers. It then re-derives live folio and lruvec identity, verifies that the sampled sequence is still the same even value, verifies same-lruvec eligibility, recomputes source and destination lists and exact accounting, performs the list unlink and relink, updates the same per-generation per-type per-zone counters that the baseline helper would update, and xend commits. Any abort, mismatch, unsupported policy, or revalidation failure triggers immediate fallback.
+7. Policy and observability: The fast path is default-off behind a boot-time static key. PMU data may be used to measure benefit, but PMU availability never affects correctness or eligibility. Adaptive runtime backoff uses only local RTM abort status and administrator policy, not PMU interrupts or PMU virtualization support.</div>
+    <h3>3.4 Architecture</h3><pre class='arch-pre'>Boot and policy gate
+  CPUID reports RTM
+  AND RTM is not disabled by microcode or kernel TSX policy
+  AND system TAA policy permits TSX use
+  AND no disallowing hypervisor or lockdown policy is active
+      -&gt; enable global static branch for mglru RTM path
+  else
+      -&gt; always use baseline locked path
+
+Per-CPU fast-path gate
+  CPU not in cooldown
+  AND abort budget is acceptable
+  AND no nested RTM attempt
+  AND caller already holds folio reference
+      -&gt; optimistic sample lane
+  else
+      -&gt; baseline locked path
+
+Optimistic sample lane (RCU read-side, no mutation)
+  seq0 = acquire read of lruvec mutation sequence
+  sample advisory hints: memcg, nid, lruvec hint, gen, tier, type, zone, src and dst hints
+  retry check on seq; if unstable, fall back
+
+RTM commit lane (preemption disabled, local interrupts disabled)
+  xbegin
+    lockword = full READ_ONCE of lru_lock qspinlock word
+    require lockword == 0
+    re-derive current memcg and nid from folio
+    re-derive current lruvec from memcg and nid
+    require current lruvec matches sampled lruvec
+    require mutation sequence still matches sampled even value
+    require folio is still pinned, order-0, LRU eligible, and not isolated according to baseline predicate
+    recompute current generation, tier, type, source list, destination list, and exact delta
+    unlink folio from current list
+    relink folio to destination list
+    update per-generation per-type per-zone page counters and any coupled metadata already changed by baseline helper
+  xend
+  on abort -&gt; record abort code, maybe enter cooldown, then fallback
+
+Fallback locked lane
+  spin_lock_irqsave on lru_lock
+  re-derive all identity and accounting from live state
+  invoke existing authoritative MGLRU rotation helper
+  spin_unlock_irqrestore
+
+Memory touched inside RTM is intentionally fixed and non-faulting: the qspinlock word, folio flags relevant to LRU and generation state, folio list_head links, source and destination lrugen list heads, per-generation counters, and the mutation sequence. No allocation, no user access, no sleeping lock, no reclaim recursion, and no indirect callback is allowed. Interrupts and NMIs are treated as abort causes only; they do not create correctness dependence.</pre>
+    <h3>3.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1. Introduce a configuration and policy surface that is default-off, such as CONFIG_X86_MGLRU_RTM_ROTATE plus a boot parameter with off, on, and auto modes, where auto enables only when RTM is architecturally present, not disabled by IA32_TSX_CTRL or kernel TSX policy, acceptable under current TAA policy, and not blocked by hypervisor or lockdown policy.
+2. Add a global static key so the compiled fast path is never reached unless boot-time policy explicitly enables it.
+3. Add a per-lruvec mutation sequence coupled to lru_lock and wrap every writer in the exhaustive contract: list add, delete, and move; generation advance and aging; tier change; isolate and putback; eviction and refault insertion; memcg migration and offline reparenting; node migration; memory hotplug and lruvec rebuild; and any order or compound eligibility transition that invalidates order-0 scope. Add debug assertions so a mutation helper cannot update lrugen state without both lru_lock held and sequence coverage active.
+4. Refactor the existing locked one-folio rotation helper so that all correctness-critical recomputation lives in one shared path usable by both the RTM lane and the fallback lane.
+5. Implement the advisory capsule helper under RCU plus read-seqcount acquire semantics. Explicitly document in code that capsule fields are hints only and may not be used to derive accounting or destination without commit-time recomputation.
+6. Implement the x86 RTM helper as a tight inline region that disables preemption and local interrupts, performs xbegin, subscribes to the full qspinlock word by requiring an all-zero state, revalidates identity and eligibility, applies the list and counter mutations, and xend commits. The helper must not call code that sleeps, faults, allocates, or enables preemption.
+7. Implement bounded retry and disable heuristics: zero retries for explicit, capacity, debug, interrupt, nested, or unsupported aborts; at most one retry for pure conflict aborts; CPU-local cooldown when abort rate exceeds a threshold over a time window; optional global cooldown driven by aggregated software counters only. PMU presence is not required.
+8. Add observability that is strictly non-authoritative: counters or tracepoints for attempts, commits, abort reasons, lock fallbacks, and cooldown entries, plus perf recipes using RTM retired events and lock or cache contention events for benchmarking.
+9. Validate staged rollout in this order: exhaustive sequence-contract coverage and fallback refactor first, RTM commit lane second, cooldown heuristics third, default-off fleet trial last.</div>
+    <h3>3.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Correctness validation:
+1. Run with lockdep, DEBUG_VM, KCSAN, and fault-injection configurations to verify no mutation path escapes the sequence contract and no fast-path mutation occurs without fallback-equivalent invariants.
+2. Exercise reclaim, compaction, migration, memcg online and offline, memcg reparenting, memory hotplug, page-cache churn, refault, activation, deactivation, and NUMA balancing workloads while forcing frequent fallback to confirm identical semantics.
+3. Force RTM abort classes via explicit xabort instrumentation, interrupt storms, and nested transactional disallow cases to verify bounded retries, CPU-local cooldown, and immediate forward progress through the locked helper.
+4. Boot matrix: TSX enabled, TSX disabled by kernel policy, TSX disabled by microcode, TAA mitigation active, TAA policy disallowing TSX, hypervisor-present with RTM masked, hypervisor-present with RTM exposed, and security-lockdown mode. In every disallowed case the feature must stay entirely inactive.
+5. Verify accounting invariants by comparing per-generation per-type per-zone counters and list membership before and after stress against a kernel built with the fast path compiled out.
+
+Performance validation:
+6. Measure lru_lock contention, RTM attempts, RTM commits, RTM abort reasons, reclaim throughput, and tail latency on page-cache and reclaim-heavy benchmarks such as memcg pressure tests, file-cache thrash, container density stress, and in-memory database churn.
+7. Use PMU only as observability: RTM retired events, lock-related events, and cacheline movement metrics to determine whether the narrow same-lruvec path actually reduces serialized lock occupancy on validated Xeon platforms.
+8. Success criteria are conservative: reduced lru_lock hold time and contention for eligible paths, no regression when the feature is off, and automatic convergence to the locked path under abort-heavy conditions.</div>
+  </section>
+
+  <section class="card">
+    <h2>4. Patent Claims</h2>
+    <ol><li style='margin-bottom:8px;'>1. A method in a Linux kernel memory-management subsystem for rotating a single order-0 folio between multi-generational LRU lists within a same lruvec, the method comprising: receiving a folio for which a caller already holds a live reference; sampling, without mutation, advisory folio and lruvec state under a per-lruvec mutation sequence; starting an x86 restricted transactional memory region only when platform policy has enabled the region; transactionally reading an entire lockword of a lruvec lock as a subscription set and proceeding only when the lockword indicates no locked, pending, or queued owner state; re-deriving inside the transactional region the folio&#x27;s current memcg, node identifier, lruvec, generation, tier, LRU eligibility, and source and destination list identity; recomputing at a commit consistency point an exact accounting delta for the folio; atomically applying a list unlink, a list link, and the exact accounting delta; and immediately falling back to an existing lock-protected path that repeats the re-derivation when any transaction abort, sequence mismatch, eligibility failure, or policy failure occurs.</li><li style='margin-bottom:8px;'>2. The method of claim 1, wherein the restricted transactional memory region uses xbegin and xend, executes with preemption and local interrupts disabled, performs no potentially faulting or sleeping operation, and performs at most one retry only for conflict-coded aborts, while capacity, interrupt, explicit, nested, debug, or unsupported aborts trigger immediate fallback and a temporary CPU-local disable interval.</li><li style='margin-bottom:8px;'>3. The method of claim 1, wherein the per-lruvec mutation sequence is updated for each state transition selected from: list insertion, deletion, or move into or between lrugen lists; generation advancement, promotion, demotion, or aging; tier change; isolate or putback for reclaim, compaction, or migration; eviction or refault reinsertion; memcg migration, offline reparenting, or lruvec ownership change; node migration, memory hotplug, or lruvec rebuild; and any transition that changes order-0 eligibility, with both source and destination lruvec sequences updated for cross-lruvec transitions.</li><li style='margin-bottom:8px;'>4. The method of claim 1, wherein sampled capsule fields are advisory only and include one or more of a sampled lruvec pointer, sampled generation, sampled tier, sampled source or destination list identity, sampled zone, or sampled sequence value, and wherein no counter delta or list mutation is derived solely from the sampled capsule.</li><li style='margin-bottom:8px;'>5. The method of claim 1, wherein the transactional fast path is default-off and globally enabled only by a boot-time static branch after verification of RTM architectural support, absence of RTM-disable microcode policy, acceptance under kernel TAA policy, and absence of a disallowing virtualization or security-lockdown policy.</li><li style='margin-bottom:8px;'>6. The method of claim 1, wherein rollback semantics are provided solely by transactional abort or by omission of mutation before lock fallback, such that double-counting cannot occur because the exact accounting delta is computed only at the commit consistency point and is never applied outside a successful transaction or the lock-protected fallback.</li><li style='margin-bottom:8px;'>7. The method of claim 1, wherein lockless sampling occurs inside an RCU read-side section and the folio lifetime is guaranteed by the caller-held reference, causing stale, migrated, isolated, or reparented folio capsules to fail closed on commit revalidation.</li><li style='margin-bottom:8px;'>8. The method of claim 1, further comprising collecting performance-monitoring data to observe transaction commit rate, abort rate, and lock contention, wherein availability or unavailability of performance monitoring does not alter correctness, forward-progress guarantees, or fast-path eligibility.</li></ol>
+    
+  </section>
+
+  <section class="card">
+    <h2>5. Risks &amp; Mitigations</h2>
+    <ul><li style='margin-bottom:6px;'>TSX and TAA security risk: keep the feature default-off and enable it only where existing kernel and platform policy already permits TSX use; automatically force the path off under lockdown, disallowing TAA policy, or uncertain hypervisor exposure.</li><li style='margin-bottom:6px;'>Abort storms from interrupts, conflicts, or capacity pressure: allow at most one retry for conflict aborts, no retry for interrupt, explicit, nested, capacity, debug, or unsupported aborts, and use CPU-local cooldown so reclaim immediately converges to the locked path.</li><li style='margin-bottom:6px;'>Missed mutation-sequence coverage: enumerate the exhaustive writer contract in code and test plans, couple the sequence to lru_lock with debug assertions, and treat any helper that mutates lrugen state without sequence coverage as a correctness bug.</li><li style='margin-bottom:6px;'>qspinlock implementation drift or subscription weakness: subscribe to the full lockword rather than only a locked bit, validate the layout on supported x86 kernels, and keep the feature disabled if the underlying lock representation or acquisition semantics are not known to be compatible.</li><li style='margin-bottom:6px;'>Folio identity drift from migration, isolate, memcg reparenting, node movement, or hotplug: require a caller-held folio reference for lifetime, re-derive memcg, nid, lruvec, generation, and list identity at commit, and fail closed to the locked path on any mismatch.</li><li style='margin-bottom:6px;'>Accounting divergence or double-counting: compute deltas only at the commit point, update only the same list links and per-generation counters that the baseline helper updates, and never replay sampled or deferred deltas after an abort.</li><li style='margin-bottom:6px;'>PMU unavailability in virtualized or restricted fleets: use PMU events only for measurement and tuning visibility, never for correctness gating, so the feature behaves safely and predictably even when PMU access is masked.</li></ul>
+  </section>
+
+  <section class="card">
+    <h2>6. References</h2>
+    <ul><li>Linux kernel Documentation/admin-guide/mm/multigen_lru.rst and related mm/vmscan.c MGLRU implementation paths.</li><li>Linux kernel locking implementation for qspinlock, including kernel/locking/qspinlock.c and the architecture qspinlock type definitions.</li><li>Linux kernel seqcount and seqlock documentation describing writer serialization and reader acquire-retry semantics.</li><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual, volumes covering Intel TSX RTM, IA32_TSX_CTRL, and transactional abort status.</li><li>Intel 64 and IA-32 Architectures Optimization Reference Manual sections covering RTM behavior and performance monitoring events for transactional execution.</li><li>Kernel and vendor guidance related to TSX Async Abort mitigation and kernel policy choices for enabling or disabling TSX on server platforms.</li></ul>
+  </section>
+
+  <section class="card">
+    <h2>7. Debate Panel Review (Final Round)</h2>
+    <p class="muted" style="font-size:13px;">4 specialists reviewed independently. 3/4 voted APPROVE. Avg score: 3.0/5. Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+    
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:12px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC: 1</span>
+    </span>
+  </div>
+  
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact memory-ordering rules for the per-lruvec mutation sequence (writers must increment under lru_lock; readers must use READ_ONCE and an acquire-style pairing if relying on even/odd stability) and spell out what invariants it actually protects vs what must still be revalidated under lru_lock.</li><li style='font-size:13px;margin-bottom:4px;'>Be explicit that the RTM path is strictly non-sleeping and must not touch any state that can fault, allocate, take locks, or trigger lockdep/tracepoints that might indirectly sleep; otherwise you’ll see pathological abort rates or correctness hazards.</li><li style='font-size:13px;margin-bottom:4px;'>Ensure the ‘pinned folio’ preconditions are concrete and checkable: order-0 (no THP/compound), not in migration/split paths, stable lruvec identity (memcg reparent/move accounted), and list membership validated only under lru_lock before any list_del/list_add; the capsule must never trust list pointers read locklessly.</li><li style='font-size:13px;margin-bottom:4px;'>Locking correctness: the canonical locked commit helper must preserve existing lru_lock IRQ semantics (spin_lock_irqsave or equivalent) and lockdep classing; do not introduce a new lock acquisition pattern that could violate current mm reclaim lock ordering.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:12px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC: 1</span>
+    </span>
+  </div>
+  
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten the novelty boundary vs prior Linux TSX/RTM lock-elision work: explicitly state what is new beyond “subscribe to lockword and mutate inside RTM” (i.e., the MGLRU-specific capsule + re-derive-at-commit contract).</li><li style='font-size:13px;margin-bottom:4px;'>Define the per-lruvec mutation-sequence contract as an explicit, auditable list of all MGLRU-invalidating writes (which exact helpers/paths must bump it), and how you prevent “forgot to bump” regressions (e.g., lockdep assertions or centralized helper wrappers).</li><li style='font-size:13px;margin-bottom:4px;'>Spell out the commit helper’s exact invariants: which capsule fields are advisory-only, which values are re-derived under RTM/lock, and how you guarantee deltas/counters are computed solely from live state at the consistency point.</li><li style='font-size:13px;margin-bottom:4px;'>Clarify concurrency interactions that commonly break optimistic MM schemes: folio migration, memcg reparent/charge move, split/compound transitions, and isolate/putback—state which are excluded, which force fail-closed, and what predicates detect them.</li><li style='font-size:13px;margin-bottom:4px;'>Specify abort policy details needed for defensibility and feasibility: bounded retries, per-CPU cooldown, which RTM abort codes trigger immediate fallback, and how IRQ/NMI/preemption are handled to avoid pathological abort storms.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:12px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC: 1</span>
+    </span>
+  </div>
+  
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Tighten the HW/SW co-design story by explicitly positioning RTM as an optional contention-avoidance *filter* (reduce futile qspinlock ownership transfers) while keeping correctness entirely in the canonical locked commit; this makes the Xeon value proposition clearer and de-risks TSX policy variability across fleets.</li><li style='font-size:13px;margin-bottom:4px;'>Make the per-lruvec mutation-sequence contract concrete: enumerate the exact write sites that must bump the sequence (list relinks, gen/tier changes, isolate/putback, memcg reparent, migration, split/compound transitions) and describe how you’ll audit/validate coverage (e.g., centralized helpers + lockdep/assertions).</li><li style='font-size:13px;margin-bottom:4px;'>Add a deployability section for Xeon clouds: TSX gating matrix (microcode TSX_CTRL/RTM disable, TAA mitigation stance, virtualization/hypervisor behavior, lockdown), plus a perf/PMU-driven auto-disable heuristic to prevent abort storms on noisy systems.</li><li style='font-size:13px;margin-bottom:4px;'>Quantify expected wins with a measurement plan that ties directly to Xeon competitiveness: qspinlock contention metrics, cross-socket cacheline traffic reduction, tail latency improvements under memcg-heavy reclaim, and sensitivity to core count/NUMA topology.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:12px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC: 2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The per-lruvec mutation-sequence contract and TSX/TAA policy gating are not specified concretely enough to guarantee fail-closed behavior; an incomplete writer-coverage list or missing barriers can silently reintroduce stale-state commits or UAF/corruption risk.</p>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact lifetime/pinning invariant for the “pinned folio” (which references qualify, how you prevent refcount-from-zero, and how you prevent reuse after free). Require explicit checks (e.g., folio_test_lru/folio_ref_count/flags stability) and state which contexts are allowed (reclaim/kswapd/direct reclaim/interrupt-disabled paths).</li><li style='font-size:13px;margin-bottom:4px;'>Make the mutation-sequence contract exhaustive and auditable: enumerate every MGLRU-invalidating writer (isolate, move, activate/deactivate, memcg reparent, migration/compaction, split/compound, reclaim tail, pagevec batching). Provide a single helper API that all writers must call, plus lockdep/assertions to catch missed increments in debug builds.</li><li style='font-size:13px;margin-bottom:4px;'>Specify memory-ordering rules: which sequence reads use READ_ONCE, where smp_rmb()/smp_wmb() are required around seq sampling and list/accounting observation, and how you ensure the canonical locked commit re-derivation cannot consume torn/stale fields (especially generation/tier bits vs list membership).</li><li style='font-size:13px;margin-bottom:4px;'>Clarify TSX/TAA/virtualization/security-lockdown gating: explicitly tie enablement to x86 vulnerability state and kernel params (tsx=, tsx_async_abort=), microcode controls (e.g., IA32_TSX_CTRL), and hypervisor behavior. State whether RTM is completely disabled when TAA mitigations require it, and ensure the default remains off.</li><li style='font-size:13px;margin-bottom:4px;'>If you ever disable preemption/IRQs (even for snapshot), state the exact scope and prove it’s legal in all call sites; otherwise require a snapshot method that does not change interrupt state. Also specify NMI/IRQ abort behavior and guarantee no recursion/nesting hazards with existing MM locks.</li></ul>
+</div>
+  </section>
+
+  <section class="card"><h2>8. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:12px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">yellow_card_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;font-size:13px;color:#64748b;">Feedback (6 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the exact pinning/lifetime rule for the optimistic phase: you must take a folio reference (e.g., folio_try_get()/folio_get()) before any unlocked observation, and you must sp</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Spell out what is legal to read without lru_lock and how: any unlocked reads of generation, referenced/active, memcg/lruvec identity, or list state must be via READ_ONCE()/atomic ac</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The proposed “mutation cookie” needs a concrete correctness model: where it lives (per-lruvec), how it is updated (incremented under lru_lock on every mutation that can invalidate a</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Revalidation must cover lruvec identity drift: a capsule created from lockless reads can become stale if the folio’s memcg changes, it migrates nodes, or it’s isolated/moved by recl</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Accounting deltas cannot be safely staged from unlocked reads unless you prove invariance under all concurrent paths. Practically, recompute generation/accounting deltas under lru_l</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Ensure forward-progress and deadlock safety: the two-phase scheme must not introduce new lock ordering inversions (e.g., memcg, pgdat, lru_lock) and must guarantee bounded retries w</li></ul>
+  </details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:12px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;font-size:13px;color:#64748b;">Feedback (6 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define the mutation-cookie semantics precisely (seqcount-like odd/even vs monotonic). You must specify: (a) exact write-side sites that bump it (ALL MGLRU list/gen/accounting mutati</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The folio lifetime contract is underspecified. A folio ref prevents free, but does NOT prevent: page migration changing node/lruvec, folio split changing identity/list linkage, or r</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Re-deriving lruvec identity under lock needs a deadlock-safe locking model. If the design ever needs memcg stabilization (CSS ref / RCU) or interacts with memcg move/charge paths, y</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] TSX ‘read-only snapshot’ still needs kernel-safety constraints: no page faults inside the transaction, no instrumentation that can fault/sleep, and clear rules for preemption/IRQ st</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] The draft claims ‘all correctness-critical state and accounting recomputed under lock’, but must enumerate which fields are advisory-only vs correctness-critical. Any unlocked reads</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] PMU-gated adaptive enablement introduces concurrency and policy risks (per-cpu state, races with CPU hotplug, virtualization PMU availability, and security/policy constraints). You </li></ul>
+  </details>
+</div></section>
+
+  <footer class="card muted" style="text-align:center;font-size:12px;">
+    Generated by DeepThought &mdash; Topological Void Analysis Engine<br/>
+    New-format run with full void context &mdash; Optimize Linux memory management using x86 TSX microarchitecture features
+  </footer>
+
+</div>
+</body>
+</html>

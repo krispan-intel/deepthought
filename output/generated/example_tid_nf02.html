@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>TID-NF-002: Topology-Scoped Cohort Synchronization for Linux (Acquisitio</title>
+  <style>
+    :root{--bg:#f7f7f4;--card:#fff;--ink:#1f2328;--muted:#59636e;--line:#dde2e7;--star:#d99a00;}
+    body{margin:0;background:radial-gradient(circle at 20% 0%,#eef3ff,var(--bg) 42%);color:var(--ink);font:15px/1.6 "Segoe UI","Noto Sans",sans-serif;}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 72px;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+    h1{font-size:22px;margin:0 0 10px;} h2{font-size:18px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:0 0 12px;} h3{font-size:15px;color:var(--muted);margin:16px 0 6px;}
+    .pill{background:#f2f5f8;border:1px solid var(--line);border-radius:999px;padding:4px 10px;display:inline-block;margin:3px 5px 0 0;font-size:13px;}
+    .stars{color:var(--star);letter-spacing:1px;}
+    .muted{color:var(--muted);}
+    table{width:100%;border-collapse:collapse;} th,td{border-bottom:1px solid var(--line);text-align:left;padding:8px 6px;font-size:14px;}
+    ul,ol{margin:8px 0 0 20px;} li{margin-bottom:3px;}
+    .arch-pre{background:#f0f2f5;border:1px solid var(--line);border-radius:8px;padding:14px;font-family:"Cascadia Code","Fira Code",monospace;font-size:12.5px;white-space:pre-wrap;line-height:1.5;overflow-x:auto;}
+    .badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:700;color:#fff;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div style="background:#f59e0b;color:#fff;border-radius:14px;padding:18px;margin-bottom:14px;text-align:center;">
+    <div style="font-size:13px;opacity:.85;margin-bottom:4px;">TID-NF-002 &nbsp;|&nbsp; Debate Panel: 3 round(s) &nbsp;|&nbsp; 2/4 APPROVE &nbsp;|&nbsp; Avg Score: 4.0/5</div>
+    <div style="font-size:20px;font-weight:700;">REVISE &mdash; fatal_flaw_revise</div>
+  </div>
+
+  <section class="card">
+    <h1>Topology-Scoped Cohort Synchronization for Linux (Acquisition-Time qspinlock Cohorts, Primitive-Class APIC Batch Nudging, and GP-Seq Steward Timers)</h1>
+    <div class="muted" style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;margin-top:8px;">
+      <div><strong>Run ID:</strong> run-584fe117f4bd</div>
+      <div><strong>Target:</strong> Optimize Linux synchronization using x86 APIC microarchitecture features</div>
+      <div><strong>Generated:</strong> 2026-04-18</div>
+      <div><strong>System:</strong> DeepThought TVA</div>
+    </div>
+    <h3>Original Maverick Drafts</h3>
+    <ul style="font-size:13px;"><li style='font-size:13px;'>x2APIC Proxy-Domain Queue Locks for Linux qspinlock</li><li style='font-size:13px;'>RCU APIC Cohort Arbiter with Local APIC TSC-Deadline Timers</li><li style='font-size:13px;'>Futex APIC Cohort Router for Barrier-Heavy Userspace Workloads</li></ul>
+  </section>
+
+  <section class="card">
+    <h2>1. Executive Summary</h2>
+    <h3>One-Liner</h3>
+    <div style='white-space:pre-wrap;line-height:1.7;'>A correctness-first Linux synchronization substrate that RCU-publishes conservative x86 APIC/CPUID topology epochs, uses a fixed hashed sidecar to serialize same-domain qspinlock contenders behind one bounded-lifetime representative, and optionally collapses only already-authoritative scheduler or Tree RCU nudges into identical-primitive, same-cluster x2APIC sends or single-cohort steward timers, with immediate reversion to stock Linux behavior on any ambiguity, hotplug drift, PREEMPT_RT conflict, paravirt path, or ordering uncertainty.</div>
+    <div style="margin-top:10px;">
+      <div class="pill"><strong>Novelty:</strong> The novelty is a single fail-closed bridge layer that binds three normally separate mechanisms—x86 topology discovery, acquisition-time contention shaping, and subset-only notification transport—without changing Linux&#x27;s authoritative synchronization </div>
+      <div class="pill"><strong>Feasibility:</strong> The design is implementable because it adds only fixed-size sidecars and sender-local scratch state around existing Linux hooks instead of replacing them. Topology is rebuilt in sleeping CPU hotplug c</div>
+      <div class="pill"><strong>Commercial:</strong> The commercial value is in high-core-count x86 servers where cross-package cacheline migration, redundant cross-cluster reschedule traffic, and broad-scope RCU laggard forcing are real tail-latency co</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2. Scorecard (Maverick self-assessment)</h2>
+    <table>
+      <thead><tr><th>Dimension</th><th>Score</th><th>Rating</th></tr></thead>
+      <tbody>
+        <tr><td>Innovation</td><td>4/10</td><td class="stars">★★☆☆☆</td></tr>
+        <tr><td>Implementation Difficulty</td><td>5/10</td><td class="stars">★★☆☆☆</td></tr>
+        <tr><td>Commercial Value</td><td>4/10</td><td class="stars">★★☆☆☆</td></tr>
+        <tr><td>Technical Risk</td><td>3/10</td><td class="stars">★☆☆☆☆</td></tr>
+        <tr><td>Prior-Art Risk</td><td>3/10</td><td class="stars">★☆☆☆☆</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>3. Technical Invention Disclosure</h2>
+    <h3>3.1 Problem Statement</h3><div style='white-space:pre-wrap;line-height:1.7;'>Large x86 SMP systems pay avoidable synchronization cost in three places. In contended qspinlocks, multiple same-socket or same-die contenders repeatedly migrate the lock cacheline across packages because each contender independently enters the global queue. In scheduler remote wake paths, Linux already suppresses repeated nudges to the same destination CPU via first-transition pending semantics, but a source CPU waking many different destination CPUs in the same APIC logical cluster still commonly issues one architectural send per target or executes an iterative send_IPI_mask() loop. In Tree RCU grace-period forcing, the GP thread must act on authoritative qsmask state, yet today broad laggard nudging can still touch multiple related CPUs separately even when one topology-local steward could safely proxy the non-authoritative transport work. x86 APIC microarchitecture exposes topology hierarchy, logical clustering, and local deadline timers, but Linux cannot safely exploit those features by inventing new ownership rules, inferring quiescent states from delivery success, batching across semantically different nudge primitives, or trusting unstable firmware topology during hotplug, isolation, or virtualization churn.</div>
+    <h3>3.2 Prior-Art Gap</h3><div style='white-space:pre-wrap;line-height:1.7;'>Existing Linux behavior already covers important pieces in isolation: qspinlock already provides a compact queued lock; ttwu_queue_wakelist()/sched_ttwu_pending already suppress duplicate remote nudges per destination CPU with first-transition semantics; x86 APIC code already knows how to target masks; and Tree RCU already performs GP-driven forcing based on authoritative qsmask state. The gap is the absence of a single kernel-feasible bridge layer that: (1) converts CPUID/APIC topology into a conservative, epoch-versioned optimization-enablement map; (2) uses that map to bound acquisition-time representative gating ahead of qspinlock slowpath without changing stock unlock or PV/RT semantics; (3) batches only the final transport step for already-authoritative remote wake or RCU nudge events, splitting masks by primitive class and APIC cluster so behavior stays semantically identical to stock; and (4) proves immediate fail-closed reversion on collisions, hotplug drift, topology ambiguity, paravirt, PREEMPT_RT, isolation policy, or uncertain x2APIC transport cost. The claimed novelty is therefore not &#x27;fewer wakeups&#x27; or &#x27;generic APIC multicast,&#x27; but a correctness-preserving way to reduce architectural send operations and queue entries only when topology, primitive class, and policy all align.</div>
+    <h3>3.3 Proposed Invention</h3><div style='white-space:pre-wrap;line-height:1.7;'>Introduce a three-part fail-closed substrate. (1) Topology epoch manager: at boot and on CPU hotplug rebuild, parse CPUID leaf 0x1F when present, otherwise 0x0B, consuming only the x2APIC ID in EDX and the shift widths in EAX to derive stable package and cluster identifiers; package scope is always supported, while die scope is enabled only when 0x1F explicitly exposes a stable die level and Linux&#x27;s published die IDs agree for all online CPUs. The result is RCU-published as a read-mostly topology snapshot with an incrementing epoch and a &#x27;stable&#x27; bit. (2) qspinlock acquisition-time cohort gate: when a lock enters contended slowpath, a fixed boot-sized sidecar hash indexed by mixed lock address attempts to claim an entry with a lock key; if the bucket is occupied by another live key or the topology snapshot is unstable, the attempt goes straight to stock qspinlock slowpath. Otherwise, same-domain contenders increment a local-waiter counter, and at most one contender installs itself as representative by cmpxchg on rep_cpu plus a rep_gen token. Only that representative may enter stock queued_spin_lock_slowpath(); peers remain outside the global queue and spin on the sidecar using acquire loads, with explicit escape to stock if rep_gen does not advance within a bounded iteration or time budget, if rep_cpu becomes offline, if the topology epoch changes, or if batch_credit expires. Representative retirement uses release ordering to clear rep_cpu and advance rep_gen after unlock, so waiters can either elect a successor or enter drain-to-stock mode. (3) Subset-only APIC nudging: after scheduler or RCU code has already completed the stock authoritative per-target enqueue and pending-state transition, sender-local or GP-local code adds that target CPU to a transient bucket keyed by {topology epoch, APIC logical cluster, primitive class}. Primitive class is one of RESCHED_IPI, IRQ_WORK, or NONE/POLLING, and masks are never mixed across classes. On commit, the x86 hook may issue one logical- or cluster-mode x2APIC send for a bucket only if every target is within one legal cluster, every target requires the same primitive class, and the hardware path is no more expensive than the stock per-target loop; otherwise the exact stock helper is called per target. For Tree RCU specifically, only the GP thread may arm one housekeeping steward timer per lagging cohort and gp_seq, and the timer callback must re-read the current gp_seq and authoritative laggard mask under normal rcu_node locking before sending any nudge. A transient gp_seq-keyed bitmap suppresses duplicate non-authoritative nudges per target CPU within that GP and is reset on GP advance; it never contributes to quiescent-state accounting.</div>
+    <h3>3.4 Architecture</h3><pre class='arch-pre'>Core objects:
+1) `struct sync_topology_snapshot { u32 epoch; bool stable; enum boundary { PACKAGE, DIE }; cpumask_t online; cpumask_t housekeeping; u32 package_id[NR_CPUS]; u32 die_id[NR_CPUS]; u32 apic_cluster_id[NR_CPUS]; enum primitive_policy primitive_class[NR_CPUS]; }` published by RCU.
+2) `struct qsc_entry { u64 key; u32 topo_epoch; u32 rep_gen; u16 rep_cpu; u16 rep_domain; u8 batch_credit; u8 flags; atomic_t local_waiters; }` in a fixed boot-time hash table.
+3) `struct apic_nudge_batch { u32 topo_epoch; bucket[cluster_id][primitive_class] -&gt; cpumask_t; }` as sender-local scratch for one lexical wake fan-out window only.
+4) `struct rcu_cohort_nudge { u64 gp_seq; u32 topo_epoch; int steward_cpu; cpumask_t laggards; cpumask_t nudged_once; struct hrtimer timer; }` owned only by the current GP forcing path.
+
+ASCII overview:
+`CPUID 0x1F/0x0B + x2APIC IDs`
+`          |`
+`          v`
+`  [topology rebuild worker under CPU hotplug] --RCU publish--&gt; [sync_topology_snapshot(epoch)]`
+`          |                                                      |`
+`          |                                                      +--&gt; qspinlock cohort gate`
+`          |                                                      |      - hash(lock*) -&gt; qsc_entry`
+`          |                                                      |      - one representative/domain`
+`          |                                                      |      - escape -&gt; stock queued slowpath`
+`          |                                                      |`
+`          |                                                      +--&gt; scheduler nudge batch`
+`          |                                                      |      - authoritative enqueue first`
+`          |                                                      |      - bucket by {cluster, class}`
+`          |                                                      |      - x86 mask send or stock loop`
+`          |                                                      |`
+`          |                                                      +--&gt; Tree RCU steward`
+`          |                                                             - GP thread snapshots laggards`
+`          |                                                             - one housekeeping steward/cohort`
+`          |                                                             - timer rechecks gp_seq + qsmask`
+`          v`
+`      fail-closed triggers: collision | unstable topology | hotplug epoch change | PREEMPT_RT | paravirt | policy mismatch | transport cost uncertainty`
+
+qspinlock state machine: `stock fastpath` -&gt; on repeated failure and observed contention -&gt; `lookup qsc_entry`; if invalid, `stock slowpath`; if valid and no representative for local domain, `elect representative`; representative alone enters stock `queued_spin_lock_slowpath`; peers wait on `rep_gen`; on representative unlock, `rep_gen++` and `rep_cpu=INVALID`; if any waiter exceeds `cohort_wait_iters` or `cohort_wait_ns`, or sees rep_cpu offline/topology epoch mismatch, it sets a drain-to-stock flag for that generation and bypasses the gate. Bounded unfairness means no domain may retain cohort preference past `MAX_LOCAL_PASSES` consecutive representative retirements or past the explicit age/iteration threshold; after either condition, all waiters for that sidecar generation bypass to stock until the bucket quiesces.
+
+Scheduler correctness contract: for each destination CPU `d`, the authoritative operations remain stock: publish wakelist entry or remote runnable state, perform the same first-transition pending atomic used today, execute the same ordering edge (including the stock atomic/barrier pair such as `smp_mb__after_atomic()` where the current path requires it), then and only then add `d` to a sender-local scratch bucket. Commit may replace only the transport helper, never the publication or pending-state transition. If commit is skipped, every `d` is handled by the stock helper exactly once.
+
+Primitive-class mapping: `RESCHED_IPI -&gt; smp_send_reschedule()` semantics; `IRQ_WORK -&gt; irq_work_queue_on()` semantics; `NONE/POLLING -&gt; no architectural send, just stock polling-visible state`. CPUs whose current policy requires nohz_full/housekeeping-specific handling, polling-idle suppression, or any arch quirk that changes semantics are split into separate buckets or forced to singleton stock handling.
+
+Tree RCU state machine: only `rcu_gp_kthread` inside the existing force-quiescent-state cadence may snapshot laggards from authoritative `qsmask` under the normal `rcu_node` lock chain, group them by topology cohort, and arm at most one steward timer per cohort when the same cohort remains lagging across a configurable number of FQS rounds. The steward is the lowest-numbered online housekeeping CPU in that cohort for the current topology epoch; if none exists, the cohort optimization is disabled. Timer expiry runs in non-sleeping context, rechecks `(current gp_seq == armed gp_seq)` with acquire ordering, re-snapshots the authoritative laggard subset under the normal lock, and uses `test_and_set_bit()` in `nudged_once` before issuing the stock-equivalent nudge transport. GP advance, CPU offline, topology epoch change, expedited GP, PREEMPT_RT, or rcu_nocb policy conflict cancels the timer and drops back to stock forcing.</pre>
+    <h3>3.5 Implementation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>1) Add an x86-only topology snapshot builder that consumes CPUID 0x1F first and 0x0B second, stores package and legal cluster IDs, records whether explicit die IDs are stable, and RCU-publishes snapshots with an incrementing epoch from CPUHP online/dying callbacks plus a sleeping rebuild worker; every consumer must compare epochs and abort on mismatch. 2) Add a boot-sized qspinlock sidecar table and a static key so the acquisition-time cohort gate activates only on x86, !PREEMPT_RT, !paravirt, stable topology, and non-colliding buckets; implement representative election with cmpxchg on `rep_cpu`, release/acquire ordering on `rep_gen`, explicit `MAX_LOCAL_PASSES`, `cohort_wait_iters`, and `cohort_wait_ns` escapes, and drain-to-stock mode when any waiter detects stalling or offline representative. 3) Add a sender-local scheduler batching helper whose lifetime is one wake fan-out loop or one wakelist drain only; keep current enqueue and pending-flag code unchanged, but collect post-publication targets into buckets by `{cluster, primitive_class}` and call a new `arch_apic_send_nudge_mask(class, mask)` hook only when the mask is intra-cluster and the hook reports a bounded hardware send count no worse than baseline. 4) Implement the x86 transport hook using only already-supported logical or cluster destination modes under x2APIC; if the mask spans clusters, the delivery mode is unavailable, the primitive class is unsupported, or the projected send count is not lower, return false so the caller executes the exact stock per-target helper sequence. 5) Add Tree RCU steward sidecars owned by the GP path: snapshot laggards from `qsmask` under existing locks in `rcu_gp_fqs()` or its equivalent forcing cadence, choose exactly one housekeeping steward per eligible cohort and epoch, arm a pinned high-resolution timer only on non-RT kernels with local APIC deadline support, and use a gp_seq-keyed `nudged_once` bitmap with atomic bitops to guarantee at most one outstanding non-authoritative nudge per target per GP. 6) Add tracepoints for topology-epoch publish, qspinlock bucket collision/escape, scheduler bucket commit, and RCU steward arm/cancel/expiry; expose only trace output, never a policy API. 7) Wire concrete fail-closed triggers: hotplug epoch change, CPU isolation/housekeeping update, virtualization ambiguity, alias collision, rep stall, expedited GP, PREEMPT_RT, or memory-ordering doubt all force immediate stock behavior.</div>
+    <h3>3.6 Validation Plan</h3><div style='white-space:pre-wrap;line-height:1.7;'>Run locktorture, qspinlock microbenchmarks, will-it-scale lock workloads, hackbench, netperf wake fan-out tests, rcutorture, and multi-socket database/AI serving traces on at least one x86 server with x2APIC logical clustering and one environment where x2APIC batching is unavailable so fallback behavior is exercised. Use `perf lock`, `perf c2c`, ftrace, lockstat, and scheduler tracepoints to show: (a) fewer global qspinlock queue entries and reduced remote cacheline migration for same-domain contention; (b) no change in stock unlock order and no starvation beyond the configured bounded-unfairness limits; (c) identical per-target enqueue visibility and destination pending semantics compared to stock; (d) reduced architectural send operations only when multiple target CPUs in one primitive class share one legal APIC cluster, with worst-case send count equal to baseline otherwise; (e) for Tree RCU, no quiescent state credited from delivery success, at most one outstanding nudge per target per GP via the gp_seq-keyed bitmap, and exact cancellation on GP advance or steward hotplug. Stress hotplug, CPU offline/online churn, nohz_full, housekeeping changes, rcu_nocb, paravirt guests, and PREEMPT_RT builds to confirm optimization disables cleanly. Add targeted fault injection to force representative CPU preemption/offline, bucket collisions, topology epoch flips mid-wait, and stale timer expiry to prove escape-to-stock and no stale post-GP nudges.</div>
+  </section>
+
+  <section class="card">
+    <h2>4. Patent Claims</h2>
+    <ol><li style='margin-bottom:8px;'>A Linux synchronization substrate that derives an optimization-only topology epoch from x86 CPUID 0x1F or 0x0B x2APIC hierarchy, publishes it via RCU, and enables cohort behavior only when package or explicitly enumerated die boundaries are stable across all online CPUs.</li><li style='margin-bottom:8px;'>An acquisition-time qspinlock cohort gate implemented with a fixed hashed sidecar keyed by lock address, wherein only one representative per topology domain may enter the stock qspinlock slowpath while same-domain peers wait outside the global queue, and wherein unlock semantics remain the unmodified stock immediate-successor behavior.</li><li style='margin-bottom:8px;'>The qspinlock gate of claim 2 further comprising explicit fail-closed escape conditions based on representative age, iteration count, batch-credit exhaustion, bucket collision, CPU offline, topology epoch mismatch, paravirtual spinlock presence, or PREEMPT_RT mode, such that any uncertainty drains the cohort back to stock behavior.</li><li style='margin-bottom:8px;'>A scheduler remote-wake batching method in which the authoritative enqueue publication and first-transition pending-state update for each destination CPU are completed exactly as in stock Linux before that CPU is added to a sender-local transient mask, the transient mask being grouped only by APIC cluster and primitive class and committed immediately after the lexical batching window ends.</li><li style='margin-bottom:8px;'>The batching method of claim 4 wherein an x86 arch hook may replace multiple stock per-target transport operations with one legal logical- or cluster-mode x2APIC send only when every target CPU in the mask shares identical primitive semantics and one legal destination cluster, and otherwise the stock per-target helper sequence is executed without semantic change.</li><li style='margin-bottom:8px;'>A Tree RCU forcing optimization in which only the existing GP forcing path reads authoritative laggard state, groups laggards by current topology cohort, and arms at most one housekeeping steward timer per cohort and grace-period sequence, the timer revalidating current gp_seq and authoritative laggard membership before issuing any non-authoritative nudge.</li><li style='margin-bottom:8px;'>The Tree RCU optimization of claim 6 further comprising a transient gp_seq-keyed duplicate-suppression bitmap that guarantees at most one outstanding non-authoritative notification per target CPU per grace period while contributing nothing to quiescent-state accounting, grace-period completion, or qsmask mutation.</li></ol>
+    
+  </section>
+
+  <section class="card">
+    <h2>5. Risks &amp; Mitigations</h2>
+    <ul><li style='margin-bottom:6px;'>Risk: topology ambiguity or drift under hotplug, BIOS quirks, or virtualization could mis-group CPUs; mitigation: consume only CPUID 0x1F/0x0B shift hierarchy, require explicit stable die enumeration before enabling die scope, rebuild snapshots from CPUHP events, compare epochs on every use, and fall back immediately on mismatch.</li><li style='margin-bottom:6px;'>Risk: qspinlock sidecar alias collisions could serialize unrelated locks; mitigation: fixed hash entries are key-claimed by lock address, any live-key mismatch disables optimization for that attempt, and no lock ever depends on the sidecar for correctness.</li><li style='margin-bottom:6px;'>Risk: representative gating could strand waiters when the representative is preempted or offlined; mitigation: each waiter tracks rep_gen progress against bounded iteration/time limits, offline detection, and batch-credit exhaustion, then forces drain-to-stock mode for that generation.</li><li style='margin-bottom:6px;'>Risk: prior-art overlap with existing ttwu pending suppression; mitigation: claim only cross-target architectural send collapse across same-class, same-cluster targets after authoritative per-target state already exists, not fewer wake events or a new pending-state mechanism.</li><li style='margin-bottom:6px;'>Risk: mask batching could mix semantically different nudge behaviors; mitigation: classify each target into concrete primitive classes mapped to existing APIs, split masks by class and policy, and force singleton stock handling for heterogeneous or uncertain targets.</li><li style='margin-bottom:6px;'>Risk: APIC mask send may not be a real single-shot hardware operation on all x86 parts; mitigation: the arch hook is allowed to batch only when its projected send count is strictly no worse than baseline and the mask stays within one legal logical cluster, otherwise it returns false and the caller performs the stock loop.</li><li style='margin-bottom:6px;'>Risk: Tree RCU could accidentally infer quiescent state from transport success or race GP advance; mitigation: authoritative qsmask is read only under existing locks, timer callbacks recheck current gp_seq before acting, duplicate suppression is gp-local and non-authoritative, and GP advance cancels timers and resets sidecars.</li><li style='margin-bottom:6px;'>Risk: PREEMPT_RT or paravirt modes may invalidate assumptions about contexts and spinning; mitigation: disable qspinlock cohort gating and steward timers under PREEMPT_RT and paravirt spinlock paths, while allowing only scheduler batching paths that already use non-sleeping stock APIs in the same context.</li><li style='margin-bottom:6px;'>Risk: extra local bookkeeping could outweigh gains on small systems; mitigation: guard every feature behind static keys, require a minimum contention or fan-out threshold, and let the arch hook reject batching unless it beats the baseline cost model.</li></ul>
+  </section>
+
+  <section class="card">
+    <h2>6. References</h2>
+    <ul><li>Intel 64 and IA-32 Architectures Software Developer&#x27;s Manual, APIC and x2APIC chapters.</li><li>Intel CPUID topology enumeration documentation for leaves 0x1F and 0x0B.</li><li>Linux kernel qspinlock implementation and documentation in `kernel/locking/qspinlock*`.</li><li>Linux scheduler remote wakeup paths including `ttwu_queue_wakelist()`, `sched_ttwu_pending()`, and x86 reschedule IPI helpers.</li><li>Linux Tree RCU implementation and documentation, including GP forcing paths and `rcu_gp_fqs()` behavior.</li><li>Linux CPU hotplug, housekeeping, nohz_full, and rcu_nocb documentation.</li><li>Linux `irq_work` and x86 APIC destination-mode code paths relevant to remote notification transport.</li><li>Performance tooling references: `perf lock`, `perf c2c`, lockstat, ftrace, and scheduler/RCU tracepoints for validating send-count and locality effects.</li></ul>
+  </section>
+
+  <section class="card">
+    <h2>7. Debate Panel Review (Final Round)</h2>
+    <p class="muted" style="font-size:13px;">4 specialists reviewed independently. 2/4 voted APPROVE. Avg score: 4.0/5. Verdict: <strong style="color:#f59e0b;">REVISE</strong></p>
+    
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Kernel Hardliner</strong>
+    <span style="display:flex;gap:12px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★☆☆☆☆</span>
+      <span style="color:#64748b;font-size:12px;">YC: 0</span>
+    </span>
+  </div>
+  
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>You must precisely define (and enforce in code) the *authoritative* “empty→non-empty transition observed” point, and ensure the aggregation decision is derived only from the same state that currently justifies `smp_send_reschedule(cpu)` (no new speculative bookkeeping). Otherwise you risk missing a required nudge under concurrent enqueues/flushes.</li><li style='font-size:13px;margin-bottom:4px;'>The batching must preserve the scheduler’s existing ordering guarantees: the remote runnable publication (wakelist enqueue / pending flag) must be visible before any aggregated IPI can be observed. If you move the send point or change the per-CPU loop into a cluster send, re-check required barriers/atomic release semantics so you don’t create a ‘IPI before publish’ race.</li><li style='font-size:13px;margin-bottom:4px;'>x86 APIC “cluster delivery” is only safe if you can *prove* the destination encoding cannot expand beyond the exact cpumask subset that baseline would target (across xAPIC/x2APIC, logical vs physical modes, and driver quirks). If that proof is not airtight for the running APIC mode/driver, you must hard-fallback to the per-CPU send loop.</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug and CPU online state must be handled explicitly: while building the flush-local target mask, CPUs can go offline or change APIC IDs. You need a stable snapshot rule (or strict gating) so you never send to offline CPUs and never rely on topology stability in fast paths.</li><li style='font-size:13px;margin-bottom:4px;'>Policy heterogeneity has to be enforced at the last moment: if any target would legally require a different primitive (e.g., nohz/irq_work paths, or arch-specific constraints), the aggregation must split masks or fallback without silently ‘upgrading’ semantics to resched IPIs.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Prior Art Shark</strong>
+    <span style="display:flex;gap:12px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC: 1</span>
+    </span>
+  </div>
+  
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Novelty boundary is still too close to existing RCU “force quiescent state” escalation patterns (kthread-driven periodic forcing, stall detection, deferred rechecks). Tighten claims to the *exact* trigger/arming rule (e.g., “armed only after an FQS pass completes and gp_seq is unchanged at arm time and again at expiry”) and explicitly disclaim any earlier/parallel forcing so it doesn’t read like a generic extra FQS mechanism.</li><li style='font-size:13px;margin-bottom:4px;'>You need a concrete, kernel-verifiable cohort key definition and invariants (what topology identifiers, what stability requirements, and what happens on mismatch). Right now “LLC/die/NUMA/APIC cluster/housekeeping” is a menu; specify a deterministic mapping function, its hotplug epoching, and the proof obligation that cohort membership cannot cause delivering a nudge to a CPU that stock Tree RCU would not have targeted at that moment.</li><li style='font-size:13px;margin-bottom:4px;'>The ‘primitive-class split’ needs to be grounded in actual upstream forcing/nudge paths: precisely define which primitives are considered legal targets for which CPUs (e.g., resched IPI vs irq_work vs deferred wake), and show how you avoid breaking isolation/NO_HZ_FULL/housekeeping constraints. Without a strict policy matrix, prior art can argue this is just “choose any wake mechanism” batching.</li><li style='font-size:13px;margin-bottom:4px;'>Timer-callback locking and context constraints are underspecified. If the steward callback takes rcu_node raw locks and snapshots qsmask, you must show it cannot deadlock with concurrent GP kthread activity, nocb callbacks, or CPU-hotplug paths, and that it never sleeps. Provide a lock order and exact data accessed (rcu_state/rcu_node fields) to avoid ‘hand-wavy implementability.’</li><li style='font-size:13px;margin-bottom:4px;'>The optional x2APIC cluster collapsing is a major overlap risk with known IPI mask batching/cluster delivery work. To preserve novelty, you must require a non-expanding-mask proof tied to the *already authoritative* pending set at expiry time (not the cohort membership), and clearly limit it to homogeneous RESCHED-class subsets; otherwise it reads like standard destination-mask optimization.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #22c55e;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Intel Strategist</strong>
+    <span style="display:flex;gap:12px;align-items:center;">
+      <span style="background:#22c55e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">APPROVE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC: 0</span>
+    </span>
+  </div>
+  
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact cohort key and stability rules (e.g., LLC/die/node/APIC-cluster + housekeeping partition), and specify the rebuild/epoch mechanism so hotplug and x2APIC mode changes cannot leave stale cohort membership.</li><li style='font-size:13px;margin-bottom:4px;'>Specify a hard upper bound on additional work per GP (max timers, max sends, max mask operations) and the backoff/disable policy when measurements show no benefit or when overlap with rcu_nocb/NO_HZ_FULL increases jitter.</li><li style='font-size:13px;margin-bottom:4px;'>Provide a proof sketch for ‘non-expanding delivery’: show that any optional x2APIC cluster-mask collapsing cannot target CPUs outside the authoritative pending `qsmask` set, across all x86 APIC backends (xAPIC, x2APIC, clustered modes), otherwise force per-CPU fallback.</li></ul>
+</div>
+<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #f59e0b;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <strong>Security Guardian</strong>
+    <span style="display:flex;gap:12px;align-items:center;">
+      <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;">REVISE</span>
+      <span style="color:#d99a00;">★★★★★</span>
+      <span style="color:#64748b;font-size:12px;">YC: 2</span>
+    </span>
+  </div>
+  <p style="color:#ef4444;font-weight:600;font-size:13px;">⚠ Fatal Flaw: The draft does not yet specify a mechanically provable guarantee that any “cluster delivery” IPI cannot reach CPUs outside the already-authoritative per-CPU reschedule target set; if it expands, it breaks isolation/NO_HZ_FULL expectations and becomes a correctness + side-channel risk.</p>
+  <ul style="margin-top:8px;"><li style='font-size:13px;margin-bottom:4px;'>Define the exact condition for “non-expanding delivery”: require that the APIC backend can represent an arbitrary cpumask exactly (not a superset) for the chosen delivery mode. If exactness cannot be proven for the specific x2APIC logical-cluster path (including sparse masks), mandate unconditional fallback to per-CPU smp_send_reschedule().</li><li style='font-size:13px;margin-bottom:4px;'>Specify and enforce compatibility gates: PREEMPT_RT, paravirt (PV APIC/IPI), NO_HZ_FULL / isolation, CPU hotplug, and CPUs with IPI suppression policies must all force the baseline path. Document the precise checks (static keys or runtime checks) to avoid surprising behavior changes on those configs.</li><li style='font-size:13px;margin-bottom:4px;'>Memory-ordering contract needs a concrete statement: the batching must occur strictly after the existing remote-wake publication and pending-flag store(s) that baseline relies on. Call out the required barriers (e.g., smp_mb__after_atomic / smp_store_release patterns) so a refactor cannot move the batched send earlier and create missed/late wakeups.</li><li style='font-size:13px;margin-bottom:4px;'>Hotplug safety: describe how the flush-local target mask is snapshotted and validated against cpu_online_mask / cpu_active_mask at send time. If a CPU goes offline mid-flush, the design must either drop it safely (baseline behavior) or re-evaluate; never dereference per-cpu structures for an offline CPU.</li><li style='font-size:13px;margin-bottom:4px;'>Primitive heterogeneity needs a precise split rule: explicitly separate RESCHED IPI targets from irq_work_queue_on() (or other primitives) targets, and ensure that a CPU that would not receive smp_send_reschedule() in baseline never gets interrupted by the batched path (including “harmless” resched IPIs that still perturb idle/isolated CPUs).</li></ul>
+</div>
+  </section>
+
+  <section class="card"><h2>8. Revision Trace</h2>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:12px;align-items:center;">
+    <strong>Round 1</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;font-size:13px;color:#64748b;">Feedback (6 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] You must prove no lost remote notifications: if multiple tasks for the same CPU are queued, your “newly require notification” transition must be based on an atomic/ordered per-CPU s</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify the exact locking/IRQ context: ttwu_queue_wakelist()/wake_q flush often runs with IRQs disabled and/or under rq locks; the aggregated mask send must be strictly non-sleeping</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define and enforce the needed memory ordering between enqueueing the wake work on the remote CPU and issuing the consolidated IPI (or resched): you likely need an smp_wmb() (or stro</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify interaction with existing “IPI suppression” policies (NOHZ full, polling/idle, tickless, set_nr_and_not_polling, sched_ipi policy): coalescing must not bypass conditions tha</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] If you expose an out-parameter mask for instrumentation, ensure it cannot escape to callers who might rely on it for correctness (must be trace-only/debug-only), and ensure the mask</li><li style='font-size:12px;margin-bottom:3px;'>[prior_art_shark] Define the exact nudge primitive(s) (e.g., resched IPI, scheduler tick poke, deferred work enqueue, arch-specific kick) and prove it is strictly non-authoritative: no coupling to QS </li></ul>
+  </details>
+</div>
+<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;background:#f8f9fa;">
+  <div style="display:flex;gap:12px;align-items:center;">
+    <strong>Round 2</strong>
+    <span style="background:#f59e0b;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;">REVISE</span>
+    <span style="color:#64748b;font-size:12px;">fatal_flaw_revise</span>
+  </div>
+  <details style="margin-top:8px;"><summary style="cursor:pointer;font-size:13px;color:#64748b;">Feedback (6 items)</summary>
+    <ul style="margin-top:4px;"><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Define exactly how the steward computes the pending subset from rcu_node-&gt;qsmask/qsmaskinit: which rcu_node locks are taken, how long they’re held, and how you avoid O(nr_cpus) lock</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Specify CPU-hotplug and NOHZ/full-isolation handling: ensure you never target offline/dying CPUs, never violate housekeeping/nohz_full policy, and define what happens when the desig</li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Clarify the gp_seq-keyed arming/expiry race: the timer callback must recheck the current gp_seq and pending masks under proper ordering so you don’t send stale or duplicated nudges </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Bound and prove the ‘one outstanding notification per target CPU’ rule without introducing new authoritative side state; if you add side state, specify its atomicity, lifetime, and </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Constrain context: timer/irq_work/resched nudges must not sleep and must be safe from hardirq/softirq contexts; document which primitive is used and why it is safe under PREEMPT/RT </li><li style='font-size:12px;margin-bottom:3px;'>[kernel_hardliner] Detail the APIC mask-IPI transport hook and fallback: guarantee semantics-identical behavior (including IPI ordering expectations) and ensure arch batching cannot expand the target </li></ul>
+  </details>
+</div></section>
+
+  <footer class="card muted" style="text-align:center;font-size:12px;">
+    Generated by DeepThought &mdash; Topological Void Analysis Engine<br/>
+    New-format run with full void context &mdash; Optimize Linux synchronization using x86 APIC microarchitecture features
+  </footer>
+
+</div>
+</body>
+</html>
