@@ -495,40 +495,45 @@ overlap with existing techniques when viewed through a deep-domain lens.
 This motivates future work on tighter prior-art integration in the
 vacancy probe.
 
-\subsection{Case Study 1: Filesystem-Extent-Aware CXL Tiering}
+\subsection{Case Study 1: TSX-Advisory MGLRU Rotation Capsules}
 
-\textbf{Void.}  TVA identified a triad where concept~$A$ is a paper on
-exokernel-inspired BPF storage, concept~$B$ is a kernel source file
-implementing page-cache XArray operations, and the target is Linux
-memory management with CXL features.  The SLERP midpoint sat at cosine
-distance $>0.15$ from all existing documents---confirming vacancy.
+\textbf{Target and void.}  Target: \emph{Optimize Linux memory
+management using x86 TSX microarchitecture features.}  TVA surfaced
+void~\#2 from 8 candidate voids: concept~$A$ is a paper on
+\emph{optimistic memory reclamation in lock-free programs}, concept~$B$
+is a storage-technology selection study (TRaCaR Ratio).  Sparse bridge
+tokens: \texttt{memory}, \texttt{optimistic}, \texttt{reclamation},
+\texttt{access}.  The geodesic midpoint $C = m(A,B)$ had no corpus
+neighbour within cosine distance 0.09---confirming vacancy.
 
-\textbf{Idea.}  The LLM proposed a \emph{filesystem-extent-aware folio
-lease layer} that places cold, clean file-cache folios on CXL Type-3
-memory while pinning journal-coupled dirty extents in DRAM.  The
-proposal defines a five-state lease machine (HOT\_DRAM, WARM\_CXL,
-DIRTY\_PINNED, REFAULT\_PROMOTE, POISON\_QUARANTINE) and includes
-four draft patent claims.
+\textbf{Idea.}  The LLM proposed \emph{TSX-advisory single-folio
+same-lruvec MGLRU rotation capsules}: a fail-closed mechanism that
+wraps the Linux MGLRU folio rotation fast-path in an RTM (Restricted
+Transactional Memory) speculation region.  If the transaction aborts,
+the fallback acquires the \texttt{lru\_lock} normally.  The proposal
+introduces per-folio mutation cookies (seqcount-like odd/even) and a
+fail-closed locked revalidation step to preserve lruvec consistency.
 
-\textbf{Expert verdict (REVISE --- qualified positive).}
-All four specialists voted REVISE (no REJECT).  Average score: 4.0/5.
-The REVISE verdict signals that the committee found genuine technical
-merit and requested elaboration, not that the idea was rejected.
-Selected specialist feedback from Round~1:
+\textbf{Expert verdict (REVISE --- \textbf{3/4 APPROVE}), 3 rounds.}
+This is the highest-approval result in our new-format cohort.
 \begin{itemize}[noitemsep,topsep=2pt]
-  \item \textit{Kernel Hardliner}: ``Define the exact synchronization
-    and lifetime model for the lease sidecar relative to folio
-    lifetime (add, truncate, invalidate).''
-  \item \textit{Security Guardian}: ``Specify lock and atomicity rules:
-    prove no allocations or blocking operations under \texttt{xa\_lock}
-    or in atomic context.''
+  \item \textit{Kernel Hardliner} (APPROVE): ``TSX advisory path
+    is architecturally sound; RTM abort falls back correctly.''
+  \item \textit{Prior-Art Shark} (APPROVE): ``No direct prior art on
+    TSX-advisory MGLRU rotation; non-obviousness defensible.''
+  \item \textit{Intel Strategist} (APPROVE): ``Strong x86 TSX
+    differentiation story on Xeon platforms with hardware TSX support.''
+  \item \textit{Security Guardian} (REVISE, fatal flaw): ``TSX/TAA
+    policy gating not specified concretely enough to guarantee
+    fail-closed behavior under incomplete writer-coverage.''
 \end{itemize}
-After revision: the sidecar model was tightened to require
-\texttt{mapping->invalidate\_lock} plus \texttt{folio\_lock} before
-any lease transition, and explicit POISON\_QUARANTINE state was added
-for CXL hardware error paths.  This constitutes the strongest REVISE
-result in our cohort, and exemplifies the iterative refinement that
-the adversarial review enables.
+After Round~3 revision: mutation-cookie semantics were formalised
+(monotonic counter, never odd during active optimistic phase), and
+the TSX admissibility check was made explicit: RTM is enabled only
+when \texttt{X86\_FEATURE\_RTM} is present \emph{and} the current
+kernel TAA mitigation policy permits transactional use.
+Three of four specialists approved the final draft, making this
+the strongest positive result in the evaluation cohort.
 
 \subsection{Case Study 2: Verifier-Derived Synchronization Contracts}
 
