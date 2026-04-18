@@ -461,24 +461,26 @@ To understand \emph{why} ideas fail, we categorise the fatal flaws
 in the 888~REJECT verdicts by keyword analysis of specialist feedback.
 Table~\ref{tab:taxonomy} shows the distribution.
 
-\begin{table}[h]
+\begin{table*}[t]
 \centering
 \small
-\caption{Fatal flaw categories across 888 rejected candidates.}
+\caption{Fatal flaw categories across 888 rejected candidates (new-format runs).
+  Note: counts exceed 888 because multiple specialists may flag flaws per candidate.}
 \label{tab:taxonomy}
-\begin{tabular}{lrr}
+\setlength{\tabcolsep}{8pt}
+\begin{tabular}{lrrl}
 \toprule
-Category & Count & \% \\
+Category & Count & \% & Representative specialist quote \\
 \midrule
-Locking / concurrency model      & 1,072 & 35.5\% \\
-Prior art / novelty overlap      &   599 & 19.8\% \\
-Other technical issues           &   757 & 25.0\% \\
-Incomplete specification         &   230 &  7.6\% \\
-Security / side-channel risk     &   199 &  6.6\% \\
-Kernel ABI / notrace violation   &   165 &  5.5\% \\
+Locking / concurrency model    & 1,072 & 35.5\% & ``Synchronisation model violates LKMM; rq->lock discipline not proven'' \\
+Prior art / novelty overlap    &   599 & 19.8\% & ``Reads as combination of existing thermal-pressure and NUMA-balancing'' \\
+Other technical issues         &   757 & 25.0\% & Various implementation-specific correctness objections \\
+Incomplete specification       &   230 &  7.6\% & ``Concurrency contract for sidecar metadata not fully specified'' \\
+Security / side-channel risk   &   199 &  6.6\% & ``Side-channel exposure via scheduler-observable pressure signal'' \\
+Kernel ABI / notrace violation &   165 &  5.5\% & ``Target function absent from /proc/kallsyms (inlined or notrace)'' \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 Three observations stand out.  First, 90.2\% of rejections are triggered
 by \texttt{fatal\_flaw\_reject} (at least one specialist identifies a
