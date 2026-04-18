@@ -983,7 +983,10 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
                     claimed_file = None
                     for candidate in sorted(files):
                         try:
-                            claimed = candidate.with_suffix(f".{self.worker_id}.lock")
+                            # Use run_id to build clean lock name (prevents suffix accumulation)
+                            stem = candidate.stem  # e.g. "run-abc123"
+                            run_id_part = stem.split('.')[0]  # strip any prior suffixes
+                            claimed = candidate.parent / f"{run_id_part}.{self.worker_id}.lock"
                             candidate.rename(claimed)
                             pending_file = claimed
                             claimed_file = claimed
@@ -1015,7 +1018,7 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
                             total_stats[agent]["failed"] += 1
                             # Restore file for retry if it still exists
                             if claimed_file and claimed_file.exists():
-                                original = claimed_file.with_suffix(".json")
+                                original = claimed_file.parent / (claimed_file.stem.split(".")[0] + ".json")
                                 try:
                                     claimed_file.rename(original)
                                 except OSError:
@@ -1026,7 +1029,7 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
                         total_stats[agent]["failed"] += 1
                         # Restore file for retry
                         if claimed_file and claimed_file.exists():
-                            original = claimed_file.with_suffix(".json")
+                            original = claimed_file.parent / (claimed_file.stem.split(".")[0] + ".json")
                             try:
                                 claimed_file.rename(original)
                             except OSError:
