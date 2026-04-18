@@ -475,7 +475,13 @@ class ClaudeAgentAutoWorkerV2:
                 )
                 # Auto-generate HTML for human review
                 try:
-                    mav_file = Path("data/completed_maverick") / f"{run_id}.json"
+                    # For retry runs, find the original run_id (strip -retryN suffix)
+                    original_run_id = request.get("original_run_id", run_id)
+                    mav_run_id = original_run_id if original_run_id != run_id else run_id
+                    mav_file = Path("data/completed_maverick") / f"{mav_run_id}.json"
+                    if not mav_file.exists():
+                        mav_file = Path("data/completed_maverick") / f"{run_id}.json"
+
                     if mav_file.exists():
                         mav_data = json.loads(mav_file.read_text())
                         reviews = result.get("reviews", {})
@@ -484,10 +490,27 @@ class ClaudeAgentAutoWorkerV2:
                         approves = sum(1 for r in reviews.values() if r.get("status") == "APPROVE")
                         html_dir = Path("output/generated/human_review")
                         html_dir.mkdir(parents=True, exist_ok=True)
-                        fname = f"tid_{avg:.1f}avg_{approves}approve_{run_id[:12]}.html"
+
+                        # New HTML with new run_id
+                        new_fname = f"tid_{avg:.1f}avg_{approves}approve_{run_id[:12]}.html"
                         html = generate_tid_html(run_id, result, mav_data)
-                        (html_dir / fname).write_text(html)
-                        logger.info(f"Generated HTML: {fname}")
+                        (html_dir / new_fname).write_text(html)
+                        logger.info(f"Generated HTML: {new_fname}")
+
+                        # Also overwrite the original HTML if this is a retry
+                        if original_run_id != run_id:
+                            # Find and replace the original HTML file
+                            orig_pattern = f"tid_*_{original_run_id[:12]}.html"
+                            orig_files = list(html_dir.glob(orig_pattern))
+                            if orig_files:
+                                orig_file = orig_files[0]
+                                orig_file.write_text(html)
+                                logger.info(f"Updated original HTML: {orig_file.name} → new result from {run_id}")
+                            else:
+                                # Original not found, copy with original run_id prefix
+                                orig_fname = f"tid_{avg:.1f}avg_{approves}approve_{original_run_id[:12]}.html"
+                                (html_dir / orig_fname).write_text(html)
+                                logger.info(f"Created replacement HTML: {orig_fname}")
                 except Exception as exc:
                     logger.warning(f"HTML generation failed for {run_id}: {exc}")
             else:
