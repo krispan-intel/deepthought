@@ -637,6 +637,44 @@ resistant to sycophantic bias: the system identified and corrected a
 weakness in its own originating paper.
 
 % ================================================================
+\section{Future Work}
+\label{sec:future}
+
+\textbf{Recursive Topological Expansion.}
+Currently, TVA interpolates strictly within the empirical boundaries
+of human-authored prior art.  A profound avenue for future research is
+\emph{recursive innovation bootstrapping}.  By vectorising and
+re-ingesting highly-rated, APPROVE-verdict Technical Invention
+Disclosures back into the active corpus as synthetic prior art, the
+system can dynamically alter the topology of the knowledge space.  In
+this autoregressive loop, a synthesised TID acts as a newly
+established structural anchor in the embedding space, creating
+secondary topological voids between itself and historically distant
+concepts.  This feedback mechanism would transition TVA from a
+single-step gap-discovery engine into an autonomous ``technology tree''
+generator---iteratively mapping multi-generational frontiers of systems
+architecture beyond the immediate human horizon.
+
+\textbf{Downstream implementation.}
+The structured TID format produced by TVA---comprising problem
+statement, architecture overview, implementation plan, and draft
+claims---is designed to be directly actionable.  A validated TID
+can serve as a specification prompt for LLM-based coding
+agents~\cite{chen2021codex}, enabling a seamless path from
+knowledge-gap discovery to prototype implementation.  Future work
+will evaluate end-to-end pipelines from void discovery through
+automated patch generation and CI-validated compilation.
+
+\textbf{Human-architect integration.}
+Ideas that exhaust the automated revision budget without reaching
+APPROVE are routed to a \texttt{PENDING\_HUMAN\_REVIEW} queue.
+These candidates represent the frontier where LLM reasoning reaches
+its current limit---precisely the cases most worthy of expert
+human attention.  A structured human-in-the-loop interface that
+presents the accumulated specialist critique alongside the draft
+is a natural next step.
+
+% ================================================================
 \section{Related Work}
 \label{sec:related}
 
