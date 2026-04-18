@@ -20,12 +20,12 @@ from configs.settings import settings
 
 
 class LLMClient:
-    def __init__(self):
+    def __init__(self, backend_override: str = None):
         self.timeout_seconds = settings.llm_request_timeout_seconds
         self.copilot_timeout_seconds = max(self.timeout_seconds, settings.copilot_cli_timeout_seconds)
         self.max_attempts = max(1, settings.llm_request_max_attempts)
         self.backoff_seconds = max(0.0, settings.llm_request_backoff_seconds)
-        self.backend = (settings.llm_backend or "openai").strip().lower()
+        self.backend = (backend_override or settings.llm_backend or "openai").strip().lower()
         self.copilot_cli_command = settings.copilot_cli_command or "gh copilot"
         self.copilot_prompt_max_chars = max(2000, settings.copilot_prompt_max_chars)
         self._anthropic_enabled = bool(settings.anthropic_api_key)
@@ -46,6 +46,15 @@ class LLMClient:
         )
 
     def chat(self, model: str, system_prompt: str, user_prompt: str, temperature: float = 0.7) -> str:
+        # claude_code_cli goes directly to `claude -p`, skip Anthropic API
+        if self.backend == "claude_code_cli":
+            return self._chat_with_claude_code_cli(
+                model=model,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                temperature=temperature,
+            )
+
         # Prefer Anthropic API for Claude models if key exists
         if model.startswith("claude-") and self._anthropic_enabled and settings.anthropic_api_key:
             try:
@@ -497,20 +506,16 @@ class LLMClient:
 
     @staticmethod
     def _resolve_claude_code_model(pipeline_model: str) -> str:
-        """Map pipeline model names to claude CLI model aliases."""
+        """Map pipeline model names to claude CLI short aliases (opus/sonnet/haiku)."""
         m = (pipeline_model or "").lower().strip()
-        # GPT models → map to Claude equivalents
+        # Opus-class
         if "opus" in m or "gpt-5.4" in m or "gpt-5.1" in m or "gpt-5.2" in m:
-            return "claude-opus-4-6"
-        if "sonnet" in m or "gpt-5" in m or "gpt-4.1" in m:
-            return "claude-sonnet-4-6"
+            return "opus"
+        # Haiku-class (fast/cheap)
         if "haiku" in m or "nano" in m or "mini" in m:
-            return "claude-haiku-4-5"
-        # Direct Claude model names pass through
-        if m.startswith("claude-"):
-            return pipeline_model
-        # Default
-        return "claude-sonnet-4-6"
+            return "haiku"
+        # Sonnet-class (default)
+        return "sonnet"
 
     @staticmethod
     def _strip_copilot_footer(text: str) -> str:

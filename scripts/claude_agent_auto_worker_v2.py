@@ -23,9 +23,9 @@ logger.add("logs/claude_agent_auto_worker.log", rotation="100 MB", retention="7 
 
 
 class ClaudeAgentAutoWorkerV2:
-    def __init__(self, worker_id: str = None):
+    def __init__(self, worker_id: str = None, backend: str = None):
         self.worker_id = worker_id or f"w{os.getpid()}"
-        self.llm = LLMClient()
+        self.llm = LLMClient(backend_override=backend)
 
         self.pending_maverick = Path("data/pending_maverick")
         self.pending_professor = Path("data/pending_professor")
@@ -1067,11 +1067,7 @@ if __name__ == "__main__":
                         help="Override LLM backend for this worker")
     args = parser.parse_args()
 
-    # Set backend env var before LLMClient is initialized
-    if args.backend:
-        os.environ["LLM_BACKEND"] = args.backend
-
-    worker = ClaudeAgentAutoWorkerV2(worker_id=args.worker_id)
+    worker = ClaudeAgentAutoWorkerV2(worker_id=args.worker_id, backend=args.backend)
 
     if args.batch:
         worker.run_batch()
