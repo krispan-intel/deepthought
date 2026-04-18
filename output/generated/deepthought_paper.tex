@@ -207,7 +207,7 @@ of $\ell_2$-normalised $d$-dimensional embeddings.  We use BGE-M3
 ($d=1024$)~\cite{chen2024bge}, which produces both dense vectors and
 sparse lexical weight vectors for each document.  We write
 $\mathrm{dense}(k)$ for the dense vector and
-$\mathrm{sparse}(k) \subset \Sigma^*$ for the top-$p$ weighted tokens.
+$\mathrm{sparse}(k) \subset \Sigma^*$ for the top-5 weighted tokens.
 
 Let $\mathrm{cos}(u,v) = u^\top v$ for unit vectors.  Let
 $\mathrm{Sparse}(k) = \{t \in \mathrm{sparse}(k) : t \notin
@@ -244,10 +244,9 @@ all of the following hold:
 \[
   \mathrm{Sparse}(A) \cap \mathrm{Sparse}(B) \;\ne\; \emptyset
 \]
-where $\mathrm{Sparse}(k)$ denotes the top-5 BGE-M3 learned sparse
-weights of document $k$ after removing a domain stop-word list
-$\mathcal{S}$ (high-frequency, low-specificity tokens such as
-\texttt{int}, \texttt{define}, \texttt{linux}, \texttt{memory}).
+where $\mathrm{Sparse}(k)$ is the top-5 BGE-M3 sparse-weight set
+of document $k$ after stop-word removal (as defined in
+Section~\ref{sec:framework}).
 
 \noindent\textbf{C4 (Vacancy).}
 \[
@@ -382,7 +381,7 @@ void description and the target.
 We run TVA over a Cartesian matrix of 12 target domains (Linux
 scheduler, memory management, file systems, eBPF, virtualisation,
 networking, power management, device drivers, IRQ handling, CXL
-memory, PCIe, and security) crossed with 8 x86 micro-architecture
+memory, PCIe, and security) crossed with 8 x86-hardware
 feature areas (PEBS, AMX, TDX, CXL, APIC, RAPL, EPT, AVX-512),
 yielding 96 target specifications.  For each target, TVA produces up
 to 10 void triads, each triggering one LLM call for idea generation.
@@ -471,8 +470,8 @@ Kernel ABI / notrace violation &   165 &  5.5\% \\
 \begin{table}[t]
 \centering
 \small
-\caption{Adversarial approval distribution across 139 REVISE candidates
-  and 2,004 total Maverick candidates (new-format runs).}
+\caption{Adversarial approval distribution (extended new-format run,
+  $N=2{,}004$ Maverick, 139 REVISE; superset of Table~\ref{tab:funnel}).}
 \label{tab:approval}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrrr}
