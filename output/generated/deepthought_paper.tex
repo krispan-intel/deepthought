@@ -217,7 +217,9 @@ All three approaches fail to provide an occupancy guarantee:
 they rank or construct candidate points without verifying
 that the target region is genuinely unoccupied in the corpus.
 This motivates the three-condition filter and SLERP vacancy probe
-described in the next section.
+described in the next section.  Systematic ablations isolating the
+contribution of each condition are left for the extended version due
+to space constraints.
 
 % ================================================================
 \section{The Topological Void Framework}
@@ -267,6 +269,10 @@ all of the following hold:
 \[
   \mathrm{Sparse}(A) \cap \mathrm{Sparse}(B) \;\ne\; \emptyset
 \]
+where $\mathrm{Sparse}(k)$ denotes the top-5 BGE-M3 learned sparse
+weights of document $k$ after removing a domain stop-word list
+$\mathcal{S}$ (high-frequency, low-specificity tokens such as
+\texttt{int}, \texttt{define}, \texttt{linux}, \texttt{memory}).
 
 \noindent\textbf{C4 (Vacancy).}
 \[
