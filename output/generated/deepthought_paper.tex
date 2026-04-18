@@ -284,13 +284,21 @@ synthetic void midpoint $C = m(A,B)$ is unoccupied by any existing
 document~(C4).  The idea to be invented lives in the neighbourhood
 of $C$---the gap between two related but unexplored concepts.
 
-\subsection{Ranking Voids}
+\subsection{Ranking via Multi-Objective Scoring}
 
-Among all valid triads, we rank by a scoring function that rewards
-relevance to $\vtarget$, penalises redundancy with existing solutions,
-and rewards proximity to the centre of the marginality band.  The
-exact formulation is omitted for brevity; the three conditions above
-capture the essential selection mechanism.
+Valid pairs $(A, B)$ are ranked by a multi-objective scoring
+functional $\mathcal{H}(A, B; \vtarget)$ that integrates three
+competing objectives: (i)~relevance of the synthetic void midpoint
+$C = m(A,B)$ to the target domain, (ii)~a redundancy penalty
+discouraging pairs whose anchors overlap with already-selected
+solutions, and (iii)~a non-linear marginality reward that strongly
+favours pairs near the centre of the calibrated band $[\taulow,
+\tauhigh]$ and penalises deviations toward either boundary.
+
+The functional form, penalty curves, and combination weights are
+treated as proprietary and omitted; the four conditions C1--C4 define
+the feasible set, and $\mathcal{H}$ provides a total ordering within
+that set.
 
 % ================================================================
 \section{Vacancy Probing via SLERP}
@@ -323,36 +331,45 @@ the degenerate case and connects to the broader literature on
 geodesic midpoints in curved spaces~\cite{shoemake1985slerp}.
 
 Vacancy check~(C4) is an $O(n)$ dot-product scan of the corpus matrix
-against $m(A,B)$, requiring no index rebuild.
+against $m(A,B)$, requiring no index rebuild.  The vacancy threshold
+$\theta_v$ is derived from the local neighbourhood density of the
+target subgraph; its exact computation is proprietary.
 
 % ================================================================
 \section{Adaptive Threshold Calibration}
 \label{sec:calibration}
 
-\subsection{Domain Threshold \texorpdfstring{$\taudomain$}{tau\_domain}}
+Static thresholds for $\taudomain$ and $[\taulow, \tauhigh]$ fail
+across corpora with different density profiles: a threshold tuned
+for a dense subsystem over-filters a sparse one.  TVA employs a
+\emph{density-aware calibration layer} that derives both thresholds
+on-the-fly from the empirical distribution of the current query's
+candidate pool.
 
-The domain cohesion threshold $\taudomain$ is calibrated per query
-using a \emph{percentile-adaptive} strategy.  Given the cosine scores
-$\{s_i = \mathrm{cos}(\mathrm{dense}(k_i), \vtarget)\}$ for all $k_i
-\in \mathcal{K}$, we set:
-\[
-  \taudomain = \max\!\bigl(\tau_{\min},\;
-    \mathrm{Percentile}(\{s_i\},\, p)\bigr)
-\]
-where $p$ is a fixed percentile and $\tau_{\min}$ is a floor.  This
-ensures $\taudomain$ adapts to the density of the corpus near the
-target, avoiding both over-permissive selection in dense regions and
-empty results in sparse ones.
+\subsection{Domain Threshold $\taudomain$}
 
-\subsection{Marginality Band \texorpdfstring{$[\taulow, \tauhigh]$}{[tau\_low, tau\_high]}}
+The domain cohesion threshold is computed by a manifold-density
+estimator applied to the cosine-score distribution of all candidates
+with respect to $\vtarget$.  The estimator combines a data-driven
+percentile statistic with a corpus-specific floor to balance
+sensitivity and recall.  The precise statistical parameterisation
+is proprietary; the key property is that $\taudomain$ rises in
+dense regions (where many documents are relevant) and falls in
+sparse ones (where the threshold must be more permissive to
+find candidates at all).
 
-The marginality band is derived from the empirical distribution of
-pairwise similarities among domain-cohesive candidates.  We fit a
-Gaussian to the centre of the pairwise similarity histogram and define
-$[\taulow, \tauhigh]$ as the band centred at the mode with width
-proportional to the standard deviation.  This operationalises the
-non-obviousness principle: the band excludes the high-similarity tail
-(obvious combinations) and the low-similarity tail (unrelated pairs).
+\subsection{Marginality Band $[\taulow, \tauhigh]$}
+
+The marginality band is derived from the pairwise-similarity
+distribution among domain-cohesive candidates.  The band is
+centred at the empirical mode of that distribution, capturing
+the ``typical'' distance between related but non-trivial concept
+pairs in the current corpus.  The width is controlled by a
+scale parameter whose calibration is proprietary.  The key
+design invariant is that the band excludes the high-similarity
+tail (obvious combinations, prior art) and the low-similarity
+tail (unrelated noise), operationalising the non-obviousness
+principle without hard-coded constants.
 
 % ================================================================
 \section{System Implementation}
