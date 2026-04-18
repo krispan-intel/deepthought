@@ -132,6 +132,28 @@ Innovation in this view is the act of bridging two concepts $A$,~$B$
 that are not yet co-located in $\mathcal{K}$, provided their
 combination is relevant to a target goal $C$.
 
+\subsection{Geometric Convergence Across Model Scales}
+
+A key theoretical underpinning of TVA is the
+\emph{Platonic Representation Hypothesis}~\cite{huh2024platonic}:
+sufficiently trained models---regardless of architecture, modality, or
+scale---converge toward a common statistical geometry of their shared
+training world.  Concretely, the pairwise distance structure of a
+compact embedding model (BGE-M3, 1024D) and a frontier LLM are
+approximately isometric: if $\mathrm{cos}(\mathrm{dense}(A),
+\mathrm{dense}(B)) \approx 0$ in BGE-M3 space, the same pair tends
+to be distant in the LLM's implicit representation space.
+
+This convergence provides the theoretical basis for TVA's design.
+A topological void identified in BGE-M3 space---a pair $(A,B)$ whose
+geodesic midpoint is unoccupied---serves as a \emph{statistically
+reliable proxy} for an underexplored region in the frontier LLM's
+reasoning space.  The compact model acts as an efficient navigator;
+the LLM supplies the high-resolution generative capability to fill
+the identified gap.  Geometric alignment across scales, formalised via
+CKA~\cite{kornblith2019similarity}, supports this proxy relationship
+empirically.
+
 \subsection{Limitations of Prior Art Search}
 
 Conventional patent and prior-art search is keyword-driven or
@@ -155,71 +177,24 @@ informal basis for our formal marginality condition.
 \section{Why Standard Approaches Fail}
 \label{sec:motivation}
 
-Before presenting TVA, we trace the design evolution that motivated
-it.  Each prior approach solved part of the problem but broke down in
-a characteristic way.
-
-\textbf{Cosine similarity (top-$k$ retrieval).}
-The simplest baseline retrieves the $k$ documents closest to the
-target vector $\vtarget$.  The result is highly relevant but
-\emph{redundant}: the top-$k$ set is dominated by documents from the
-same well-covered subsystem, and the returned concepts are trivially
-related to each other.  Nothing in the ranking identifies a
-\emph{gap} between two concepts.
-
-\textbf{Maximum Marginal Relevance (MMR)~\cite{carbonell1998mmr}.}
-MMR extends top-$k$ retrieval by penalising similarity to
-already-selected items:
-\begin{align*}
-  \mathrm{MMR} = \arg\max_{d_i \in R \setminus S} \bigl[
-    &\lambda\,\mathrm{cos}(d_i, q) \\
-    &- (1{-}\lambda)\max_{d_j \in S}\mathrm{cos}(d_i, d_j)\bigr]
-\end{align*}
-MMR improves diversity but does not identify missing regions.
-A high-MMR pair $(A, B)$ may still have existing prior art at
-their midpoint---exactly where an inventor would look for a gap.
-In our experiments, $\sim$30\% of high-MMR pairs had a nearest
+Three retrieval baselines were evaluated before arriving at TVA, each
+failing in a characteristic way.
+\textbf{Cosine top-$k$} retrieves relevant but redundant results---all
+from the same well-covered subsystem, with no notion of a gap.
+\textbf{MMR}~\cite{carbonell1998mmr} improves diversity but provides
+no occupancy guarantee: $\sim$30\% of high-MMR pairs had a corpus
 neighbour within cosine distance 0.08 of their linear midpoint,
-rendering them false voids.
-
-\textbf{MMR + latent vector arithmetic (``Queen formula'').}
-Inspired by the additive structure of word embeddings~\cite{mikolov2013linguistic},
-we combined MMR with concept arithmetic: after selecting a diverse
-pair $(A, B)$ via MMR, we computed a bridge vector
-$v_{\mathrm{bridge}} = \vtarget + (v_A - v_B)$ and retrieved
-candidates nearest to $v_{\mathrm{bridge}}$.  The intuition mirrors
-the classical analogy \emph{king} $-$ \emph{man} $+$ \emph{woman}
-$\approx$ \emph{queen}~\cite{mikolov2013linguistic}: the difference
-vector encodes a directional concept shift that, when applied to the
-target, should surface the desired gap.
-
-\emph{Why it fails in high dimensions.}
-The analogy arithmetic of Word2Vec works in 300-dimensional
-skip-gram space because the training objective explicitly aligns
-semantic directions with linear offsets.  BGE-M3 operates in
-1024-dimensional contextualised representation space, which suffers
-from two compounding problems.
-First, transformer embeddings are \emph{anisotropic}~\cite{ethayarajh2019anisotropy}:
-all vectors cluster in a narrow cone, so the difference $v_A - v_B$
-is nearly orthogonal to the principal semantic axes.  Adding such a
-vector to $\vtarget$ moves the probe point toward the boundary or
-exterior of the semantic manifold, far from any real document.
-Second, in high-dimensional spaces the curse of dimensionality
-flattens the cosine-distance distribution~\cite{beyer1999nearest}:
-nearest-neighbour distances concentrate around a single value,
-stripping the difference vector of directional meaning.
-In our experiments, $\sim$67\% of bridge vectors produced by this
-method had no corpus neighbour within cosine distance 0.25,
-confirming that they escaped the manifold entirely.
-
-\textbf{Lesson.}
-All three approaches fail to provide an occupancy guarantee:
-they rank or construct candidate points without verifying
-that the target region is genuinely unoccupied in the corpus.
-This motivates the three-condition filter and SLERP vacancy probe
-described in the next section.  Systematic ablations isolating the
-contribution of each condition are left for the extended version due
-to space constraints.
+making them false voids.
+\textbf{Latent vector arithmetic}~\cite{mikolov2013linguistic}
+($v_{\mathrm{bridge}} = \vtarget + (v_A - v_B)$) fails in
+1024-dimensional contextualised space: anisotropy~\cite{ethayarajh2019anisotropy}
+makes difference vectors nearly orthogonal to semantic axes, and the
+curse of dimensionality~\cite{beyer1999nearest} strips them of
+directional meaning---67\% of bridge vectors escaped the semantic
+manifold entirely.
+All three lack an explicit \emph{occupancy check}: they rank or
+construct candidate points without verifying the region is genuinely
+unoccupied.  This motivates the vacancy probe in TVA.
 
 % ================================================================
 \section{The Topological Void Framework}
