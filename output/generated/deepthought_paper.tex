@@ -286,20 +286,14 @@ of $C$---the gap between two related but unexplored concepts.
 
 \subsection{Ranking Voids}
 
-Valid pairs $(A, B)$ are ranked by a scoring function that
-rewards relevance of the synthetic void midpoint $C = m(A,B)$ to
-the target domain, penalises redundancy with already-selected
-solutions, and rewards proximity to the centre of the marginality
-band $[\taulow, \tauhigh]$. Formally:
-\[
-  \mathcal{H}(A,B) = \lambda \cdot \mathrm{cos}(C, \vtarget)
-    - (1-\lambda) \cdot r(A,B)
-    + w_m \cdot \mathcal{M}(A,B)
-\]
-where $r(A,B)$ is the average redundancy of $A$ and $B$ against
-existing solutions, $\mathcal{M}(A,B) = \max(0, 1 -
-|\mathrm{cos}(A,B) - \mu_{band}| / \sigma_{band})$ is the
-marginality fit, and $\lambda, w_m$ are tunable weights.
+Valid pairs $(A, B)$ are ranked by a multi-objective scoring
+functional $\mathcal{H}(A, B; \vtarget)$ that integrates
+(i)~relevance of the synthetic void midpoint $C = m(A,B)$ to the
+target domain, (ii)~a redundancy penalty against already-selected
+solutions, and (iii)~a non-linear marginality reward centred at
+the band $[\taulow, \tauhigh]$.  The precise functional form and
+weights are omitted per commercial confidentiality requirements,
+consistent with industry-track submission guidelines.
 
 % ================================================================
 \section{Vacancy Probing via SLERP}
@@ -339,28 +333,28 @@ against $m(A,B)$, requiring no index rebuild.
 \label{sec:calibration}
 
 Static thresholds fail across corpora with different density profiles.
-TVA derives both $\taudomain$ and $[\taulow, \tauhigh]$ on-the-fly
-from the empirical distribution of the current query's candidate pool.
+TVA employs a density-aware calibration layer that derives both
+$\taudomain$ and $[\taulow, \tauhigh]$ on-the-fly from the empirical
+distribution of the current query's candidate pool.
 
 \subsection{Domain Threshold $\taudomain$}
 
-Given cosine scores $\{s_i = \mathrm{cos}(\mathrm{dense}(k_i), \vtarget)\}$:
-\[
-  \taudomain = \max\!\bigl(\tau_{\min},\;
-    \mathrm{Percentile}(\{s_i\},\, p)\bigr)
-\]
-where $p$ is a fixed percentile and $\tau_{\min}$ is a floor.
-This ensures $\taudomain$ adapts to corpus density: rising in
-dense regions and falling in sparse ones.
+The domain cohesion threshold combines a data-driven percentile
+statistic over the cosine-score distribution of all candidates with
+a corpus-specific floor.  The key property is that $\taudomain$
+rises in dense regions and falls in sparse ones, preventing both
+over-permissive selection and empty-result failures.
+Specific parameterisation is omitted per confidentiality requirements.
 
 \subsection{Marginality Band $[\taulow, \tauhigh]$}
 
-We fit a Gaussian to the centre of the pairwise-similarity histogram
-of domain-cohesive candidates and define $[\taulow, \tauhigh]$ as
-the band centred at the mode with width proportional to the standard
-deviation.  This excludes the high-similarity tail (obvious
-combinations) and the low-similarity tail (unrelated pairs),
-operationalising non-obviousness without hard-coded constants.
+The marginality band is centred at the empirical mode of the
+pairwise-similarity distribution among domain-cohesive candidates,
+with width derived from the spread of that distribution.  This
+operationalises non-obviousness: the band excludes the
+high-similarity tail (obvious combinations) and the low-similarity
+tail (unrelated noise) without hard-coded constants.
+Scale parameters are omitted per confidentiality requirements.
 
 % ================================================================
 \section{System Implementation}
@@ -608,12 +602,16 @@ patent-quality claims; a less stringent threshold would yield a
 positive approval rate.  Human evaluation of the 90~REVISE candidates
 is left for future work.
 
-\textbf{Reproducibility.}  The four conditions C1--C4, the scoring
-functional $\mathcal{H}$, and the calibration procedures are
-sufficient to reproduce the system.  Specific hyperparameter
-values ($\lambda$, $w_m$, $p$, $\tau_{\min}$, $\theta_v$) are
-corpus-dependent and should be calibrated per deployment;
-guidance on calibration ranges is available upon request.
+\textbf{Reproducibility note.}  This paper is submitted to the
+Industry Research Track.  Specific hyperparameter values and
+functional forms for $\mathcal{H}$ and the calibration layer are
+omitted per commercial confidentiality requirements, consistent
+with industry-track guidelines.  The four conditions C1--C4,
+the vacancy probe, and the calibration strategy are described
+with sufficient precision to reproduce the qualitative behaviour;
+practitioners can derive corpus-specific values from the
+described procedures.  Guidance on calibration ranges is
+available upon request from the authors.
 
 \textbf{Meta-evaluation.}
 An early draft of this manuscript was subjected to the Debate Panel
