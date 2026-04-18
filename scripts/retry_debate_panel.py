@@ -105,6 +105,9 @@ def retry(run_id: str, rounds: int = 1):
             "previous_verdict": cr.get("final_verdict", "REVISE"),
             "previous_approves": approves,
             "previous_avg_score": avg,
+            # Carry over full revision trace so HTML shows continuous history
+            "previous_revision_trace": review.get("revision_trace", []),
+            "previous_debate_rounds": prev_rounds,
         }
 
         pending_file.write_text(json.dumps(request, indent=2, ensure_ascii=False))

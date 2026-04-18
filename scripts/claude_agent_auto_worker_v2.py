@@ -326,7 +326,10 @@ class ClaudeAgentAutoWorkerV2:
             max_debate_revisions = 2
             final_reports = {}
             final_verdict_result = {}
-            revision_trace = []  # Track each round's feedback and changes
+            # Start trace from previous history if this is a retry
+            prev_trace = request.get("previous_revision_trace", [])
+            round_offset = request.get("previous_debate_rounds", 0)
+            revision_trace = list(prev_trace)  # copy previous rounds
 
             for debate_round in range(max_debate_revisions + 1):
                 # Step 1: 4-specialist review
@@ -431,9 +434,9 @@ class ClaudeAgentAutoWorkerV2:
 
                     revised_drafts.append(revised)
 
-                # Record revision trace
+                # Record revision trace (offset round number if retry)
                 revision_trace.append({
-                    "round": debate_round + 1,
+                    "round": round_offset + debate_round + 1,
                     "verdict": verdict,
                     "rule_trigger": chairman_result.get("rule_trigger", ""),
                     "specialist_feedback": all_issues,
@@ -447,10 +450,11 @@ class ClaudeAgentAutoWorkerV2:
             # Save result
             result = {
                 "run_id": run_id,
+                "original_run_id": request.get("original_run_id", run_id),
                 "timestamp": datetime.now().isoformat(),
                 "reviews": final_reports,
                 "chairman_result": final_verdict_result,
-                "debate_rounds": debate_round + 1,
+                "debate_rounds": round_offset + debate_round + 1,  # total rounds including previous
                 "revision_trace": revision_trace,
                 "final_drafts": current_drafts,
             }
