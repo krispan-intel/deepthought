@@ -34,13 +34,24 @@ def find_run_id(input_str: str) -> str:
                 input_str = p
                 break
 
-    # Find full run_id from completed_reviews
+    # Find full run_id from completed_reviews — prefer exact/non-retry match
+    matches = []
     for f in glob.glob(str(BASE / "data/completed_reviews/*.json")):
         rid = Path(f).stem
         if rid.startswith(input_str):
-            return rid
+            matches.append(rid)
 
-    raise ValueError(f"run_id not found: {input_str}")
+    if not matches:
+        raise ValueError(f"run_id not found: {input_str}")
+
+    # Prefer exact match or non-retry run over retry variants
+    exact = [r for r in matches if r == input_str]
+    if exact:
+        return exact[0]
+    non_retry = [r for r in matches if "-retry" not in r]
+    if non_retry:
+        return non_retry[0]
+    return matches[0]
 
 
 def retry(run_id: str, rounds: int = 1):
