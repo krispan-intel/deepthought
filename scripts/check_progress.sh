@@ -296,7 +296,9 @@ approved = db_approve
 
 # Print funnel
 def pct(n, base):
-    return f"{100*n/base:.0f}%" if base > 0 else "-%"
+    if base <= 0: return "-%"
+    v = 100*n/base
+    return f"{v:.2f}%" if v < 1 else f"{v:.0f}%"
 
 def bar(n, base, width=20):
     ratio = n / base if base > 0 else 0
