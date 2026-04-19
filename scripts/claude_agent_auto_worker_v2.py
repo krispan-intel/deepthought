@@ -1051,6 +1051,25 @@ If you assign status 'APPROVE', you may provide an empty issues array or constru
         print("Monitoring pending directories for tasks...")
         print("Press Ctrl+C to stop")
 
+        # On startup: restore any stale .lock files to .json
+        # (previous session may have crashed leaving locks behind)
+        stale_cleared = 0
+        for pending_dir in [self.pending_maverick, self.pending_professor,
+                            self.pending_reality_checker, self.pending_reviews]:
+            for lock_file in pending_dir.glob("*.lock"):
+                run_id = lock_file.stem.split(".")[0]
+                json_file = pending_dir / f"{run_id}.json"
+                try:
+                    if not json_file.exists():
+                        lock_file.rename(json_file)
+                    else:
+                        lock_file.unlink()
+                    stale_cleared += 1
+                except OSError:
+                    pass
+        if stale_cleared:
+            logger.info(f"Startup: cleared {stale_cleared} stale lock files")
+
         total_stats = {
             "maverick": {"succeeded": 0, "failed": 0},
             "professor": {"succeeded": 0, "failed": 0},
