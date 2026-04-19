@@ -55,13 +55,27 @@ def retry(run_id: str, rounds: int = 1):
     review = json.loads(review_file.read_text())
     mav = json.loads(mav_file.read_text())
 
-    # Use final_drafts if available, otherwise fall back to original maverick drafts
+    # Use final_drafts if available AND non-empty tid_detail
+    # Fall back to maverick if tid_detail is empty (data loss during revision)
     final_drafts = review.get("final_drafts")
-    if not final_drafts:
-        final_drafts = mav.get("drafts", [])
-        print("  ⚠  No final_drafts in review, using original Maverick drafts")
-    else:
+    mav_drafts = mav.get("drafts", [])
+
+    def has_content(drafts):
+        if not drafts:
+            return False
+        return any(
+            len(str(d.get("tid_detail", {}).get("proposed_invention", ""))) > 50
+            for d in drafts
+        )
+
+    if has_content(final_drafts):
         print(f"  Using final_drafts ({len(final_drafts)} drafts from last DP round)")
+    elif has_content(mav_drafts):
+        final_drafts = mav_drafts
+        print("  ⚠  final_drafts have empty tid_detail — falling back to Maverick drafts")
+    else:
+        final_drafts = mav_drafts
+        print("  ⚠  No content found, using Maverick drafts")
 
     target = mav.get("target", "")
     void_context = mav.get("void_context", "")
