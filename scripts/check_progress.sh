@@ -330,8 +330,9 @@ for f in glob.glob('data/pending_human_review/*.json'):
             human_qualified += 1
     except:
         pass
-if human_all > 0:
-    print(f"│  → 🧑 PENDING HUMAN    {bar(human_qualified, base)} {human_qualified:4d}  ({pct(human_qualified, maverick):>4s})  ← ≥1 APPROVE, HTML ready │")
+html_count = len(glob.glob('output/generated/human_review/*.html'))
+if human_all > 0 or html_count > 0:
+    print(f"│  → 🧑 PENDING HUMAN    {bar(html_count, base)} {html_count:4d}  ({pct(html_count, maverick):>4s})  ← HTML ready for review │")
 print(f"│                                                                      │")
 print(f"│  Jackpot Rate: {pct(approved, maverick):>4s}  ({approved}/{maverick})                                │")
 
@@ -362,8 +363,9 @@ if total_revise > 0:
         note = "★ HTML" if k >= 1 else "skip"
         print(f"│  {k}/4 APPROVE   {cnt:5d}  {pct_r:>11.1f}%  {pct_m:>12.2f}%  {note}  │")
 
-if human_all > 0:
-    print(f"│  🏆 Human Review: {human_qualified}/{human_all} ≥1-APPROVE · {html_count} HTML ready ({human_all - human_qualified} skipped 0-APPROVE) │")
+revise_1plus = sum(v for k,v in approve_dist.items() if k >= 1)
+if html_count > 0:
+    print(f"│  🏆 Human Review: {html_count} HTML files · {revise_1plus} REVISE ≥1-APPROVE in cohort     │")
 
 # Pending queue depth (shows backlog)
 pending_m = len(glob.glob('data/pending_maverick/*.json'))
