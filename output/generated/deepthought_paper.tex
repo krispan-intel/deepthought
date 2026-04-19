@@ -65,9 +65,10 @@
   unrelated noise; and (iii)~they share a sparse lexical bridge while
   the geodesic midpoint on the embedding hypersphere is unoccupied.
 
-  Applied to $\sim$140k indexed documents, TVA generates 1,896
-  invention candidates across 96 targets; 90\% pass automated quality
-  filtering and 1 APPROVE multi-expert adversarial review.  Two case
+  Applied to $\sim$140k indexed documents, TVA generates 2,128
+  invention candidates across 96 targets; 90\% survive automated
+  quality filtering, yielding 191~REVISE and 1~APPROVE verdict from
+  four-specialist adversarial review (0.05\% end-to-end).  Two case
   studies demonstrate the framework surfaces non-obvious connective
   tissue rather than merely obvious related pairs.
   \end{minipage}
@@ -486,7 +487,7 @@ Approval & Count & \%/REVISE & \%/Maverick \\
 1/4 & 42 & 22.0\% & 1.97\% \\
 0/4 & 142 & 74.3\% & 6.67\% \\
 \midrule
-$\geq$1 & 49 & 25.7\% & 2.30\% \\
+$\geq$\textbf{1} & \textbf{49} & \textbf{25.7\%} & \textbf{2.30\%} \\
 $\geq$2 &  7 &  3.7\% & 0.33\% \\
 \bottomrule
 \end{tabular}
@@ -671,9 +672,11 @@ not a failure mode; it is the geometric signature of a genuine
 topological void.
 
 \textbf{Evaluation limitations.}  Our automated adversarial review
-pipeline is a proxy for human expert evaluation.  Human evaluation of
-the 191~REVISE candidates and extended benchmark data over a longer
-operational window are left for future work.
+pipeline is a proxy for formal human expert evaluation.
+The 49 shortlisted candidates ($\geq$1/4 approval) are ready for
+domain-expert review; structured evaluation with a pre-defined rubric,
+inter-rater reliability measurement, and blinded expert scoring is
+left for future work.
 
 \textbf{Reproducibility note.}  Specific hyperparameter values and
 functional forms for $\mathcal{H}$ and the calibration layer are
