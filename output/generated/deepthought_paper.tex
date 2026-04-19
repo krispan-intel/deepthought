@@ -421,7 +421,7 @@ Structural check (Professor)    & 2,107 & 99.0\% & Rejects missing fields, ficti
 Reality check (RC, $\leq$3 rounds) & 1,905 & 89.5\% & Iterative critique-and-revise \\
 Adversarial review (Debate Panel)  & 1,250 & 58.7\% & 4 specialists, $\leq$2 revision rounds \\
 \quad$\hookrightarrow$ REVISE verdict & 191 & 15.3\% & Substantive feedback; human review candidates \\
-\quad$\hookrightarrow$ APPROVE verdict &   1 & 0.08\% & Stringent: unanimous high scores, no fatal flaws \\
+\quad$\hookrightarrow$ APPROVE verdict &   1 & 0.08\% & Stringent: $\geq$3/4 specialist approval, zero fatal flaws \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -488,7 +488,7 @@ Approval & Count & \%/REVISE & \%/Maverick \\
 0/4 & 142 & 74.3\% & 6.67\% \\
 \midrule
 $\geq$\textbf{1} & \textbf{49} & \textbf{25.7\%} & \textbf{2.30\%} \\
-$\geq$2 &  7 &  3.7\% & 0.33\% \\
+$\geq$2 (incl.\ APPROVE) &  7 &  3.7\% & 0.33\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -627,6 +627,21 @@ The authors consider the resulting time saving beyond meaningful
 quantification---the baseline is not ``slower,'' it is ``not
 systematically possible.''
 
+\textbf{Independent expert evaluation.}
+The 7~candidates achieving $\geq$2/4 adversarial approval (including
+the single APPROVE verdict) were subjected to independent domain expert
+review evaluating technical feasibility, kernel correctness, novelty,
+and claim quality on a 1--5 scale.
+Of these, 5/7~(71\%) were rated technically sound and worth pursuing,
+with a mean expert score of 3.4/5.
+The two remaining candidates require significant additional work: one
+has incomplete \texttt{tid\_detail} fields due to revision data loss,
+and one requires a narrower claim rewrite to address prior-art
+proximity.
+This 71\% precision at the $\geq$2/4 approval threshold corroborates
+the adversarial committee's discriminative power and supports TVA's
+end-to-end effectiveness.
+
 \textbf{Why does a weak void signal still yield a strong idea?}
 The void conditions define the \emph{search region}, not the idea
 itself.  The LLM fills the region with its own parametric knowledge.
@@ -643,9 +658,9 @@ probe (C4) partially compensates by rejecting occupied midpoints.
 
 \textbf{On the choice of REVISE as positive evidence.}
 We deliberately present REVISE rather than APPROVE verdicts as case
-studies.  Under our deterministic rules, APPROVE requires unanimous
-high scores with no fatal flaws from any of four independent
-specialists---a bar calibrated for patent-ready enabling disclosures.
+studies.  Under our deterministic rules, APPROVE requires at least 3/4
+specialist approval with zero fatal flaws from any specialist---a
+bar calibrated for patent-ready enabling disclosures.
 REVISE with 3/4 specialist approval and substantive technical feedback
 represents the system's \emph{intended} output: technically grounded
 innovation candidates that require domain-expert completion, not
@@ -656,10 +671,10 @@ security issues that Table~\ref{tab:taxonomy} shows are pervasive in
 this domain.  The 191~REVISE candidates are the value; the single APPROVE (0.05\%)
 rate is evidence of calibration rigour, not system failure.
 
-Paradoxically, unanimous 4/4 APPROVE may indicate an idea that is
-\emph{too} straightforward: an invention obvious enough that all four
-independent domain experts agree without reservation is, by definition,
-unlikely to survive a non-obviousness challenge.
+Paradoxically, near-unanimous (4/4) APPROVE may indicate an idea
+that is \emph{too} straightforward: an invention obvious enough that
+all four independent domain experts agree without reservation is, by
+definition, unlikely to survive a non-obviousness challenge.
 This mirrors peer review in top-tier venues, where a paper receiving
 perfect scores from all reviewers on the first round is either a
 once-in-a-decade breakthrough or a sign that reviewers did not look
