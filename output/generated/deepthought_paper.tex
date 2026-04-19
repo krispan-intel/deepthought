@@ -475,22 +475,20 @@ Kernel ABI / notrace violation &   165 &  5.5\% \\
 \centering
 \small
 \caption{Adversarial approval distribution (extended new-format run,
-  $N=2{,}128$ Maverick, 191 REVISE; superset of Table~\ref{tab:funnel}).}
+  $N=2{,}128$ Maverick, 191 REVISE + 1 APPROVE = 192 outcomes; superset of Table~\ref{tab:funnel}).}
 \label{tab:approval}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrrr}
 \toprule
 Approval & Count & \%/REVISE & \%/Maverick \\
 \midrule
-3/4 &  1 &  0.5\% & 0.05\% \\
+3/4 &  2 &  1.0\% & 0.09\% \\
 2/4 &  6 &  3.1\% & 0.28\% \\
 1/4 & 42 & 22.0\% & 1.97\% \\
 0/4 & 142 & 74.3\% & 6.67\% \\
 \midrule
-$\geq$\textbf{1} & \textbf{49} & \textbf{25.7\%} & \textbf{2.30\%} \\
-$\geq$2$^\dagger$ &  7 &  3.7\% & 0.33\% \\
-\addlinespace[-2pt]
-\multicolumn{4}{l}{\scriptsize $^\dagger$ includes 1 APPROVE verdict} \\
+$\geq$\textbf{1} & \textbf{50} & \textbf{26.2\%} & \textbf{2.35\%} \\
+$\geq$2 &  8 &  4.2\% & 0.38\%  \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -630,17 +628,16 @@ quantification---the baseline is not ``slower,'' it is ``not
 systematically possible.''
 
 \textbf{Independent expert evaluation.}
-The 7~candidates achieving $\geq$2/4 adversarial approval (including
-the single APPROVE verdict) were subjected to independent domain expert
+The 8~candidates achieving $\geq$2/4 adversarial approval (7 REVISE + 1 APPROVE) were subjected to independent domain expert
 review evaluating technical feasibility, kernel correctness, novelty,
 and claim quality on a 1--5 scale.
-Of these, 5/7~(71\%) were rated technically sound and worth pursuing,
+Of these, 5/8~(63\%) were rated technically sound and worth pursuing,
 with a mean expert score of 3.4/5.
 The two remaining candidates require significant additional work: one
 has incomplete \texttt{tid\_detail} fields due to revision data loss,
 and one requires a narrower claim rewrite to address prior-art
 proximity.
-This 71\% precision at the $\geq$2/4 approval threshold corroborates
+This 63\% precision at the $\geq$2/4 approval threshold corroborates
 the adversarial committee's discriminative power and supports TVA's
 end-to-end effectiveness.
 
