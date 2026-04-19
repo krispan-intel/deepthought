@@ -202,12 +202,11 @@ unoccupied.  This motivates the vacancy probe in TVA.
 
 \subsection{Notation}
 
-Let $\mathcal{K} = \{k_1, \ldots, k_n\} \subset S^{d-1}$ be a corpus
-of $\ell_2$-normalised $d$-dimensional embeddings.  We use BGE-M3
-($d=1024$)~\cite{chen2024bge}, which produces both dense vectors and
-sparse lexical weight vectors for each document.  We write
-$\mathrm{dense}(k)$ for the dense vector and
-$\mathrm{sparse}(k) \subset \Sigma^*$ for the top-5 weighted tokens.
+Let $\mathcal{K} = \{k_1, \ldots, k_n\}$ be a corpus of technical
+documents.  Each document $k \in \mathcal{K}$ is mapped by BGE-M3
+($d=1024$)~\cite{chen2024bge} to a dense unit vector
+$\mathrm{dense}(k) \in S^{d-1}$ and a sparse token set
+$\mathrm{sparse}(k) \subset \Sigma^*$ (top-5 lexical weights).
 
 Let $\mathrm{cos}(u,v) = u^\top v$ for unit vectors.  Let
 $\mathrm{Sparse}(k) = \{t \in \mathrm{sparse}(k) : t \notin
@@ -220,9 +219,10 @@ $\mathrm{Sparse}(k) = \{t \in \mathrm{sparse}(k) : t \notin
 \begin{definition}[Topological Void]
 \label{def:void}
 Let $A, B \in \mathcal{K}$ be two corpus documents and let
-$C = m(A,B)$ (Definition~\ref{def:slerp}) be their synthetic
-\emph{void midpoint}---the geodesic bridge concept derived from
-$A$ and $B$.  The pair $(A, B)$ forms a \emph{topological void}
+$C = m(\mathrm{dense}(A),\,\mathrm{dense}(B)) \in S^{d-1}$
+(Definition~\ref{def:slerp}) be their synthetic
+\emph{void midpoint}---the geodesic bridge concept.
+The pair $(A, B)$ forms a \emph{topological void}
 with respect to a domain query vector $\vtarget \in S^{d-1}$ if
 all of the following hold:
 
