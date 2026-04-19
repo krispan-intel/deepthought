@@ -610,6 +610,20 @@ This is the ``non-obvious connective tissue'' that TVA is designed to surface.
 \section{Discussion}
 \label{sec:disc}
 
+\textbf{Engineering time savings.}
+A 140,000-document corpus yields approximately $\binom{140000}{2}
+\approx 10$~billion candidate concept pairs.
+Manually evaluating even a small fraction at the depth required for
+patentable invention---an experienced kernel engineer can assess roughly
+2~novel TID candidates per working day---would require on the order of
+\textbf{4~person-years} to screen the 2,128 candidates TVA surfaced.
+TVA automates this screening via 25,536 LLM expert-review calls,
+delivering a pre-screened shortlist of \textbf{49~human-review
+candidates} (those achieving $\geq$1/4 specialist approval).
+A domain expert reviewing this shortlist requires approximately
+\textbf{49~person-hours}---a compression from an intractable search space
+of $\sim$200~million to 1.
+
 \textbf{Why does a weak void signal still yield a strong idea?}
 The void conditions define the \emph{search region}, not the idea
 itself.  The LLM fills the region with its own parametric knowledge.
