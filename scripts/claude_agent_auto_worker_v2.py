@@ -147,6 +147,17 @@ class ClaudeAgentAutoWorkerV2:
         model = request.get("model", "claude-sonnet-4-5")
         max_revisions = 3
 
+        # Load Maverick originals as ultimate fallback for safety net
+        mav_drafts = {}
+        try:
+            mav_file = self.completed_maverick / f"{run_id}.json"
+            if mav_file.exists():
+                mav_data = json.loads(mav_file.read_text())
+                for i, d in enumerate(mav_data.get("drafts", [])):
+                    mav_drafts[i] = d
+        except Exception:
+            pass
+
         try:
             current_drafts = drafts
             all_critiques = []
@@ -206,14 +217,16 @@ class ClaudeAgentAutoWorkerV2:
                         temperature=0.5
                     )
                     revised = self._parse_json_response(response_text, "RealityChecker")
-                    # Safety net: fill missing tid_detail fields from original
+                    # Safety net: fill missing tid_detail fields
+                    # Priority: revised → current draft → Maverick original
                     orig_td = draft.get("tid_detail", {})
+                    mav_td = mav_drafts.get(i, {}).get("tid_detail", {})
                     rev_td = revised.get("tid_detail", {})
                     for field in ("problem_statement", "prior_art_gap", "proposed_invention",
                                   "architecture_overview", "implementation_plan", "validation_plan",
                                   "draft_claims", "risks_and_mitigations", "references"):
-                        if not rev_td.get(field) and orig_td.get(field):
-                            rev_td[field] = orig_td[field]
+                        if not rev_td.get(field):
+                            rev_td[field] = orig_td.get(field) or mav_td.get(field) or ""
                     if rev_td:
                         revised["tid_detail"] = rev_td
                     revised_drafts.append(revised)
