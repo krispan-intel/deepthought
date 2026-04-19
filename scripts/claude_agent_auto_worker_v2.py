@@ -330,6 +330,11 @@ class ClaudeAgentAutoWorkerV2:
             prev_trace = request.get("previous_revision_trace", [])
             round_offset = request.get("previous_debate_rounds", 0)
             revision_trace = list(prev_trace)  # copy previous rounds
+            # Retry protection: TIDs that already survived N rounds with ≥2 APPROVE
+            # cannot be killed by a fresh REJECT — only REVISE allowed
+            is_retry = bool(request.get("original_run_id"))
+            previous_approves = request.get("previous_approves", 0)
+            retry_protect = is_retry and previous_approves >= 2
 
             for debate_round in range(max_debate_revisions + 1):
                 # Step 1: 4-specialist review
@@ -358,6 +363,18 @@ class ClaudeAgentAutoWorkerV2:
                 # Step 2: Deterministic verdict
                 chairman_result = self._deterministic_verdict(reports)
                 verdict = chairman_result.get("final_verdict", "UNKNOWN")
+
+                # Retry protection: TIDs with ≥2 previous APPROVE cannot be REJECT
+                # They already proved their value — retry is for refinement only
+                if retry_protect and verdict == "REJECT":
+                    verdict = "REVISE"
+                    chairman_result = {
+                        **chairman_result,
+                        "final_verdict": "REVISE",
+                        "synthesis": f"[Retry protection: downgraded from REJECT] {chairman_result.get('synthesis', '')}",
+                        "rule_trigger": f"retry_protect_{chairman_result.get('rule_trigger', '')}",
+                    }
+                    logger.info(f"Retry protection applied: REJECT → REVISE for {run_id} (had {previous_approves} previous APPROVE)")
 
                 logger.info(
                     f"Debate round {debate_round + 1}/{max_debate_revisions + 1}: {run_id} | "
