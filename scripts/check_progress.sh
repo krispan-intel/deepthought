@@ -317,10 +317,21 @@ if debate > 0:
     print(f"│    ├─ APPROVE: {db_approve}  REVISE: {db_revise}  REJECT: {db_reject}                          │")
 print(f"│  → APPROVED TID        {bar(approved, base)} {approved:4d}  ({pct(approved, maverick):>4s})       │")
 
-# Human review queue (survived all DP rounds)
-human_review = len(glob.glob('data/pending_human_review/*.json'))
-if human_review > 0:
-    print(f"│  → 🧑 PENDING HUMAN    {bar(human_review, base)} {human_review:4d}  ({pct(human_review, maverick):>4s})  ← Architect needed │")
+# Human review queue: only count ≥1 APPROVE (these have HTML, are worth reviewing)
+human_all = len(glob.glob('data/pending_human_review/*.json'))
+html_count = len(glob.glob('output/generated/human_review/*.html'))
+# Count ≥1 approve in human review queue
+human_qualified = 0
+for f in glob.glob('data/pending_human_review/*.json'):
+    try:
+        d = json.load(open(f))
+        reviews = d.get('reviews', {})
+        if sum(1 for r in reviews.values() if r.get('status') == 'APPROVE') >= 1:
+            human_qualified += 1
+    except:
+        pass
+if human_all > 0:
+    print(f"│  → 🧑 PENDING HUMAN    {bar(human_qualified, base)} {human_qualified:4d}  ({pct(human_qualified, maverick):>4s})  ← ≥1 APPROVE, HTML ready │")
 print(f"│                                                                      │")
 print(f"│  Jackpot Rate: {pct(approved, maverick):>4s}  ({approved}/{maverick})                                │")
 
@@ -351,9 +362,8 @@ if total_revise > 0:
         note = "★ HTML" if k >= 1 else "skip"
         print(f"│  {k}/4 APPROVE   {cnt:5d}  {pct_r:>11.1f}%  {pct_m:>12.2f}%  {note}  │")
 
-if human_review > 0:
-    html_count = len(glob.glob('output/generated/human_review/*.html'))
-    print(f"│  🏆 Human Review: {human_review} TIDs queued · {html_count} HTML files generated           │")
+if human_all > 0:
+    print(f"│  🏆 Human Review: {human_qualified}/{human_all} ≥1-APPROVE · {html_count} HTML ready ({human_all - human_qualified} skipped 0-APPROVE) │")
 
 # Pending queue depth (shows backlog)
 pending_m = len(glob.glob('data/pending_maverick/*.json'))
