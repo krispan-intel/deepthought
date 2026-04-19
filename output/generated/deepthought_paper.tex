@@ -693,6 +693,15 @@ domain-expert review; structured evaluation with a pre-defined rubric,
 inter-rater reliability measurement, and blinded expert scoring is
 left for future work.
 
+The revision loop issues a single LLM call per round that addresses
+all four specialists' feedback simultaneously; this ``attend-to-all''
+strategy can lead to trade-offs where addressing one specialist's
+concerns inadvertently weakens another's approval.
+A specialist-decomposed approach---one focused revision per specialist,
+followed by a merge pass---would likely improve approval rates at the
+cost of 4--5$\times$ more inference per revision round, a
+compute-efficiency trade-off we leave for future work.
+
 \textbf{Reproducibility note.}  Specific hyperparameter values and
 functional forms for $\mathcal{H}$ and the calibration layer are
 omitted per proprietary constraints.  The four conditions C1--C4,
