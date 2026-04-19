@@ -72,12 +72,18 @@ def retry(run_id: str, rounds: int = 1):
     mav_drafts = mav.get("drafts", [])
 
     def has_content(drafts):
+        """Check if drafts have complete tid_detail with correct schema."""
         if not drafts:
             return False
-        return any(
-            len(str(d.get("tid_detail", {}).get("proposed_invention", ""))) > 50
-            for d in drafts
-        )
+        required = {"proposed_invention", "architecture_overview", "draft_claims"}
+        for d in drafts:
+            td = d.get("tid_detail", {})
+            # Must have the standard keys AND substantial content
+            has_keys = required.issubset(td.keys())
+            has_inv = len(str(td.get("proposed_invention", ""))) > 100
+            if has_keys and has_inv:
+                return True
+        return False
 
     if has_content(final_drafts):
         print(f"  Using final_drafts ({len(final_drafts)} drafts from last DP round)")
