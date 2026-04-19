@@ -66,8 +66,8 @@
   the geodesic midpoint on the embedding hypersphere is unoccupied.
 
   Applied to $\sim$140k indexed documents, TVA generates 1,896
-  invention candidates across 96 targets; 85\% pass automated quality
-  filtering and 90 survive multi-expert adversarial review.  Two case
+  invention candidates across 96 targets; 90\% pass automated quality
+  filtering and 1 APPROVE multi-expert adversarial review.  Two case
   studies demonstrate the framework surfaces non-obvious connective
   tissue rather than merely obvious related pairs.
   \end{minipage}
@@ -402,30 +402,30 @@ pipeline as a proxy for expert review:
 
 \subsection{Quantitative Results}
 
-Table~\ref{tab:funnel} summarises the filtering funnel over 1,896
+Table~\ref{tab:funnel} summarises the filtering funnel over 2,128
 candidate ideas generated across all 96 targets.
 
 \begin{table*}[t]
 \centering
 \small
-\caption{Quality filtering funnel over 1,896 void-derived invention candidates.}
+\caption{Quality filtering funnel over 2,128 void-derived invention candidates.}
 \label{tab:funnel}
 \setlength{\tabcolsep}{6pt}
 \begin{tabular}{lrr p{5.5cm}}
 \toprule
 Stage & Surviving & Rate & Notes \\
 \midrule
-Void generation (Forager + LLM) & 1,896 & 100\% & 96 targets, $\leq$10 voids each \\
-Structural check (Professor)    & 1,836 & 96.8\% & Rejects missing fields, fictional APIs \\
-Reality check (RC, $\leq$3 rounds) & 1,620 & 85.4\% & Iterative critique-and-revise \\
-Adversarial review (Debate Panel)  & 978   & 51.6\% & 4 specialists, $\leq$2 revision rounds \\
-\quad$\hookrightarrow$ REVISE verdict & 90 & 4.7\% & Substantive feedback; human review candidates \\
-\quad$\hookrightarrow$ APPROVE verdict &  0 & 0.0\% & Stringent: unanimous high scores, no fatal flaws \\
+Void generation (Forager + LLM) & 2,128 & 100\% & 96 targets, $\leq$10 voids each \\
+Structural check (Professor)    & 2,107 & 99.0\% & Rejects missing fields, fictional APIs \\
+Reality check (RC, $\leq$3 rounds) & 1,905 & 89.5\% & Iterative critique-and-revise \\
+Adversarial review (Debate Panel)  & 1,250 & 58.7\% & 4 specialists, $\leq$2 revision rounds \\
+\quad$\hookrightarrow$ REVISE verdict & 191 & 15.3\% & Substantive feedback; human review candidates \\
+\quad$\hookrightarrow$ APPROVE verdict &   1 & 0.08\% & Stringent: unanimous high scores, no fatal flaws \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-The 90~candidates reaching a REVISE verdict received substantive
+The 191~candidates reaching a REVISE verdict received substantive
 technical feedback from all four specialists (avg.\ 5.1 issues per
 specialist per candidate, avg.\ specialist score 4.0--5.0/5).
 Under our deterministic rules, REVISE indicates that the committee
@@ -433,12 +433,16 @@ found genuine technical merit and requested elaboration---it is a
 \emph{qualified positive result}, not a rejection.
 The two case studies below are drawn from this REVISE cohort.
 
-The 0\% APPROVE rate reflects an intentionally stringent threshold
-(unanimous high scores with no fatal flaws from any of four
-specialists), appropriate for patent-quality claims.
-The evaluation corpus presented here spans fewer than two days of
-operation with full metadata propagation.  Extended results over a
-longer run are ongoing; updated numbers will appear in the final version.
+One candidate reached the \texttt{majority\_approval} threshold
+(3/4 APPROVE, avg.\ score 4.0/5, zero fatal flaws, two Debate Panel
+rounds): \emph{Runtime Density-Adaptive x2APIC Cluster Broadcast
+for Linux TLB Shootdown}, which proposes per-cluster density-adaptive
+IPI mode selection in \texttt{native\_flush\_tlb\_multi()}.
+We present REVISE candidates as case studies rather than this APPROVE
+candidate, because ideas receiving near-unanimous expert agreement
+are, by construction, less likely to exhibit the non-obvious
+``connective tissue'' that defines the topological void---a point
+we discuss further in Section~\ref{sec:disc}.
 
 \subsection{Rejection Taxonomy}
 
@@ -470,20 +474,20 @@ Kernel ABI / notrace violation &   165 &  5.5\% \\
 \centering
 \small
 \caption{Adversarial approval distribution (extended new-format run,
-  $N=2{,}004$ Maverick, 139 REVISE; superset of Table~\ref{tab:funnel}).}
+  $N=2{,}128$ Maverick, 191 REVISE; superset of Table~\ref{tab:funnel}).}
 \label{tab:approval}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrrr}
 \toprule
 Approval & Count & \%/REVISE & \%/Maverick \\
 \midrule
-3/4 &  1 &  0.7\% & 0.05\% \\
-2/4 &  4 &  2.9\% & 0.20\% \\
-1/4 & 29 & 20.9\% & 1.45\% \\
-0/4 & 105 & 75.5\% & 5.24\% \\
+3/4 &  1 &  0.5\% & 0.05\% \\
+2/4 &  6 &  3.1\% & 0.28\% \\
+1/4 & 42 & 22.0\% & 1.97\% \\
+0/4 & 142 & 74.3\% & 6.67\% \\
 \midrule
-$\geq$1 & 34 & 24.5\% & 1.70\% \\
-$\geq$2 &  5 &  3.6\% & 0.25\% \\
+$\geq$1 & 49 & 25.7\% & 2.30\% \\
+$\geq$2 &  7 &  3.7\% & 0.33\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -632,7 +636,7 @@ autonomous patent generation.  A system that routinely produces APPROVE
 verdicts from LLM specialists alone would be under-calibrated rather
 than superior---it would fail to catch the locking, prior-art, and
 security issues that Table~\ref{tab:taxonomy} shows are pervasive in
-this domain.  The 90~REVISE candidates are the value; the 0\%~APPROVE
+this domain.  The 191~REVISE candidates are the value; the single APPROVE (0.05\%)
 rate is evidence of calibration rigour, not system failure.
 
 Paradoxically, unanimous 4/4 APPROVE may indicate an idea that is
@@ -652,7 +656,7 @@ topological void.
 
 \textbf{Evaluation limitations.}  Our automated adversarial review
 pipeline is a proxy for human expert evaluation.  Human evaluation of
-the 90~REVISE candidates and extended benchmark data over a longer
+the 191~REVISE candidates and extended benchmark data over a longer
 operational window are left for future work.
 
 \textbf{Reproducibility note.}  Specific hyperparameter values and
@@ -807,8 +811,8 @@ dense-sparse embedding space, TVA converts the informal notion of
 ``unexplored region'' into a decidable predicate.
 
 Applied to a 140k-document corpus of Linux kernel and hardware
-specifications, TVA generated 1,896 invention candidates, 85\% of
-which survived automated quality filtering and 90 of which engaged
+specifications, TVA generated 2,128 invention candidates, 90\% of
+which survived automated quality filtering and 191 of which engaged
 four adversarial expert reviewers with substantive technical critique.
 Two case studies illustrate that TVA surfaces both obvious-gap ideas
 and non-obvious connective-tissue ideas that neither keyword search nor
