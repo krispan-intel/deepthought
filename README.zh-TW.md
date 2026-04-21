@@ -13,20 +13,23 @@
 
 ## 🎯 核心概念
 
-傳統研發通常依賴人的直覺去發現創新缺口。
-DeepThought 則將這件事變得**系統化且數學化**。
+每份技術文件——論文、kernel 原始碼、硬體規格、專利——都被嵌入到一個高維空間中。DeepThought 在這個空間裡透過數學導航，找出**拓樸空洞（Topological Voids）**：現有概念之間尚未被任何人發明的未開拓區域。
 
-知識空間示意如下：
+一旦定位到空洞，前沿 LLM 將其座標翻譯回具體的發明提案。對抗性審查 pipeline 從四個角度——kernel 正確性、新穎性、策略價值、安全性——對想法進行壓力測試，防止幻覺並確保輸出有所依據。
+
+結果：一份技術上紮實的創新候選清單，供人類專家審查。
+
+> **關於 Anchor C（意圖向量）**：系統中的 v_target 代表的是**發明者的意圖**——探索的方向，而不是一份具體文件。列舉 96 個 target 只是為了可重現性，不是限制。你只需要用一句話說清楚你想去哪裡，TVA 就會幫你找到那個方向上還沒人去過的地方。
 
     ████████░░░░░░████████
-    ████████░░░░░░████████   <-░░ = 拓撲空洞
+    ████████░░░░░░████████   <-░░ = 拓樸空洞
     █████████████████████       （尚未探索的創新空間）
     ████████░░░░░░████████
     ████████░░░░░░████████
 
     █ = 既有專利 / 解法
     ░ = DeepThought 鎖定的高價值創新缺口
-    ★ = V_target（你的最佳化目標）
+    ★ = V_target（你的意圖 / 最佳化目標）
 
 ## 📐 Hybrid DeepThought 方程式（BGE-M3 Dense-Sparse Triad）
 
@@ -98,63 +101,47 @@ HybridScore(A,B) = λ · Cos(Dense(A⊕B), Dense(C)) - (1-λ) · AvgRedundancy(A
   - 多數批准（多數 specialist 通過）
 - **模型**：`gpt-5.2`（`--model gpt-5.2 --effort high`）
 
-## 🔄 Pipeline 流程
+## 🔄 Pipeline 流程（異步架構）
 
 ```
-Input: Legacy Code + Modern Specs
-              |
-              v
-        +------------+
-        |  FORAGER   |
-        |  Dense + Sparse Void Triad Filter  |
-        +------------+
-              | (Concept Anchors A & B)
-              v
-   +--------> +------------+
-   |          |  MAVERICK  |
-   |          |  gpt-5.4 --effort high       |
-   |          |  RFC Draft Generation        |
-   |          +------------+
-   |                  |
-   |                  v
-   |          +------------+
-   |          |  PROFESSOR |
-   |          |  Pre-Flight|
-   |          |  審查員    |
-   |          +------------+
-   |                  |
-   |                  v
-   |          +------------------+
-   |          | PATENT SHIELD    |
-   |          | Global Prior Art |
-   |          +------------------+
-   |                  | (Pass)
-   |                  v
-   |          +------------------+
-   |          | REALITY CHECKER  |
-   |          | Constraint Eval  |
-   |          +------------------+
-   |                  |
-   +------------------+ (REVISE: 回饋 metrics 做 Mutation，最多 3-5 次)
-                      |
-                   APPROVE
-                      |
-                      v
-              +--------------+
-              | DEBATE PANEL |
-              | 4 specialists|
-              | 平行執行     |
-              +--------------+
-                      |
-                      v
-              +----------------+
-              | CONSENSUS JUDGE|
-              +----------------+
-                      |
-                      v
-              +--------------+
-              | TID FORMATTER|
-              +--------------+
+FORAGER（異步，fire-and-forget）
+────────────────────────────────
+  BGE-M3 → TVA 空洞發現 → pending_maverick/
+  ~5 voids/小時，獨立於下游階段
+
+AUTO WORKER（16 workers：8 copilot_cli + 8 claude_code_cli）
+─────────────────────────────────────────────────────────────
+  優先級：Debate Panel > Reality Checker > Professor > Maverick
+
+  pending_maverick/  →  MAVERICK（gpt-5.4）
+                         3 份 TID 草稿，完整 tid_detail
+                              │ chain
+  pending_professor/ →  PROFESSOR（gpt-5.2）
+                         結構預檢
+                              │ chain
+  pending_reality_   →  REALITY CHECKER（gpt-5.2）
+  checker/               critique → revise（≤3 輪）
+                              │ chain
+  pending_reviews/   →  DEBATE PANEL（gpt-5.4 × 4 specialists）
+                         2-pass 聚焦修改：
+                           Pass 1：kernel 正確性 + 安全性
+                           Pass 2：新穎性 + 策略價值
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+           APPROVE          REVISE          REJECT
+          (0.05%)       → pending_         （過濾）
+              │           human_review/
+              ▼           + 自動生成 HTML
+         output/               │
+         generated/            ▼
+                         output/generated/human_review/
+
+HUMAN REVIEW（人工審查）
+  # 觸發更多 DP 輪次
+  python scripts/retry_debate_panel.py <html_file> --rounds 2
+  # 查看候選清單
+  ls output/generated/human_review/ | sort -r
 ```
 
 ## ✅ TODO
