@@ -43,6 +43,8 @@ Before collecting anything, answer these questions:
 | **Markdown / RST** | Docs, READMEs | `mistune`, `docutils` | Good signal-to-noise ratio |
 | **Jupyter Notebooks** | Research code | `nbformat` | Extract markdown cells + code |
 | **CSV / JSON / JSONL** | Structured data | pandas / native | Flatten to text fields |
+| **Video** | Lectures, conference talks, tutorials | `yt-dlp` + Whisper (OpenAI) | Transcribe to text first, then use text pipeline; chapter timestamps work as chunk boundaries |
+| **Audio** | Podcasts, interviews, recordings | `openai-whisper`, `faster-whisper` | Speaker diarization (`pyannote-audio`) improves chunking quality |
 
 ---
 
@@ -58,6 +60,7 @@ Before collecting anything, answer these questions:
 | Commit messages | Whole message | As-is |
 | Patents | Claim 1 + abstract | ~200–400 tokens |
 | Mailing list threads | Single email, trim quoting | ~200–500 tokens |
+| Video / audio transcripts | Split on speech pauses or chapter markers | ~300–600 tokens |
 
 **Rule:** One chunk = one concept. If a chunk covers 3 unrelated topics, split it.
 
@@ -187,6 +190,110 @@ print(f"Std: {sims.std():.3f}")              # target: > 0.15
 | LangChain text splitters | https://python.langchain.com/docs/modules/data_connection/document_transformers | Chunking strategies |
 | LlamaIndex ingestion | https://docs.llamaindex.ai | End-to-end RAG pipeline |
 | PyMuPDF | https://pymupdf.readthedocs.io | PDF extraction |
+
+### Video / Audio Transcription
+| Resource | URL | What you'll learn |
+|---|---|---|
+| OpenAI Whisper | https://github.com/openai/whisper | Local speech-to-text (multilingual) |
+| faster-whisper | https://github.com/SYSTRAN/faster-whisper | CTranslate2-accelerated Whisper |
+| yt-dlp | https://github.com/yt-dlp/yt-dlp | Download YouTube / conference videos |
+| pyannote-audio | https://github.com/pyannote/pyannote-audio | Speaker diarization |
+| WhisperX | https://github.com/m-bain/whisperX | Whisper + alignment + diarization in one |
+
+---
+
+## Step 8: Configure Your Debate Panel
+
+Once your corpus is ready, the only thing you need to configure manually is the **four specialist roles** in the adversarial review committee. Think of it like choosing a programme committee for a domain conference: you want reviewers who can challenge the idea from different angles — technical correctness, novelty, strategic value, and risk.
+
+The current Linux/x86 roster is:
+
+| Role | Focus |
+|---|---|
+| Kernel Hardliner | Implementation correctness, ABI constraints, locking |
+| Prior-Art Shark | Novelty, non-obviousness, overlap with known work |
+| Intel Strategist | Platform strategic fit, HW/SW co-design value |
+| Security Guardian | Security and privacy risk |
+
+**Prior-Art Shark** and a **safety/security** role are universally useful — keep them in every domain. The other two should reflect your domain's technical and organisational reality.
+
+### Domain Examples
+
+**Biomedical / Drug Discovery**
+Modelled after NeurIPS / Nature Medicine review norms: scientific rigor + safety above all.
+
+| Role | Focus |
+|---|---|
+| Clinical Researcher | Clinical feasibility, patient safety, FDA/EMA pathway |
+| Drug-Safety Expert | Toxicology, off-target effects, contraindications |
+| Prior-Art Shark | Patent landscape, published prior art |
+| Regulatory Specialist | GxP compliance, labelling, trial design requirements |
+
+---
+
+**Materials Science**
+Modelled after Nature Materials / ICMSE review: reproducibility + manufacturability.
+
+| Role | Focus |
+|---|---|
+| Materials Physicist | Thermodynamic feasibility, DFT/experiment consistency |
+| Manufacturing Engineer | Scalability, process integration, yield concerns |
+| Prior-Art Shark | Patent and literature overlap |
+| IP Counsel | Freedom-to-operate, claim scope |
+
+---
+
+**Automotive Software (AUTOSAR / ISO 26262)**
+Modelled after SAE / AUTOSAR technical review: safety integrity + standards compliance.
+
+| Role | Focus |
+|---|---|
+| Functional Safety Engineer | ASIL decomposition, FMEA, safety goal traceability |
+| AUTOSAR Architect | BSW/RTE integration, ARXML compliance, timing |
+| Prior-Art Shark | Novelty over existing AUTOSAR extensions, SAE papers |
+| Cybersecurity Expert | EVITA/TARA threat modelling, ISO 21434 |
+
+---
+
+**Compiler / Programming Languages**
+Modelled after PLDI / POPL programme committee: formal correctness + performance.
+
+| Role | Focus |
+|---|---|
+| Compiler Engineer | IR correctness, aliasing, undefined behaviour |
+| Language Theorist | Type system soundness, formal semantics |
+| Prior-Art Shark | Overlap with LLVM/GCC patches, academic publications |
+| Performance Architect | Benchmark regression risk, codegen quality |
+
+---
+
+**Enterprise / Cloud Infrastructure**
+Modelled after SOSP / OSDI review: correctness under failure + operational cost.
+
+| Role | Focus |
+|---|---|
+| Distributed Systems Engineer | Consistency model, failure modes, CAP tradeoffs |
+| SRE / Operations | Operational complexity, blast radius, rollback |
+| Prior-Art Shark | AWS/GCP/Azure patent landscape, open-source prior art |
+| Security Guardian | Supply chain risk, zero-trust, data residency |
+
+---
+
+### Prompt Template
+
+For each specialist, provide a one-paragraph system prompt of this shape:
+
+```
+You are [Role Name]. Your focus is [domain + angle].
+When reviewing a Technical Invention Disclosure, you evaluate:
+- [Criterion 1 specific to this role]
+- [Criterion 2 specific to this role]
+- [Criterion 3 specific to this role]
+Respond with: verdict (APPROVE / REVISE / REJECT), a one-sentence rationale,
+and — if REVISE — one concrete required change.
+```
+
+Claude or any capable LLM can help you draft these prompts once you describe your domain. The key is that each specialist should have a **distinct, non-overlapping lens** — if two reviewers would say the same thing, merge them or replace one.
 
 ---
 

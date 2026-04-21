@@ -9,6 +9,8 @@
 **拓扑空洞（Topological Voids）**，并将其具体化为
 **可直接交由律师使用的技术发明披露文件（Technical Invention Disclosure, TID）**。
 
+🗄️ **[建立你自己的向量数据库 →](VECTORDB_GUIDE.zh-CN.md)** | 将 TVA 部署到任何领域
+
 ## 🎯 核心理念
 
 每份技术文档——论文、kernel 源代码、硬件规格、专利——都被嵌入到一个高维空间中。DeepThought 在这个空间里通过数学导航，找出**拓扑空洞（Topological Voids）**：现有概念之间尚未被任何人发明的未开拓区域。
@@ -189,6 +191,34 @@ HUMAN REVIEW（人工审查）
 - 本地 RAG 用于建立新颖性与证据边界；LLM 推理用于提出跨领域假设。
 - 生成想法不会被直接采纳：必须通过检索 grounding、技术约束检查，以及多 agent 评审/辩论，才会成为 TID 候选。
 - 因此系统目标是输出**有证据支撑的发明假设**，而不是直接保证专利可授权。
+
+## 🌐 将 TVA 部署到新领域
+
+TVA 框架是**领域无关**的。任何维护大型可嵌入技术知识库的组织——硬件设计文档、生医文献、材料科学专利、汽车软件标准、企业架构存储库——都适用相同的空洞形式化。
+
+Domain 迁移只需要**两个步骤**，其余全部不需要更动。
+
+### 步骤一：重新配置对抗审查的 Specialist 角色
+
+将 Debate Panel 的四个角色替换为适合你领域的专家：
+
+| 领域 | Specialist 配置范例 |
+|---|---|
+| **Linux / x86** *(现行)* | Kernel Hardliner、Prior-Art Shark、Intel Strategist、Security Guardian |
+| **生医** | Clinical Researcher、Drug-Safety Expert、Regulatory Specialist、IP Counsel |
+| **材料科学** | Materials Physicist、Manufacturing Engineer、Prior-Art Shark、IP Counsel |
+| **汽车** | Safety Engineer (ISO 26262)、AUTOSAR Architect、Prior-Art Shark、Cybersecurity Expert |
+| **编译器 / PL** | Compiler Engineer、Language Theorist、Prior-Art Shark、Performance Architect |
+
+Prior-Art Shark 与安全/安全性角色具有普遍适用性，只有领域专属的技术与策略角色需要替换。
+
+### 步骤二：重新校准边际带
+
+边际带 `[τ_low, τ_high]`——你领域中创新发生的几何距离——会**从你的语料库自动推导**（对配对相似度直方图做高斯拟合）。无需手动调整；只需在导入后执行一次校准即可。
+
+这两个步骤均为数据驱动。Void 发现的数学、LLM 生成与修订循环均为领域中立，不需要更动。
+
+> 语料库准备请见 **[建立你自己的向量数据库 →](VECTORDB_GUIDE.zh-CN.md)**
 
 ## 📊 数据来源
 

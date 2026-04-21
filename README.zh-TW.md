@@ -11,6 +11,8 @@
 
 📄 **[閱讀 TVA 論文 →](PAPER.zh-TW.md)** | [arXiv 預印本](https://arxiv.org) *(待審核)*
 
+🗄️ **[建立你自己的向量資料庫 →](VECTORDB_GUIDE.zh-TW.md)** | 將 TVA 部署到任何領域
+
 ## 🎯 核心概念
 
 每份技術文件——論文、kernel 原始碼、硬體規格、專利——都被嵌入到一個高維空間中。DeepThought 在這個空間裡透過數學導航，找出**拓樸空洞（Topological Voids）**：現有概念之間尚未被任何人發明的未開拓區域。
@@ -164,6 +166,34 @@ HUMAN REVIEW（人工審查）
 - 本地 RAG 用來建立新穎性與證據邊界；LLM 推理負責提出跨領域假設。
 - 生成點子不會直接採納：必須通過檢索 grounding、技術約束檢查，以及多 agent 評審/辯論，才會成為 TID 候選。
 - 因此系統目標是產出**有證據支撐的發明假設**，而非直接保證可核准專利。
+
+## 🌐 將 TVA 部署到新領域
+
+TVA 框架是**領域無關**的。任何維護大型可嵌入技術知識庫的組織——硬體設計文件、生醫文獻、材料科學專利、汽車軟體標準、企業架構儲存庫——都適用相同的空洞形式化。
+
+Domain 遷移只需要**兩個步驟**，其餘全部不需要更動。
+
+### 步驟一：重新配置對抗審查的 Specialist 角色
+
+將 Debate Panel 的四個角色替換為適合你領域的專家：
+
+| 領域 | Specialist 配置範例 |
+|---|---|
+| **Linux / x86** *(現行)* | Kernel Hardliner、Prior-Art Shark、Intel Strategist、Security Guardian |
+| **生醫** | Clinical Researcher、Drug-Safety Expert、Regulatory Specialist、IP Counsel |
+| **材料科學** | Materials Physicist、Manufacturing Engineer、Prior-Art Shark、IP Counsel |
+| **汽車** | Safety Engineer (ISO 26262)、AUTOSAR Architect、Prior-Art Shark、Cybersecurity Expert |
+| **編譯器 / PL** | Compiler Engineer、Language Theorist、Prior-Art Shark、Performance Architect |
+
+Prior-Art Shark 與安全/安全性角色具有普遍適用性，只有領域專屬的技術與策略角色需要替換。
+
+### 步驟二：重新校準邊際帶
+
+邊際帶 `[τ_low, τ_high]`——你領域中創新發生的幾何距離——會**從你的語料庫自動推導**（對配對相似度直方圖做高斯擬合）。無需手動調整；只需在匯入後執行一次校準即可。
+
+這兩個步驟均為資料驅動。Void 發現的數學、LLM 生成與修訂循環均為領域中立，不需要更動。
+
+> 語料庫準備請見 **[建立你自己的向量資料庫 →](VECTORDB_GUIDE.zh-TW.md)**
 
 ## 📊 資料來源
 

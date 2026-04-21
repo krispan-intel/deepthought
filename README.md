@@ -216,6 +216,34 @@ HUMAN REVIEW
 - A generated idea is not accepted directly: it must pass retrieval grounding, technical constraint checks, and multi-agent critique/debate before becoming a TID candidate.
 - This means the system optimizes for **evidence-backed invention hypotheses**, not guaranteed patentability claims.
 
+## 🌐 Deploying TVA in a New Domain
+
+While this paper instantiates TVA on a Linux kernel and x86 hardware corpus, the framework is **domain-agnostic**. Any organisation that maintains a large, embeddable technical knowledge base — hardware design documentation, biomedical literature, materials-science patents, automotive software standards, or enterprise architecture repositories — admits the same void formalization.
+
+Domain adaptation requires exactly **two steps**. Everything else transfers unchanged.
+
+### Step 1 — Reconfigure the Adversarial Review Specialists
+
+Replace the four Debate Panel roles with domain-appropriate experts:
+
+| Domain | Example Specialist Roster |
+|---|---|
+| **Linux / x86** *(current)* | Kernel Hardliner, Prior-Art Shark, Intel Strategist, Security Guardian |
+| **Biomedical** | Clinical Researcher, Drug-Safety Expert, Regulatory Specialist, IP Counsel |
+| **Materials Science** | Materials Physicist, Manufacturing Engineer, Prior-Art Shark, IP Counsel |
+| **Automotive** | Safety Engineer (ISO 26262), AUTOSAR Architect, Prior-Art Shark, Cybersecurity Expert |
+| **Compiler / PL** | Compiler Engineer, Language Theorist, Prior-Art Shark, Performance Architect |
+
+The Prior-Art Shark and a security/safety role are universally applicable — only the domain-specific technical and strategic roles need to change.
+
+### Step 2 — Re-calibrate the Marginality Band
+
+The marginality band `[τ_low, τ_high]` — the geometric distance at which innovation occurs in your domain — is **derived automatically from your corpus** via Gaussian fit to the pairwise similarity histogram. It requires no manual tuning; you only need to run the calibration once after ingestion.
+
+Both steps are data-driven. The void discovery math, LLM generation, and revision loop are domain-neutral and do not change.
+
+> For corpus preparation, see **[Build your own Vector DB →](VECTORDB_GUIDE.md)**
+
 ## 📊 Data Sources
 
 | Category | Sources |
