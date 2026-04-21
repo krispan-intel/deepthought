@@ -5,14 +5,14 @@ Language: [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文
 > *"The Answer to the Great Question of Life, the Universe and Everything"*
 > — Douglas Adams, The Hitchhiker's Guide to the Galaxy
 
-A systematic AI-driven invention discovery engine that identifies
-**Topological Voids** in technical knowledge spaces and materializes
-them into **Lawyer-ready Technical Invention Disclosures (TID)**.
+An AI-driven invention discovery engine powered by the **Topological Void Analysis (TVA) framework** — a mathematical system that identifies unexplored innovation gaps in technical knowledge spaces and materializes them into **Technical Invention Disclosures (TID)** through an adversarial multi-agent review pipeline.
+
+> *"The system surfaces the map; human experts navigate it."*  — Driving-AI, not AI-driven
 
 ## 🎯 The Core Idea
 
 Traditional R&D relies on human intuition to find innovation gaps.
-DeepThought makes this **systematic and mathematical**.
+DeepThought makes this **systematic and mathematical** via TVA.
 
 The knowledge space visualization:
 
@@ -26,36 +26,16 @@ The knowledge space visualization:
     ░ = DeepThought target: high-value innovation gaps
     ★ = V_target (your optimization goal)
 
-## 📐 The Hybrid DeepThought Equation (BGE-M3 Dense-Sparse Triad)
+## 📐 TVA Framework (Topological Void Analysis)
 
-The core mathematical engine has evolved from traditional global MMR to a **Hybrid Vector-Inverted Index Triad**. We identify Topological Voids by finding two concepts (A and B) within a domain anchor (C) that are semantically marginal but share a **sparse lexical bridge** — at least one meaningful co-occurring token.
+DeepThought is powered by TVA — a mathematical framework that identifies **topological voids**: concept pairs (A, B) in an embedding space that are simultaneously relevant to a target domain, semantically non-obvious, lexically connected, and unoccupied by existing documents.
 
-**Hybrid Score Formula:**
+The mathematical details (scoring functional, calibration parameters, vacancy probe) are described in the companion paper:
 
-```
-HybridScore(A,B) = λ · Cos(Dense(A⊕B), Dense(C))
-                 - (1-λ) · AvgRedundancy(A,B)
-                 + w_m · MarginalityFit(A,B)
-                 + bias
-```
+> **Topological Void Analysis: A Mathematical Framework for Systematic Technical Innovation Discovery in Knowledge Spaces**  
+> Kris Pan, Intel Corporation — [arXiv preprint]
 
-Where `MarginalityFit(A,B) = max(0, 1 - |Cos(A,B) - midpoint| / half_band)` is a Gaussian-like penalty that peaks when the pair similarity sits at the center of the marginality band and drops to zero outside it.
-
-**Objective:** Find Triad (C, A, B) that satisfies:
-
-1. Domain Cohesion: `Cos(Dense(A), Dense(C)) > τ_domain` AND `Cos(Dense(B), Dense(C)) > τ_domain` (τ_domain uses percentile-adaptive calibration)
-2. Calibrated Marginality: `τ_low ≤ Cos(Dense(A), Dense(B)) ≤ τ_high`
-3. Sparse Lexical Bridge: `|SparseTokens(A) ∩ SparseTokens(B) - StopWords| > 0` — pairs must share at least one meaningful token
-
-| Component | Meaning | Execution |
-|-----------|---------|-----------|
-| **Dense(·)** | 1024D Semantic Embedding | Nearest Neighbor (KNN) via FAISS for fast O(N) candidate retrieval. |
-| **Sparse(·)** | Top-5 Lexical Weights | Extracts precise "Concept Anchors" using BGE-M3's learned sparse layer. |
-| **τ_domain** | Domain Cohesion Threshold | Percentile-adaptive calibration (not a static constant). |
-| **τ_low, τ_high** | Marginality Threshold | Calibrated from git-history of "first-time subsystem collisions" to avoid Franken-IPs. |
-| **MarginalityFit** | Gaussian-like band penalty | Peaks at midpoint of [τ_low, τ_high], zero outside the band. |
-| **Sparse Lexical Bridge** | Shared token filter | Requires at least one non-stop-word token overlap between A and B sparse vocabularies. |
-| **StopWords** | Noise filter | Common function words removed before sparse token intersection. |
+**In brief:** TVA uses BGE-M3 (1024D dense + sparse) to find concept pairs at the boundary of the knowledge space — not too close to prior art (obvious), not too far (incoherent) — and verifies the geodesic midpoint is unoccupied. From ~10B possible document pairs, it surfaces ~2,000 candidates worth LLM evaluation.
 
 ## 🏗️ Architecture: Decoupled 3-Tier Pipeline
 ```
@@ -138,73 +118,66 @@ Where `MarginalityFit(A,B) = max(0, 1 - |Cos(A,B) - midpoint| / half_band)` is a
 - Parallel execution via bash-level fleet (4 specialists run simultaneously)
 - **Model**: `copilot_cli` -> `gpt-5.4` via `--model --effort high`
 
-## 🔄 Pipeline Flow
+## 🔄 Pipeline Flow (Async Architecture)
 
 ```
-Input: Legacy Code + Modern Specs
-              |
-              v
-        +------------+
-        |  FORAGER   |
-        |  Dense + Sparse Void Triad Filter  |
-        +------------+
-              | (Concept Anchors A & B)
-              v
-   +--------> +------------+
-   |          |  MAVERICK  |
-   |          |  gpt-5.4                     |
-   |          |  RFC Draft Generation        |
-   |          +------------+
-   |                  |
-   |                  v
-   |          +------------------+
-   |          | PROFESSOR        |
-   |          | gpt-5.2          |
-   |          | Pre-Flight Triage|
-   |          +------------------+
-   |                  | (Pass)
-   |                  v
-   |          +------------------+
-   |          | PATENT SHIELD    |
-   |          | Global Prior Art |
-   |          +------------------+
-   |                  | (Pass)
-   |                  v
-   |          +------------------+
-   |          | REALITY CHECKER  |
-   |          | gpt-5.2          |
-   |          | Constraint Eval  |
-   |          +------------------+
-   |                  |
-   +------------------+ (REVISE: Feed metrics back for Mutation - Max 3-5x)
-                      |
-                   APPROVE
-                      |
-                      v
-   +--------> +-------------------------------+
-   |          | DEBATE PANEL (4 Specialists)  |
-   |          | gpt-5.4 x4 parallel           |
-   |          +-------------------------------+
-   |          | Kernel Hardliner              |
-   |          | Prior-Art Shark               |
-   |          | Intel Strategist              |
-   |          | Security Guardian             |
-   |          +-------------------------------+
-   |                      |
-   |                      v
-   |          +-------------------------------+
-   |          | DETERMINISTIC VERDICT         |
-   |          | (rule-based, no LLM call)     |
-   |          +-------------------------------+
-   |                      |
-   +----------------------+ (REVISE: Debate revision loop)
-                          |
-                       APPROVE
-                          |
-                          v
-                  +--------------+
-                  | TID FORMATTER|
-                  +--------------+
+FORAGER (async, fire-and-forget)
+────────────────────────────────
+  BGE-M3 → TVA void discovery → pending_maverick/
+  ~5 voids/hour, independent of downstream stages
+
+AUTO WORKER (16 workers: 8 copilot_cli + 8 claude_code_cli)
+─────────────────────────────────────────────────────────────
+  Priority: Debate Panel > Reality Checker > Professor > Maverick
+
+  pending_maverick/  →  MAVERICK (gpt-5.4)
+                         3 TID drafts, full tid_detail
+                              │
+                              ▼ chain
+  pending_professor/ →  PROFESSOR (gpt-5.2)
+                         structural pre-flight check
+                              │
+                              ▼ chain
+  pending_reality_   →  REALITY CHECKER (gpt-5.2)
+  checker/               critique → revise → critique (≤3 rounds)
+                              │
+                              ▼ chain
+  pending_reviews/   →  DEBATE PANEL (gpt-5.4 × 4 specialists)
+                         2-pass focused revision per round:
+                           Pass 1: kernel correctness + security
+                           Pass 2: novelty + strategic value
+                         ≤2 revision rounds
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+           APPROVE          REVISE          REJECT
+          (0.05%)       → pending_         (filtered)
+              │           human_review/
+              ▼           + HTML auto-
+         output/          generated
+         generated/            │
+         tid_APPROVED_*        ▼
+                         output/generated/
+                         human_review/
+                         tid_Xavg_Yapprove_*.html
+
+DETERMINISTIC VERDICT RULES
+────────────────────────────
+  ≥3 specialists with fatal_flaw          → REJECT
+  1-2 specialists with fatal_flaw         → REVISE
+  yellow_cards ≥ 5                        → REJECT
+  yellow_cards 3-4                        → REVISE
+  ≥3/4 APPROVE + avg≥3.5 + no REJECT     → APPROVE (majority_approval)
+  4/4 APPROVE + avg≥4.0                  → APPROVE (full_committee_approval)
+  default                                 → REVISE
+
+HUMAN REVIEW
+────────────
+  # Trigger additional DP rounds on a specific TID
+  python scripts/retry_debate_panel.py tid_3.0avg_3approve_run-40e5ec8f.html --rounds 2
+
+  # View shortlist (≥1 APPROVE, HTML ready)
+  ls output/generated/human_review/ | sort -r
 ```
 
 ## 🧭 Practical Notes: Void Semantics and Scale
