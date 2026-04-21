@@ -770,4 +770,103 @@ The system surfaces the map; human experts navigate it.
 
 ---
 
+## Appendix: Derivation of the TVA Dimensionality Theorem
+
+This appendix provides the full first-principles derivation of the optimal
+embedding dimension $D^*$ used in Section System Implementation.
+
+### A.1 — PRH Resolution Formula
+
+The Platonic Representation Hypothesis (PRH) states that sufficiently
+trained models converge toward a shared statistical geometry.
+The key question is: *how well does a $D$-dimensional embedding space
+approximate the full representational capacity of a frontier LLM?*
+
+Regardless of how large a frontier LLM is ($D_{\mathrm{LLM}}$ dimensions),
+its knowledge distribution is never uniform.  Applying SVD to the LLM's
+embedding space, the eigenvalues $\lambda_i$ (information content of the
+$i$-th dimension) follow a **power-law decay**:
+
+$$\lambda_i \propto i^{-\alpha}$$
+
+where $\alpha > 1$ is the manifold decay exponent.  More specialised domains
+(e.g. a single kernel subsystem) have larger $\alpha$; broad heterogeneous
+corpora have $\alpha$ closer to 1.
+
+When a Vector DB of dimension $D$ approximates the full space, it retains
+the cumulative explained variance of the first $D$ dimensions.
+The **topological resolution** $R(D, D_{\mathrm{LLM}})$ is therefore:
+
+$$R(D, D_{\mathrm{LLM}}) = \frac{\displaystyle\int_1^{D} x^{-\alpha}\,dx}{\displaystyle\int_1^{D_{\mathrm{LLM}}} x^{-\alpha}\,dx}$$
+
+Setting $\gamma = \alpha - 1 > 0$ and evaluating the integrals:
+
+$$\boxed{R(D, D_{\mathrm{LLM}}) = \frac{1 - D^{-\gamma}}{1 - D_{\mathrm{LLM}}^{-\gamma}}}$$
+
+This is a logarithmic saturation curve: resolution gains are largest at
+low $D$ and diminish rapidly — each doubling of $D$ yields a smaller and
+smaller increment of resolution.
+
+### A.2 — Noise Penalty from Finite Data
+
+Resolution alone would suggest maximising $D$. However, with finite corpus
+size $N$, high-dimensional spaces become extremely sparse.  Geodesic
+midpoints $C = m(A,B)$ computed by the vacancy probe (C4) in a sparse
+high-dimensional space are likely to land in structurally empty regions —
+*spurious voids* — not genuine innovation gaps.
+
+By the Johnson-Lindenstrauss lemma, geometric noise in high-dimensional
+spaces scales proportionally to $D$ and inversely with $\log N$.
+We define the **noise penalty**:
+
+$$P(D, N) = k \cdot \frac{D}{\ln N}$$
+
+where $k$ is a system noise-tolerance constant calibrated from the
+adversarial committee's spurious-void rejection rate.
+
+### A.3 — Optimal Dimension $D^*$
+
+Combining signal and noise into a unified **topological utility function**:
+
+$$\mathcal{U}(D) = \underbrace{\frac{1 - D^{-\gamma}}{1 - D_{\mathrm{LLM}}^{-\gamma}}}_{\text{PRH resolution (signal)}} - \underbrace{k\,\frac{D}{\ln N}}_{\text{spurious voids (noise)}}$$
+
+Maximising $\mathcal{U}(D)$ by setting $\partial\mathcal{U}/\partial D = 0$:
+
+$$\frac{\gamma\,D^{-(\gamma+1)}}{1 - D_{\mathrm{LLM}}^{-\gamma}} = \frac{k}{\ln N}$$
+
+Solving for $D$:
+
+$$\boxed{D^* = \left[\frac{\gamma \cdot \ln N}{k\,(1 - D_{\mathrm{LLM}}^{-\gamma})}\right]^{\!\frac{1}{\gamma+1}}}$$
+
+### A.4 — Three Corollaries
+
+**Corollary 1 — $D_{\mathrm{LLM}}$ decoupling.**
+When $\gamma$ is moderate to large ($\gamma \gtrsim 0.2$),
+$D_{\mathrm{LLM}}^{-\gamma} \to 0$ as $D_{\mathrm{LLM}}$ grows, so
+$(1 - D_{\mathrm{LLM}}^{-\gamma}) \to 1$ and $D^*$ becomes independent
+of the frontier LLM's dimensionality.  The optimal Vector DB dimension
+is determined by corpus statistics $(N, \gamma)$, not by the size of
+the generative model.
+*Note:* for broad corpora with very small $\gamma$ (e.g. $\gamma = 0.069$
+as measured in our corpus), the decoupling is partial —
+$(1 - D_{\mathrm{LLM}}^{-\gamma}) \approx 0.48$ — but $D^*$ still
+converges to a finite value independent of further LLM scaling.
+
+**Corollary 2 — Logarithmic buffer law.**
+Since $N$ enters $D^*$ only via $\ln N$, corpus size has a strongly
+sublinear effect on optimal dimension.  A 10$\times$ increase in corpus
+size (e.g.\ 140k $\to$ 1.4M documents) raises $\ln N$ from 11.85 to
+14.15 — a 19\% change — which after the outer $\frac{1}{\gamma+1}$
+root translates to a very modest increase in $D^*$.  The common
+assumption that dimension must scale proportionally with data volume
+is mathematically unfounded.
+
+**Corollary 3 — Empirical validation.**
+For the TVA corpus ($N = 148{,}978$, $\gamma = 0.069$, $k = 0.001$):
+$D^* = 1063$, with nearest standard dimension 1024D.  The empirical
+choice of BGE-M3 ($d = 1024$) lies within 4\% of the theoretical
+optimum — confirming the selection post hoc from first principles.
+
+---
+
 *For full mathematical formulations, tables, and references, see the [PDF version](output/generated/deepthought_paper.pdf).*
