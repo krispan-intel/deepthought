@@ -9,6 +9,8 @@ An AI-driven invention discovery engine powered by the **Topological Void Analys
 
 > *"The system surfaces the map; human experts navigate it."*  — Driving-AI, not AI-driven
 
+📄 **[Read the TVA Paper →](PAPER.md)** | [arXiv preprint](https://arxiv.org) *(pending endorsement)*
+
 ## 🎯 The Core Idea
 
 Every technical document — papers, kernel source, hardware specs, patents — gets embedded into a high-dimensional space. DeepThought navigates this space mathematically to find **Topological Voids**: the unexplored regions between existing concepts where no one has invented yet.

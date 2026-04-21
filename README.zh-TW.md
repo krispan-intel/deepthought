@@ -9,6 +9,8 @@
 **拓撲空洞（Topological Voids）**，並將其具體化為
 **可直接交由律師使用的技術發明揭露文件（Technical Invention Disclosure, TID）**。
 
+📄 **[閱讀 TVA 論文 →](PAPER.zh-TW.md)** | [arXiv 預印本](https://arxiv.org) *(待審核)*
+
 ## 🎯 核心概念
 
 傳統研發通常依賴人的直覺去發現創新缺口。
