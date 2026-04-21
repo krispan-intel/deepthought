@@ -366,4 +366,4 @@ python scripts/run_pipeline_service.py \
 
 ---
 
-*For questions about adapting TVA to your domain, open an issue or contact kris.pan@intel.com.*
+*Before opening an issue, try the [AI-Guided Onboarding →](BKM_ONBOARDING.md) first — Claude or Copilot can answer most domain adaptation questions interactively.*
