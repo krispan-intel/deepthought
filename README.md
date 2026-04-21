@@ -546,3 +546,8 @@ Proprietary — All Rights Reserved
 - [ChromaDB](https://www.trychroma.com/) — Local vector database
 - [GitHub Copilot CLI](https://docs.github.com/en/copilot) — Unified model backend via `copilot_cli`
 - Douglas Adams — For naming inspiration
+- **Yao, Anbang** (anbang.yao@intel.com) — arXiv endorsement
+- **Xu, Beryl** (beryl.xu@intel.com) — Connected the author with the endorser
+- [Claude Code](https://claude.ai/code) (Anthropic) — Co-developer, backend, documentation, and the AI that helped write this paper
+- [Gemini](https://gemini.google.com) (Google) — Co-developer and discussion partner
+- [Grok](https://grok.x.ai) (xAI) — Debugging and technical discussion
