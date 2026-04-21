@@ -93,6 +93,17 @@ Walk me through a systematic diagnosis: corpus quality → threshold calibration
 
 ---
 
+## For Mathematical / Implementation Questions
+
+If you have questions about TVA's math (SLERP formula, marginality band calibration, vacancy probe threshold, C1–C4 conditions), paste the relevant section from [PAPER.md](PAPER.md) directly into your Claude/Copilot conversation first, then ask. The AI will answer from the paper — no need to contact the authors.
+
+```
+# How to get a detailed technical answer:
+# 1. Open PAPER.md
+# 2. Copy the relevant section (e.g. "Adaptive Threshold Calibration")
+# 3. Paste into Claude/Copilot with your question
+```
+
 ## Tips
 
 - **Claude Opus** gives the most thorough specialist prompts and corpus plans.
