@@ -53,6 +53,17 @@ The mathematical details (scoring functional, calibration parameters, vacancy pr
 | **Vacancy probe** | Geodesic midpoint occupancy | SLERP midpoint = normalize(u+v), O(n) dot-product scan, θ_v tuned per corpus |
 | **Index** | FAISS + sparse index | FAISS flat (exact) + SQLite FTS5 inverted index |
 
+**Hybrid Score formula (for reference):**
+```
+HybridScore(A,B) = λ · Cos(Dense(A⊕B), Dense(C))
+                 - (1-λ) · AvgRedundancy(A,B)
+                 + w_m · MarginalityFit(A,B)
+                 + bias
+
+MarginalityFit = max(0, 1 - |Cos(A,B) - midpoint| / half_band)
+```
+where C = m(dense(A), dense(B)) is the synthetic void midpoint, and Anchor C = inventor's intent vector.
+
 ## 🏗️ Architecture: Decoupled 3-Tier Pipeline
 ```
 +================================================================+
