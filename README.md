@@ -42,6 +42,17 @@ The mathematical details (scoring functional, calibration parameters, vacancy pr
 
 **In brief:** TVA uses BGE-M3 (1024D dense + sparse) to find concept pairs at the boundary of the knowledge space — not too close to prior art (obvious), not too far (incoherent) — and verifies the geodesic midpoint is unoccupied. From ~10B possible document pairs, it surfaces ~2,000 candidates worth LLM evaluation.
 
+**Key implementation details (engineering layer):**
+
+| Component | What the paper says | What we actually use |
+|---|---|---|
+| **Dense embedding** | Generic embedding model | BGE-M3 (1024D, local offline, CPU) |
+| **Sparse bridge** | Top-p lexical weights | BGE-M3 top-5 sparse weights, domain stop-word filtered |
+| **Domain threshold τ** | Density-aware calibration | Percentile of cosine score distribution (adaptive per query) |
+| **Marginality band [τ_low, τ_high]** | Centred at empirical mode | **Gaussian fit** to pairwise similarity histogram — band = mode ± k·σ |
+| **Vacancy probe** | Geodesic midpoint occupancy | SLERP midpoint = normalize(u+v), O(n) dot-product scan, θ_v tuned per corpus |
+| **Index** | FAISS + sparse index | FAISS flat (exact) + SQLite FTS5 inverted index |
+
 ## 🏗️ Architecture: Decoupled 3-Tier Pipeline
 ```
 +================================================================+
