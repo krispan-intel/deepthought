@@ -533,8 +533,8 @@ GitHub Copilot CLI gateway，會依執行配置啟用。
 - [ChromaDB](https://www.trychroma.com/) — 本地向量資料庫
 - [GitHub Copilot CLI](https://docs.github.com/en/copilot) — 透過 `copilot_cli` 統一模型後端
 - Douglas Adams — 命名靈感來源
-- **Yao, Anbang** (anbang.yao@intel.com) — arXiv 論文背書
-- **Xu, Beryl** (beryl.xu@intel.com) — 引薦背書人
+- **Yao, Anbang** — arXiv 論文背書
+- **Xu, Beryl** — 引薦背書人
 - [Claude Code](https://claude.ai/code)（Anthropic）— 共同開發者、backend、文件撰寫，以及幫忙寫這篇論文的 AI
 - [Gemini](https://gemini.google.com)（Google）— 共同開發者與討論夥伴
 - [Grok](https://grok.x.ai)（xAI）— Debug 與技術討論
