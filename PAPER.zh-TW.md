@@ -659,6 +659,9 @@ At scale, this positions TVA as an
 the unexplored territory across an entire organisation's collective
 technical knowledge, one topological void at a time.
 
+**動態拓撲空洞。**
+本文建立的是*靜態 TVA*：語料庫固定，空洞相對於穩定的幾何快照定義。這是已證明的適用範疇。一個自然且難度顯著更高的開放問題是*動態 TVA*：隨時間演化的語料庫——隨著新論文發表、專利獲批、程式碼庫更新——會產生具有生命週期的空洞。今天存在的空洞，可能隨著領域推進而收縮，也可能隨著相鄰領域分歧而擴大。開放問題包括：(i) 如何為空洞賦予*速度向量*——它是在擴大、收縮還是穩定？(ii) 如何在空洞完全成形之前偵測到*正在形成中的空洞*，為發明者提供時間優勢；(iii) 如何處理前述的反身性問題——報告一個空洞的行為本身會加速其被填補。動態 TVA 需要時序 embedding、跨語料庫快照的空洞追蹤，以及考慮軌跡而非僅考慮位置的修訂版 vacancy probe。我們將此標記為首要的開放研究方向。
+
 ## Related Work
 
 **Patent and technology forecasting.**

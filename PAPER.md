@@ -659,6 +659,9 @@ At scale, this positions TVA as an
 the unexplored territory across an entire organisation's collective
 technical knowledge, one topological void at a time.
 
+**Dynamic Topological Voids.**
+The present work establishes *static TVA*: the corpus is fixed, and voids are identified relative to a stable geometric snapshot.  This is the proven regime.  A natural and substantially harder open problem is *dynamic TVA*: corpora that evolve over time — as new papers are published, patents granted, and codebases updated — produce voids with a lifecycle.  A void that exists today may close as the field advances, or widen as adjacent areas diverge.  The open questions are: (i) how to assign a *velocity vector* to a void — is it expanding, contracting, or stable? (ii) how to detect *forming voids* before they are fully established, giving inventors a time advantage; and (iii) how to handle the reflexivity problem noted above, where the act of reporting a void accelerates its closure.  Dynamic TVA would require temporal embeddings, void-tracking across corpus snapshots, and a revised vacancy probe that accounts for trajectory rather than position alone.  We mark this as the primary open research direction.
+
 ## Related Work
 
 **Patent and technology forecasting.**
