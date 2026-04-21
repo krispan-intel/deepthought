@@ -7,7 +7,8 @@ Language: [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文
 
 An AI-driven invention discovery engine powered by the **Topological Void Analysis (TVA) framework** — a mathematical system that identifies unexplored innovation gaps in technical knowledge spaces and materializes them into **Technical Invention Disclosures (TID)** through an adversarial multi-agent review pipeline.
 
-> *"The system surfaces the map; human experts navigate it."*  — Driving-AI, not AI-driven
+> *"Upstream, we drive AI. Downstream, AI-driven."*  
+> The human sets the direction. The pipeline does the rest.
 
 📄 **[Read the TVA Paper →](PAPER.md)** | [arXiv preprint](https://arxiv.org) *(pending endorsement)*  
 🗄️ **[Build your own Vector DB →](VECTORDB_GUIDE.md)** | Deploy TVA in any domain  

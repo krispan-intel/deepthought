@@ -353,7 +353,7 @@ that no specialist found the core concept defensible.  The remaining
 the system's effective human-review yield: ideas where at least one
 domain expert identified genuine technical merit despite identifying
 issues requiring elaboration.  This stringent end-to-end conversion
-rate reflects the *Driving-AI* philosophy: the value lies not
+rate reflects the *upstream human, downstream AI* philosophy: the value lies not
 in volume but in surfacing a small set of technically grounded
 candidates for expert follow-up.
 
@@ -727,8 +727,10 @@ procedure for reproducibility; implementation details are available
 upon request.
 
 Ultimately, TVA embodies a design philosophy we term
-*Driving-AI, not AI-driven*: the system surfaces the map;
-human experts navigate it.
+*Upstream, we drive AI. Downstream, AI-driven.*
+The human sets the direction — the domain, the intent, the Anchor C.
+The pipeline executes autonomously from there: void discovery, generation, adversarial review, revision.
+The system surfaces the map; human experts navigate it.
 
 ---
 
