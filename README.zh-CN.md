@@ -11,10 +11,13 @@
 
 ## 🎯 核心理念
 
-传统研发通常依赖人的直觉去发现创新空白。
-DeepThought 则把这件事变成**系统化且数学化**的过程。
+每份技术文档——论文、kernel 源代码、硬件规格、专利——都被嵌入到一个高维空间中。DeepThought 在这个空间里通过数学导航，找出**拓扑空洞（Topological Voids）**：现有概念之间尚未被任何人发明的未开拓区域。
 
-知识空间可视化如下：
+一旦定位到空洞，前沿 LLM 将其坐标翻译回具体的发明提案。对抗性审查 pipeline 从四个角度——kernel 正确性、新颖性、战略价值、安全性——对想法进行压力测试，防止幻觉并确保输出有所依据。
+
+结果：一份技术上扎实的创新候选清单，供人类专家审查。
+
+> **关于 Anchor C（意图向量）**：系统中的 v_target 代表的是**发明者的意图**——探索的方向，而不是一份具体文件。列举 96 个 target 只是为了可重现性，不是限制。你只需要用一句话说清楚你想去哪里，TVA 就会帮你找到那个方向上还没人去过的地方。
 
     ████████░░░░░░████████
     ████████░░░░░░████████   <-░░ = 拓扑空洞
@@ -22,9 +25,9 @@ DeepThought 则把这件事变成**系统化且数学化**的过程。
     ████████░░░░░░████████
     ████████░░░░░░████████
 
-    █ = 现有专利 / 解决方案
-    ░ = DeepThought 的目标：高价值创新缺口
-    ★ = V_target（你的优化目标）
+    █ = 既有专利 / 解法
+    ░ = DeepThought 锁定的高价值创新缺口
+    ★ = V_target（你的意图 / 最优化目标）
 
 ## 📐 Hybrid DeepThought 方程（BGE-M3 Dense-Sparse Triad）
 
@@ -133,63 +136,47 @@ HybridScore(A,B) = λ · Cos(Dense(A⊕B), Dense(C))
 - **确定性裁决规则**：fatal flaw 拒绝、多数拒绝（≥2）、黄牌拒绝（≥3）、全体批准、多数批准
 - **模型**：`gpt-5.2`（通过 `--model` 指定，`--effort high`）
 
-## 🔄 Pipeline 流程
+## 🔄 Pipeline 流程（异步架构）
 
 ```
-Input: Legacy Code + Modern Specs
-              |
-              v
-        +------------+
-        |  FORAGER   |
-        |  Dense + Sparse Void Triad Filter  |
-        +------------+
-              | (Concept Anchors A & B)
-              v
-   +--------> +------------+
-   |          |  MAVERICK  |
-   |          |  gpt-5.4 --effort high       |
-   |          |  RFC Draft Generation        |
-   |          +------------+
-   |                  |
-   |                  v
-   |          +------------------+
-   |          |  PROFESSOR       |
-   |          |  gpt-5.2         |
-   |          |  Pre-Flight 审查  |
-   |          +------------------+
-   |                  | (Pass)
-   |                  v
-   |          +------------------+
-   |          | PATENT SHIELD    |
-   |          | Global Prior Art |
-   |          +------------------+
-   |                  | (Pass)
-   |                  v
-   |          +------------------+
-   |          | REALITY CHECKER  |
-   |          | Constraint Eval  |
-   |          +------------------+
-   |                  |
-   +------------------+ (REVISE: 回馈 metrics 做 Mutation，最多 3-5 次)
-                      |
-                   APPROVE
-                      |
-                      v
-              +--------------+
-              | DEBATE PANEL |
-              | gpt-5.2      |
-              | 4 Specialists|
-              +--------------+
-                      |
-                      v
-              +----------------+
-              | CONSENSUS JUDGE|
-              +----------------+
-                      |
-                      v
-              +--------------+
-              | TID FORMATTER|
-              +--------------+
+FORAGER（异步，fire-and-forget）
+────────────────────────────────
+  BGE-M3 → TVA 空洞发现 → pending_maverick/
+  ~5 voids/小时，独立于下游阶段
+
+AUTO WORKER（16 workers：8 copilot_cli + 8 claude_code_cli）
+─────────────────────────────────────────────────────────────
+  优先级：Debate Panel > Reality Checker > Professor > Maverick
+
+  pending_maverick/  →  MAVERICK（gpt-5.4）
+                         3 份 TID 草稿，完整 tid_detail
+                              │ chain
+  pending_professor/ →  PROFESSOR（gpt-5.2）
+                         结构预检
+                              │ chain
+  pending_reality_   →  REALITY CHECKER（gpt-5.2）
+  checker/               critique → revise（≤3 轮）
+                              │ chain
+  pending_reviews/   →  DEBATE PANEL（gpt-5.4 × 4 specialists）
+                         2-pass 聚焦修改：
+                           Pass 1：kernel 正确性 + 安全性
+                           Pass 2：新颖性 + 战略价值
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+           APPROVE          REVISE          REJECT
+          (0.05%)       → pending_         （过滤）
+              │           human_review/
+              ▼           + 自动生成 HTML
+         output/               │
+         generated/            ▼
+                         output/generated/human_review/
+
+HUMAN REVIEW（人工审查）
+  # 触发更多 DP 轮次
+  python scripts/retry_debate_panel.py <html_file> --rounds 2
+  # 查看候选清单
+  ls output/generated/human_review/ | sort -r
 ```
 
 ## 🧭 实务说明：空洞定义与规模
