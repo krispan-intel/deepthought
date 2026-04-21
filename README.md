@@ -247,6 +247,8 @@ The marginality band `[τ_low, τ_high]` — the geometric distance at which inn
 
 All three steps are data-driven. The void discovery math, LLM generation, and revision loop are domain-neutral and do not change.
 
+> **New to this?** Use the **[AI-Guided Onboarding →](BKM_ONBOARDING.md)** — paste one prompt into Claude or Copilot and it will walk you through all three steps interactively.
+
 ## 📊 Data Sources
 
 | Category | Sources |

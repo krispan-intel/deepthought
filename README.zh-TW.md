@@ -198,6 +198,8 @@ Prior-Art Shark 與安全/安全性角色具有普遍適用性，只有領域專
 
 三個步驟均為資料驅動。Void 發現的數學、LLM 生成與修訂循環均為領域中立，不需要更動。
 
+> **剛開始？** 使用 **[AI 引導式 Onboarding →](BKM_ONBOARDING.zh-TW.md)** — 把一個 prompt 貼入 Claude 或 Copilot，它會互動式地帶你完成這三個步驟。
+
 ## 📊 資料來源
 
 | 類別 | 來源 |
