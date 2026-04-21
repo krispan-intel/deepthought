@@ -151,6 +151,59 @@ print(f"Std: {sims.std():.3f}")              # target: > 0.15
 
 ---
 
+## Step 7b: Choose the Right Embedding Dimension
+
+Don't guess the embedding dimension. Run the TVA Dimensionality Analysis to find the mathematically optimal `D*` for your corpus.
+
+### The TVA Dimensionality Theorem
+
+Based on the power-law decay of your corpus's eigenvalue spectrum and the Johnson-Lindenstrauss noise penalty:
+
+$$D^* = \left[\frac{\gamma \cdot \ln N}{k \cdot (1 - D_{LLM}^{-\gamma})}\right]^{\frac{1}{\gamma+1}}$$
+
+Where:
+- `γ` = power-law decay exponent of your corpus (measured from SVD, γ = α − 1)
+- `N` = total number of documents in your corpus
+- `k` = noise tolerance constant (default 0.001, calibrate from adversarial reject rates)
+- `D_LLM` = frontier LLM dimensionality (default 12288)
+
+### Run the Analysis
+
+```bash
+# Default: kernel_source collection, 10k sample
+python scripts/run_dimension_analysis.py
+
+# For a different collection or larger sample
+python scripts/run_dimension_analysis.py --collection papers --sample 20000
+
+# Adjust k if your adversarial review rejects too many (k higher) or too few (k lower)
+python scripts/run_dimension_analysis.py --k 0.002
+```
+
+### Interpreting the Results
+
+| γ value | Corpus type | Typical D* |
+|---|---|---|
+| γ < 0.1 | Broad mixed-domain corpus | 768–1024+ |
+| γ 0.1–0.4 | Focused technical domain | 512–768 |
+| γ > 0.4 | Highly specialised (single subdomain) | 256–512 |
+
+**Real example (Linux kernel + hardware + papers, N=149k):**
+```
+α = 1.069,  γ = 0.069,  R² = 0.929
+
+  D    | R(D) theory | Empirical var | Marginal gain
+  768  |      77.0%  |       99.7%   |  +1.7%
+  1024 |      79.6%  |      100.0%   |  +1.2%
+  3072 |      89.1%  |        —      |  +9.5%  (3× cost, not justified)
+
+  D* = 1063  →  nearest standard: 1024D  ✅
+```
+
+**Key insight:** Once D* is computed, going higher gives diminishing returns. In this corpus, upgrading from 1024D to 3072D (`text-embedding-3-large`) costs 3× more compute for only +9.5% theoretical resolution gain.
+
+---
+
 ## Domain Examples
 
 | Domain | Core Sources | Key Stop-Words to Add |
