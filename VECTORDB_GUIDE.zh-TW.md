@@ -366,4 +366,4 @@ python scripts/run_pipeline_service.py \
 
 ---
 
-*如有任何關於將 TVA 應用於你的領域的問題，請開 issue 或聯絡 kris.pan@intel.com。*
+*開 issue 之前，請先試試 [AI 引導式 Onboarding →](BKM_ONBOARDING.zh-TW.md) — Claude 或 Copilot 能互動式地回答大多數領域適應問題。自己動手，豐衣足食。*
