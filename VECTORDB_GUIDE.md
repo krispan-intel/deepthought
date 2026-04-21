@@ -202,6 +202,51 @@ print(f"Std: {sims.std():.3f}")              # target: > 0.15
 
 ---
 
+## Step 7.5: Write Your Anchor C (Intent Vector)
+
+Before running TVA, you need one thing: a **target phrase**. This is your Anchor C — the inventor's intent vector.
+
+**What it is:** A single sentence describing *where* you want to innovate. TVA embeds this sentence into the same vector space as your corpus, then finds voids that point in that direction.
+
+**What it is NOT:** A keyword, a search query, or a specific document. You are not searching for something that exists — you are declaring a direction in knowledge space.
+
+> The 96 targets used in the TVA paper are listed only for reproducibility. In practice, you need exactly one sentence.
+
+### What makes a good Anchor C
+
+| | Too narrow | Too broad | Just right |
+|---|---|---|---|
+| **Linux kernel** | `"optimize spinlock contention in scheduler runqueue"` | `"improve Linux performance"` | `"reduce scheduler latency in high-core-count x86 systems"` |
+| **Biomedical** | `"reduce IL-6 cytokine in NLRP3 pathway"` | `"cure inflammation"` | `"novel small-molecule targets for neuroinflammation with blood-brain barrier penetration"` |
+| **Materials** | `"increase fracture toughness of Al₂O₃ at 1200°C"` | `"better battery materials"` | `"solid electrolyte interfaces with low impedance and high thermal stability for next-gen solid-state batteries"` |
+| **Automotive** | `"AUTOSAR SWC timeout handling in SOME/IP"` | `"safer cars"` | `"functional safety mechanisms for over-the-air update validation in ASIL-D automotive ECUs"` |
+| **Compiler** | `"eliminate redundant store instructions after inlining"` | `"faster compilation"` | `"JIT compilation techniques that reduce warm-up latency for short-lived server workloads"` |
+| **Cloud/Infra** | `"reduce tail latency in gRPC keepalive under packet loss"` | `"faster cloud"` | `"low-latency consensus protocols for geo-distributed stateful microservices under partial network partition"` |
+
+**Too narrow:** TVA finds almost no voids — you've already defined the solution, not the direction.  
+**Too broad:** TVA finds too many unrelated voids — the vector has no discriminative power.  
+**Just right:** Specific enough to embed meaningfully, open enough to surface non-obvious connections.
+
+### Real examples from the TVA paper
+
+These are the targets that produced the two case studies:
+
+**Case Study 1 — TSX-Advisory MGLRU Rotation:**
+> `"memory reclamation latency optimisation for high-core-count x86 systems"`
+
+TVA surfaced void #2: an optimistic memory reclamation paper (concept A) × a storage-technology ratio study (concept B). The sparse bridge token `reclamation` connected them. Nobody would have searched for this pair — TVA found it because both pointed toward the intent vector.
+
+**Case Study 2 — Verifier-Derived Synchronisation Contracts:**
+> `"eBPF JIT correctness and synchronisation on x86"`
+
+TVA surfaced void #5: `ELF_MACHINE_NAME` (an ELF portability macro) × `addend_may_be_ifunc` (a linker relocation predicate). Cosine similarity 0.64 — related but non-obvious. The idea that emerged (per-site synchronisation contract vectors) had no surface connection to either source concept.
+
+### The key insight
+
+> Anchor C is the direction, not the destination. TVA does not find documents *about* your intent — it finds the **unexplored space nearby**. A weaker, more oblique target often surfaces more interesting voids than a precise one.
+
+---
+
 ## Step 8: Configure Your Debate Panel
 
 Once your corpus is ready, the only thing you need to configure manually is the **four specialist roles** in the adversarial review committee. Think of it like choosing a programme committee for a domain conference: you want reviewers who can challenge the idea from different angles — technical correctness, novelty, strategic value, and risk.
