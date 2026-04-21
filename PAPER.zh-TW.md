@@ -564,6 +564,13 @@ practitioners can derive corpus-specific values from the
 described procedures.  Guidance on calibration ranges is
 available upon request from the authors.
 
+**適用範疇：僅限靜態知識空間。**
+TVA 假設知識空間具有*穩定的幾何結構*——語料庫是一組固定的先前技術，空洞相對於它定義，且識別空洞的行為不會改變這個空間。這個假設在 Level 1 系統中成立：技術領域的事實是客觀的，文件是持久的，發現創新缺口的行為不會導致競爭者立即填補它。
+
+這個假設在 Level 2 動態系統中會失效——市場、社會協作、競爭策略——這些領域的知識空間具有反身性：識別空洞並採取行動，會改變其他 agent 的位置，進而重塑拓撲結構。在這類領域中，今天識別的空洞，可能因為揭露本身而被競爭者明天填補；「市場機會」的 embedding 也可能隨著閱讀過這份分析的人的行動而移動。
+
+TVA 並非為 Level 2 系統設計，對這些領域不做任何有效性聲明。在不考慮反身性的情況下，將 TVA 應用於商業策略、金融市場或社會動態，將產生在測量當下是真實的、但在結構上不穩定的空洞座標。形式化 TVA 的反身性延伸——其中語料庫本身是一個被曾閱讀過先前空洞報告的 agent 行動所塑造的動態對象——留作開放問題。
+
 **Meta-evaluation.**
 This manuscript was iteratively revised through five rounds of the
 Debate Panel itself—the same adversarial review pipeline described
