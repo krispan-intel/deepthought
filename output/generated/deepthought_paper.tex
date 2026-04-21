@@ -164,6 +164,21 @@ approaches~\cite{bordes2013transe} predict missing edges but require a
 pre-defined relation schema and do not model the continuous
 ``marginality'' notion central to patentable non-obviousness.
 
+\subsection{The Role of the Domain Anchor}
+
+The domain query vector $\vtarget \in S^{d-1}$ represents the
+\emph{inventor's intent}---the direction of inquiry rather than
+a specific document.  In our implementation, $\vtarget$ is derived
+from a natural-language target phrase (e.g., ``Optimize Linux
+synchronization using x86 APIC microarchitecture features'')
+embedded at query time.  Enumerating a fixed set of 96 target
+phrases serves \emph{reproducibility}: it allows systematic
+coverage of a domain matrix and enables re-running the same
+targets to compare results.  The anchor does not constrain the
+invention; it orients the search.  A practitioner deploying TVA
+in a new domain need only specify their intent as a target phrase
+and provide a relevant corpus---no other configuration is required.
+
 \subsection{The Marginality Principle}
 
 Patent law requires that an invention be \emph{non-obvious}: too
