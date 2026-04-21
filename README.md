@@ -10,7 +10,8 @@ An AI-driven invention discovery engine powered by the **Topological Void Analys
 > *"The system surfaces the map; human experts navigate it."*  — Driving-AI, not AI-driven
 
 📄 **[Read the TVA Paper →](PAPER.md)** | [arXiv preprint](https://arxiv.org) *(pending endorsement)*  
-🗄️ **[Build your own Vector DB →](VECTORDB_GUIDE.md)** | Deploy TVA in any domain
+🗄️ **[Build your own Vector DB →](VECTORDB_GUIDE.md)** | Deploy TVA in any domain  
+🤖 **[AI-Guided Onboarding →](BKM_ONBOARDING.md)** | Let Claude/Copilot walk you through setup
 
 ## 🎯 The Core Idea
 
