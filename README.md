@@ -220,7 +220,11 @@ HUMAN REVIEW
 
 While this paper instantiates TVA on a Linux kernel and x86 hardware corpus, the framework is **domain-agnostic**. Any organisation that maintains a large, embeddable technical knowledge base — hardware design documentation, biomedical literature, materials-science patents, automotive software standards, or enterprise architecture repositories — admits the same void formalization.
 
-Domain adaptation requires exactly **two steps**. Everything else transfers unchanged.
+Domain adaptation requires **three steps**. Everything else transfers unchanged.
+
+### Step 0 — Build a Domain Corpus
+
+Collect, clean, chunk, and embed your domain's technical documents into a local vector DB. See **[Build your own Vector DB →](VECTORDB_GUIDE.md)** for the full pipeline.
 
 ### Step 1 — Reconfigure the Adversarial Review Specialists
 
@@ -240,9 +244,7 @@ The Prior-Art Shark and a security/safety role are universally applicable — on
 
 The marginality band `[τ_low, τ_high]` — the geometric distance at which innovation occurs in your domain — is **derived automatically from your corpus** via Gaussian fit to the pairwise similarity histogram. It requires no manual tuning; you only need to run the calibration once after ingestion.
 
-Both steps are data-driven. The void discovery math, LLM generation, and revision loop are domain-neutral and do not change.
-
-> For corpus preparation, see **[Build your own Vector DB →](VECTORDB_GUIDE.md)**
+All three steps are data-driven. The void discovery math, LLM generation, and revision loop are domain-neutral and do not change.
 
 ## 📊 Data Sources
 
