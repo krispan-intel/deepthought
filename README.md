@@ -11,8 +11,11 @@ An AI-driven invention discovery engine powered by the **Topological Void Analys
 
 ## 🎯 The Core Idea
 
-Traditional R&D relies on human intuition to find innovation gaps.
-DeepThought makes this **systematic and mathematical** via TVA.
+Every technical document — papers, kernel source, hardware specs, patents — gets embedded into a high-dimensional space. DeepThought navigates this space mathematically to find **Topological Voids**: the unexplored regions between existing concepts where no one has invented yet.
+
+Once a void is located, a frontier LLM translates its coordinates back into a concrete invention proposal. The adversarial review pipeline then stress-tests the idea from four angles — kernel correctness, novelty, strategic value, and security — preventing hallucination and keeping the output grounded.
+
+The result: a systematic shortlist of technically grounded innovation candidates, ready for human expert review.
 
 The knowledge space visualization:
 
