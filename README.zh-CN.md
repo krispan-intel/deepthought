@@ -29,32 +29,35 @@
     ░ = DeepThought 锁定的高价值创新缺口
     ★ = V_target（你的意图 / 最优化目标）
 
-## 📐 Hybrid DeepThought 方程（BGE-M3 Dense-Sparse Triad）
+## 📐 TVA 框架（Topological Void Analysis）
 
-核心数学引擎已经从传统 global MMR 演进为 **Hybrid Vector-Inverted Index Triad**。系统会在一个领域锚点（C）下寻找两个语义上兼容、但在历史资料中 **完全没有共同出现** 的概念（A 与 B），以此识别真正的 Topological Void。
+DeepThought 由 TVA 驱动——一个在嵌入空间中识别**拓扑空洞**的数学框架。完整的数学细节请见论文：
 
-**实际公式：**
+> **Topological Void Analysis: A Mathematical Framework for Systematic Technical Innovation Discovery in Knowledge Spaces**  
+> Kris Pan, Intel Corporation — [arXiv 预印本]
 
+**工程实现对照表（paper 数学 ↔ 真实使用）：**
+
+| 组件 | Paper 描述 | 实际实现 |
+|---|---|---|
+| **Dense embedding** | 通用嵌入模型 | BGE-M3（1024D，本地离线，CPU） |
+| **Sparse bridge** | Top-p 词汇权重 | BGE-M3 top-5 sparse weights，停用词过滤后取交集 |
+| **域阈值 τ_domain** | 密度感知校准 | 候选 cosine score 分布的百分位数（每次查询自适应） |
+| **边际带 [τ_low, τ_high]** | 以经验众数为中心 | **高斯拟合**配对相似度直方图 — band = mode ± k·σ |
+| **空洞探测** | 测地线中点占用检查 | SLERP 中点 = normalize(u+v)，O(n) 点积扫描 |
+| **索引** | FAISS + 稀疏索引 | FAISS flat（精确）+ SQLite FTS5 倒排索引 |
+
+**Hybrid Score 公式：**
 ```
 HybridScore(A,B) = λ · Cos(Dense(A⊕B), Dense(C))
                  - (1-λ) · AvgRedundancy(A,B)
                  + w_m · MarginalityFit(A,B)
                  + bias
+
+MarginalityFit = max(0, 1 - |Cos(A,B) - midpoint| / half_band)
 ```
+其中 C = m(dense(A), dense(B)) 为合成空洞中点，Anchor C = 发明者的意图向量。
 
-**目标：** 找到满足以下条件的 Triad (C, A, B)：
-
-1. 领域凝聚性：`Cos(Dense(A), Dense(C)) > τ_domain` 且 `Cos(Dense(B), Dense(C)) > τ_domain`（τ_domain 使用百分位自适应校准）
-2. 边际新颖性校准：`τ_low ≤ Cos(Dense(A), Dense(B)) ≤ τ_high`
-3. 稀疏词汇桥接：配对必须在去停用词过滤后至少共享一个有意义的 token（共现检查器通过 Elasticsearch 已**禁用**）
-
-| 组件 | 含义 | 执行方式 |
-|------|------|----------|
-| **Dense(·)** | 1024 维语义嵌入 | 通过 FAISS 做 Nearest Neighbor (KNN) 候选检索。 |
-| **Sparse(·)** | Top-5 词汇权重 | 使用 BGE-M3 的 learned sparse layer 提取精准的「Concept Anchors」。 |
-| **τ_low, τ_high** | 边际阈值 | 从 git history 的「首次子系统碰撞」校准而来，避免产生 Franken-IP。 |
-| **τ_domain** | 领域凝聚阈值 | 百分位自适应校准（percentile-adaptive calibration）。 |
-| **Sparse Lexical Bridge** | 稀疏词汇桥接 | 去停用词后至少共享一个有意义 token；Elasticsearch 共现检查器已禁用。 |
 
 ## 🏗️ 架构：解耦的三层 Pipeline
 ```

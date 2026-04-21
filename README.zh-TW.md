@@ -31,29 +31,34 @@
     ░ = DeepThought 鎖定的高價值創新缺口
     ★ = V_target（你的意圖 / 最佳化目標）
 
-## 📐 Hybrid DeepThought 方程式（BGE-M3 Dense-Sparse Triad）
+## 📐 TVA 框架（Topological Void Analysis）
 
-核心數學引擎已從傳統 global MMR 演進為 **Hybrid Vector-Inverted Index Triad**。系統會在一個領域錨點（C）之下，尋找兩個語意上相容、但在歷史資料中具有 **稀疏詞彙橋接** 的概念（A 與 B），以此識別真正的 Topological Void。
+DeepThought 由 TVA 驅動——一個在嵌入空間中識別**拓樸空洞**的數學框架。完整的數學細節請見論文：
 
-**實際公式：**
+> **Topological Void Analysis: A Mathematical Framework for Systematic Technical Innovation Discovery in Knowledge Spaces**  
+> Kris Pan, Intel Corporation — [arXiv 預印本]
 
+**工程實作對照表（paper 數學 ↔ 真實使用）：**
+
+| 元件 | Paper 描述 | 實際實作 |
+|---|---|---|
+| **Dense embedding** | 通用嵌入模型 | BGE-M3（1024D，本地離線，CPU） |
+| **Sparse bridge** | Top-p 詞彙權重 | BGE-M3 top-5 sparse weights，停用詞過濾後取交集 |
+| **域門檻 τ_domain** | 密度感知校準 | 候選 cosine score 分佈的百分位數（每次查詢自適應） |
+| **邊際帶 [τ_low, τ_high]** | 以經驗眾數為中心 | **高斯擬合**配對相似度直方圖 — band = mode ± k·σ |
+| **空洞探測** | 測地線中點佔用檢查 | SLERP 中點 = normalize(u+v)，O(n) 點積掃描 |
+| **索引** | FAISS + 稀疏索引 | FAISS flat（精確）+ SQLite FTS5 倒排索引 |
+
+**Hybrid Score 公式：**
 ```
-HybridScore(A,B) = λ · Cos(Dense(A⊕B), Dense(C)) - (1-λ) · AvgRedundancy(A,B) + w_m · MarginalityFit(A,B) + bias
+HybridScore(A,B) = λ · Cos(Dense(A⊕B), Dense(C))
+                 - (1-λ) · AvgRedundancy(A,B)
+                 + w_m · MarginalityFit(A,B)
+                 + bias
+
+MarginalityFit = max(0, 1 - |Cos(A,B) - midpoint| / half_band)
 ```
-
-**目標：** 找出滿足以下條件的 Triad (C, A, B)：
-
-1. 領域凝聚性：`Cos(Dense(A), Dense(C)) > τ_domain` 且 `Cos(Dense(B), Dense(C)) > τ_domain`
-2. 邊際新穎性校準：`τ_low ≤ Cos(Dense(A), Dense(B)) ≤ τ_high`
-3. 稀疏詞彙橋接：配對必須在停用詞過濾後至少共享一個有意義的 token（共現檢查器透過 Elasticsearch 已**停用**）
-
-| 元件 | 意義 | 執行方式 |
-|------|------|----------|
-| **Dense(·)** | 1024 維語意嵌入 | 透過 FAISS 做 Nearest Neighbor (KNN) 候選檢索。 |
-| **Sparse(·)** | Top-5 詞彙權重 | 使用 BGE-M3 的 learned sparse layer 萃取精準的「Concept Anchors」。 |
-| **τ_domain** | 領域凝聚門檻 | 使用百分位自適應校準（percentile-adaptive calibration）。 |
-| **τ_low, τ_high** | 邊際門檻 | 從 git history 的「首次子系統碰撞」校準而來，避免產生 Franken-IP。 |
-| **Sparse Lexical Bridge** | 稀疏詞彙橋接 | 配對必須在停用詞過濾後共享至少一個有意義的 token。ES 共現檢查器已停用。 |
+其中 C = m(dense(A), dense(B)) 為合成空洞中點，Anchor C = 發明者的意圖向量。
 
 ## 🤖 Triad Agents
 
