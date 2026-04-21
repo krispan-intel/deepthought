@@ -1,735 +1,269 @@
-# 拓扑空洞分析（TVA）
-## 一个用于技术知识空间中系统性创新发现的数学框架
+# 拓扑空洞分析
+## 知识空间中系统性技术创新发现的数学框架
 
-**潘凯瑞（Kris Pan）** · 英特尔公司 · kris.pan@intel.com
+**Kris Pan** · Intel Corporation · kris.pan@intel.com
 
-📄 [完整 PDF](output/generated/deepthought_paper.pdf) | [arXiv 预印本](https://arxiv.org) *(待发布)*
-
----
-
-## Abstract
-
-**Abstract.**
-  Identifying where to innovate in a dense technical domain—such as
-  operating systems or hardware/software co-design—is fundamentally a
-  search problem in a high-dimensional knowledge space.  Existing
-  approaches rely on keyword search, citation proximity, or human
-  intuition, none of which formalise the notion of an  that is simultaneously relevant to a target goal and absent
-  from prior art.
-
-  We present *Topological Void Analysis* (TVA), a mathematical
-  framework that defines *topological voids* as triads $(A, B, C)$
-  in a dense-sparse hybrid embedding space.  A void requires three
-  conditions: (i) both concepts $A$ and $B$ are semantically cohesive
-  with domain anchor $C$; (ii) their pairwise similarity falls within a
-  calibrated marginality band—avoiding both obvious combinations and
-  unrelated noise; and (iii) they share a sparse lexical bridge while
-  the geodesic midpoint on the embedding hypersphere is unoccupied.
-
-  Applied to $$140k indexed documents, TVA generates 2,128
-  invention candidates across 96 targets; 90\
-  quality filtering, yielding 191 REVISE and 1 APPROVE verdict from
-  four-specialist adversarial review (0.05\
-  studies demonstrate the framework surfaces non-obvious connective
-  tissue rather than merely obvious related pairs.
+📄 [完整 PDF](output/generated/deepthought_paper.pdf) | [arXiv 预印本](https://arxiv.org) *(待审核)*
 
 ---
 
-## Introduction
-
-Modern software systems, especially at the systems-software layer,
-evolve through incremental invention: a developer notices a gap
-between two subsystems, proposes an abstraction to bridge them, and
-the community iterates toward a patch or patent.  The *noticing*
-step is bottlenecked by human attention and domain breadth.  A single
-engineer cannot simultaneously hold in mind the locking semantics of
-the Linux scheduler, the memory-ordering guarantees of eBPF JIT
-output, the ELF relocation model, and the BPF verifier's type system
-well enough to recognise that an IFUNC-style dispatch contract could
-unify the latter three.
-
-This paper asks: *can we formalise and automate the discovery of unexplored technical gaps?*
-
-We answer yes, and make the following contributions:
-
-- A formal definition of a *topological void*
-  (Section ): a triad $(A, B, C)$ satisfying
-  domain cohesion, calibrated marginality, and sparse lexical bridge
-  conditions in a hybrid dense-sparse embedding space.
-
-- A *vacancy probing* mechanism
-  (Section ) based on spherical linear interpolation
-  (SLERP) that rejects pseudo-voids whose midpoint is occupied by
-  existing documents.
-
-- An *adaptive threshold calibration* procedure
-  (Section ) that derives domain-specific
-  marginality bounds from corpus statistics, removing manual tuning.
-
-- A large-scale empirical evaluation
-  (Section ) with two detailed case studies demonstrating
-  that TVA surfaces non-obvious yet technically grounded innovation
-  candidates.
-
-## Background and Motivation
-
-### Technical Knowledge as an Embedding Space
-
-Pre-trained embedding models map technical documents into a
-high-dimensional unit sphere .  Points
-close in cosine distance share semantic content; distant points are
-unrelated.  A *knowledge corpus* $$ is a finite set of
-such points.
-
-Innovation in this view is the act of bridging two concepts $A$, $B$
-that are not yet co-located in $$, provided their
-combination is relevant to a target goal $C$.
-
-### Geometric Convergence Across Model Scales
-
-A key theoretical underpinning of TVA is the
-*Platonic Representation Hypothesis* :
-sufficiently trained models—regardless of architecture, modality, or
-scale—converge toward a common statistical geometry of their shared
-training world.  Concretely, the pairwise distance structure of a
-compact embedding model (BGE-M3, 1024D) and a frontier LLM are
-approximately isometric: if $((A),
-(B))  0$ in BGE-M3 space, the same pair tends
-to be distant in the LLM's implicit representation space.
-
-This convergence provides the theoretical basis for TVA's design.
-A topological void identified in BGE-M3 space—a pair $(A,B)$ whose
-geodesic midpoint is unoccupied—serves as a  for an underexplored region in the frontier LLM's
-reasoning space.  The compact model acts as an efficient navigator;
-the LLM supplies the high-resolution generative capability to fill
-the identified gap.  Geometric alignment across scales, formalised via
-CKA , supports this proxy relationship
-empirically.
-
-### Limitations of Prior Art Search
-
-Conventional patent and prior-art search is keyword-driven or
-citation-driven .  These
-methods retrieve *known* content; they do not identify
-*missing* content.  Knowledge-graph completion
-approaches  predict missing edges but require a
-pre-defined relation schema and do not model the continuous
-``marginality'' notion central to patentable non-obviousness.
-
-### The Marginality Principle
-
-Patent law requires that an invention be *non-obvious*: too
-similar to existing work fails the novelty bar; too dissimilar yields
-an incoherent or non-enabling disclosure.  High-value inventions live
-in a band of *moderate dissimilarity*—far enough from prior art
-to be novel, close enough to the domain to be useful.  This is the
-informal basis for our formal marginality condition.
-
-## Why Standard Approaches Fail
-
-Three retrieval baselines were evaluated before arriving at TVA, each
-failing in a characteristic way.
-**Cosine top-$k$** retrieves relevant but redundant results—all
-from the same well-covered subsystem, with no notion of a gap.
-**MMR**  improves diversity but provides
-no occupancy guarantee: $$30\
-neighbour within cosine distance 0.08 of their linear midpoint,
-making them false voids.
-**Latent vector arithmetic** 
-($v_ =  + (v_A - v_B)$) fails in
-1024-dimensional contextualised space: anisotropy 
-makes difference vectors nearly orthogonal to semantic axes, and the
-curse of dimensionality  strips them of
-directional meaning—67\
-manifold entirely.
-All three lack an explicit *occupancy check*: they rank or
-construct candidate points without verifying the region is genuinely
-unoccupied.  This motivates the vacancy probe in TVA.
-
-## The Topological Void Framework
-
-### Notation
-
-Let $ = \k_1, , k_n\$ be a corpus of technical
-documents.  Each document $k  $ is mapped by BGE-M3
-($d=1024$)  to a dense unit vector
-$(k)  S^d-1$ and a sparse token set
-$(k)  ^*$ (top-5 lexical weights).
-
-Let $(u,v) = u^ v$ for unit vectors.  Let
-$(k) = \t  (k) : t 
-\$ where $$ is a domain stop-word list
-(high-frequency, low-specificity tokens such as `int`,
-`define`, `linux`).
-
-### Formal Definition
-
-> **Definition:** [Topological Void]
-
-Let $A, B  $ be two corpus documents and let
-$C = m((A),\,(B))  S^d-1$
-(Definition ) be their synthetic
-*void midpoint*—the geodesic bridge concept.
-The pair $(A, B)$ forms a *topological void*
-with respect to a domain query vector $  S^d-1$ if
-all of the following hold:
-
-**C1
-
-Intuitively: $A$ and $B$ both point toward the target domain (C1);
-are neither trivially similar nor unrelated (C2); share at least one
-meaningful technical token as a conceptual bridge (C3); and the
-synthetic void midpoint $C$ is unoccupied by any existing
-document (C4).  The idea to be invented lives in the neighbourhood
-of $C$—the gap between two related but unexplored concepts.
-
-### Ranking Voids
-
-Valid pairs $(A, B)$ are ranked by a multi-objective scoring
-functional $(A, B; )$ that integrates
-(i) relevance of the synthetic void midpoint $C = m(A,B)$ to the
-target domain, (ii) a redundancy penalty against already-selected
-solutions, and (iii) a non-linear marginality reward centred at
-the band $[, ]$.  The precise functional form and
-weights are omitted per commercial confidentiality requirements,
-consistent with industry-track submission guidelines.
-
-## Vacancy Probing via SLERP
-
-A key failure mode of purely similarity-based approaches is the
-*false void*: two documents that appear to span an empty region
-but whose midpoint is, in fact, close to an existing document.
-Condition C4 addresses this.
-
-> **Definition:** [Geodesic Midpoint]
-
-For unit vectors $u, v  S^d-1$ with $ = (u^ v)$,
-the geodesic midpoint on $S^d-1$ is given by SLERP :
-
-> *(see formula in PDF)*
-
-with fallback to $u$ for antipodal vectors ($ = $).
-
-We use the geodesic midpoint rather than an arbitrary interpolation
-because it is *equidistant* from $u$ and $v$ on the hypersphere:
-$(m(u,v), u) = (m(u,v), v)$, guaranteeing
-that the vacancy test is symmetric with respect to both anchors.
-For non-antipodal unit vectors this simplifies to
-normalised linear interpolation; the SLERP formulation handles
-the degenerate case and connects to the broader literature on
-geodesic midpoints in curved spaces .
-
-Vacancy check (C4) is an $O(n)$ dot-product scan of the corpus matrix
-against $m(A,B)$, requiring no index rebuild.
-
-## Adaptive Threshold Calibration
-
-Static thresholds fail across corpora with different density profiles.
-TVA employs a density-aware calibration layer that derives both
-$$ and $[, ]$ on-the-fly from the empirical
-distribution of the current query's candidate pool.
-
-### Domain Threshold $$
-
-The domain cohesion threshold combines a data-driven percentile
-statistic over the cosine-score distribution of all candidates with
-a corpus-specific floor.  The key property is that $$
-rises in dense regions and falls in sparse ones, preventing both
-over-permissive selection and empty-result failures.
-Specific parameterisation is omitted per confidentiality requirements.
-
-### Marginality Band $[, ]$
-
-The marginality band is centred at the empirical mode of the
-pairwise-similarity distribution among domain-cohesive candidates,
-with width derived from the spread of that distribution.  This
-operationalises non-obviousness: the band excludes the
-high-similarity tail (obvious combinations) and the low-similarity
-tail (unrelated noise) without hard-coded constants.
-Notably, the calibrated band is itself a *domain characterisation*:
-it quantifies the pairwise semantic distance at which innovation
-typically occurs in the target technical space and will differ across
-domains.  Cross-domain comparison of these bands is left as future work.
-Scale parameters are omitted per confidentiality requirements.
-
-## System Implementation
-
-We implement TVA in a prototype that ingests a heterogeneous corpus of
-Linux kernel source (parsed via tree-sitter into
-function/struct/symbol chunks), hardware architecture manuals, academic
-papers (PDF-extracted), and patent texts.  The corpus contains
-approximately 140,000 indexed documents after deduplication.
-
-**Embedding.**  We use BGE-M3  in local
-offline mode for both dense ($d=1024$) and sparse (top-$p$ lexical
-weights) representations.  All computation runs on CPU.
-
-**Index.**  Dense vectors are stored in a FAISS flat
-index  for $O(n)$ exact similarity search.
-Sparse tokens are stored in an SQLite FTS5 inverted index for
-boolean co-occurrence queries.
-
-**Candidate generation.**  For a given target phrase, we embed
-the target, retrieve the top-$K$ domain-cohesive candidates (C1),
-enumerate all $$ pairs, and filter by C2, C3, and C4 in
-sequence.  Surviving pairs are ranked and the top-$k$ returned as voids.
-
-**Idea generation.**  Each void is passed to a frontier LLM with
-a structured prompt instructing it to propose a technical invention
-disclosure (TID) that bridges the two void concepts toward the target
-domain.  The LLM is not told the scoring details; it receives only the
-void description and the target.
-
-## Evaluation
-
-### Setup
-
-We run TVA over a Cartesian matrix of 12 target domains (Linux
-scheduler, memory management, file systems, eBPF, virtualisation,
-networking, power management, device drivers, IRQ handling, CXL
-memory, PCIe, and security) crossed with 8 x86-hardware
-feature areas (PEBS, AMX, TDX, CXL, APIC, RAPL, EPT, AVX-512),
-yielding 96 target specifications.  For each target, TVA produces up
-to 10 void triads, each triggering one LLM call for idea generation.
-
-**Quality evaluation.**  We use a four-stage automated filtering
-pipeline as a proxy for expert review:
-
-  
-- *Structural check*: validates JSON completeness and
-    absence of fictional kernel APIs.
-  
-- *Reality check*: iterative critique-and-revise with up
-    to 3 rounds; rejects physically impossible ideas.
-  
-- *Adversarial review*: a four-specialist committee
-    (kernel correctness, novelty/prior-art, strategic value,
-    security/stability) each independently assigns APPROVE / REVISE /
-    REJECT with an integer score.
-  
-- *Deterministic verdict*: fatal-flaw, yellow-card, and
-    majority rules aggregate the four specialist votes.
-
-### Quantitative Results
-
-Table  summarises the filtering funnel over 2,128
-candidate ideas generated across all 96 targets.
-
-> *(see table in PDF)*
-
-The 191 candidates reaching a REVISE verdict received substantive
-technical feedback from all four specialists (avg.\ 5.1 issues per
-specialist per candidate, avg.\ specialist score 4.0–5.0/5).
-Under our deterministic rules, REVISE indicates that the committee
-found genuine technical merit and requested elaboration—it is a
-*qualified positive result*, not a rejection.
-The two case studies below are drawn from this REVISE cohort.
-
-One candidate reached the `majority\_approval` threshold
-(3/4 APPROVE, avg.\ score 4.0/5, zero fatal flaws, two Debate Panel
-rounds): , which proposes per-cluster density-adaptive
-IPI mode selection in `native\_flush\_tlb\_multi()`.
-We present REVISE candidates as case studies rather than this APPROVE
-candidate, because ideas receiving near-unanimous expert agreement
-are, by construction, less likely to exhibit the non-obvious
-``connective tissue'' that defines the topological void—a point
-we discuss further in Section .
-
-### Rejection Taxonomy
-
-To understand *why* ideas fail, we categorise the fatal flaws
-in the 888 REJECT verdicts by keyword analysis of specialist feedback.
-Table  shows the distribution.
-
-> *(see table in PDF)*
-
-> *(see table in PDF)*
-
-Table  shows the adversarial approval distribution.
-The 75.5\
-are filtered from the human-review queue—unanimous rejection signals
-that no specialist found the core concept defensible.  The remaining
-24.5\
-the system's effective human-review yield: ideas where at least one
-domain expert identified genuine technical merit despite identifying
-issues requiring elaboration.  This stringent end-to-end conversion
-rate reflects the *Driving-AI* philosophy: the value lies not
-in volume but in surfacing a small set of technically grounded
-candidates for expert follow-up.
-
-Three observations stand out.  First, 90.2\
-by `fatal\_flaw\_reject` (at least one specialist identifies a
-blocking technical error), confirming that the committee is performing
-genuine domain-specific reasoning rather than surface-level critique.
-Second, locking and concurrency errors (35.5\
-with the difficulty of safe kernel synchronisation—exactly the class
-of error that a Linux maintainer would cite when rejecting a patch.
-Third, prior-art overlap (19.8\
-of void-derived ideas, while geometrically novel in embedding space,
-overlap with existing techniques when viewed through a deep-domain lens.
-This motivates future work on tighter prior-art integration in the
-vacancy probe.
-
-### Case Study 1: TSX-Advisory MGLRU Rotation Capsules
-
-**Target and void.**  Target:   TVA surfaced
-void \#2 from 8 candidate voids: concept $A$ is a paper on
-*optimistic memory reclamation in lock-free programs*, concept $B$
-is a storage-technology selection study (TRaCaR Ratio).  Sparse bridge
-tokens: `memory`, `optimistic`, `reclamation`,
-`access`.  The geodesic midpoint $C = m(A,B)$ had no corpus
-neighbour within cosine distance 0.09—confirming vacancy.
-
-**Idea.**  The LLM proposed : a fail-closed mechanism that
-wraps the Linux MGLRU folio rotation fast-path in an RTM (Restricted
-Transactional Memory) speculation region.  If the transaction aborts,
-the fallback acquires the `lru\_lock` normally.  The proposal
-introduces per-folio mutation cookies (seqcount-like odd/even) and a
-fail-closed locked revalidation step to preserve lruvec consistency.
-
-**Expert verdict (REVISE — 
-This is the highest-approval result in our new-format cohort.
-[noitemsep,topsep=2pt]
-  
-- *Kernel Hardliner* (APPROVE): ``TSX advisory path
-    is architecturally sound; RTM abort falls back correctly.''
-  
-- *Prior-Art Shark* (APPROVE): ``No direct prior art on
-    TSX-advisory MGLRU rotation; non-obviousness defensible.''
-  
-- *Intel Strategist* (APPROVE): ``Strong x86 TSX
-    differentiation story on Xeon platforms with hardware TSX support.''
-  
-- *Security Guardian* (REVISE, fatal flaw): ``TSX/TAA
-    policy gating not specified concretely enough to guarantee
-    fail-closed behavior under incomplete writer-coverage.''
-
-After Round 3 revision: mutation-cookie semantics were formalised
-(monotonic counter, never odd during active optimistic phase), and
-the TSX admissibility check was made explicit: RTM is enabled only
-when `X86\_FEATURE\_RTM` is present *and* the current
-kernel TAA mitigation policy permits transactional use.
-Three of four specialists approved the final draft, making this
-the strongest positive result in the evaluation cohort.
-
-### Case Study 2: Verifier-Derived Synchronization Contracts
-
-**Void.**  Void \#5 in the same run: concept $A$ is
-`ELF\_MACHINE\_NAME` (an ELF portability macro), concept $B$ is
-`addend\_may\_be\_ifunc` (a linker IFUNC relocation predicate).
-Sparse bridge tokens: `addend\_may\_be\_ifunc`,
-`elf\_machine\_name`, `x86\_64`.  The pairwise cosine
-similarity (0.64) is at the high end of the calibrated band, indicating
-the pair is related but non-obvious in the target context.
-
-**Idea.**  Despite the weak, oblique signal, the LLM proposed
-*Verifier-Derived Synchronization Contract Vectors (SCVs)* for the
-x86 eBPF JIT: an immutable per-program sidecar table in which the eBPF
-verifier records each synchronisation site's primitive family, memory
-order, address class, context mask, and admissibility class; the JIT
-resolves each site exactly once at load time to an inline template or
-call-equivalent thunk.  The idea ran through three rounds of
-adversarial revision, refining the SCV schema and clarifying
-LKMM-equivalence requirements.
-
-**Expert verdict (REVISE after 3 rounds — qualified positive).**
-The idea underwent three rounds of adversarial revision (all REVISE,
-no REJECT; avg.\ specialist score 5.0/5).  Representative feedback
-and responses:
-[noitemsep,topsep=2pt]
-  
-- *Round 1 — Kernel Hardliner*: ``Define the stable-feature
-    admissibility rule in terms of existing `x86\_cpufeature` APIs.''
-    $$ Added explicit stable-feature whitelist (TSO baseline, CX8,
-    optional CX16); excluded RTM/HLE and revocable features.
-  
-- *Round 2 — Kernel Hardliner*: ``The SCV ABI requires
-    precise versioning and endianness specification.''
-    $$ SCV entry schema extended with `linux\_primitive\_id`,
-    `width\_code`, `memory\_order`, `admissibility\_class`.
-  
-- *Round 3 — Prior-Art Shark*: ``Claims overlap with
-    generic verifier fact propagation.''
-    $$ Claims narrowed to the normative primitive-family identifier
-    and the one-time admissibility resolution rule.
-
-**Significance.**  This case demonstrates a key property of TVA:
-the void pair (`ELF\_MACHINE\_NAME`, `addend\_may\_be\_ifunc`)
-has no surface-level connection to BPF synchronisation semantics.  A
-human engineer would not naturally connect these concepts; the LLM
-used the IFUNC dispatch mechanism as a structural analogy for per-site
-JIT resolution.  The 3-round revision trace confirms that the idea was
-technically grounded enough to survive sustained adversarial critique
-and emerge with a stronger, more narrowly-claimed design.
-This is the ``non-obvious connective tissue'' that TVA is designed to surface.
-
-## Discussion
-
-**Engineering time savings.**
-A 140,000-document corpus yields approximately $
- 10$ billion candidate concept pairs.
-The practical difficulty is not merely combinatorial: a human engineer
-has no principled way to decide *which* pairs to evaluate without
-first examining them, making exhaustive manual exploration effectively
-intractable regardless of expertise or time.
-TVA converts this intractable search into a tractable shortlist:
-25,536 automated LLM expert-review calls screen 2,128 candidates and
-deliver **49 human-review candidates** ($$1/4 specialist
-approval) requiring approximately **49 person-hours** of focused
-domain expert review.
-The authors consider the resulting time saving beyond meaningful
-quantification—the baseline is not ``slower,'' it is ``not
-systematically possible.''
-
-**Independent expert evaluation.**
-The 8 candidates achieving $$2/4 adversarial approval (7 REVISE + 1 APPROVE) were subjected to independent domain expert
-review evaluating technical feasibility, kernel correctness, novelty,
-and claim quality on a 1–5 scale.
-Of these, 6/8 (75\
-with a mean expert score of 3.5/5.
-The two remaining candidates require significant additional work: one
-has incomplete `tid\_detail` fields due to revision data loss,
-and one requires a narrower claim rewrite to address prior-art
-proximity.
-This 75\
-the adversarial committee's discriminative power and supports TVA's
-end-to-end effectiveness.
-
-**Why does a weak void signal still yield a strong idea?**
-The void conditions define the *search region*, not the idea
-itself.  The LLM fills the region with its own parametric knowledge.
-A sparse but valid bridge token (here, `addend\_may\_be\_ifunc`)
-acts as a semantic trigger—analogous to how a human expert reading an
-unrelated paper suddenly connects it to their domain expertise.  TVA
-formalises the triggering mechanism; the LLM supplies the reasoning.
-
-**Calibration sensitivity.**  The adaptive $$
-calibration reduces manual tuning but introduces dependence on corpus
-density.  For very sparse domains, the percentile-based calibration may
-set $$ too low, admitting noisy candidates.  The vacancy
-probe (C4) partially compensates by rejecting occupied midpoints.
-
-**On the choice of REVISE as positive evidence.**
-We deliberately present REVISE rather than APPROVE verdicts as case
-studies.  Under our deterministic rules, APPROVE requires at least 3/4
-specialist approval with zero fatal flaws from any specialist—a
-bar calibrated for patent-ready enabling disclosures.
-REVISE with 3/4 specialist approval and substantive technical feedback
-represents the system's *intended* output: technically grounded
-innovation candidates that require domain-expert completion, not
-autonomous patent generation.  A system that routinely produces APPROVE
-verdicts from LLM specialists alone would be under-calibrated rather
-than superior—it would fail to catch the locking, prior-art, and
-security issues that Table  shows are pervasive in
-this domain.  The 191 REVISE candidates are the value; the single APPROVE (0.05\
-rate is evidence of calibration rigour, not system failure.
-
-Paradoxically, near-unanimous (4/4) APPROVE may indicate an idea
-that is *too* straightforward: an invention obvious enough that
-all four independent domain experts agree without reservation is, by
-definition, unlikely to survive a non-obviousness challenge.
-This mirrors peer review in top-tier venues, where a paper receiving
-perfect scores from all reviewers on the first round is either a
-once-in-a-decade breakthrough or a sign that reviewers did not look
-closely enough.  The most patentable candidates in our cohort—those
-surviving adversarial review with 2–3/4 approval and substantive
-specialist feedback—sit precisely in the calibrated marginality band
-that TVA is designed to surface: not so similar to prior art as to be
-obvious, not so dissimilar as to be incoherent.  Expert disagreement is
-not a failure mode; it is the geometric signature of a genuine
-topological void.
-
-**Evaluation limitations.**  Our automated adversarial review
-pipeline is a proxy for formal human expert evaluation.
-The 49 shortlisted candidates ($$1/4 approval) are ready for
-domain-expert review; structured evaluation with a pre-defined rubric,
-inter-rater reliability measurement, and blinded expert scoring is
-left for future work.
-
-The revision loop issues a single LLM call per round that addresses
-all four specialists' feedback simultaneously; this ``attend-to-all''
-strategy can lead to trade-offs where addressing one specialist's
-concerns inadvertently weakens another's approval.
-A specialist-decomposed approach—one focused revision per specialist,
-followed by a merge pass—would likely improve approval rates at the
-cost of 4–5$$ more inference per revision round, a
-compute-efficiency trade-off we leave for future work.
-
-**Reproducibility note.**  Specific hyperparameter values and
-functional forms for $$ and the calibration layer are
-omitted per proprietary constraints.  The four conditions C1–C4,
-the vacancy probe, and the calibration strategy are described
-with sufficient precision to reproduce the qualitative behaviour;
-practitioners can derive corpus-specific values from the
-described procedures.  Guidance on calibration ranges is
-available upon request from the authors.
+## 摘要
+
+**摘要。**
+在密集的技术领域中（例如操作系统或硬件/软件协同设计），识别创新方向从根本上是一个在高维知识空间中的搜索问题。现有方法依赖关键词搜索、引用邻近度或人类直觉，这些方法都无法形式化一个「同时与目标相关、又不存在于先前技术中」的未探索区域概念。
+
+我们提出*拓扑空洞分析*（TVA），一个将*拓扑空洞*定义为密集-稀疏混合嵌入空间中三元组 $(A, B, C)$ 的数学框架。空洞需满足三个条件：(i) 概念 $A$ 和 $B$ 均与领域锚点 $C$ 语义相关；(ii) 它们的配对相似度落在一个校准的边际带内——既避免显而易见的组合，也排除不相关的噪音；(iii) 它们共享一个稀疏词汇桥，同时嵌入超球面上的测地线中点无已存在文件占据。
+
+应用于约 14 万份索引文件，TVA 在 96 个目标上生成了 2,128 个发明候选；90% 通过自动化质量过滤，由四位 specialist 对抗审查得出 191 个 REVISE 和 1 个 APPROVE 裁决（0.05%）。两个案例研究表明，该框架能够发现非显而易见的连接性技术，而非仅仅是显而易见的相关配对。
+
+---
+
+## 引言
+
+现代软件系统，尤其是系统软件层，通过增量式发明演进：工程师注意到两个子系统之间的缺口，提出一个抽象概念加以桥接，社群随后迭代出一个补丁或专利。「注意到」这个步骤受制于人类注意力和领域广度的瓶颈。单一工程师无法同时记住 Linux 调度器的锁定语义、eBPF JIT 输出的内存排序保证、ELF 重定位模型，以及 BPF 验证器的类型系统，也就无从意识到一种 IFUNC 风格的分派契约可以统一后三者。
+
+本文提问：*我们能否形式化并自动化未探索技术缺口的发现？*
+
+我们的回答是肯定的，并做出以下贡献：
+
+- 拓扑空洞的形式化定义（第 X 节）：在混合密集-稀疏嵌入空间中，满足领域相关性、校准边际性与稀疏词汇桥条件的三元组 $(A, B, C)$。
+
+- 基于球面线性插值（SLERP）的*空位探测*机制（第 X 节），用于拒绝中点已被现有文件占据的伪空洞。
+
+- 一个*自适应阈值校准*程序（第 X 节），从语料库统计中推导领域专属的边际边界，消除手动调整。
+
+- 一个大规模的实验评估（第 X 节），包含两个详细案例研究，证明 TVA 能够发现非显而易见但技术上扎实的创新候选。
+
+## 背景与动机
+
+### 技术知识作为嵌入空间
+
+预训练嵌入模型将技术文件映射到高维单位球面上。在余弦距离上相近的点共享语义内容；距离远的点则不相关。*知识语料库* $\mathcal{K}$ 是这样一组有限点集。
+
+在这个视角下，创新是桥接两个尚未在 $\mathcal{K}$ 中共置的概念 $A$、$B$ 的行为，前提是它们的组合与目标 $C$ 相关。
+
+### 跨模型尺度的几何收敛
+
+TVA 的一个关键理论基础是*柏拉图表示假说*：充分训练的模型——无论架构、模态或规模——都会向其共同训练世界的统一统计几何结构收敛。具体而言，紧凑嵌入模型（BGE-M3, 1024D）与前沿 LLM 的配对距离结构近似等距：如果一对概念在 BGE-M3 空间中距离接近，同一对在 LLM 的隐式表示空间中也倾向于接近。
+
+这种收敛为 TVA 的设计提供了理论基础。在 BGE-M3 空间中识别的拓扑空洞——测地线中点未被占据的配对 $(A, B)$——充当前沿 LLM 推理空间中欠探索区域的*坐标代理*。紧凑模型扮演高效导航器的角色；LLM 提供高分辨率的生成能力来填充识别出的缺口。跨尺度的几何对齐通过 CKA 实验得到支持。
+
+### 先前技术搜索的局限性
+
+传统的专利和先前技术搜索依赖关键词或引用驱动。这些方法检索*已知*内容；它们无法识别*缺失*的内容。知识图补全方法预测缺失的边，但需要预先定义的关系模式，且无法建模与可专利非显而易见性核心相关的连续「边际性」概念。
+
+### 边际性原则
+
+专利法要求发明具有*非显而易见性*：与现有技术过于相似无法通过新颖性要求；过于不相似则产生不连贯或不充分披露的文件。高价值发明存在于*中等程度不相似性*的带状区域中——距离先前技术足够远以具备新颖性，但距离目标领域足够近以具备实用性。这是我们形式化边际性条件的非形式化基础。
+
+## 为何标准方法失效
+
+在到达 TVA 之前，我们评估了三种基准检索方法，每种都以特定方式失效。
+**余弦 top-$k$** 检索相关但冗余的结果——全部来自同一个覆盖良好的子系统，没有缺口的概念。
+**MMR** 提升了多样性，但不提供占用保证：约 30% 的 MMR 对在其线性中点的余弦距离 0.08 以内有邻居，使其成为伪空洞。
+**潜在向量算术**（$v_{\text{target}} = v_C + (v_A - v_B)$）在 1024 维上下文化空间中失效：各向异性使差分向量几乎与语义轴正交，维度诅咒剥夺了它们的方向意义——67% 的结果落在语义流形之外。
+三种方法都缺乏明确的*占用检查*：它们对候选点进行排序或构造，却不验证该区域是否真正未被占据。这促成了 TVA 中的空位探测机制。
+
+## 拓扑空洞框架
+
+### 符号说明
+
+设 $\mathcal{K} = \{k_1, \ldots, k_n\}$ 为技术文件语料库。每份文件 $k \in \mathcal{K}$ 由 BGE-M3（$d=1024$）映射为密集单位向量 $\text{dense}(k) \in S^{d-1}$ 和稀疏 token 集合 $\text{sparse}(k) \subseteq \Sigma^*$（top-5 词汇权重）。
+
+设 $\text{cos}(u,v) = u^\top v$ 对单位向量成立。设 $\text{filtered}(k) = \{t \in \text{sparse}(k) : t \notin \mathcal{S}\}$，其中 $\mathcal{S}$ 为领域停用词列表（高频、低特异性 token，如 `int`、`define`、`linux`）。
+
+### 形式化定义
+
+> **定义：** [拓扑空洞]
+
+设 $A, B \in \mathcal{K}$ 为两份语料库文件，设 $C = m(\text{dense}(A),\,\text{dense}(B)) \in S^{d-1}$（见定义）为其合成*空洞中点*——测地线桥接概念。
+若以下所有条件成立，则配对 $(A, B)$ 相对于领域查询向量 $\mathbf{q} \in S^{d-1}$ 形成一个*拓扑空洞*：
+
+**C1（领域相关性）：** $A$ 和 $B$ 均与目标领域语义相关。
+**C2（校准边际性）：** 配对相似度落在 $[\tau_{\text{low}}, \tau_{\text{high}}]$ 带内。
+**C3（稀疏词汇桥）：** $\text{filtered}(A) \cap \text{filtered}(B) \neq \emptyset$。
+**C4（空位）：** 合成中点 $C$ 不被任何语料库文件占据。
+
+直觉上：$A$ 和 $B$ 均指向目标领域（C1）；既非显而易见地相似，也非无关（C2）；共享至少一个有意义的技术 token 作为概念桥（C3）；且合成空洞中点 $C$ 不被任何现有文件占据（C4）。待发明的想法存在于 $C$ 的邻域中——两个相关但未探索概念之间的缺口。
+
+### 空洞排序
+
+有效配对 $(A, B)$ 通过多目标评分函数 $\mathcal{H}(A, B; \mathbf{q})$ 排序，该函数整合了：(i) 合成空洞中点 $C = m(A,B)$ 相对于目标领域的相关性，(ii) 对已选择方案的冗余惩罚，以及 (iii) 以带状区域 $[\tau_{\text{low}}, \tau_{\text{high}}]$ 为中心的非线性边际性奖励。精确的函数形式和权重因商业保密要求而省略，符合产业轨道投稿指南。
+
+## 通过 SLERP 的空位探测
+
+纯粹基于相似度方法的一个关键失效模式是*伪空洞*：两份文件看似跨越一个空区域，但其中点实际上接近一份现有文件。条件 C4 解决了这个问题。
+
+> **定义：** [测地线中点]
+
+对于 $S^{d-1}$ 上的单位向量 $u, v$，测地线中点由 SLERP 给出，对反向向量退回到 $u$。
+
+我们使用测地线中点而非任意插值，因为它在超球面上相对于 $u$ 和 $v$ 是*等距的*，保证空位测试关于两个锚点对称。对于非反向的单位向量，这简化为归一化线性插值；SLERP 形式化处理退化情况，并与弯曲空间测地线中点的更广泛文献相连接。
+
+空位检查（C4）是对语料库矩阵相对于 $m(A,B)$ 的 $O(n)$ 点积扫描，不需要重建索引。
+
+## 自适应阈值校准
+
+静态阈值在具有不同密度特征的语料库中失效。TVA 采用一个密度感知校准层，从当前查询候选池的经验分布中即时推导 $\tau_{\text{domain}}$ 和 $[\tau_{\text{low}}, \tau_{\text{high}}]$。
+
+### 领域阈值 $\tau_{\text{domain}}$
+
+领域相关性阈值结合了所有候选余弦分数分布的数据驱动百分位统计，以及语料库专属的下限。关键特性是 $\tau_{\text{domain}}$ 在密集区域升高、在稀疏区域降低，既防止过度宽松的选择，也避免空结果失败。具体参数化因保密要求而省略。
+
+### 边际带 $[\tau_{\text{low}}, \tau_{\text{high}}]$
+
+边际带以领域相关候选配对相似度分布的经验众数为中心，宽度从该分布的扩散程度推导。这将非显而易见性操作化：带状排除了高相似度尾部（显而易见的组合）和低相似度尾部（无关的噪音），无需硬编码常数。值得注意的是，校准后的带状本身是一种*领域特征化*：它量化了目标技术空间中创新通常发生的配对语义距离，并因领域而异。带状的跨领域比较留作未来工作。比例参数因保密要求而省略。
+
+## 系统实现
+
+我们在一个原型中实现 TVA，该原型摄取由以下来源构成的异质语料库：Linux kernel 源代码（通过 tree-sitter 解析为函数/结构/符号 chunk）、硬件架构手册、学术论文（PDF 提取）和专利文本。语料库在去重后包含约 14 万份索引文件。
+
+**嵌入。** 我们使用 BGE-M3 的本地离线模式，用于密集（$d=1024$）和稀疏（top-$p$ 词汇权重）表示。所有计算在 CPU 上运行。
+
+**索引。** 密集向量存储在 FAISS flat 索引中，用于 $O(n)$ 精确相似度搜索。稀疏 token 存储在 SQLite FTS5 倒排索引中，用于布尔共现查询。
+
+**候选生成。** 对于给定的目标短语，我们嵌入目标，检索 top-$K$ 领域相关候选（C1），枚举所有配对，并依序按 C2、C3、C4 过滤。存活的配对被排序后，返回 top-$k$ 作为空洞。
+
+**想法生成。** 每个空洞连同一个结构化 prompt 传递给前沿 LLM，指示其提出一个技术发明披露（TID），以桥接两个空洞概念朝向目标领域。LLM 不被告知评分细节；它只接收空洞描述和目标。
+
+## 评估
+
+### 设置
+
+我们在由 12 个目标领域（Linux 调度器、内存管理、文件系统、eBPF、虚拟化、网络、电源管理、设备驱动、IRQ 处理、CXL 内存、PCIe 和安全性）与 8 个 x86 硬件特性领域（PEBS、AMX、TDX、CXL、APIC、RAPL、EPT、AVX-512）构成的笛卡尔矩阵上运行 TVA，产生 96 个目标规格。对于每个目标，TVA 最多生成 10 个空洞三元组，每个触发一次 LLM 想法生成调用。
+
+**质量评估。** 我们使用四阶段自动化过滤 pipeline 作为专家审查的代理：
+
+- *结构检查*：验证 JSON 完整性和虚构 kernel API 的缺失。
+- *现实性检查*：最多 3 轮的迭代批判-修订；拒绝物理上不可能的想法。
+- *对抗审查*：四位 specialist 委员会（kernel 正确性、新颖性/先前技术、策略价值、安全性/稳定性），各自独立分配 APPROVE / REVISE / REJECT 并附整数分数。
+- *确定性裁决*：致命缺陷、黄牌和多数规则聚合四位 specialist 的投票。
+
+### 定量结果
+
+在 96 个目标上生成的 2,128 个候选想法中，191 个候选达到 REVISE 裁决，收到来自全部四位 specialist 的实质性技术反馈（每位 specialist 每个候选平均 5.1 个问题，平均 specialist 分数 4.0–5.0/5）。在我们的确定性规则下，REVISE 表示委员会发现了真正的技术价值并要求详细说明——这是一个*有条件的正面结果*，而非拒绝。下面的两个案例研究来自这个 REVISE 群体。
+
+一个候选达到了 `majority_approval` 阈值（3/4 APPROVE，平均分数 4.0/5，零致命缺陷，两轮 Debate Panel）：提出在 `native_flush_tlb_multi()` 中进行每簇密度自适应 IPI 模式选择。我们将 REVISE 候选而非此 APPROVE 候选作为案例研究呈现，因为获得接近一致专家同意的想法，从定义上就不太可能表现出定义拓扑空洞的非显而易见「连接性技术」——我们在讨论节中进一步探讨这一点。
+
+### 拒绝分类
+
+为理解想法为何失败，我们通过对 specialist 反馈的关键词分析对 888 个 REJECT 裁决中的致命缺陷进行分类。
+
+三个观察脱颖而出。首先，90.2% 的拒绝由 `fatal_flaw_reject` 触发（至少一位 specialist 识别出阻碍性技术错误），确认委员会在执行真正的领域专属推理而非表面级批判。其次，锁定和并发错误（35.5%）与安全 kernel 同步的难度一致——这正是 Linux 维护者在拒绝补丁时会引用的错误类别。第三，先前技术重叠（19.8%）表明，在嵌入空间中几何上新颖的空洞衍生想法，通过深度领域视角审视时仍可能与现有技术重叠。这促使未来工作在空位探测中加强先前技术整合。
+
+### 案例研究 1：TSX-Advisory MGLRU 旋转胶囊
+
+**目标与空洞。** TVA 从 8 个候选空洞中发现了空洞 #2：概念 $A$ 是关于无锁程序中乐观内存回收的论文，概念 $B$ 是一份存储技术选择研究（TRaCaR Ratio）。稀疏桥接 token：`memory`、`optimistic`、`reclamation`、`access`。测地线中点 $C = m(A,B)$ 在余弦距离 0.09 以内无语料库邻居——确认空位。
+
+**想法。** LLM 提出了一种 fail-closed 机制，将 Linux MGLRU folio 旋转快速路径包裹在 RTM（限制事务性内存）推测区域中。若事务中止，回退正常获取 `lru_lock`。该提案引入了每 folio 的变异 cookie（seqcount 风格的奇/偶）和一个 fail-closed 锁定重新验证步骤以保持 lruvec 一致性。
+
+**专家裁决（REVISE — 最高批准率结果）：**
+
+- *Kernel Hardliner*（APPROVE）：「TSX advisory 路径在架构上是合理的；RTM 中止正确地回退。」
+- *Prior-Art Shark*（APPROVE）：「在 TSX-advisory MGLRU 旋转上无直接先前技术；非显而易见性可辩护。」
+- *Intel Strategist*（APPROVE）：「在支持硬件 TSX 的 Xeon 平台上强烈的 x86 TSX 差异化故事。」
+- *Security Guardian*（REVISE，致命缺陷）：「TSX/TAA 策略门控未具体明确到足以保证不完整写入者覆盖下的 fail-closed 行为。」
+
+第 3 轮修订后：变异 cookie 语义被形式化（单调计数器，在活跃乐观阶段从不为奇数），TSX 可允许性检查被明确化：RTM 仅在 `X86_FEATURE_RTM` 存在且当前 kernel TAA 缓解策略允许事务性使用时启用。四位 specialist 中有三位批准了最终草稿，使其成为评估群体中最强的正面结果。
+
+### 案例研究 2：验证器衍生的同步契约
+
+**空洞。** 同一运行中的空洞 #5：概念 $A$ 是 `ELF_MACHINE_NAME`（ELF 可移植性宏），概念 $B$ 是 `addend_may_be_ifunc`（链接器 IFUNC 重定位谓词）。稀疏桥接 token：`addend_may_be_ifunc`、`elf_machine_name`、`x86_64`。配对余弦相似度（0.64）处于校准带的高端，表示该配对在目标上下文中相关但非显而易见。
+
+**想法。** 尽管信号微弱且间接，LLM 提出了 x86 eBPF JIT 的*验证器衍生同步契约向量（SCV）*：一个不可变的每程序 sidecar 表，其中 eBPF 验证器记录每个同步位点的原语族、内存顺序、地址类别、上下文掩码和可允许性类别；JIT 在载入时对每个位点恰好解析一次，得到内联模板或等效的调用 thunk。该想法经历了三轮对抗修订，精炼了 SCV 模式并澄清了 LKMM 等效性要求。
+
+**专家裁决（三轮后 REVISE——有条件正面）：**
+该想法经历了三轮对抗修订（全部 REVISE，无 REJECT；平均 specialist 分数 5.0/5）。代表性反馈与回应：
+
+- *第 1 轮 — Kernel Hardliner*：「根据现有 `x86_cpufeature` API 定义稳定功能可允许性规则。」→ 添加了明确的稳定功能白名单（TSO 基线、CX8、可选 CX16）；排除了 RTM/HLE 和可撤销功能。
+- *第 2 轮 — Kernel Hardliner*：「SCV ABI 需要精确的版本控制和字节序规范。」→ SCV 条目模式扩展了 `linux_primitive_id`、`width_code`、`memory_order`、`admissibility_class`。
+- *第 3 轮 — Prior-Art Shark*：「Claims 与通用验证器事实传播重叠。」→ Claims 缩小到规范性原语族标识符和一次性可允许性解析规则。
+
+**意义。** 此案例展示了 TVA 的一个关键特性：空洞配对（`ELF_MACHINE_NAME`，`addend_may_be_ifunc`）与 BPF 同步语义没有表面联系。人类工程师不会自然地连接这些概念；LLM 将 IFUNC 分派机制用作每位点 JIT 解析的结构性类比。三轮修订迹线确认该想法在技术上足够扎实，能够在持续的对抗批判中存活，并以更强、范围更窄的设计出现。这就是 TVA 旨在发现的「非显而易见的连接性技术」。
+
+## 讨论
+
+**工程时间节省。**
+14 万份文件的语料库大约产生 $10^{10}$ 个候选概念配对。实际困难不仅仅是组合性的：人类工程师没有原则性方法来决定评估*哪些*配对，而不先逐一审视它们，使得穷尽式手动探索无论有多少专业知识或时间都实际上不可行。TVA 将这种难以处理的搜索转换为可处理的候选清单：25,536 次自动化 LLM 专家审查调用筛选 2,128 个候选，并交付 **49 个人工审查候选**（≥1/4 specialist 批准），需要大约 **49 人时**的集中领域专家审查。作者认为由此产生的时间节省超出了有意义的量化范围——基线不是「更慢」，而是「系统性地不可能」。
+
+**独立专家评估。**
+达到 ≥2/4 对抗批准的 8 个候选（7 REVISE + 1 APPROVE）接受了独立领域专家审查，评估技术可行性、kernel 正确性、新颖性和 claim 质量（1–5 分）。其中 6/8（75%）被认定为技术上有价值，平均专家分数为 3.5/5。两个剩余候选需要大量额外工作：一个因修订数据丢失而有不完整的 `tid_detail` 字段，另一个需要更窄的 claim 改写以解决先前技术邻近性。75% 的验证率肯定了对抗委员会的判别能力，并支持 TVA 的端到端有效性。
+
+**为何弱空洞信号仍能产生强想法？**
+空洞条件定义的是*搜索区域*，而非想法本身。LLM 以其自身的参数知识填充该区域。一个稀疏但有效的桥接 token（此处为 `addend_may_be_ifunc`）充当语义触发器——类似于人类专家阅读一篇不相关的论文时突然将其与自身领域专业知识连接。TVA 将触发机制形式化；LLM 提供推理。
+
+**校准敏感性。** 自适应 $\tau$ 校准减少了手动调整，但引入了对语料库密度的依赖。对于非常稀疏的领域，基于百分位的校准可能将 $\tau$ 设置得过低，导致噪音候选进入。空位探测（C4）通过拒绝已占用中点部分补偿这一问题。
+
+**选择 REVISE 作为正面证据的理由。**
+我们特意将 REVISE 而非 APPROVE 裁决作为案例研究呈现。在我们的确定性规则下，APPROVE 需要至少 3/4 specialist 批准且任何 specialist 均无致命缺陷——这是为可专利的充分披露设定的标准。带有 3/4 specialist 批准和实质性技术反馈的 REVISE 代表系统的*预期输出*：需要领域专家补全的技术上扎实的创新候选，而非自主的专利生成。一个常规产生 LLM specialist 独立 APPROVE 裁决的系统将是校准不足而非更优越——它将无法发现锁定、先前技术和安全问题，而这些在本领域中（如表格所示）普遍存在。191 个 REVISE 候选才是价值所在；单一 APPROVE（0.05%）是校准严格性的证据，而非系统失败。
+
+矛盾的是，接近一致（4/4）的 APPROVE 可能表示一个*过于*直接的想法：一个足够明显以至于所有四位独立领域专家毫无保留地同意的发明，从定义上就不太可能通过非显而易见性挑战。这与顶级期刊的同行评审相呼应，在第一轮就获得所有审查者满分的论文要么是十年一遇的突破，要么是审查者审查不够仔细的迹象。我们群体中最具可专利性的候选——那些以 2–3/4 批准和实质性 specialist 反馈通过对抗审查的——恰好坐落在 TVA 旨在发现的校准边际带中：与先前技术不那么相似以至于显而易见，但也不那么不相似以至于不连贯。专家分歧不是失败模式；它是真正的拓扑空洞的几何特征。
+
+**评估局限性。** 我们的自动化对抗审查 pipeline 是正式人类专家评估的代理。49 个候选（≥1/4 批准）已准备好接受领域专家审查；带有预定义标准、评分者间可靠性测量和盲法专家评分的结构化评估留作未来工作。
+
+修订循环每轮发出一个 LLM 调用，同时处理所有四位 specialist 的反馈；这种「全部关注」策略可能导致取舍，即处理一位 specialist 的关切时无意中削弱另一位的批准。一种 specialist 分解方法——每位 specialist 一个聚焦修订，然后一个合并步骤——可能会以每轮修订 4–5 倍更多推理的代价提高批准率，这是我们留作未来工作的计算效率取舍。
+
+**可重现性说明。** $\tau$ 和校准层的具体超参数值和函数形式因专有约束而省略。四个条件 C1–C4、空位探测和校准策略的描述精度足以重现定性行为；从业者可以从描述的程序中推导语料库专属值。校准范围的指导可向作者索取。
 
 **适用范围：仅限静态知识空间。**
 TVA 假设知识空间具有*稳定的几何结构*——语料库是一组固定的先前技术，空洞相对于它定义，且识别空洞的行为不会改变这个空间。这个假设在 Level 1 系统中成立：技术领域的事实是客观的，文件是持久的，发现创新缺口的行为不会导致竞争者立即填补它。
 
-这个假设在 Level 2 动态系统中会失效——市场、社会协作、竞争策略——这些领域的知识空间具有反身性：识别空洞并采取行动，会改变其他 agent 的位置，进而重塑拓扑结构。在这类领域中，今天识别的空洞，可能因为揭露本身而被竞争者明天填补；"市场机会"的 embedding 也可能随着阅读过这份分析的人的行动而移动。
+这个假设在 Level 2 动态系统中会失效——市场、社会协作、竞争策略——这些领域的知识空间具有反身性：识别空洞并采取行动，会改变其他 agent 的位置，进而重塑拓扑结构。在这类领域中，今天识别的空洞，可能因为披露本身而被竞争者明天填补；「市场机会」的 embedding 也可能随着阅读过这份分析的人的行动而移动。
 
 TVA 并非为 Level 2 系统设计，对这些领域不做任何有效性声明。在不考虑反身性的情况下，将 TVA 应用于商业策略、金融市场或社会动态，将产生在测量当下是真实的、但在结构上不稳定的空洞坐标。形式化 TVA 的反身性延伸——其中语料库本身是一个被曾阅读过先前空洞报告的 agent 行动所塑造的动态对象——留作开放问题。
 
-**Meta-evaluation.**
-This manuscript was iteratively revised through five rounds of the
-Debate Panel itself—the same adversarial review pipeline described
-in Section .  Round 1 triggered a Writing Reviewer
-REVISE citing ``narrative cherry-picking,'' directly prompting the
-inclusion of Table  and the deterministic verdict
-formalisation.  The Math Reviewer issued REJECT (score 3/10) in
-Round 3 over a type error in Condition C4 (`cos`$(k, C)$
-vs.\ `cos`(`dense`$(k), C)$), which was corrected in
-Round 4.  By Round 5, the Math Reviewer upgraded to **ACCEPT**
-(score 8/10) and average specialist score reached 6.2.
+**后设评估。**
+本稿件通过 Debate Panel 本身——即第 X 节描述的同一对抗审查 pipeline——迭代修订了五轮。第 1 轮触发了 Writing Reviewer 的 REVISE，引用「叙事性选择性」，直接促使了表格和确定性裁决形式化的加入。Math Reviewer 在第 3 轮对条件 C4 中的类型错误（`cos`$(k, C)$ vs. `cos`(`dense`$(k), C)$）发出 REJECT（分数 3/10），在第 4 轮得到更正。到第 5 轮，Math Reviewer 升级为 **ACCEPT**（分数 8/10），平均 specialist 分数达到 6.2。
 
-This trajectory mirrors exactly the design rationale for
-`PENDING\_HUMAN\_REVIEW`: the system did not produce a final
-APPROVE verdict autonomously—the human author intervened at each
-round to address specialist feedback.  Ideas (and papers) that
-survive multiple adversarial rounds without full approval are not
-failures; they are candidates for the ``last-mile'' refinement that
-only human expertise can provide.  The system identified and corrected
-weaknesses in its own originating paper across five rounds of
-substantive, sycophancy-resistant critique.
-Notably, the committee also penalised this manuscript for withholding
-implementation details—the same system that identifies innovation
-gaps was unwilling to fill one about itself.  We regard this as
-evidence of consistent calibration rather than irony.
+这一轨迹完全呼应了 `PENDING_HUMAN_REVIEW` 的设计理念：系统未自主产生最终 APPROVE 裁决——人类作者在每轮都介入处理 specialist 反馈。在未达到完全批准的情况下存活多轮对抗审查的想法（和论文）不是失败；它们是只有人类专业知识才能完成「最后一公里」的候选。系统在五轮实质性、抵抗迎合性的批判中识别并纠正了其自身原始论文的弱点。值得注意的是，委员会也因本稿件隐瞒实现细节而受到惩罚——同一个识别创新缺口的系统，也不愿填补一个关于自身的缺口。我们将此视为一致性校准的证据，而非讽刺。
 
-## Future Work
+## 未来工作
 
-**Recursive Topological Expansion.**
-Currently, TVA interpolates strictly within the empirical boundaries
-of human-authored prior art.  A profound avenue for future research is
-*recursive innovation bootstrapping*.  By vectorising and
-re-ingesting highly-rated, APPROVE-verdict Technical Invention
-Disclosures back into the active corpus as synthetic prior art, the
-system can dynamically alter the topology of the knowledge space.  In
-this autoregressive loop, a synthesised TID acts as a newly
-established structural anchor in the embedding space, creating
-secondary topological voids between itself and historically distant
-concepts.  This feedback mechanism would transition TVA from a
-single-step gap-discovery engine into an autonomous ``technology tree''
-generator—iteratively mapping multi-generational frontiers of systems
-architecture beyond the immediate human horizon.
+**递归拓扑扩展。**
+目前，TVA 严格在人类撰写的先前技术的经验边界内进行插值。一个深刻的未来研究方向是*递归创新自举*。通过将高评分、APPROVE 裁决的技术发明披露向量化并重新摄取回活跃语料库作为合成先前技术，系统可以动态改变知识空间的拓扑。在这个自回归循环中，一个合成的 TID 在嵌入空间中充当新建立的结构锚，在其自身与历史上距离遥远的概念之间创造次级拓扑空洞。这个反馈机制将使 TVA 从单步缺口发现引擎过渡到自主「技术树」生成器——迭代映射超越人类即时视野的系统架构多代前沿。
 
-**Downstream implementation.**
-The structured TID format produced by TVA—comprising problem
-statement, architecture overview, implementation plan, and draft
-claims—is designed to be directly actionable.  A validated TID
-can serve as a specification prompt for LLM-based coding
-agents , enabling a seamless path from
-knowledge-gap discovery to prototype implementation.  Future work
-will evaluate end-to-end pipelines from void discovery through
-automated patch generation and CI-validated compilation.
+**下游实现。**
+TVA 产生的结构化 TID 格式——包含问题陈述、架构概述、实现计划和草稿 claims——设计为可直接采取行动。一个经过验证的 TID 可以充当基于 LLM 的代码 agent 的规格 prompt，实现从知识缺口发现到原型实现的无缝路径。未来工作将评估从空洞发现到自动化补丁生成和 CI 验证编译的端到端 pipeline。
 
-**Human-architect integration.**
-Ideas that exhaust the automated revision budget without reaching
-APPROVE are routed to a `PENDING\_HUMAN\_REVIEW` queue.
-These candidates represent the frontier where LLM reasoning reaches
-its current limit—precisely the cases most worthy of expert
-human attention.  A structured human-in-the-loop interface that
-presents the accumulated specialist critique alongside the draft
-is a natural next step.
+**人类架构师整合。**
+用尽自动化修订预算而未达到 APPROVE 的想法被路由到 `PENDING_HUMAN_REVIEW` 队列。这些候选代表 LLM 推理达到其当前极限的前沿——恰恰是最值得专家人类关注的案例。一个呈现累积 specialist 批判和草稿的结构化人机协作界面是自然的下一步。
 
-**Cross-domain generalisation.**
-While this paper instantiates TVA on a Linux kernel and x86
-hardware corpus, the framework is domain-agnostic.  Any
-organisation that maintains a large, embeddable technical knowledge
-base—hardware design documentation, biomedical literature,
-materials-science patents, automotive software standards, or
-enterprise architecture repositories—admits the same void
-formalization.  A unified *organisational knowledge graph*
-that spans multiple engineering disciplines would allow TVA to
-surface cross-domain voids: ideas at the boundary between, say,
-a firmware subsystem and a compiler backend that neither team would
-discover in isolation.  Domain adaptation involves two steps: (i) reconfiguring the four
-specialist roles in the adversarial review committee with
-domain-appropriate reviewers (e.g., Clinical Researcher and
-Drug-Safety Expert for biomedical, Materials Physicist and
-Manufacturing Engineer for materials science), and
-(ii) re-calibrating the marginality band $[, ]$
-from a domain corpus, as the geometric distance at which innovation
-occurs varies across fields.  Both steps are data-driven and require
-no manual threshold tuning.  The rest of the pipeline—void
-discovery, LLM generation, and revision loop—transfers unchanged.
-At scale, this positions TVA as an
-*enterprise-wide innovation radar*—systematically mapping
-the unexplored territory across an entire organisation's collective
-technical knowledge, one topological void at a time.
+**跨领域泛化。**
+本文在 Linux kernel 和 x86 硬件语料库上实例化 TVA，但框架是领域无关的。任何维护大型可嵌入技术知识库的组织——硬件设计文档、生医文献、材料科学专利、汽车软件标准或企业架构存储库——都适用相同的空洞形式化。一个跨多个工程学科的统一*组织知识图*将允许 TVA 发现跨领域空洞：例如，固件子系统和编译器后端边界上的想法，这两个团队都不会单独发现。领域适应涉及两个步骤：(i) 用领域适当的审查者重新配置对抗审查委员会的四个 specialist 角色（例如，生医领域的 Clinical Researcher 和 Drug-Safety Expert，材料科学的 Materials Physicist 和 Manufacturing Engineer），以及 (ii) 从领域语料库重新校准边际带 $[\tau_{\text{low}}, \tau_{\text{high}}]$，因为创新发生的几何距离因领域而异。两个步骤都是数据驱动的，不需要手动阈值调整。其余 pipeline——空洞发现、LLM 生成和修订循环——保持不变。在规模上，这将 TVA 定位为*企业级创新雷达*——系统性地映射整个组织集体技术知识中的未探索领域，一个拓扑空洞接一个拓扑空洞。
 
 **动态拓扑空洞。**
 本文建立的是*静态 TVA*：语料库固定，空洞相对于稳定的几何快照定义。这是已证明的适用范畴。一个自然且难度显著更高的开放问题是*动态 TVA*：随时间演化的语料库——随着新论文发表、专利获批、代码库更新——会产生具有生命周期的空洞。今天存在的空洞，可能随着领域推进而收缩，也可能随着相邻领域分歧而扩大。开放问题包括：(i) 如何为空洞赋予*速度向量*——它是在扩大、收缩还是稳定？(ii) 如何在空洞完全成形之前侦测到*正在形成中的空洞*，为发明者提供时间优势；(iii) 如何处理前述的反身性问题——报告一个空洞的行为本身会加速其被填补。动态 TVA 需要时序 embedding、跨语料库快照的空洞追踪，以及考虑轨迹而非仅考虑位置的修订版 vacancy probe。我们将此标记为首要的开放研究方向。
 
-## Related Work
+## 相关工作
 
-**Patent and technology forecasting.**
- propose keyword-based patent maps for technology
-opportunity identification.   apply
-BERT to prior-art search.  Neither formalises the notion of an
-unexplored region or provides a mathematical criterion for
-non-obviousness.
+**专利与技术预测。**
+现有工作提出基于关键词的专利地图用于技术机会识别，或将 BERT 应用于先前技术搜索。这些方法均未形式化未探索区域的概念，也未提供非显而易见性的数学标准。
 
-**Knowledge graph completion.**
-TransE  and its successors predict missing
-triples in knowledge graphs.  These methods require a pre-defined
-relation schema and binary (present/absent) labels; TVA operates on
-continuous similarity and does not require a schema.
+**知识图补全。**
+TransE 及其后继者预测知识图中缺失的三元组。这些方法需要预先定义的关系模式和二元（存在/不存在）标签；TVA 在连续相似度上运作，不需要模式。
 
-**Diversity-based retrieval.**
-Maximum Marginal Relevance  selects a diverse
-set of documents relevant to a query by penalising redundancy.  TVA
-uses a similar relevance-novelty trade-off but applies it to the
-*generation* of new concepts rather than the retrieval of existing
-ones.
+**基于多样性的检索。**
+最大边际相关性（MMR）通过惩罚冗余来选择与查询相关的多样文件集。TVA 使用类似的相关性-新颖性取舍，但将其应用于新概念的*生成*，而非现有概念的检索。
 
-**LLMs for code and creativity.**
-Large language models have demonstrated strong performance on code
-generation  and
-instruction-following .  We treat LLMs as
-black-box reasoners invoked after void discovery; the novelty is the
-void identification mechanism, not the generation step.
+**LLM 用于代码和创意。**
+大型语言模型在代码生成和指令遵循上表现出强大性能。我们将 LLM 视为在空洞发现后调用的黑盒推理器；新颖性在于空洞识别机制，而非生成步骤。
 
-**Topological data analysis.**
-Persistent homology  identifies topological
-features (connected components, loops, voids) in point clouds.  Our
-use of ``topological void'' is inspired by but distinct from TDA:
-we define voids in semantic embedding space by algebraic conditions on
-pairwise similarities, not by simplicial complex homology.
+**拓扑数据分析。**
+持久同调在点云中识别拓扑特征（连通分量、循环、空洞）。我们对「拓扑空洞」的使用受 TDA 启发但有所不同：我们通过嵌入空间中配对相似度的代数条件定义空洞，而非通过单纯复形同调。
 
-**Embedding geometry.**
- show that contextualised
-representations are anisotropic—concentrated in a narrow cone.  Our
-adaptive threshold calibration is designed to be robust to this
-property; SLERP avoids the geometric distortion that linear
-interpolation introduces in anisotropic spaces.
+**嵌入几何。**
+研究表明上下文化表示是各向异性的——集中在狭窄的锥形中。我们的自适应阈值校准设计为对此特性具有鲁棒性；SLERP 避免了线性插值在各向异性空间中引入的几何扭曲。
 
-## Conclusion
+## 结论
 
-We have presented Topological Void Analysis, a mathematical framework
-for systematic technical innovation discovery.  By defining topological
-voids as triads satisfying domain cohesion, calibrated marginality,
-sparse lexical bridge, and vacancy conditions in a hybrid
-dense-sparse embedding space, TVA converts the informal notion of
-``unexplored region'' into a decidable predicate.
+我们提出了拓扑空洞分析，一个系统性技术创新发现的数学框架。通过将拓扑空洞定义为在混合密集-稀疏嵌入空间中满足领域相关性、校准边际性、稀疏词汇桥和空位条件的三元组，TVA 将「未探索区域」的非形式化概念转换为一个可判定的谓词。
 
-Applied to a 140k-document corpus of Linux kernel and hardware
-specifications, TVA generated 2,128 invention candidates, 90\
-which survived automated quality filtering and 191 of which engaged
-four adversarial expert reviewers with substantive technical critique.
-Two case studies illustrate that TVA surfaces both obvious-gap ideas
-and non-obvious connective-tissue ideas that neither keyword search nor
-human browsing would naturally find.
+应用于包含 Linux kernel 和硬件规格的 14 万份文件语料库，TVA 生成了 2,128 个发明候选，其中 90% 通过了自动化质量过滤，191 个吸引了四位对抗性专家审查者进行实质性技术批判。两个案例研究说明 TVA 能够发现明显缺口想法和非显而易见的连接性技术想法——这些是关键词搜索或人类浏览都不会自然发现的。
 
-We release the mathematical framework and threshold calibration
-procedure for reproducibility; implementation details are available
-upon request.
+我们发布数学框架和阈值校准程序以供重现；实现细节可向作者索取。
 
-Ultimately, TVA embodies a design philosophy we term
-*Driving-AI, not AI-driven*: the system surfaces the map;
-human experts navigate it.
+最终，TVA 体现了我们称之为*Driving-AI，而非 AI-driven* 的设计哲学：系统呈现地图；人类专家在其中导航。
 
 ---
 
-*完整数学公式、表格与参考文献，请见 [PDF 版本](output/generated/deepthought_paper.pdf)。*
+*完整数学公式、表格和参考文献请见 [PDF 版本](output/generated/deepthought_paper.pdf)。*
