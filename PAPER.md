@@ -564,6 +564,13 @@ practitioners can derive corpus-specific values from the
 described procedures.  Guidance on calibration ranges is
 available upon request from the authors.
 
+**Scope boundary: static knowledge spaces only.**
+TVA assumes that the knowledge space has a *stable geometry* — that the corpus is a fixed set of prior art against which voids are defined, and that identifying a void does not alter the space.  This assumption holds for Level 1 systems: technical domains where facts are objective, documents are persistent, and the act of discovering an innovation gap does not cause competitors to immediately fill it.
+
+The assumption breaks down for Level 2 dynamic systems — markets, social coordination, competitive strategy — where the knowledge space is reflexive: observing a void and acting on it changes the positions of other agents, which in turn reshapes the topology.  In such domains, a void identified today may be occupied by a competitor tomorrow in direct response to the disclosure, or the embedding of "market opportunity" may shift as a function of who has read the analysis.
+
+TVA is not designed for Level 2 systems and makes no claim to validity there.  Applying it to business strategy, financial markets, or social dynamics without accounting for reflexivity would produce void coordinates that are real at the moment of measurement but structurally unstable.  Formalising a reflexive extension of TVA — where the corpus itself is a dynamic object shaped by the actions of agents who have read prior void reports — is left as an open problem.
+
 **Meta-evaluation.**
 This manuscript was iteratively revised through five rounds of the
 Debate Panel itself—the same adversarial review pipeline described
