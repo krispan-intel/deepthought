@@ -11,7 +11,8 @@
 
 📄 **[閱讀 TVA 論文 →](PAPER.zh-TW.md)** | [arXiv 預印本](https://arxiv.org) *(待審核)*
 
-🗄️ **[建立你自己的向量資料庫 →](VECTORDB_GUIDE.zh-TW.md)** | 將 TVA 部署到任何領域
+🗄️ **[建立你自己的向量資料庫 →](VECTORDB_GUIDE.zh-TW.md)** | 將 TVA 部署到任何領域  
+🤖 **[AI 引導式 Onboarding →](BKM_ONBOARDING.zh-TW.md)** | 讓 Claude/Copilot 一步一步帶你完成部署
 
 ## 🎯 核心概念
 
