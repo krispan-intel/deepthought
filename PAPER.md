@@ -633,6 +633,60 @@ implementation details—the same system that identifies innovation
 gaps was unwilling to fill one about itself.  We regard this as
 evidence of consistent calibration rather than irony.
 
+**Broader implications: TVA as a mutation engine for multi-agent systems.**
+The TVA framework as presented operates on a static corpus with a single
+human-defined intent vector.  A broader reading of the architecture
+suggests a different class of system altogether.  If multiple
+TVA-equipped agents are placed in a shared communication network —
+each operating on overlapping but locally distinct knowledge subsets —
+the information asymmetry between agents creates natural pressure toward
+communication and alignment.  In this setting, TVA functions not as a
+batch query tool but as a *mutation engine*: each void-derived proposal
+is a novel concept injected into the shared knowledge space, and the
+adversarial review pipeline functions as a selection pressure that
+retains grounded mutations and discards incoherent ones.  The resulting
+dynamic is structurally analogous to biological evolution operating on a
+digital knowledge manifold — without any centrally specified loss
+function or reward signal.  Intent emerges from the friction of
+interaction rather than from an externally imposed objective.
+We note this not as a claim but as a structural observation about what
+the architecture implies at scale.
+
+**On the limits of monolithic AI systems.**
+The scope boundary noted above (static knowledge spaces only) points to
+a deeper architectural constraint.  A single model with fixed weights is,
+by definition, a finite system operating against an infinite dynamic
+environment (Level 2 reflexive systems, where observation changes the
+observed).  Any finite static approximation of an infinite dynamic
+process will eventually fail — not due to insufficient parameters, but
+due to the fundamental incommensurability of finite and infinite.
+The evolutionary multi-agent framing sidesteps this constraint by
+replacing a fixed global approximation with an open-ended generative
+process: the system never claims to have captured the full space, only
+to be continuously exploring its boundary.  This suggests that the
+path toward robust general intelligence may lie not in scaling single
+models but in designing the ecological conditions under which
+intelligence can emerge and self-organise.
+
+**Structural correspondence with the Default Mode Network.**
+The operational mode of TVA — searching for unoccupied midpoints
+between domain-cohesive concept pairs, unconstrained by any specific
+task objective — bears a structural resemblance to the Default Mode
+Network (DMN) in biological neural systems.  The DMN activates during
+undirected cognition (rest, mind-wandering) and is associated with
+creative insight, cross-domain analogy, and the spontaneous formation
+of novel associations — precisely the operations TVA formalises
+mathematically.  This correspondence is not causal but architectural:
+both systems allocate processing capacity to boundary exploration
+rather than task execution, and both produce outputs (creative
+hypotheses, topological voids) whose value is not assessable until
+evaluated by a downstream critic.  The adversarial review pipeline
+in TVA mirrors the evaluative role that focused attention and social
+feedback play in validating DMN-generated insights in biological
+cognition.  Whether this structural parallel reflects a deeper
+invariance in how intelligence explores knowledge boundaries — across
+carbon and silicon substrates alike — remains an open question.
+
 ## Future Work
 
 **Recursive Topological Expansion.**
