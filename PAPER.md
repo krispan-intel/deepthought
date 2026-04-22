@@ -116,6 +116,29 @@ approaches  predict missing edges but require a
 pre-defined relation schema and do not model the continuous
 ``marginality'' notion central to patentable non-obviousness.
 
+### Geometric Intuition: Why Three Points Define a Plane and a Fourth Points the Direction
+
+Before formalising the framework, it is worth grounding the geometric
+intuition behind the triad $(A, B, C)$.  In high-dimensional embedding
+space, two points define a vector — a direction encoding a semantic
+relationship (e.g.\ the shift from one technical concept to another).
+Three points span a two-dimensional subspace, a semantic plane that
+captures the relational structure between concepts.  A fourth point,
+predicted by applying the established direction to a third anchor,
+either exists in the corpus — confirming a known relationship — or is
+absent, identifying a gap.  This absent fourth point is the topological
+void: the position that the logic of the semantic plane implies should
+exist, but where no document currently resides.
+
+This four-point structure is not unique to TVA; it underlies classical
+vector analogy (``A is to B as C is to D'') and motivates the design
+of the triad conditions C1–C4.  The vacancy probe (C4) is precisely the
+check that the predicted fourth position is unoccupied.  High-dimensional
+embedding spaces contain vast numbers of such absent positions; the
+purpose of conditions C1–C3 is to filter for those that are both
+domain-relevant and non-trivially absent — the ones where the gap is
+meaningful, not merely sparse.
+
 ### The Marginality Principle
 
 Patent law requires that an invention be *non-obvious*: too
@@ -632,6 +655,9 @@ TVA assumes that the knowledge space has a *stable geometry* — that the corpus
 The assumption breaks down for Level 2 dynamic systems — markets, social coordination, competitive strategy — where the knowledge space is reflexive: observing a void and acting on it changes the positions of other agents, which in turn reshapes the topology.  In such domains, a void identified today may be occupied by a competitor tomorrow in direct response to the disclosure, or the embedding of "market opportunity" may shift as a function of who has read the analysis.
 
 TVA is not designed for Level 2 systems and makes no claim to validity there.  Applying it to business strategy, financial markets, or social dynamics without accounting for reflexivity would produce void coordinates that are real at the moment of measurement but structurally unstable.  Formalising a reflexive extension of TVA — where the corpus itself is a dynamic object shaped by the actions of agents who have read prior void reports — is left as an open problem.
+
+**Knowledge fragmentation and the locality of voids.**
+TVA identifies voids relative to the boundaries of a local corpus — not against a hypothetical global knowledge space.  The commercial and geopolitical fragmentation of knowledge corpora — proprietary datasets, access restrictions, regulatory boundaries — is structurally analogous to allopatric speciation in evolutionary biology.  Each isolated corpus develops its own topological structure and void distribution.  TVA operating within such a fragment surfaces voids relative to local prior art, not global knowledge.  Just as geographically isolated populations evolve distinct adaptations rather than converging to a single optimum, knowledge systems operating on fragmented corpora will surface distinct innovation directions — a form of parallel, domain-specific exploration rather than convergence toward a unified solution space.  This is not a limitation of the framework but a reflection of the knowledge landscape it operates in: the topology of what remains to be invented is itself shaped by what each community has chosen to share.
 
 **Broader implications: TVA as a mutation engine for multi-agent systems.**
 The TVA framework as presented operates on a static corpus with a single
