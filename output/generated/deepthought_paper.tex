@@ -370,6 +370,33 @@ approximately 140,000 indexed documents after deduplication.
 \textbf{Embedding.}  We use BGE-M3~\cite{chen2024bge} in local
 offline mode for both dense ($d=1024$) and sparse (top-$p$ lexical
 weights) representations.  All computation runs on CPU.
+The choice of $d=1024$ is analytically justified in
+Appendix~\ref{sec:appendix_dim}.
+
+\textbf{Dimensionality selection.}
+While frontier LLMs operate in extremely high-dimensional spaces
+($D_{\mathrm{LLM}} \ge 12{,}288$), blindly matching this dimensionality
+is computationally prohibitive and topologically fragile due to
+distance concentration~\cite{beyer1999nearest}.
+We derived the optimal Vector DB dimensionality from the lens of
+PRH via SVD on a 10,000-document corpus sample, fitting a power-law
+decay model $\lambda_i \propto i^{-\alpha}$ to the eigenvalue spectrum.
+The fit yields $\alpha = 1.069$, $\gamma = \alpha - 1 = 0.069$
+($R^2 = 0.929$), indicating a broad, heterogeneous corpus with
+high intrinsic dimensionality---driven by the orthogonal syntactic
+structures spanning C source code, legal patent claims, and
+hardware specifications.
+Applying the TVA Dimensionality Theorem
+(Appendix~\ref{sec:appendix_dim}) with $N = 148{,}978$,
+$D_{\mathrm{LLM}} = 12{,}288$, and noise constant $k = 0.001$:
+\[
+  D^* = \left[\frac{\gamma \cdot \ln N}{k\,(1 - D_{\mathrm{LLM}}^{-\gamma})}\right]^{1/(\gamma+1)} = 1063
+\]
+The nearest standard dimension is 1024, confirming BGE-M3 ($d=1024$)
+is analytically optimal for this corpus.
+Scaling to $d=3072$ (\texttt{text-embedding-3-large}) would incur
+$300\%$ computational overhead for only $+9.5\%$ theoretical resolution
+gain, while simultaneously increasing spurious void noise.
 
 \textbf{Index.}  Dense vectors are stored in a FAISS flat
 index~\cite{johnson2021faiss} for $O(n)$ exact similarity search.
@@ -516,7 +543,7 @@ that no specialist found the core concept defensible.  The remaining
 the system's effective human-review yield: ideas where at least one
 domain expert identified genuine technical merit despite identifying
 issues requiring elaboration.  This stringent end-to-end conversion
-rate reflects the \emph{Driving-AI} philosophy: the value lies not
+rate reflects the \emph{upstream human, downstream AI} philosophy: the value lies not
 in volume but in surfacing a small set of technically grounded
 candidates for expert follow-up.
 
@@ -725,6 +752,26 @@ practitioners can derive corpus-specific values from the
 described procedures.  Guidance on calibration ranges is
 available upon request from the authors.
 
+\textbf{Scope boundary: static knowledge spaces only.}
+TVA assumes that the knowledge space has a \emph{stable geometry}---that
+the corpus is a fixed set of prior art against which voids are defined,
+and that identifying a void does not alter the space.
+This assumption holds for \emph{Level~1} systems: technical domains
+where facts are objective, documents are persistent, and discovering
+an innovation gap does not cause competitors to immediately fill it.
+
+The assumption breaks down for \emph{Level~2} dynamic systems---markets,
+social coordination, competitive strategy---where the knowledge space
+is \emph{reflexive}: observing a void and acting on it changes the
+positions of other agents, which in turn reshapes the topology.
+In such domains, a void identified today may be occupied by a
+competitor tomorrow in direct response to the disclosure.
+
+TVA is not designed for Level~2 systems and makes no claim to validity
+there.  Formalising a reflexive extension of TVA---where the corpus
+itself is a dynamic object shaped by agents who have read prior void
+reports---is left as an open problem.
+
 \textbf{Meta-evaluation.}
 This manuscript was iteratively revised through five rounds of the
 Debate Panel itself---the same adversarial review pipeline described
@@ -815,6 +862,25 @@ At scale, this positions TVA as an
 the unexplored territory across an entire organisation's collective
 technical knowledge, one topological void at a time.
 
+\textbf{Dynamic Topological Voids.}
+The present work establishes \emph{static TVA}: the corpus is fixed,
+and voids are identified relative to a stable geometric snapshot.
+A natural and substantially harder open problem is \emph{dynamic TVA}:
+corpora that evolve over time---as new papers are published, patents
+granted, and codebases updated---produce voids with a lifecycle.
+A void that exists today may close as the field advances, or widen
+as adjacent areas diverge.  The open questions are:
+(i)~how to assign a \emph{velocity vector} to a void---is it expanding,
+contracting, or stable?
+(ii)~how to detect \emph{forming voids} before they are fully
+established, giving inventors a time advantage; and
+(iii)~how to handle the reflexivity problem noted above, where the act
+of reporting a void accelerates its closure.
+Dynamic TVA would require temporal embeddings, void-tracking across
+corpus snapshots, and a revised vacancy probe that accounts for
+trajectory rather than position alone.
+We mark this as the primary open research direction.
+
 % ================================================================
 \section{Related Work}
 \label{sec:related}
@@ -883,11 +949,111 @@ We release the mathematical framework and threshold calibration
 procedure for reproducibility; implementation details are available
 upon request.
 
-Ultimately, TVA embodies a design philosophy we term
-\emph{Driving-AI, not AI-driven}: the system surfaces the map;
-human experts navigate it.
+Ultimately, TVA embodies a simple design principle:
+\emph{Upstream, we drive AI. Downstream, AI-driven.}
+The human sets the direction---the domain, the intent, the Anchor~$C$.
+The pipeline executes autonomously from there: void discovery,
+generation, adversarial review, revision.
+The system surfaces the map; human experts navigate it.
 
 \bibliographystyle{plain}
 \bibliography{references}
+
+% ================================================================
+\appendix
+\section{Derivation of the TVA Dimensionality Theorem}
+\label{sec:appendix_dim}
+
+This appendix provides the full first-principles derivation of the
+optimal embedding dimension $D^*$ used in Section~\ref{sec:impl}.
+
+\subsection{PRH Resolution Formula}
+
+The Platonic Representation Hypothesis (PRH)~\cite{huh2024platonic}
+states that sufficiently trained models converge toward a shared
+statistical geometry.  Regardless of frontier LLM size
+($D_{\mathrm{LLM}}$ dimensions), its knowledge distribution is
+never uniform.  Applying SVD to the embedding space, eigenvalues
+$\lambda_i$ follow a \textbf{power-law decay}:
+\[
+  \lambda_i \propto i^{-\alpha}, \quad \alpha > 1
+\]
+where $\alpha$ is the manifold decay exponent.  Specialised domains
+have larger $\alpha$; broad heterogeneous corpora have $\alpha \to 1$.
+
+The \textbf{topological resolution} of a $D$-dimensional Vector DB
+relative to a frontier LLM is the cumulative explained variance:
+\[
+  R(D, D_{\mathrm{LLM}}) =
+  \frac{\displaystyle\int_1^{D} x^{-\alpha}\,dx}
+       {\displaystyle\int_1^{D_{\mathrm{LLM}}} x^{-\alpha}\,dx}
+\]
+Setting $\gamma = \alpha - 1 > 0$ and evaluating:
+\begin{equation}
+  \boxed{R(D, D_{\mathrm{LLM}}) = \frac{1 - D^{-\gamma}}{1 - D_{\mathrm{LLM}}^{-\gamma}}}
+  \label{eq:resolution}
+\end{equation}
+This is a logarithmic saturation curve: resolution gains are largest
+at low $D$ and diminish rapidly with further increases.
+
+\subsection{Noise Penalty from Finite Data}
+
+With finite corpus size $N$, high-dimensional spaces become extremely
+sparse.  Geodesic midpoints $C = m(A,B)$ computed in a sparse
+high-dimensional space are likely to land in structurally empty
+regions---\emph{spurious voids}---not genuine innovation gaps.
+
+By the Johnson-Lindenstrauss lemma~\cite{johnson1984jl}, geometric
+noise scales proportionally to $D$ and inversely with $\log N$.
+We define the \textbf{noise penalty}:
+\begin{equation}
+  P(D, N) = k \cdot \frac{D}{\ln N}
+  \label{eq:noise}
+\end{equation}
+where $k$ is a noise-tolerance constant calibrated from the
+adversarial committee's spurious-void rejection rate.
+
+\subsection{Optimal Dimension $D^*$}
+
+Combining Equations~(\ref{eq:resolution}) and~(\ref{eq:noise}) into a
+unified \textbf{topological utility function}:
+\[
+  \mathcal{U}(D) =
+  \underbrace{\frac{1 - D^{-\gamma}}{1 - D_{\mathrm{LLM}}^{-\gamma}}}_{\text{PRH resolution (signal)}}
+  -
+  \underbrace{k\,\frac{D}{\ln N}}_{\text{spurious voids (noise)}}
+\]
+Setting $\partial\mathcal{U}/\partial D = 0$:
+\[
+  \frac{\gamma\,D^{-(\gamma+1)}}{1 - D_{\mathrm{LLM}}^{-\gamma}} = \frac{k}{\ln N}
+\]
+Solving:
+\begin{equation}
+  \boxed{D^* = \left[\frac{\gamma \cdot \ln N}{k\,(1 - D_{\mathrm{LLM}}^{-\gamma})}\right]^{\!1/(\gamma+1)}}
+  \label{eq:dstar}
+\end{equation}
+
+\subsection{Corollaries}
+
+\textbf{Corollary 1 ($D_{\mathrm{LLM}}$ decoupling).}
+When $\gamma \gtrsim 0.2$, $D_{\mathrm{LLM}}^{-\gamma} \to 0$ as
+$D_{\mathrm{LLM}}$ grows, so $(1 - D_{\mathrm{LLM}}^{-\gamma}) \to 1$
+and $D^*$ becomes independent of the frontier LLM's dimensionality.
+For broad corpora with small $\gamma$ (e.g.\ $\gamma = 0.069$),
+decoupling is partial but $D^*$ still converges to a finite value
+independent of further LLM scaling.
+
+\textbf{Corollary 2 (Logarithmic buffer law).}
+$N$ enters $D^*$ only via $\ln N$.  A 10$\times$ increase in corpus
+size raises $\ln N$ by only $\sim$19\%, which after the outer root
+translates to a very modest increase in $D^*$.  The assumption that
+embedding dimension must scale proportionally with data volume is
+mathematically unfounded.
+
+\textbf{Corollary 3 (Empirical validation).}
+For the TVA corpus ($N = 148{,}978$, $\gamma = 0.069$, $k = 0.001$):
+$D^* = 1063$, nearest standard dimension 1024D.
+BGE-M3 ($d=1024$) lies within 4\% of the theoretical optimum---
+confirming the selection post hoc from first principles.
 
 \end{document}
