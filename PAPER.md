@@ -687,6 +687,21 @@ cognition.  Whether this structural parallel reflects a deeper
 invariance in how intelligence explores knowledge boundaries — across
 carbon and silicon substrates alike — remains an open question.
 
+**On the tension between safety and creativity.**
+The TVA framework surfaces a structural tension that is worth naming
+explicitly.  Safety filtering in embedding space is operationally
+equivalent to closing voids: a filter that blocks outputs in
+unexplored regions of the knowledge manifold is, by construction,
+a filter that prevents the system from entering those regions.
+Creativity, as TVA defines it, requires precisely the opposite —
+moving into unoccupied midpoints between domain-cohesive concepts.
+Whether this tension is fundamental or merely reflects current
+implementation choices remains an open question.  But the observation
+motivates a reframing of safety: not as a topological barrier applied
+after void discovery, but as an evolutionary selection pressure
+embedded within the review pipeline itself — the role the adversarial
+committee already plays in this system.
+
 ## Future Work
 
 **Recursive Topological Expansion.**
