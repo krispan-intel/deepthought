@@ -790,6 +790,26 @@ At scale, this positions TVA as an
 the unexplored territory across an entire organisation's collective
 technical knowledge, one topological void at a time.
 
+**Multi-corpus routing and domain-specific Vector DBs.**
+The current implementation ingests a heterogeneous corpus into a single
+shared vector DB.  As domain-specific corpora become more widely
+available, a natural extension is *automatic intent routing*: given an
+Anchor C, an LLM first identifies the relevant domain DB (or
+intersection of DBs), then runs TVA within that subspace.
+Domain-specialised corpora yield higher $\gamma$ values (faster
+eigenvalue decay, more concentrated knowledge structure), which in turn
+sharpens the marginality band and produces more discriminative voids.
+Since all DBs sharing the same embedding model (BGE-M3, 1024D) occupy
+the same geometric space, cross-domain void discovery becomes possible
+by merging corpora — surfacing voids at the boundary between knowledge
+islands, where neither community would discover the gap in isolation.
+Re-calibration of $\tau_{\mathrm{domain}}$ and the marginality band
+$[\tau_{\mathrm{low}}, \tau_{\mathrm{high}}]$ is required after each
+merge, as density profiles differ across domains.  The single-corpus
+design adopted in this work was an intentional simplification that
+enabled end-to-end validation; the routing and merging architecture is
+a direct next step.
+
 **Dynamic Topological Voids.**
 The present work establishes *static TVA*: the corpus is fixed, and voids are identified relative to a stable geometric snapshot.  This is the proven regime.  A natural and substantially harder open problem is *dynamic TVA*: corpora that evolve over time — as new papers are published, patents granted, and codebases updated — produce voids with a lifecycle.  A void that exists today may close as the field advances, or widen as adjacent areas diverge.  The open questions are: (i) how to assign a *velocity vector* to a void — is it expanding, contracting, or stable? (ii) how to detect *forming voids* before they are fully established, giving inventors a time advantage; and (iii) how to handle the reflexivity problem noted above, where the act of reporting a void accelerates its closure.  Dynamic TVA would require temporal embeddings, void-tracking across corpus snapshots, and a revised vacancy probe that accounts for trajectory rather than position alone.  We mark this as the primary open research direction.
 
