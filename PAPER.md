@@ -3,7 +3,7 @@
 
 **Kris Pan** · Intel Corporation · kris.pan@intel.com
 
-📄 [Full PDF](output/generated/deepthought_paper.pdf) | [arXiv preprint](https://arxiv.org) *(pending)*
+📄 [Full PDF](output/generated/deepthought_paper.pdf) | [arXiv preprint](https://arxiv.org) *(pending)* | [Zenodo DOI](https://zenodo.org/records/19836730)
 
 ---
 
