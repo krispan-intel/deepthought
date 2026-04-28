@@ -12,8 +12,10 @@ from __future__ import annotations
 import json
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Dict, List
+from pathlib import Path
+from typing import Any, Dict, List, NamedTuple
 
+import yaml
 from loguru import logger
 
 from configs.settings import settings
@@ -22,6 +24,86 @@ from agents.json_parser import robust_json_parse
 from agents.llm_client import LLMClient
 from agents.state import DebateResult, PipelineState
 from vectordb.store import DeepThoughtVectorStore
+
+
+class _SpecialistDef(NamedTuple):
+    id: str
+    role: str
+    model: str
+    prompt: str
+
+
+def _parse_frontmatter(text: str):
+    """Split YAML frontmatter (--- ... ---) from body."""
+    if text.startswith("---"):
+        parts = text.split("---", 2)
+        if len(parts) >= 3:
+            meta = yaml.safe_load(parts[1]) or {}
+            body = parts[2].strip()
+            return meta, body
+    return {}, text.strip()
+
+
+def _resolve_model_tier(tier: str) -> str:
+    """Map model_tier string to the configured model name."""
+    mapping = {
+        "code_expert": settings.debate_code_expert_model,
+        "deep_thinker": settings.debate_deep_thinker_model,
+        "judge": settings.debate_judge_model,
+    }
+    return mapping.get(tier, settings.debate_code_expert_model)
+
+
+def _load_specialists(domain: str) -> List[_SpecialistDef]:
+    """Load specialist definitions from domains/<domain>/specialists/*.md.
+
+    Falls back to built-in linux_x86 hardcoded definitions if the domain
+    pack directory does not exist (backwards compatibility).
+    """
+    domain_dir = Path(f"domains/{domain}/specialists")
+    if not domain_dir.exists():
+        logger.warning(
+            f"Domain pack not found: {domain_dir}. "
+            "Falling back to built-in linux_x86 specialists."
+        )
+        return _builtin_linux_x86_specialists()
+
+    specs: List[_SpecialistDef] = []
+    for md_file in sorted(domain_dir.glob("*.md")):
+        meta, prompt = _parse_frontmatter(md_file.read_text(encoding="utf-8"))
+        spec_id = meta.get("id", md_file.stem)
+        role = meta.get("display_name", spec_id)
+        model = _resolve_model_tier(meta.get("model_tier", "code_expert"))
+        specs.append(_SpecialistDef(id=spec_id, role=role, model=model, prompt=prompt))
+
+    if not specs:
+        logger.warning(f"No specialist .md files found in {domain_dir}. Using built-in.")
+        return _builtin_linux_x86_specialists()
+
+    return specs
+
+
+def _builtin_linux_x86_specialists() -> List[_SpecialistDef]:
+    """Built-in fallback — linux_x86 specialists as Python literals."""
+    return [
+        _SpecialistDef(
+            "kernel_hardliner", "Kernel Hardliner", settings.debate_code_expert_model,
+            "You are The Kernel Hardliner. Focus on Linux kernel implementation correctness, "
+            "locking and concurrency validity. Reject unsafe ideas.",
+        ),
+        _SpecialistDef(
+            "prior_art_shark", "Prior-Art Shark", settings.debate_deep_thinker_model,
+            "You are The Prior-Art Shark. Focus on novelty, non-obviousness, and overlap risk with known work.",
+        ),
+        _SpecialistDef(
+            "intel_strategist", "Intel Strategist", settings.debate_deep_thinker_model,
+            "You are The Intel Strategist. Focus on x86 strategic value, Xeon competitiveness, and HW/SW co-design leverage.",
+        ),
+        _SpecialistDef(
+            "security_guardian", "Security Guardian", settings.debate_code_expert_model,
+            "You are The Security and Stability Guardian. Focus on TAA/side-channel risk, crash risk, and compatibility guarantees.",
+        ),
+    ]
 
 
 class DebatePanelAgent:
@@ -50,35 +132,9 @@ class DebatePanelAgent:
 
         draft_blob = self._format_drafts(state)
 
-        _specialist_defs = [
-            (
-                "kernel_hardliner",
-                "Kernel Hardliner",
-                settings.debate_code_expert_model,
-                (
-                    "You are The Kernel Hardliner. Focus on Linux kernel implementation correctness, "
-                    "locking and concurrency validity. Reject unsafe ideas."
-                ),
-            ),
-            (
-                "prior_art_shark",
-                "Prior-Art Shark",
-                settings.debate_deep_thinker_model,
-                "You are The Prior-Art Shark. Focus on novelty, non-obviousness, and overlap risk with known work.",
-            ),
-            (
-                "intel_strategist",
-                "Intel Strategist",
-                settings.debate_deep_thinker_model,
-                "You are The Intel Strategist. Focus on x86 strategic value, Xeon competitiveness, and HW/SW co-design leverage.",
-            ),
-            (
-                "security_guardian",
-                "Security Guardian",
-                settings.debate_code_expert_model,
-                "You are The Security and Stability Guardian. Focus on TAA/side-channel risk, crash risk, and compatibility guarantees.",
-            ),
-        ]
+        _specialist_defs = _load_specialists(
+            getattr(settings, "active_domain", "linux_x86")
+        )
 
         # Enforce queue depth limit for debate panel parallelism
         if len(_specialist_defs) > settings.max_debate_queue_depth:
@@ -89,14 +145,14 @@ class DebatePanelAgent:
 
         with ThreadPoolExecutor(max_workers=len(_specialist_defs)) as executor:
             futures = {
-                name: executor.submit(
+                spec.id: executor.submit(
                     self._specialist_review,
-                    role=role,
-                    model=model,
-                    system_prompt=prompt,
+                    role=spec.role,
+                    model=spec.model,
+                    system_prompt=spec.prompt,
                     draft_blob=draft_blob,
                 )
-                for name, role, model, prompt in _specialist_defs
+                for spec in _specialist_defs
             }
             reports = {name: fut.result() for name, fut in futures.items()}
 

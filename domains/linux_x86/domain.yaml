@@ -1,0 +1,21 @@
+domain_id: linux_x86
+display_name: "Linux Kernel / x86 Architecture"
+description: >
+  Linux kernel internals and x86 hardware co-design. Covers scheduler,
+  memory management, eBPF, synchronization, CXL, APIC, TSX, and related
+  Intel platform features.
+
+embedder:
+  model: BAAI/bge-m3
+  dimension: 1024
+
+collections:
+  - kernel_source
+  - hardware_specs
+  - papers
+  - patents
+
+calibration_file: calibration.json
+
+chairman_prompt_header: >
+  You are the Chairman of the Intel DeepThought Patent Committee.

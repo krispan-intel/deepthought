@@ -155,6 +155,13 @@ class Settings(BaseSettings):
         default=Path("./data/processed/human_review_decisions.jsonl")
     )
 
+    # ── Domain Pack ──────────────────────────────────────────────
+    active_domain: str = Field(
+        default="linux_x86",
+        description="Active domain pack under domains/<active_domain>/. "
+                    "Controls which specialist prompts are loaded at runtime."
+    )
+
     # ── Target Generation ────────────────────────────────────────
     target_generation_mode: str = Field(
         default="cartesian",

@@ -1,0 +1,26 @@
+{
+  "_comment": "Auto-written by scripts/run_dimension_analysis.py. Curator may revise.",
+  "last_calibrated": "2026-04-21T00:00:00Z",
+  "corpus_stats": {
+    "N": 148978,
+    "gamma": 0.069,
+    "alpha": 1.069,
+    "r2": 0.929
+  },
+  "k_sensitivity_table": {
+    "0.0002": 4793,
+    "0.0005": 2034,
+    "0.001":  1063,
+    "0.002":  556,
+    "0.005":  236
+  },
+  "chosen_D": 1024,
+  "chosen_k": 0.001,
+  "marginality_band": {
+    "tau_low": 0.41,
+    "tau_high": 0.71,
+    "mode": 0.54,
+    "sigma": 0.13
+  },
+  "vacancy_probe_threshold": 0.92
+}
