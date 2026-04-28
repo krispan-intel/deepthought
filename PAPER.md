@@ -989,6 +989,35 @@ $D^* = 1063$, with nearest standard dimension 1024D.  The empirical
 choice of BGE-M3 ($d = 1024$) lies within 4\% of the theoretical
 optimum — confirming the selection post hoc from first principles.
 
+### A.5 — Sensitivity of $D^*$ to the Noise Constant $k$
+
+The noise constant $k$ is calibrated from the adversarial committee's
+spurious-void rejection rate (see Section System Implementation).
+To assess robustness, Table~A.1 reports $D^*$ across a two-order-of-magnitude
+range of $k$ for the TVA corpus ($N = 148{,}978$, $\gamma = 0.069$,
+$D_{\mathrm{LLM}} = 12{,}288$).
+
+| $k$ | $D^*$ | Nearest standard dim |
+|---|---|---|
+| 0.0002 | 4793 | 3072 |
+| 0.0005 | 2034 | 2048 |
+| **0.0010** | **1063** | **1024** ← chosen |
+| 0.0020 | 556 | 512 |
+| 0.0050 | 236 | 256 |
+| 0.0100 | 123 | 256 |
+| 0.0200 | 65 | 256 |
+
+$D^*$ varies substantially with $k$, confirming that the choice of
+$k = 0.001$ is load-bearing for the 1024D recommendation.  The
+calibration procedure for $k$ — using spurious-void rejection rate from
+the adversarial committee — introduces a dependence on the downstream
+review pipeline; Section~\ref{sec:disc} (Calibration sensitivity)
+acknowledges this limitation.  For practitioners deploying TVA on a new
+corpus, we recommend computing the null-model spurious-void density
+(vacancy probe applied to $N$ uniform random unit vectors on $S^{d-1}$)
+as a corpus-independent baseline for $k$ calibration, decoupling it from
+the LLM committee.
+
 ---
 
 *For full mathematical formulations, tables, and references, see the [PDF version](output/generated/deepthought_paper.pdf).*
