@@ -810,6 +810,57 @@ design adopted in this work was an intentional simplification that
 enabled end-to-end validation; the routing and merging architecture is
 a direct next step.
 
+**On the asymmetry of cross-domain voids.**
+The framing above describes cross-domain TVA as surfacing voids "at the
+boundary between knowledge islands."  This warrants clarification.
+In practice, the Anchor C (inventor's intent) is always rooted in a
+*primary* domain — it expresses a problem to be solved, not a neutral
+position between fields.  A cross-domain void is therefore asymmetric:
+the *problem* belongs to the primary domain; the *missing bridge concept*
+is drawn from an adjacent domain.  This mirrors how cross-domain
+innovation occurs in practice — Darwin did not pose a question
+equidistant between biology and geology; he used geological time-scale
+reasoning to answer a biological question.
+A fully symmetric "equidistant anchor" is semantically ill-formed for
+most practical intents.  Future work should formalise this asymmetry:
+TVA with a primary-domain anchor and a secondary-domain candidate pool
+is a well-posed problem; TVA with an anchor that straddles two domains
+equally remains an open design question.
+
+**The specialist seam problem in cross-domain review.**
+The current adversarial committee is composed of domain specialists who
+evaluate a complete TID from a single-domain perspective.  For a
+cross-domain TID — say, a kernel-compiler co-design proposal — the
+Kernel Hardliner evaluates kernel correctness and the Compiler Engineer
+evaluates compiler correctness, but *neither role is responsible for
+evaluating the interface between the two subsystems*: the ABI contract,
+data ownership model, and failure propagation across the boundary.
+This seam is precisely where cross-domain proposals are most likely to
+fail in practice.  A dedicated *Integration Reviewer* or *Boundary
+Architect* specialist role — one whose evaluation criteria are defined
+around the interface rather than either component — is a natural
+extension of the committee model, but the criteria for such a role
+remain an open design problem specific to each domain pair.
+
+**Cross-domain base rate: an unvalidated assumption.**
+The narrative framing of cross-domain voids as high-value targets
+("ideas that neither team would discover in isolation") is plausible but
+empirically unvalidated in this work.  Prior literature on atypical
+combinations in patent and citation networks
+(e.g.\ Uzzi et al., 2013) reports a bimodal distribution: most
+atypical combinations are noise; a small tail of high-impact outliers
+drives the positive mean.  Whether cross-domain TVA voids exhibit
+the same distribution — or whether the geometric constraints of C1–C4
+filter toward the high-impact tail — is not known.
+A minimal pilot experiment to test this assumption is available without
+additional infrastructure: partition an existing corpus by subsystem
+(e.g.\ \texttt{mm/} vs.\ \texttt{net/} within the Linux kernel),
+treat each partition as a "domain," and compare the downstream
+REVISE/APPROVE rates of cross-partition voids against within-partition
+voids.  This pilot requires no additional calibration, as both
+partitions share the same embedding space and marginality band.
+We leave this validation to future work.
+
 **Dynamic Topological Voids.**
 The present work establishes *static TVA*: the corpus is fixed, and voids are identified relative to a stable geometric snapshot.  This is the proven regime.  A natural and substantially harder open problem is *dynamic TVA*: corpora that evolve over time — as new papers are published, patents granted, and codebases updated — produce voids with a lifecycle.  A void that exists today may close as the field advances, or widen as adjacent areas diverge.  The open questions are: (i) how to assign a *velocity vector* to a void — is it expanding, contracting, or stable? (ii) how to detect *forming voids* before they are fully established, giving inventors a time advantage; and (iii) how to handle the reflexivity problem noted above, where the act of reporting a void accelerates its closure.  Dynamic TVA would require temporal embeddings, void-tracking across corpus snapshots, and a revised vacancy probe that accounts for trajectory rather than position alone.  We mark this as the primary open research direction.
 
