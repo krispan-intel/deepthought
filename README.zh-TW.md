@@ -9,7 +9,7 @@
 **拓撲空洞（Topological Voids）**，並將其具體化為
 **可直接交由律師使用的技術發明揭露文件（Technical Invention Disclosure, TID）**。
 
-📄 **[閱讀 TVA 論文 →](PAPER.zh-TW.md)** | [arXiv 預印本](https://arxiv.org) *(待審核)*
+📄 **[閱讀 TVA 論文 →](PAPER.zh-TW.md)** | [arXiv 預印本](https://arxiv.org) *(待審核)* | [Zenodo](https://zenodo.org/records/19836730)
 
 🗄️ **[建立你自己的向量資料庫 →](VECTORDB_GUIDE.zh-TW.md)** | 將 TVA 部署到任何領域  
 🤖 **[AI 引導式 Onboarding →](BKM_ONBOARDING.zh-TW.md)** | 讓 Claude/Copilot 一步一步帶你完成部署

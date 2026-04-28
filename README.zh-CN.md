@@ -9,6 +9,8 @@
 **拓扑空洞（Topological Voids）**，并将其具体化为
 **可直接交由律师使用的技术发明披露文件（Technical Invention Disclosure, TID）**。
 
+📄 **[阅读 TVA 论文 →](PAPER.zh-CN.md)** | [arXiv 预印本](https://arxiv.org) *(待审核)* | [Zenodo](https://zenodo.org/records/19836730)
+
 🗄️ **[建立你自己的向量数据库 →](VECTORDB_GUIDE.zh-CN.md)** | 将 TVA 部署到任何领域  
 🤖 **[AI 引导式 Onboarding →](BKM_ONBOARDING.zh-CN.md)** | 让 Claude/Copilot 一步一步带你完成部署
 

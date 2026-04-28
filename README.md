@@ -10,7 +10,7 @@ An AI-driven invention discovery engine powered by the **Topological Void Analys
 > *"Upstream, we drive AI. Downstream, AI-driven."*  
 > The human sets the direction. The pipeline does the rest.
 
-📄 **[Read the TVA Paper →](PAPER.md)** | [arXiv preprint](https://arxiv.org) *(pending endorsement)*  
+📄 **[Read the TVA Paper →](PAPER.md)** | [arXiv preprint](https://arxiv.org) *(pending)* | [Zenodo](https://zenodo.org/records/19836730)  
 🗄️ **[Build your own Vector DB →](VECTORDB_GUIDE.md)** | Deploy TVA in any domain  
 🤖 **[AI-Guided Onboarding →](BKM_ONBOARDING.md)** | Let Claude/Copilot walk you through setup
 
