@@ -930,9 +930,16 @@ midpoints $C = m(A,B)$ computed by the vacancy probe (C4) in a sparse
 high-dimensional space are likely to land in structurally empty regions —
 *spurious voids* — not genuine innovation gaps.
 
-By the Johnson-Lindenstrauss lemma, geometric noise in high-dimensional
-spaces scales proportionally to $D$ and inversely with $\log N$.
-We define the **noise penalty**:
+Due to the curse of dimensionality and hyperspherical volume expansion,
+a fixed corpus of $N$ documents becomes increasingly sparse as $D$ grows.
+Covering the unit sphere $S^{d-1}$ with $N$ balls of radius $\epsilon$
+requires $N \propto (1/\epsilon)^D$, so the effective neighbourhood
+radius scales as $\epsilon \propto \exp(-\ln N / D)$, growing with $D$
+for fixed $N$.  Geodesic midpoints in such sparse spaces are likely to
+land in regions that are empty only due to data scarcity — *spurious
+voids* — not genuine innovation gaps.
+We model this sparsity-induced noise as a penalty proportional to
+$D / \ln N$, and define the **noise penalty**:
 
 $$P(D, N) = k \cdot \frac{D}{\ln N}$$
 

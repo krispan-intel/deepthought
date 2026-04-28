@@ -179,6 +179,26 @@ invention; it orients the search.  A practitioner deploying TVA
 in a new domain need only specify their intent as a target phrase
 and provide a relevant corpus---no other configuration is required.
 
+\subsection{Geometric Intuition: Three Points Span a Plane; a Fourth Points the Direction}
+
+Before formalising the framework, it is useful to ground the geometric
+intuition behind the triad $(A, B, C)$.  In high-dimensional embedding
+space, two points define a vector---a direction encoding a semantic
+relationship.  Three points span a two-dimensional subspace: a semantic
+plane capturing the relational structure between concepts.  A fourth
+point, predicted by applying the established direction to a third anchor,
+either exists in the corpus (confirming a known relationship) or is
+absent (identifying a gap).  This absent fourth point is the topological
+void: the position the logic of the semantic plane implies should exist,
+but where no document currently resides.
+
+This four-point structure underlies classical vector analogy
+(``A is to B as C is to D'') and motivates the design of conditions
+C1--C4.  The vacancy probe~(C4) is precisely the check that the
+predicted fourth position is unoccupied.  Conditions C1--C3 filter for
+positions that are domain-relevant and non-trivially absent---gaps that
+are meaningful, not merely sparse.
+
 \subsection{The Marginality Principle}
 
 Patent law requires that an invention be \emph{non-obvious}: too
@@ -752,26 +772,6 @@ practitioners can derive corpus-specific values from the
 described procedures.  Guidance on calibration ranges is
 available upon request from the authors.
 
-\textbf{Scope boundary: static knowledge spaces only.}
-TVA assumes that the knowledge space has a \emph{stable geometry}---that
-the corpus is a fixed set of prior art against which voids are defined,
-and that identifying a void does not alter the space.
-This assumption holds for \emph{Level~1} systems: technical domains
-where facts are objective, documents are persistent, and discovering
-an innovation gap does not cause competitors to immediately fill it.
-
-The assumption breaks down for \emph{Level~2} dynamic systems---markets,
-social coordination, competitive strategy---where the knowledge space
-is \emph{reflexive}: observing a void and acting on it changes the
-positions of other agents, which in turn reshapes the topology.
-In such domains, a void identified today may be occupied by a
-competitor tomorrow in direct response to the disclosure.
-
-TVA is not designed for Level~2 systems and makes no claim to validity
-there.  Formalising a reflexive extension of TVA---where the corpus
-itself is a dynamic object shaped by agents who have read prior void
-reports---is left as an open problem.
-
 \textbf{Meta-evaluation.}
 This manuscript was iteratively revised through five rounds of the
 Debate Panel itself---the same adversarial review pipeline described
@@ -797,6 +797,102 @@ Notably, the committee also penalised this manuscript for withholding
 implementation details---the same system that identifies innovation
 gaps was unwilling to fill one about itself.  We regard this as
 evidence of consistent calibration rather than irony.
+
+\textbf{Scope boundary: static knowledge spaces only.}
+TVA assumes that the knowledge space has a \emph{stable geometry}---that
+the corpus is a fixed set of prior art against which voids are defined,
+and that identifying a void does not alter the space.
+This assumption holds for \emph{Level~1} systems: technical domains
+where facts are objective, documents are persistent, and discovering
+an innovation gap does not cause competitors to immediately fill it.
+The assumption breaks down for \emph{Level~2} dynamic systems---markets,
+social coordination, competitive strategy---where the knowledge space
+is \emph{reflexive}: observing a void and acting on it changes the
+positions of other agents, reshaping the topology.
+TVA is not designed for Level~2 systems and makes no claim to validity
+there.  Formalising a reflexive extension of TVA is left as an open problem.
+
+\textbf{Knowledge fragmentation and the locality of voids.}
+TVA identifies voids relative to the boundaries of a local corpus---not
+against a hypothetical global knowledge space.  The commercial and
+geopolitical fragmentation of knowledge corpora---proprietary datasets,
+access restrictions, regulatory boundaries---is structurally analogous
+to allopatric speciation in evolutionary biology.  Each isolated corpus
+develops its own topological structure and void distribution.  TVA
+operating within such a fragment surfaces voids relative to local prior
+art, not global knowledge.  Just as geographically isolated populations
+evolve distinct adaptations rather than converging to a single optimum,
+knowledge systems operating on fragmented corpora will surface distinct
+innovation directions---a form of parallel, domain-specific exploration
+rather than convergence toward a unified solution space.  This is not a
+limitation of the framework but a reflection of the knowledge landscape
+it operates in: the topology of what remains to be invented is itself
+shaped by what each community has chosen to share.
+
+\textbf{Broader implications: TVA as a mutation engine for multi-agent systems.}
+The TVA framework as presented operates on a static corpus with a
+single human-defined intent vector.  A broader reading of the
+architecture suggests a different class of system.  If multiple
+TVA-equipped agents are placed in a shared communication network---each
+operating on overlapping but locally distinct knowledge subsets---the
+information asymmetry between agents creates natural pressure toward
+communication and alignment.  In this setting, TVA functions not as a
+batch query tool but as a \emph{mutation engine}: each void-derived
+proposal is a novel concept injected into the shared knowledge space,
+and the adversarial review pipeline functions as a selection pressure
+that retains grounded mutations and discards incoherent ones.  The
+resulting dynamic is structurally analogous to biological evolution
+operating on a digital knowledge manifold---without any centrally
+specified loss function or reward signal.  Intent emerges from the
+friction of interaction rather than from an externally imposed
+objective.  We note this not as a claim but as a structural observation
+about what the architecture implies at scale.
+
+\textbf{On the limits of monolithic AI systems.}
+The scope boundary noted above points to a deeper architectural
+constraint.  A single model with fixed weights is, by definition, a
+finite system operating against an infinite dynamic environment
+(Level~2 reflexive systems, where observation changes the observed).
+Any finite static approximation of an infinite dynamic process will
+eventually fail---not due to insufficient parameters, but due to the
+fundamental incommensurability of finite and infinite.  The
+evolutionary multi-agent framing sidesteps this constraint by replacing
+a fixed global approximation with an open-ended generative process: the
+system never claims to have captured the full space, only to be
+continuously exploring its boundary.  This suggests that the path
+toward robust general intelligence may lie not in scaling single models
+but in designing the ecological conditions under which intelligence can
+emerge and self-organise.
+
+\textbf{Structural correspondence with the Default Mode Network.}
+The operational mode of TVA---searching for unoccupied midpoints between
+domain-cohesive concept pairs, unconstrained by any specific task
+objective---bears a structural resemblance to the Default Mode
+Network~(DMN) in biological neural systems~\cite{buckner2008dmn}.
+The DMN activates during undirected cognition and is associated with
+creative insight, cross-domain analogy, and spontaneous novel
+association---precisely the operations TVA formalises mathematically.
+This correspondence is architectural rather than causal: both systems
+allocate processing capacity to boundary exploration rather than task
+execution, and both produce outputs whose value is not assessable until
+evaluated by a downstream critic.  Whether this structural parallel
+reflects a deeper invariance in how intelligence explores knowledge
+boundaries---across carbon and silicon substrates alike---remains an
+open question.
+
+\textbf{On the tension between safety and creativity.}
+The TVA framework surfaces a structural tension worth naming explicitly.
+Safety filtering in embedding space is operationally equivalent to
+closing voids: a filter that blocks outputs in unexplored regions of
+the knowledge manifold is, by construction, a filter that prevents the
+system from entering those regions.  Creativity, as TVA defines it,
+requires precisely the opposite---moving into unoccupied midpoints
+between domain-cohesive concepts.  Whether this tension is fundamental
+or merely reflects current implementation choices remains an open
+question.  But the observation motivates a reframing of safety: not as
+a topological barrier applied after void discovery, but as an
+evolutionary selection pressure embedded within the review pipeline
+itself---the role the adversarial committee already plays in this system.
 
 % ================================================================
 \section{Future Work}
@@ -861,6 +957,25 @@ At scale, this positions TVA as an
 \emph{enterprise-wide innovation radar}---systematically mapping
 the unexplored territory across an entire organisation's collective
 technical knowledge, one topological void at a time.
+
+\textbf{Multi-corpus routing and domain-specific Vector DBs.}
+The current implementation ingests a heterogeneous corpus into a single
+shared vector DB\@.  As domain-specific corpora become more widely
+available, a natural extension is \emph{automatic intent routing}: given
+an Anchor~$C$, an LLM first identifies the relevant domain DB (or
+intersection of DBs), then runs TVA within that subspace.
+Domain-specialised corpora yield higher $\gamma$ values (faster
+eigenvalue decay, more concentrated knowledge), sharpening the
+marginality band and producing more discriminative voids.  Since all
+DBs sharing the same embedding model (BGE-M3, 1024D) occupy the same
+geometric space, cross-domain void discovery becomes possible by merging
+corpora---surfacing voids at the boundary between knowledge islands
+where neither community would discover the gap in isolation.
+Re-calibration of $\taudomain$ and $[\taulow, \tauhigh]$ is required
+after each merge, as density profiles differ across domains.  The
+single-corpus design adopted here was an intentional simplification
+enabling end-to-end validation; the routing and merging architecture
+is a direct next step.
 
 \textbf{Dynamic Topological Voids.}
 The present work establishes \emph{static TVA}: the corpus is fixed,
@@ -1003,9 +1118,20 @@ sparse.  Geodesic midpoints $C = m(A,B)$ computed in a sparse
 high-dimensional space are likely to land in structurally empty
 regions---\emph{spurious voids}---not genuine innovation gaps.
 
-By the Johnson-Lindenstrauss lemma~\cite{johnson1984jl}, geometric
-noise scales proportionally to $D$ and inversely with $\log N$.
-We define the \textbf{noise penalty}:
+Due to the curse of dimensionality~\cite{beyer1999nearest} and
+hyperspherical volume expansion, a fixed corpus of $N$ documents
+becomes increasingly sparse as $D$ grows: the expected distance
+between any two points converges, and the fraction of the sphere
+occupied by the corpus vanishes exponentially.  Formally, covering
+the unit sphere $S^{d-1}$ with $N$ balls of radius $\epsilon$
+requires $N \propto (1/\epsilon)^D$, so the effective neighbourhood
+radius scales as $\epsilon \propto \exp(-\ln N / D)$, which grows
+with $D$ for fixed $N$.  As a result, geodesic midpoints computed
+in high-dimensional sparse spaces are likely to land in structurally
+empty regions that are empty only due to data scarcity, not genuine
+innovation gaps (\emph{spurious voids}).
+We model this sparsity-induced noise as a penalty proportional to
+$D / \ln N$, and define the \textbf{noise penalty}:
 \begin{equation}
   P(D, N) = k \cdot \frac{D}{\ln N}
   \label{eq:noise}
