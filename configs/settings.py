@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # ── Internal LLM ─────────────────────────────────────────────
     internal_llm_base_url: str = Field(
-        default="http://10.67.114.161:3001/v1",
+        default="http://localhost:3001/v1",
         validation_alias=AliasChoices("OPENAI_API_BASE", "INTERNAL_LLM_BASE_URL"),
     )
     internal_llm_api_key: str = Field(
