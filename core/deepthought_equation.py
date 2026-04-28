@@ -588,6 +588,18 @@ class DeepThoughtEquation:
                 # Mask out A and B themselves by setting their similarity to -1
                 midpoint_sims[index] = -1.0
                 midpoint_sims[candidate_id_to_idx[right.id]] = -1.0
+
+                # Anchor shadow masking: also mask out near-duplicates of A and B
+                # (e.g. same struct implemented for different architectures, cos > 0.95).
+                # These "semantic twins" are not independent blockers — they cluster around
+                # A or B and would falsely kill genuine voids nearby.
+                left_sims = candidate_matrix @ left.vector
+                right_sims = candidate_matrix @ right.vector
+                twin_mask = (left_sims > 0.95) | (right_sims > 0.95)
+                twin_mask[index] = False            # keep A itself already masked above
+                twin_mask[candidate_id_to_idx[right.id]] = False  # keep B itself masked above
+                midpoint_sims[twin_mask] = -1.0
+
                 nearest_to_midpoint = float(np.max(midpoint_sims))
 
                 # If a document is closer than the vacancy threshold, this void is occupied
