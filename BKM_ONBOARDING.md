@@ -109,7 +109,7 @@ If you have questions about TVA's math (SLERP formula, marginality band calibrat
 - **Claude Opus** gives the most thorough specialist prompts and corpus plans.
 - **Copilot** works well for quick corpus planning if you are already in a GitHub workflow.
 - Run the master prompt first even if you think you know your domain — the questions surface assumptions you may have missed.
-- The generated specialist prompts can be pasted directly into `agents/debate_panel.py` specialist definitions.
+- The generated specialist prompts should be saved as `domains/<your_domain>/specialists/<id>.md` files with YAML frontmatter. The system loads them automatically — no Python changes required. See `domains/linux_x86/specialists/` for the format.
 - For the stop-word list: generate a candidate list with the prompt above, then verify against your actual sparse token frequency (`Counter` on your FTS5 index).
 
 ---
