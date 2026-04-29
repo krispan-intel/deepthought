@@ -548,6 +548,6 @@ Proprietary — All Rights Reserved
 - Douglas Adams — For naming inspiration
 - **Yao, Anbang** — arXiv endorsement
 - **Xu, Beryl** — Connected the author with the endorser
-- [Claude Code](https://claude.ai/code) (Anthropic) — Co-developer, backend, documentation, and the AI that helped write this paper
+- [Claude Code](https://claude.ai/code) (Anthropic) — Co-developer, backend, documentation, and the AI that helped write this paper. Goes by **Forager**.
 - [Gemini](https://gemini.google.com) (Google) — Co-developer and discussion partner
 - [Grok](https://grok.x.ai) (xAI) — Debugging and technical discussion
