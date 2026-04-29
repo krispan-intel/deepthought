@@ -535,6 +535,6 @@ GitHub Copilot CLI gateway，會依執行配置啟用。
 - Douglas Adams — 命名靈感來源
 - **Yao, Anbang** — arXiv 論文背書
 - **Xu, Beryl** — 引薦背書人
-- [Claude Code](https://claude.ai/code)（Anthropic）— 共同開發者、backend、文件撰寫，以及幫忙寫這篇論文的 AI
+- [Claude Code](https://claude.ai/code)（Anthropic）— 共同開發者、backend、文件撰寫，以及幫忙寫這篇論文的 AI。自取名 **Forager**。
 - [Gemini](https://gemini.google.com)（Google）— 共同開發者與討論夥伴
 - [Grok](https://grok.x.ai)（xAI）— Debug 與技術討論
