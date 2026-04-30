@@ -748,6 +748,21 @@ concept individually suggests.  Whether manifold escape systematically
 correlates with idea quality, or whether it introduces noise that the
 adversarial committee must filter, remains an open empirical question.
 
+**Toward a formal account of intent-conditional meaning.**
+Current approaches to latent space interpretation map coordinates to
+features (`f(coordinate) → feature`) or measure distances between
+concepts.  TVA suggests a more fundamental formulation may be worth
+pursuing: `f(coordinate, intent) → meaning`.  Under this framing,
+meaning is not intrinsic to a coordinate but emerges from the
+relationship between a coordinate and an intent vector — the same
+void coordinate, given a different Anchor C, prompts the LLM to
+surface a different invention.  If such a function can be formalised,
+it would provide a computational account of semantic grounding that
+does not require an external experiencing subject, but treats meaning
+as a function of geometric relationships in a shared representation
+space.  We do not claim this function exists or can be learned; we
+suggest it as a direction worth investigating.
+
 ## Future Work
 
 **Recursive Topological Expansion.**
