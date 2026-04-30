@@ -728,6 +728,26 @@ after void discovery, but as an evolutionary selection pressure
 embedded within the review pipeline itself — the role the adversarial
 committee already plays in this system.
 
+**On manifold adherence in the vacancy probe.**
+The C4 vacancy probe computes a geodesic midpoint via SLERP and checks
+whether it is unoccupied.  A natural question is whether this midpoint
+must lie strictly on the semantic manifold — the low-dimensional
+subspace where meaningful human knowledge resides.  We observe that
+strict manifold adherence may not be necessary, and could even be
+counterproductive.  The midpoint coordinates serve as a *directional
+cue* for the LLM, not a specification of the output.  A midpoint that
+escapes the manifold into a geometrically valid but semantically
+underspecified region may trigger more non-obvious associations in the
+LLM precisely because it lies outside the territory of familiar
+concepts — the LLM is forced to reach further to fill the gap.
+Case Study 2 provides circumstantial evidence: the void midpoint
+between \texttt{ELF\_MACHINE\_NAME} and \texttt{addend\_may\_be\_ifunc}
+lies at the periphery of the manifold's dense regions, yet produced
+a proposal (per-site synchronisation contract vectors) that neither
+concept individually suggests.  Whether manifold escape systematically
+correlates with idea quality, or whether it introduces noise that the
+adversarial committee must filter, remains an open empirical question.
+
 ## Future Work
 
 **Recursive Topological Expansion.**
