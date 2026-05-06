@@ -171,3 +171,6 @@ temp/
 !data/processed/.gitkeep
 !data/vectorstore/.gitkeep
 !output/generated/.gitkeep
+# Temporary PDFs
+*.pdf
+!output/generated/deepthought_paper.pdf
