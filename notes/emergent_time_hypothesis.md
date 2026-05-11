@@ -67,7 +67,7 @@ Where:
 This framework maps onto known results:
 
 **KL Divergence (Information Theory):**
-$$\Delta \mathcal{T} \propto \mathcal{D}_{\text{KL}}(P_{\text{new}} \| P_{\text{old}})$$
+$$\Delta \mathcal{T} \propto D_{KL}(P_{\text{new}} \,||\, P_{\text{old}})$$
 Time = information distance between old and new state.
 
 **Fubini-Study Metric (Quantum Mechanics):**
@@ -133,7 +133,7 @@ This replaces commit frequency (too crude) with something more principled:
 - A domain with 1 paradigm-shifting paper may have large `D_KL` → large time step
 
 **Dynamic TVA time axis:**
-$$t_{\text{knowledge}} = \sum_{\text{events}} \mathcal{D}_{\text{KL}}(P_{\text{after}} \| P_{\text{before}})$$
+$$t_{\text{knowledge}} = \sum_{\text{events}} D_{KL}(P_{\text{after}} \,||\, P_{\text{before}})$$
 
 Projected onto D* subspace to filter noise.
 
