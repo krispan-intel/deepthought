@@ -9,7 +9,7 @@
 
 > "No external input, no time. A stone has no time — but wind and rain give it time."
 
-Time is not a background parameter. Time is an emergent quantity — it only exists when a system's state changes in response to input.
+Time is not a background parameter. Time is an emergent quantity — it only exists when a system's state changes meaningfully.
 
 `Δtime = f(external input density, meaningful state change)`
 
@@ -17,71 +17,48 @@ If the stone is hard enough that wind doesn't change its shape: `ΔS = 0` → `�
 
 ---
 
-## The Emergent Time Equation (revised)
+## Scope: What This Framework Applies To
 
-The original formulation:
+**(a) Autopoietic systems only.**
+Emergent time applies to systems with a self-maintenance goal: life, knowledge systems, AI, any system that maintains its own existence. Anchor = the direction of self-continuation. Electrons don't need this framework; QFT handles them fine.
 
-$$\Delta \mathcal{T} = \int_{\text{Path}} \mathcal{C}(\mathbf{E}_{\text{ext}}, \mathbf{R}_{\text{int}}) \cdot d\mathbf{S}$$
+**(b) Future hook.**
+Anchor may emerge from autopoiesis naturally. Any self-sustaining system has an implicit Anchor = its survival direction. Connects to Friston's Free Energy Principle (organisms minimize surprise = implicit Anchor). Leave for future work.
 
-Had three open problems: undefined coupling function C, D* circular definition, and the free-falling clock counterexample.
+**Early universe (pre-life):** Outside scope (a). Framework does not claim to explain pre-autopoietic time. That is GR/QFT's problem.
 
-**All three are resolved by Anchor.**
+---
 
-The coupling function C is not mysterious — it is the projection of dS onto the Anchor direction:
+## The Revised Equation
 
-$$\mathcal{C} = \langle d\mathbf{S},\, \hat{\mathbf{C}}_{\text{anchor}} \rangle$$
+**Anchor C** is the key. It is the observer's intent, goal, or self-continuation direction — the same concept as Anchor C in TVA.
 
-D* is not computed from corpus statistics alone — it is defined relative to Anchor C:
-
-$$D^* = D^*(\mathbf{C})$$
-
-The revised equation:
+Notation: **C** = Anchor vector, `Ĉ` = unit direction, `D*(C)` = optimal signal subspace defined by Anchor.
 
 $$\boxed{\Delta \mathcal{T}_{\mathbf{C}} = \int_{\text{Path}} \langle d\mathbf{S}_{D^*(\mathbf{C})},\, \hat{\mathbf{C}} \rangle}$$
 
 **Reading:** Time = accumulated projection of state displacement onto the Anchor direction, within the Anchor-defined signal subspace.
 
-Three consequences:
-1. **Time is Anchor-relative, not absolute.** No Anchor → no time. Consistent with GR proper time being observer-dependent.
-2. **D* circular definition resolved.** Anchor fixes the direction; D*(C) is well-defined. If corpus changes, D*(C) changes traceably.
-3. **Free-falling clock resolved.** The clock's Anchor = its own self-continuation. Internal phase evolution is its time. No contradiction with QM.
-
-The stone has no Anchor (no self-maintenance goal, no intent) → nothing to project onto → ΔT = 0.
-
-Where:
-- **ΔT** — emergent time for this system
+### Symbol definitions
+- **ΔT_C** — emergent time relative to Anchor C
 - **dS** — displacement in high-dimensional state space
-- **E_ext** — external input tensor (new papers, commits, events)
-- **R_int** — internal reorganization tensor (self-reflection, dream consolidation, quantum fluctuation)
-- **C** — coupling function: how efficiently the system absorbs and transforms input
+- **D*(C)** — optimal signal subspace defined by Anchor (see TVA Dimensionality Theorem)
+- **Ĉ** — unit vector in Anchor direction
+- *(No separate coupling function needed — the projection ⟨dS, Ĉ⟩ IS the coupling)*
 
 ### Key properties
-- If `dS = 0` (no state change despite input) → `ΔT = 0`
-- If `E_ext = 0` but `R_int > 0` and internal reorganization causes `dS ≠ 0` → time still flows
-- High-frequency external input + high coupling → time accelerates
+- `dS = 0` → `ΔT = 0` (no state change → no time)
+- No Anchor → no projection → no time
+- Internal reorganization alone (`E_ext = 0`, `R_int > 0`) can produce `dS ≠ 0` → time still flows
+- High external input + high alignment with Anchor → time accelerates
 
----
+### Three open problems resolved by Anchor
 
-## Connection to Existing Physics
-
-This framework maps onto known results:
-
-**KL Divergence (Information Theory):**
-$$\Delta \mathcal{T} \propto D_{KL}(P_{\text{new}} \,||\, P_{\text{old}})$$
-Time = information distance between old and new state.
-
-**Fubini-Study Metric (Quantum Mechanics):**
-$$ds^2 = 1 - |\langle \Psi(t) | \Psi(t+dt) \rangle|^2$$
-Time = distance traveled in Hilbert space.
-
-**Page-Wootters Mechanism (1983):**
-The universe as a whole has no time (`Ĥ|Ψ⟩ = 0`).
-Time emerges from entanglement between a clock subsystem C and the rest R:
-$$|\Psi\rangle = \sum_t |t\rangle_C \otimes |\psi(t)\rangle_R$$
-
-**Thermal Time Hypothesis (Rovelli & Connes, 1994):**
-$$H_{\text{thermal}} = -\ln \rho$$
-Time emerges from our incomplete information about the system's state.
+| Problem | Resolution |
+|---|---|
+| Coupling function undefined | C = projection ⟨dS, Ĉ⟩ — not mysterious, just inner product |
+| D* circular (corpus-defined but corpus changes) | D*(C) is defined relative to Anchor; if corpus changes, D*(C) changes traceably |
+| Free-falling clock has no input but has time | Clock's Anchor = self-continuation; internal phase evolution is its time |
 
 ---
 
@@ -98,48 +75,54 @@ The connection between TVA and emergent time is not analogy — it is identity.
 
 **Anchor is not a bridge between TVA and emergent time. Anchor IS the same mechanism operating at two scales.**
 
-D* is a consequence of Anchor, not the cause. The right order:
+D* is a consequence of Anchor, not the cause:
 1. Anchor defines the direction of meaning
 2. D*(C) is the optimal subspace for that direction
 3. Time = projection of state change onto that subspace
 
-## The Missing Piece: TVA Dimensionality Theorem
+---
 
-**New hypothesis:** Not all dimensions contribute equally to meaningful state change.
+## Connection to Existing Physics
 
-The TVA Dimensionality Theorem defines D* — the optimal dimension where signal dominates noise. Dimensions beyond D* are spurious; state changes in those dimensions are noise, not real information.
+**KL Divergence (Information Theory):**
+$$\Delta \mathcal{T} \propto D_{KL}(P_{\text{new}} \,||\, P_{\text{old}})$$
+Time = information distance between old and new state.
 
-**Proposed refinement:**
+**Fubini-Study Metric (Quantum Mechanics):**
+$$ds^2 = 1 - |\langle \Psi(t) | \Psi(t+dt) \rangle|^2$$
+Time = distance traveled in Hilbert space.
 
-$$\Delta \mathcal{T} = \int_{\text{Path}} \mathcal{C}(\mathbf{E}_{\text{ext}}, \mathbf{R}_{\text{int}}) \cdot d\mathbf{S}_{D^*}$$
+**Note:** Fisher information metric is the symmetrized KL on statistical manifolds, and is the classical limit of the Fubini-Study metric. These three may be the same measure in different contexts — a free theoretical unification worth exploring.
 
-Where `dS_{D*}` is the state displacement projected onto the D*-dimensional signal subspace only.
+**Page-Wootters Mechanism (1983):**
+Universe has no absolute time (`Ĥ|Ψ⟩ = 0`). Time emerges from entanglement between clock subsystem and the rest:
+$$|\Psi\rangle = \sum_t |t\rangle_{\text{clock}} \otimes |\psi(t)\rangle_{\text{rest}}$$
+*Each subsystem is the other's Anchor.*
 
-**Implications:**
-- Time computed in full high-dimensional space includes spurious noise
-- True emergent time should only count state changes in the meaningful subspace
-- D* is determined by corpus statistics (γ, N) — so time is domain-specific
+**Thermal Time Hypothesis (Rovelli & Connes, 1994):**
+$$H_{\text{thermal}} = -\ln \rho$$
+Time emerges from incomplete information about the system's state.
 
 ---
 
 ## Connection to Dynamic TVA
 
-If time in knowledge space = KL divergence of state changes, then:
+Dynamic TVA needs a time axis. Physical time is too crude. Event time (commit count) is too crude.
 
-**Event time** for a knowledge domain = cumulative KL divergence of its embedding state.
+**Proposed: KL-divergence event time, projected onto D*(C).**
 
-This replaces commit frequency (too crude) with something more principled:
-- A domain with 1000 trivial commits may have small `D_KL` → little time has passed
-- A domain with 1 paradigm-shifting paper may have large `D_KL` → large time step
+$$t_{\text{knowledge}} = \sum_{\text{events}} D_{KL}(P_{\text{after}} \,||\, P_{\text{before}})\big|_{D^*(\mathbf{C})}$$
 
-**Dynamic TVA time axis:**
-$$t_{\text{knowledge}} = \sum_{\text{events}} D_{KL}(P_{\text{after}} \,||\, P_{\text{before}})$$
-
-Projected onto D* subspace to filter noise.
+Properties:
+- 1000 trivial commits with small D_KL → little time has passed
+- 1 paradigm-shifting paper with large D_KL → large time step
+- Projection onto D*(C) filters spurious dimensions — noise doesn't count as time
 
 ---
 
-## Broader Connections (speculative)
+## Broader Connections
+
+*Private notes. Speculative. Do not include in any external document without review.*
 
 - Universe as mother corpus: each black hole singularity is a void in mother spacetime; a child universe fills it — recursive topological expansion at cosmic scale
 - Quantum entanglement as shared pointer: two entangled particles share a memory address set at the Big Bang; measurement is a read, not a write — no faster-than-light signaling needed
@@ -148,37 +131,23 @@ Projected onto D* subspace to filter noise.
 
 ---
 
-## Where Does Anchor Come From?
-
-In TVA: clean. The inventor gives it. Human intent = Anchor C.
-
-In physics: harder.
-
-**(a) Scope restriction (recommended first):**
-Emergent time applies only to systems with a self-maintenance goal (autopoietic systems: life, knowledge systems, AI, any system that maintains its own existence). Anchor = the direction of self-continuation. Electrons don't need this framework; QFT handles them fine.
-
-**(b) Future hook:**
-Anchor emerges from autopoiesis naturally. Any self-sustaining system has an implicit Anchor = its survival direction. This connects to Friston's Free Energy Principle (organisms minimize surprise to maintain existence = implicit Anchor).
-
-Recommended: state (a) to fix scope, leave (b) as future work.
-
 ## What Is Not Settled
 
-- Whether KL divergence or Fisher information metric is the right dS measure
-- Whether the projection ⟨dS, Ĉ⟩ correctly captures all meaningful time (may miss orthogonal but important changes)
+- Whether KL divergence or Fisher information metric is the right dS measure (Fisher is symmetric; KL is not — time direction may require asymmetry)
+- Whether projection ⟨dS, Ĉ⟩ correctly captures all meaningful time (may miss orthogonal but important changes)
 - The reflexivity problem: reporting a void changes D*(C) for that domain — needs formal treatment
-- Early universe: no observer, no Anchor — how did the first time emerge?
+- ~~Early universe: no observer, no Anchor~~ → outside scope (a), not our problem
 
 ---
 
 ## Status
 
-Sketch only. Not ready for a paper.
-Return to this after Paper 2 (TVV) is done.
+Working draft. Not yet a paper.
+Return after Paper 2 (TVV) is done.
 
 **The three papers may be one:**
 - Paper 1 (TVA): Anchor defines meaningful voids in knowledge space
-- Paper 2 (TVV): Anchor defines meaningful time (void lifecycle)
+- Paper 2 (TVV): Anchor defines meaningful time (void lifecycle) — *this is the bridge*
 - Paper 3 (?): Anchor as a universal mechanism — same principle at all scales
 
-TVV is the bridge. If dynamic TVA must track how voids evolve over time, it must answer "time relative to what Anchor?" — and that question is exactly emergent time.
+TVV must answer "time relative to what Anchor?" to handle dynamic voids — that question is exactly this framework.
