@@ -168,6 +168,44 @@ $\Delta \mathcal{T}_{\mathbf{C}}$ per token = how much that token moved the stat
 
 ---
 
+## Mapping to Human Time
+
+**No bijection exists.** High-dimensional Anchor time and human time (physical / consensus) are clocks at different levels. No formula converts one to the other exactly.
+
+**Local sync via empirical φ.** Each Anchor has its own mapping:
+
+$$\phi: t_{\text{human}} \mapsto \mathcal{T}_{\mathbf{C}}$$
+
+This is an empirical function, not a derivation. Different domains, different Anchors → different φ shapes. The mapping is built from sync points: every corpus update records a pair $(t_H, \mathcal{T}_{\mathbf{C}})$.
+
+Like GPS satellites: the satellite clock and the ground clock are not converted — they are synchronized at each fix event. Same here.
+
+**Three routes (in order of practicality):**
+
+| Route | Approach | Status |
+|---|---|---|
+| A — Regression | Fit φ from arXiv/commit data with wall-clock timestamps | Do first — gives data and intuition |
+| B — Consensus Anchor | Human time = projection onto average human Anchor $\mathbb{E}[\hat{\mathbf{C}}_i]$ | Theoretically clean, but requires answering Rovelli's question |
+| C — Two-clock decoupling | Accept two independent clocks, connect via sync points only | Correct long-term framing |
+
+**Implication (testable hypothesis):** If human time is a special case of Anchor projection — the projection onto "human consensus Anchor" — then:
+- Boring meetings feel longer because your personal Anchor misaligns with the consensus Anchor
+- Historical "dark ages" had genuinely small dS on the consensus Anchor
+- Individuals with unusual Anchors (scientists, artists) experience time differently because their Anchor diverges from consensus
+
+**Experiment (doable now):**
+```python
+anchor = embed("Linux kernel scheduler design")
+# load commits 2020-2025 with timestamps
+# for each commit: compute dT_C = project(dS, anchor, D_star)
+# plot (wall_clock_time, cumulative_T_C)
+# expect: steep slope during CFS→EEVDF transition, flat during maintenance
+```
+
+If φ has different shapes for different domains → proves no single mapping exists → C is the right framing.
+
+---
+
 ## Broader Connections
 
 *Private notes. Speculative. Do not include in any external document without review.*
