@@ -120,6 +120,54 @@ Properties:
 
 ---
 
+## Working Definition (Implementable)
+
+For practical use in Dynamic TVA and LLM systems:
+
+$$\Delta \mathcal{T}_{\mathbf{C}}(S_1 \to S_2) = \big\| \Pi_{D^*(\mathbf{C})}(S_2 - S_1) \big\| \cdot \cos\theta_{\mathbf{C}}$$
+
+Where:
+- $\Pi_{D^*(\mathbf{C})}$ = projection onto Anchor-defined D* signal subspace
+- $\theta_{\mathbf{C}}$ = angle between projected vector and Anchor direction Ĉ
+- $\cos\theta_{\mathbf{C}}$ = how much this change points toward the Anchor
+
+Special cases:
+- Change orthogonal to Anchor → $\cos\theta = 0$ → ΔT = 0 (changed, but not toward me → no time for me)
+- Change along Anchor → ΔT maximum
+- No Anchor → formula undefined → no time (the stone)
+
+### Three layers, not three competitors
+
+| Layer | Formula | What it measures |
+|---|---|---|
+| **Fisher / Fubini-Study** | $ds^2 = 1 - \|\langle\Psi_t\|\Psi_{t+dt}\rangle\|^2$ | Base metric — distance in state space |
+| **KL (event layer)** | $D_{KL}(P_{\text{after}} \|\| P_{\text{before}})$ | How far one update moved the distribution |
+| **Anchor projection** | $\|\Pi_{D^*(\mathbf{C})}(S_2-S_1)\| \cdot \cos\theta_{\mathbf{C}}$ | How far this moved *for this observer* |
+
+---
+
+## Applications (Concrete)
+
+### 1. Dynamic TVA event ordering
+Replace commit timestamp with cumulative $\Delta \mathcal{T}_{\mathbf{C}}$ to sort events.
+Gives domain-intrinsic event order — not wall-clock order.
+
+### 2. LLM staleness / aging
+LLM is trained at time $t_0$. Corpus keeps changing.
+**LLM is stale when:** $\sum \Delta \mathcal{T}_{\mathbf{C}} > \theta_{\text{stale}}$
+
+Not measured in months. Measured in Anchor-relative accumulated change:
+- Classical math corpus: LLM never stales
+- Frontier AI corpus: LLM stales in weeks
+
+### 3. LLM thinking time (session-level)
+Each token changes internal state. But not all tokens are equal.
+$\Delta \mathcal{T}_{\mathbf{C}}$ per token = how much that token moved the state toward the Anchor.
+
+**True thinking time ≠ token count.** Filler tokens ("sure", "ok") have ΔT ≈ 0. Key reasoning steps have large ΔT. This gives a metric for "LLM is actually thinking vs. generating noise."
+
+---
+
 ## Broader Connections
 
 *Private notes. Speculative. Do not include in any external document without review.*
