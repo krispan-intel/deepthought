@@ -347,6 +347,57 @@ Three definitions, one language:
 
 ---
 
+## Collapse Pulse — Falsification as Topological Event
+
+Entropy decrease ≠ time reversal. A falsification event is a **compressive phase transition** in Anchor-time.
+
+**Key distinction:**
+
+```
+Magnitude time:  dT_A = D(ρ_A', ρ_A) ≥ 0    (always forward)
+Entropy arrow:   σ_A = sign(H_A' - H_A)       (direction, ±1)
+```
+
+A collapse pulse occurs when:
+- `dT_A` is large (major state change)
+- `σ_A = -1` (entropy decreasing — possibilities pruned)
+- `Δrank_A < 0` (fewer observable directions)
+- `Δβ_k < 0` (Betti numbers drop — topological voids die)
+
+**Geometric signatures:**
+
+1. **Void death by falsification** — a void `V(τ-)` exists, then `V(τ+)` is invalidated. Not filled by innovation; *cancelled* by evidence.
+2. **Volume collapse** — a region of latent space loses Anchor-relevance; its effective volume under `L_C` shrinks.
+3. **Rank collapse** — `rank(L_C)` drops; the Anchor's observable dimensions decrease.
+4. **Bar death in persistence diagram** — long-lived bars abruptly terminate; `W_p(PD(τ-), PD(τ+))` is large.
+
+**Two kinds of light:**
+
+```
+Expansive light = reveals new reachable structure  (σ_A = +1)
+Compressive light = eliminates false structure      (σ_A = -1)
+```
+
+Both advance time. Falsification is also light.
+
+**Full Anchor-time formula (accounting for collapse):**
+
+$$d\tau_C = \alpha\, W_2(\mu^{\tau+}, \mu^\tau) + \beta\, W_p(PD^{\tau+}, PD^\tau) + \gamma\, |\Delta H_C| + \delta\, |\Delta \text{rank}_C|$$
+
+Record direction separately: `arrow_C = sign(ΔH_C)`
+
+**Dynamic TVA event taxonomy:**
+
+| Event | dτ_C | σ_C | Topology |
+|---|---|---|---|
+| Innovation | large | +1 | void filled |
+| Discovery | moderate | +1 | new void revealed |
+| Falsification | large | -1 | void death, rank drop |
+| Paradigm shift | very large | ±1 | global topology surgery |
+| Maintenance | small | 0 | no change |
+
+---
+
 ## Status
 
 Working draft. Not yet a paper.
