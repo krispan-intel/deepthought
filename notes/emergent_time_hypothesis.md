@@ -398,6 +398,76 @@ Record direction separately: `arrow_C = sign(ΔH_C)`
 
 ---
 
+## Dynamic TVA Axiom System
+
+Five axioms sufficient to ground the full framework:
+
+**Axiom 1 — Anchor**
+An Anchor defines what differences are observable.
+
+**Axiom 2 — Light**
+Light is an Anchor-conditioned operation that manifests and propagates latent differences.
+`L_C : (M_τ, ΔI) → ΔO_C`
+
+**Axiom 3 — Time**
+Anchor-time is the accumulated magnitude of Anchor-observable structural change.
+`τ_C = Σ ‖ΔO_C‖_C ≥ 0`
+
+**Axiom 4 — Void**
+A Void is an illuminated absence under an Anchor.
+
+**Axiom 5 — Collapse**
+A Collapse Pulse occurs when new information advances Anchor-time while reducing the accessible hypothesis topology.
+
+---
+
+## Void Taxonomy
+
+Not all voids are equal:
+
+| Type | Description |
+|---|---|
+| **True Void** | Genuine unfilled innovation space |
+| **False Void** | Appears empty but not viable — Compressive Light kills these |
+| **Shadow Void** | Caused by data gap or Anchor blind spot |
+| **Emergent Void** | Forming — not yet fully visible |
+| **Collapsed Void** | Killed by falsification evidence |
+
+Compressive Light's function: **eliminate false voids.**
+
+LLM hallucination is often: model sees a semantic gap, lacks compressive light, fills false void with unsupported content. Dynamic TVA says: innovation needs expansive light; reliability needs compressive light.
+
+---
+
+## Quantum analogy (operational, not ontological)
+
+Collapse Pulse resembles measurement-induced wavefunction collapse at the operational level, but Dynamic TVA does not assume quantum ontology.
+
+> *This resembles measurement-induced collapse in quantum theory at the operational level, but Dynamic TVA does not claim physical identity with quantum measurement.*
+
+Use: "operational analogy, not physical identity."
+
+---
+
+## Paper-ready sentence
+
+> **Dynamic TVA treats time not as calendar duration, but as the accumulated deformation of an anchor-conditioned knowledge topology. Light is the operation that makes such deformation observable.**
+
+---
+
+## Core vocabulary (final)
+
+```
+Anchor    = what defines observability
+Light     = operation that manifests latent difference
+Time      = accumulated magnitude of manifested change
+Void      = illuminated absence
+Collapse  = positive time + contraction of possibility
+Innovation = positive time + expansion of possibility
+```
+
+---
+
 ## Status
 
 Working draft. Not yet a paper.
