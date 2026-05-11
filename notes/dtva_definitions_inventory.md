@@ -25,7 +25,7 @@ Optimal embedding dimension given corpus size N, decay exponent γ, LLM dimensio
 
 ---
 
-## Layer 2 — Anchor-Time (Paper 2 / TVV, defined, experiment pending)
+## Layer 2 — Anchor-Drift (Paper 2 / TVV, defined, experiment pending)
 
 **5. Anchor-Conditioned Illumination Operator L_C**
 ```
@@ -33,14 +33,14 @@ L_C : (M_τ, ΔI) → ΔO_C
 ```
 Three-layer decomposition: `L_C = P_C ∘ W_C ∘ T` (conceptual; formal construction is Issue #1).
 
-**6. Anchor-Time dτ_C**
+**6. Anchor-Drift dD_C**
 ```
-dτ_C = ‖ΔO_C‖_C ≥ 0
+dD_C = ‖ΔO_C‖_C ≥ 0
 ```
-Full formula: `dτ_C = α·W_2 + β·W_p + γ·|ΔH_C| + δ·|Δrank_C|`
+Full formula: `dD_C = α·W_2 + β·W_p + γ·|ΔH_C| + δ·|Δrank_C|`
 Weights α,β,γ,δ not yet specified — this is Issue #1 (P0).
 
-**7. Anchor-Time vs Calendar-Time Decoupling** — empirical mapping φ: t_human → τ_C. No bijection. Sync points only.
+**7. Anchor-Drift vs Calendar-Time Decoupling** — empirical mapping φ: t_human → D_C. No bijection. Sync points only.
 
 ---
 
@@ -48,24 +48,24 @@ Weights α,β,γ,δ not yet specified — this is Issue #1 (P0).
 
 **8. Void Velocity Vector**
 ```
-V_void^C = dC_τ / dτ_C
+V_void^C = dC_τ / dD_C
 ```
-Tracks void midpoint motion in Anchor-time: expanding / contracting / forming.
+Tracks void midpoint motion in Anchor-drift: expanding / contracting / forming.
 
 **9. Reflexivity as Jump Discontinuity** (Issue #2)
 ```
-dτ_C^report = ‖O_C^+ − O_C^−‖_C
+dD_C^report = ‖O_C^+ − O_C^−‖_C
 ```
-Reporting a void is a discrete τ_C jump, not a smooth limit. Observation is a topological event.
+Reporting a void is a discrete D_C jump, not a smooth limit. Observation is a topological event.
 
 **10. Collapse Pulse** — falsification event:
-- dτ_C ≥ 0 always (magnitude forward)
+- dD_C ≥ 0 always (magnitude forward)
 - σ_C = sign(ΔH_C) (direction separate)
 - Signatures: Δrank_C < 0, Betti numbers drop, bar death in persistence diagram
 
 **11. Event Taxonomy**
 
-| Event | dτ_C | σ_C | Topology |
+| Event | dD_C | σ_C | Topology |
 |---|---|---|---|
 | Innovation | large | +1 | void filled |
 | Discovery | moderate | +1 | new void revealed |
@@ -86,9 +86,9 @@ Reporting a void is a discrete τ_C jump, not a smooth limit. Observation is a t
 **13. Five-Axiom System**
 - A1 — Anchor defines observability
 - A2 — Light is an Anchor-conditioned operation: `L_C : (M_τ, ΔI) → ΔO_C`
-- A3 — Time is accumulated magnitude of observable change: `τ_C = Σ ‖ΔO_C‖_C`
+- A3 — Time is accumulated magnitude of observable change: `D_C = Σ ‖ΔO_C‖_C`
 - A4 — Void is illuminated absence under an Anchor
-- A5 — Collapse is positive Anchor-time + contraction of hypothesis topology
+- A5 — Collapse is positive Anchor-drift + contraction of hypothesis topology
 
 ---
 
@@ -98,14 +98,14 @@ Everything else derives from these three:
 
 1. **Anchor C** — defines observability
 2. **L_C** — Anchor-conditioned operator
-3. **dτ_C = ‖L_C output‖** — time
+3. **dD_C = ‖L_C output‖** — anchor-relative drift
 
 ---
 
 ## What Has NOT Been Defined (important boundaries)
 
 - ❌ What light *is* — only what it *does*
-- ❌ Absolute time — only Anchor-relative time metric
+- ❌ Absolute time — only Anchor-relative drift metric (dD_C is NOT time)
 - ❌ Consciousness / intelligence / AGI
 - ❌ Cosmology (association, not derivation)
 - ❌ Unification of physical and informational light (explicitly declined)
@@ -124,4 +124,4 @@ These are the framework's **boundaries**, not defects.
 
 - **Issue #1** — Define norm ‖·‖_C and weights (P0)
 - **Issue #2** — Formalize reflexivity as jump discontinuity
-- **Issue #3** — Linux kernel scheduler Anchor-time experiment
+- **Issue #3** — Linux kernel scheduler Anchor-drift experiment

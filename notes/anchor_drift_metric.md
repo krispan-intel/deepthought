@@ -1,6 +1,14 @@
-# Emergent Time in Knowledge Space — Working Draft
+# Anchor Drift Metric in Knowledge Space — Working Draft
 
 *2026-05-11. Kris Pan.*
+
+---
+
+## Naming Note
+
+> *We deliberately avoid the term "time" for `dD_C`. While it shares formal properties with temporal measures (monotonicity, accumulation, event ordering), it is defined purely on knowledge state space and makes no claim of physical or relativistic interpretation. Readers familiar with thermal time hypotheses or Page-Wootters formulations will recognize structural analogies; we intend none.*
+
+`dD_C` = **Anchor-relative drift** — the accumulated observable response of Anchor C to information changes.
 
 ---
 
@@ -8,7 +16,7 @@
 
 > "No external input, no time. A stone has no time — but wind and rain give it time."
 
-Time is an emergent quantity — it only exists when a system's state changes meaningfully relative to an Anchor.
+Anchor Drift is a knowledge-state metric — it only exists when a system's state changes meaningfully relative to an Anchor.
 
 ---
 
@@ -18,7 +26,7 @@ Time is an emergent quantity — it only exists when a system's state changes me
 
 Notation: **C** = Anchor vector, `Ĉ` = unit direction, `D*(C)` = optimal signal subspace.
 
-$$\boxed{\Delta \mathcal{T}_{\mathbf{C}} = \int_{\text{Path}} \langle d\mathbf{S}_{D^*(\mathbf{C})},\, \hat{\mathbf{C}} \rangle}$$
+$$\boxed{\Delta \mathcal{D}_{\mathbf{C}} = \int_{\text{Path}} \langle d\mathbf{S}_{D^*(\mathbf{C})},\, \hat{\mathbf{C}} \rangle}$$
 
 **Reading:** Time = accumulated projection of state displacement onto the Anchor direction, within the Anchor-defined signal subspace.
 
@@ -32,7 +40,7 @@ $$\boxed{\Delta \mathcal{T}_{\mathbf{C}} = \int_{\text{Path}} \langle d\mathbf{S
 
 ## Working Definition (Implementable)
 
-$$\Delta \mathcal{T}_{\mathbf{C}}(S_1 \to S_2) = \big\| \Pi_{D^*(\mathbf{C})}(S_2 - S_1) \big\| \cdot \cos\theta_{\mathbf{C}}$$
+$$\Delta \mathcal{D}_{\mathbf{C}}(S_1 \to S_2) = \big\| \Pi_{D^*(\mathbf{C})}(S_2 - S_1) \big\| \cdot \cos\theta_{\mathbf{C}}$$
 
 Three metric choices (not competitors — three levels):
 
@@ -51,8 +59,8 @@ Related formal frameworks: Page-Wootters (1983), thermal time (Rovelli-Connes 19
 $$t_{\text{knowledge}} = \sum_{\text{events}} D_{KL}(P_{\text{after}} \,||\, P_{\text{before}})\big|_{D^*(\mathbf{C})}$$
 
 Properties:
-- 1000 trivial commits → small D_KL → little Anchor-time
-- 1 paradigm-shifting paper → large D_KL → large Anchor-time step
+- 1000 trivial commits → small D_KL → little Anchor-drift
+- 1 paradigm-shifting paper → large D_KL → large Anchor-drift step
 
 ---
 
@@ -68,13 +76,13 @@ Properties:
 
 ## The Bridge: Anchor IS the Bridge
 
-| TVA | Emergent Time |
+| TVA | Anchor Drift Metric |
 |---|---|
 | Anchor C filters 10^10 voids → meaningful ones | Anchor C filters infinite state changes → time |
 | D*(C) = optimal signal subspace | D*(C) = signal subspace where time is meaningful |
 | Void = unoccupied coordinate relative to Anchor | Time = displacement relative to Anchor |
 
-Anchor is not a bridge between TVA and emergent time. **Anchor IS the same mechanism at two scales.**
+Anchor is not a bridge between TVA and anchor drift. **Anchor IS the same mechanism at two scales.**
 
 ---
 
@@ -82,7 +90,7 @@ Anchor is not a bridge between TVA and emergent time. **Anchor IS the same mecha
 
 No bijection exists. Each Anchor has its own empirical mapping φ:
 
-$$\phi: t_{\text{human}} \mapsto \mathcal{T}_{\mathbf{C}}$$
+$$\phi: t_{\text{human}} \mapsto \mathcal{D}_{\mathbf{C}}$$
 
 Built from sync points. Different domains → different φ shapes.
 
@@ -101,13 +109,13 @@ anchor = embed("Linux kernel scheduler design")
 ### Core equations
 
 $$\Delta O_C = L_C(\mathcal{M}_\tau,\, \Delta I)$$
-$$d\tau_C = \|\Delta O_C\|_C$$
+$$dD_C = \|\Delta O_C\|_C$$
 
 Where `L_C = P_C ∘ W_C ∘ T` is the **Anchor-conditioned illumination operator** (formally; "light" is metaphor only).
 
 ### Void velocity (answers Paper 1 open question #1)
 
-$$\vec{V}_{void}^C = \frac{dC_\tau}{d\tau_C}$$
+$$\vec{V}_{void}^C = \frac{dC_\tau}{dD_C}$$
 
 ### Reflexivity (answers Paper 1 open question #3)
 
@@ -115,10 +123,10 @@ Reporting a void is a discrete jump event, not a smooth limit:
 
 ```
 K_{τ-}, L_C^-  →  Report R injected  →  K_{τ+} = U_R(K_{τ-}), L_C^+ = U_R(L_C^-)
-dτ_C^{report} = ‖O_C^+ - O_C^-‖_C
+dD_C^{report} = ‖O_C^+ - O_C^-‖_C
 ```
 
-Observation/reporting is a topological event that advances Anchor-time. (See Issue #2.)
+Observation/reporting is a topological event that advances Anchor-drift. (See Issue #2.)
 
 ---
 
@@ -127,17 +135,17 @@ Observation/reporting is a topological event that advances Anchor-time. (See Iss
 Entropy decrease ≠ time reversal. Falsification = compressive phase transition.
 
 ```
-Magnitude time:  dτ_C = ‖ΔO_C‖_C ≥ 0   (always forward)
+Magnitude time:  dD_C = ‖ΔO_C‖_C ≥ 0   (always forward)
 Entropy arrow:   σ_C = sign(ΔH_C)         (direction only)
 ```
 
 **Full time formula:**
 
-$$d\tau_C = \alpha\, W_2(\mu^{\tau+}, \mu^\tau) + \beta\, W_p(PD^{\tau+}, PD^\tau) + \gamma\, |\Delta H_C| + \delta\, |\Delta \text{rank}_C|$$
+$$dD_C = \alpha\, W_2(\mu^{\tau+}, \mu^\tau) + \beta\, W_p(PD^{\tau+}, PD^\tau) + \gamma\, |\Delta H_C| + \delta\, |\Delta \text{rank}_C|$$
 
 **Event taxonomy:**
 
-| Event | dτ_C | σ_C | Topology |
+| Event | dD_C | σ_C | Topology |
 |---|---|---|---|
 | Innovation | large | +1 | void filled |
 | Discovery | moderate | +1 | new void revealed |
@@ -153,7 +161,7 @@ $$d\tau_C = \alpha\, W_2(\mu^{\tau+}, \mu^\tau) + \beta\, W_p(PD^{\tau+}, PD^\ta
 2. **Light** — Anchor-conditioned operation: `L_C : (M_τ, ΔI) → ΔO_C`
 3. **Time** — `τ_C = Σ ‖ΔO_C‖_C ≥ 0`
 4. **Void** — illuminated absence under an Anchor
-5. **Collapse** — positive Anchor-time + contraction of hypothesis topology
+5. **Collapse** — positive Anchor-drift + contraction of hypothesis topology
 
 ---
 
@@ -185,6 +193,6 @@ Return after TVV (Paper 2) is done.
 **Three papers:**
 - Paper 1 (TVA): Anchor defines meaningful voids
 - Paper 2 (TVV): Validates voids are real — *the bridge*
-- Paper 3 (DTVA): Voids move, collapse, form in Anchor-time
+- Paper 3 (DTVA): Voids move, collapse, form in Anchor-drift
 
 Open issues: #1 (norm), #2 (reflexivity jump), #3 (Linux experiment).
