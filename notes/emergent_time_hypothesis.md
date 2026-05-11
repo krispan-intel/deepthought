@@ -17,9 +17,36 @@ If the stone is hard enough that wind doesn't change its shape: `ΔS = 0` → `�
 
 ---
 
-## The Emergent Time Equation
+## The Emergent Time Equation (revised)
+
+The original formulation:
 
 $$\Delta \mathcal{T} = \int_{\text{Path}} \mathcal{C}(\mathbf{E}_{\text{ext}}, \mathbf{R}_{\text{int}}) \cdot d\mathbf{S}$$
+
+Had three open problems: undefined coupling function C, D* circular definition, and the free-falling clock counterexample.
+
+**All three are resolved by Anchor.**
+
+The coupling function C is not mysterious — it is the projection of dS onto the Anchor direction:
+
+$$\mathcal{C} = \langle d\mathbf{S},\, \hat{\mathbf{C}}_{\text{anchor}} \rangle$$
+
+D* is not computed from corpus statistics alone — it is defined relative to Anchor C:
+
+$$D^* = D^*(\mathbf{C})$$
+
+The revised equation:
+
+$$\boxed{\Delta \mathcal{T}_{\mathbf{C}} = \int_{\text{Path}} \langle d\mathbf{S}_{D^*(\mathbf{C})},\, \hat{\mathbf{C}} \rangle}$$
+
+**Reading:** Time = accumulated projection of state displacement onto the Anchor direction, within the Anchor-defined signal subspace.
+
+Three consequences:
+1. **Time is Anchor-relative, not absolute.** No Anchor → no time. Consistent with GR proper time being observer-dependent.
+2. **D* circular definition resolved.** Anchor fixes the direction; D*(C) is well-defined. If corpus changes, D*(C) changes traceably.
+3. **Free-falling clock resolved.** The clock's Anchor = its own self-continuation. Internal phase evolution is its time. No contradiction with QM.
+
+The stone has no Anchor (no self-maintenance goal, no intent) → nothing to project onto → ΔT = 0.
 
 Where:
 - **ΔT** — emergent time for this system
@@ -57,6 +84,24 @@ $$H_{\text{thermal}} = -\ln \rho$$
 Time emerges from our incomplete information about the system's state.
 
 ---
+
+## The Bridge: Anchor IS the Bridge
+
+The connection between TVA and emergent time is not analogy — it is identity.
+
+| TVA | Emergent Time |
+|---|---|
+| Anchor C filters 10^10 voids → meaningful ones | Anchor C filters infinite state changes → time |
+| D*(C) = optimal signal subspace for Anchor | D*(C) = signal subspace where time is meaningful |
+| C1: A and B must point toward Anchor | dS must project onto Anchor to count as time |
+| Void = unoccupied coordinate relative to Anchor | Time = displacement relative to Anchor |
+
+**Anchor is not a bridge between TVA and emergent time. Anchor IS the same mechanism operating at two scales.**
+
+D* is a consequence of Anchor, not the cause. The right order:
+1. Anchor defines the direction of meaning
+2. D*(C) is the optimal subspace for that direction
+3. Time = projection of state change onto that subspace
 
 ## The Missing Piece: TVA Dimensionality Theorem
 
@@ -103,12 +148,26 @@ Projected onto D* subspace to filter noise.
 
 ---
 
+## Where Does Anchor Come From?
+
+In TVA: clean. The inventor gives it. Human intent = Anchor C.
+
+In physics: harder.
+
+**(a) Scope restriction (recommended first):**
+Emergent time applies only to systems with a self-maintenance goal (autopoietic systems: life, knowledge systems, AI, any system that maintains its own existence). Anchor = the direction of self-continuation. Electrons don't need this framework; QFT handles them fine.
+
+**(b) Future hook:**
+Anchor emerges from autopoiesis naturally. Any self-sustaining system has an implicit Anchor = its survival direction. This connects to Friston's Free Energy Principle (organisms minimize surprise to maintain existence = implicit Anchor).
+
+Recommended: state (a) to fix scope, leave (b) as future work.
+
 ## What Is Not Settled
 
-- The coupling function C is undefined — this is the hard part
-- Whether D* projection is the right way to filter spurious time
-- Whether KL divergence is the right metric for knowledge-space time (Fisher information metric may be more natural)
-- The reflexivity problem: does reporting a void change D* for that domain?
+- Whether KL divergence or Fisher information metric is the right dS measure
+- Whether the projection ⟨dS, Ĉ⟩ correctly captures all meaningful time (may miss orthogonal but important changes)
+- The reflexivity problem: reporting a void changes D*(C) for that domain — needs formal treatment
+- Early universe: no observer, no Anchor — how did the first time emerge?
 
 ---
 
@@ -116,4 +175,10 @@ Projected onto D* subspace to filter noise.
 
 Sketch only. Not ready for a paper.
 Return to this after Paper 2 (TVV) is done.
-The connection between TVA dimensionality theorem and emergent time is the most interesting open thread.
+
+**The three papers may be one:**
+- Paper 1 (TVA): Anchor defines meaningful voids in knowledge space
+- Paper 2 (TVV): Anchor defines meaningful time (void lifecycle)
+- Paper 3 (?): Anchor as a universal mechanism — same principle at all scales
+
+TVV is the bridge. If dynamic TVA must track how voids evolve over time, it must answer "time relative to what Anchor?" — and that question is exactly emergent time.
