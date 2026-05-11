@@ -263,35 +263,52 @@ Informally: "light" as metaphor, clearly labelled as such.
 
 ### Definition 1 — Anchor-Light (Illumination Operator)
 
-Given an Anchor **C**, the illumination operator `L_C` maps incoming information `ΔK` to observable manifold deformation `δ_C M`:
+> **Light is not a state. Light is the operation by which state change becomes observable.**
 
-$$L_C : \Delta K \mapsto \delta_C \mathcal{M}$$
+Light is not information. Information can sit static in a structure.
+Light is the *operation* that makes latent distinctions manifest — the propagation, illumination, and detection of difference.
 
-subject to:
-- `δ_C M ≠ 0` only if `ΔK` has non-zero projection onto the Anchor's signal subspace `D*(C)`
-- The rate of propagation is bounded (no information faster than the corpus update cycle)
+Formally, Anchor-light `L_C` is an operator:
 
-**In one sentence:** Light is what makes latent differences visible to a specific Anchor.
+$$L_C : (\mathcal{M}_\tau,\, \Delta I) \mapsto \Delta O_C$$
+
+where:
+- `M_τ` = current latent manifold (corpus state at topological time τ)
+- `ΔI` = incoming information (new documents, commits, discoveries)
+- `ΔO_C` = Anchor-observable change produced by this operation
+
+The operator decomposes as:
+
+$$L_C = P_C \circ W_C \circ T$$
+
+- `T` = propagation: how information spreads through latent space
+- `W_C` = Anchor weighting: how the Anchor weighs different distinctions
+- `P_C` = projection: collapse to Anchor-observable result
+
+**Rank of light:** `rank(L_C)` = number of independent observable directions this Anchor-light can reveal. Low-rank light has blind spots; full-rank light illuminates everything the Anchor cares about.
+
+**In one sentence:** Anchor-light converts latent distinction into observable distinction, for a specific Anchor.
 
 ---
 
 ### Definition 2 — Anchor-Time
 
-Abandon calendar time `t`. Use Anchor-conditioned topological time `τ_C`.
+The two core equations of Dynamic TVA:
 
-$$\tau_C(K_0 \to K_n) = \sum_{i} D_C(K_{i+1},\, K_i)$$
+$$\Delta O_C = L_C(\mathcal{M}_\tau,\, \Delta I)$$
 
-where `D_C` is an Anchor-conditioned distance between corpus states (KL divergence projected onto `D*(C)` subspace).
+$$d\tau_C = \|\Delta O_C\|_C$$
+
+Time is the norm of the Anchor-observable change produced by the illumination operation. Nothing else.
+
+**Integrated form:**
+
+$$\tau_C(K_0 \to K_n) = \sum_{i} \|L_C(\mathcal{M}_i, \Delta I_i)\|_C$$
 
 **Properties:**
-- 100 trivial papers with `D_C ≈ 0` → `τ_C ≈ 0` (time barely moves)
-- 1 paradigm-shifting paper with large `D_C` → large `τ_C` step
-- Stone with no Anchor: `D_C` undefined → no time
-
-**Differential form:**
-$$d\tau_C = \|O_C(\tau + d\tau) - O_C(\tau)\|_C$$
-
-where `O_C(τ) = L_C · K(τ)` is the Anchor-observable corpus structure at time `τ`.
+- 100 trivial papers → small `‖ΔO_C‖` → `dτ_C ≈ 0`
+- 1 paradigm-shifting paper → large `‖ΔO_C‖` → large `dτ_C`
+- Stone (no Anchor, no `L_C`) → `ΔO_C` undefined → no time
 
 ---
 
