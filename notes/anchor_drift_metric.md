@@ -140,7 +140,7 @@ $$dD_C = \alpha\, W_2(\mu^{\tau+}, \mu^\tau) + \beta\, W_p(PD^{\tau+}, PD^\tau) 
 ## Axiom System
 
 1. **Anchor** — defines what differences are observable
-2. **Light** — Anchor-conditioned operation: `L_C : (M_τ, ΔI) → ΔO_C`
+2. **Illumination operator L_C** — Anchor-conditioned operation: `L_C : (M_τ, ΔI) → ΔO_C`
 3. **Drift** — `D_C = Σ ‖ΔO_C‖_C ≥ 0`
 4. **Void** — illuminated absence under an Anchor
 5. **Collapse** — positive Anchor-drift + contraction of hypothesis topology
@@ -152,12 +152,12 @@ $$dD_C = \alpha\, W_2(\mu^{\tau+}, \mu^\tau) + \beta\, W_p(PD^{\tau+}, PD^\tau) 
 | Type | Description |
 |---|---|
 | **True Void** | Genuine unfilled innovation space |
-| **False Void** | Appears empty but not viable — eliminated by compressive light |
+| **False Void** | Appears empty but not viable — eliminated by compressive L_C (falsification) |
 | **Shadow Void** | Caused by data gap or Anchor blind spot |
 | **Emergent Void** | Forming — not yet fully visible |
 | **Collapsed Void** | Killed by falsification evidence |
 
-LLM hallucination = model fills **False Void** without compressive light.
+LLM hallucination = model fills **False Void** without compressive L_C (no falsification signal).
 
 ---
 

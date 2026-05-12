@@ -85,8 +85,8 @@ Reporting a void is a discrete D_C jump, not a smooth limit. Observation is a to
 
 **13. Five-Axiom System**
 - A1 — Anchor defines observability
-- A2 — Light is an Anchor-conditioned operation: `L_C : (M_τ, ΔI) → ΔO_C`
-- A3 — Time is accumulated magnitude of observable change: `D_C = Σ ‖ΔO_C‖_C`
+- A2 — L_C (illumination operator) is an Anchor-conditioned operation: `L_C : (M_τ, ΔI) → ΔO_C`
+- A3 — Drift is accumulated magnitude of observable change: `D_C = Σ ‖ΔO_C‖_C`
 - A4 — Void is illuminated absence under an Anchor
 - A5 — Collapse is positive Anchor-drift + contraction of hypothesis topology
 
@@ -104,11 +104,11 @@ Everything else derives from these three:
 
 ## What Has NOT Been Defined (important boundaries)
 
-- ❌ What light *is* — only what it *does*
-- ❌ Absolute time — only Anchor-relative drift metric (dD_C is NOT time)
+- ❌ What L_C *is* physically — only what it *does* operationally
+- ❌ Absolute time — dD_C is anchor-relative drift, NOT time
 - ❌ Consciousness / intelligence / AGI
 - ❌ Cosmology (association, not derivation)
-- ❌ Unification of physical and informational light (explicitly declined)
+- ❌ Unification of physical propagation and L_C (explicitly out of scope)
 
 These are the framework's **boundaries**, not defects.
 
@@ -116,7 +116,7 @@ These are the framework's **boundaries**, not defects.
 
 ## One sentence
 
-> **Anchor C is the mathematical object that defines observability; void, light, and time are all derived operators of the Anchor.**
+> **Anchor C is the mathematical object that defines observability; void, L_C, and drift are all derived operators of the Anchor.**
 
 ---
 
