@@ -28,13 +28,13 @@ Notation: **C** = Anchor vector, `Ĉ` = unit direction, `D*(C)` = optimal signal
 
 $$\boxed{\Delta \mathcal{D}_{\mathbf{C}} = \int_{\text{Path}} \langle d\mathbf{S}_{D^*(\mathbf{C})},\, \hat{\mathbf{C}} \rangle}$$
 
-**Reading:** Time = accumulated projection of state displacement onto the Anchor direction, within the Anchor-defined signal subspace.
+**Reading:** Drift = accumulated projection of state displacement onto the Anchor direction, within the Anchor-defined signal subspace.
 
 | Problem | Resolution via Anchor |
 |---|---|
 | Coupling function undefined | Projection ⟨dS, Ĉ⟩ IS the coupling |
 | D* circular definition | D*(C) defined relative to Anchor; changes traceably |
-| Free-falling clock | Clock's Anchor = self-continuation; internal phase evolution is its time |
+| Free-falling clock | Clock's Anchor = self-continuation; internal phase evolution is its drift |
 
 ---
 
@@ -48,7 +48,7 @@ Three metric choices (not competitors — three levels):
 |---|---|---|
 | **Fisher / Fubini-Study** | $ds^2 = 1 - \|\langle\Psi_t\|\Psi_{t+dt}\rangle\|^2$ | Base metric |
 | **KL divergence** | $D_{KL}(P_{\text{after}} \| P_{\text{before}})$ | Event-level distance |
-| **Anchor projection** | $\|\Pi_{D^*(\mathbf{C})}(S_2-S_1)\| \cdot \cos\theta$ | Observer-relative time |
+| **Anchor projection** | $\|\Pi_{D^*(\mathbf{C})}(S_2-S_1)\| \cdot \cos\theta$ | Observer-relative drift |
 
 Related formal frameworks: Page-Wootters (1983), thermal time (Rovelli-Connes 1994), Fubini-Study quantum metrics. No claim of physical identity — structural analogy at the operator level only.
 
@@ -66,11 +66,11 @@ Properties:
 
 ## Applications (Concrete)
 
-**1. Dynamic TVA event ordering** — replace commit timestamp with cumulative ΔT_C.
+**1. Dynamic TVA event ordering** — replace commit timestamp with cumulative ΔD_C.
 
-**2. LLM staleness** — LLM is stale when `Σ ΔT_C > θ_stale`. Measured in Anchor-relative change, not months.
+**2. LLM staleness** — LLM is stale when `Σ ΔD_C > θ_stale`. Measured in Anchor-relative drift, not months.
 
-**3. LLM thinking time** — filler tokens have ΔT ≈ 0; key reasoning steps have large ΔT. True thinking time ≠ token count.
+**3. LLM thinking drift** — filler tokens have ΔD ≈ 0; key reasoning steps have large ΔD. True thinking drift ≠ token count.
 
 ---
 
@@ -78,15 +78,15 @@ Properties:
 
 | TVA | Anchor Drift Metric |
 |---|---|
-| Anchor C filters 10^10 voids → meaningful ones | Anchor C filters infinite state changes → time |
-| D*(C) = optimal signal subspace | D*(C) = signal subspace where time is meaningful |
-| Void = unoccupied coordinate relative to Anchor | Time = displacement relative to Anchor |
+| Anchor C filters 10^10 voids → meaningful ones | Anchor C filters infinite state changes → drift |
+| D*(C) = optimal signal subspace | D*(C) = signal subspace where drift is meaningful |
+| Void = unoccupied coordinate relative to Anchor | Drift = displacement relative to Anchor |
 
 Anchor is not a bridge between TVA and anchor drift. **Anchor IS the same mechanism at two scales.**
 
 ---
 
-## Mapping to Human Time
+## Mapping to Calendar Time
 
 No bijection exists. Each Anchor has its own empirical mapping φ:
 
@@ -135,11 +135,11 @@ Observation/reporting is a topological event that advances Anchor-drift. (See Is
 Entropy decrease ≠ time reversal. Falsification = compressive phase transition.
 
 ```
-Magnitude time:  dD_C = ‖ΔO_C‖_C ≥ 0   (always forward)
+Magnitude drift:  dD_C = ‖ΔO_C‖_C ≥ 0   (always forward)
 Entropy arrow:   σ_C = sign(ΔH_C)         (direction only)
 ```
 
-**Full time formula:**
+**Full drift formula:**
 
 $$dD_C = \alpha\, W_2(\mu^{\tau+}, \mu^\tau) + \beta\, W_p(PD^{\tau+}, PD^\tau) + \gamma\, |\Delta H_C| + \delta\, |\Delta \text{rank}_C|$$
 
@@ -159,7 +159,7 @@ $$dD_C = \alpha\, W_2(\mu^{\tau+}, \mu^\tau) + \beta\, W_p(PD^{\tau+}, PD^\tau) 
 
 1. **Anchor** — defines what differences are observable
 2. **Light** — Anchor-conditioned operation: `L_C : (M_τ, ΔI) → ΔO_C`
-3. **Time** — `τ_C = Σ ‖ΔO_C‖_C ≥ 0`
+3. **Drift** — `D_C = Σ ‖ΔO_C‖_C ≥ 0`
 4. **Void** — illuminated absence under an Anchor
 5. **Collapse** — positive Anchor-drift + contraction of hypothesis topology
 
@@ -181,7 +181,7 @@ LLM hallucination = model fills **False Void** without compressive light.
 
 ## Paper-ready sentence
 
-> **Dynamic TVA treats time not as calendar duration, but as the accumulated deformation of an anchor-conditioned knowledge topology. Light is the operation that makes such deformation observable.**
+> **Dynamic TVA treats drift not as calendar duration, but as the accumulated deformation of an anchor-conditioned knowledge topology. The illumination operator is the operation that makes such deformation observable.**
 
 ---
 
