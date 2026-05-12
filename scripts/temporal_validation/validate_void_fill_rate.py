@@ -113,9 +113,34 @@ def load_train_embeddings():
     return ids, np.array(vecs, dtype=np.float32)
 
 
-def check_fill(midpoint: np.ndarray, val_matrix: np.ndarray, threshold: float) -> tuple[bool, float]:
-    sims = val_matrix @ midpoint
-    max_sim = float(sims.max())
+def check_fill(
+    midpoint: np.ndarray,
+    val_matrix: np.ndarray,
+    threshold: float,
+    anchor_vec=None,
+    anchor_threshold: float = 0.55,
+    src_a=None,
+    src_b=None,
+    nontrivial_threshold: float = 0.0,
+) -> tuple[bool, float]:
+    """Check fill. Three versions:
+    v1 raw:     anchor_vec=None
+    v2 gated:   anchor_vec + anchor_threshold
+    v3 quality: also src_a, src_b, nontrivial_threshold > 0
+    """
+    sims_mid = val_matrix @ midpoint
+    if anchor_vec is not None:
+        sims_anc = val_matrix @ anchor_vec
+        mask = sims_anc >= anchor_threshold
+        if not mask.any():
+            return False, 0.0
+        sims_mid = np.where(mask, sims_mid, -1.0)
+    if src_a is not None and src_b is not None and nontrivial_threshold > 0:
+        sims_a = val_matrix @ src_a
+        sims_b = val_matrix @ src_b
+        synthesis = sims_mid - np.maximum(sims_a, sims_b)
+        sims_mid = np.where(synthesis >= nontrivial_threshold, sims_mid, -1.0)
+    max_sim = float(sims_mid.max())
     return max_sim >= threshold, max_sim
 
 
@@ -187,7 +212,10 @@ def run_validation(fill_threshold: float, skip_embed: bool = False):
     anchor_vecs = {k: np.array(embedder.embed_query(v), dtype=np.float32)
                    for k, v in anchor_defs.items()}
 
-    # ── TVA void fill check ─────────────────────────────────────────────
+    ANCHOR_THRESHOLD = 0.55   # val paper must be relevant to anchor
+    NONTRIVIAL_THRESHOLD = 0.0  # fill_quality > 0 = filler closer to midpoint than sources
+
+    # ── TVA void fill check — three versions ────────────────────────────
     logger.info(f"=== TVA Void Fill Rate (threshold={fill_threshold}) ===")
     tva_results = []
     tva_midpoints = []
@@ -199,50 +227,89 @@ def run_validation(fill_threshold: float, skip_embed: bool = False):
         if vec_a is None or vec_b is None:
             continue
         midpoint = slerp_midpoint(vec_a, vec_b)
-        filled, max_sim = check_fill(midpoint, val_matrix, fill_threshold)
+        anchor_vec = anchor_vecs[v["anchor_id"]]
+
+        # v1: raw
+        filled_v1, sim_v1 = check_fill(midpoint, val_matrix, fill_threshold)
+        # v2: anchor-gated
+        filled_v2, sim_v2 = check_fill(midpoint, val_matrix, fill_threshold,
+                                        anchor_vec=anchor_vec,
+                                        anchor_threshold=ANCHOR_THRESHOLD)
+        # v3: anchor-gated + nontrivial
+        filled_v3, sim_v3 = check_fill(midpoint, val_matrix, fill_threshold,
+                                        anchor_vec=anchor_vec,
+                                        anchor_threshold=ANCHOR_THRESHOLD,
+                                        src_a=vec_a, src_b=vec_b,
+                                        nontrivial_threshold=NONTRIVIAL_THRESHOLD)
         tva_results.append({
             "void_id": v["void_id"],
             "anchor_id": v["anchor_id"],
             "label": v["label"],
-            "filled": filled,
-            "max_sim_to_midpoint": max_sim,
+            "filled": filled_v1,
+            "filled_v2": filled_v2,
+            "filled_v3": filled_v3,
+            "max_sim_to_midpoint": sim_v1,
             "paper_a": v["paper_a"],
             "paper_b": v["paper_b"],
         })
         tva_midpoints.append(midpoint)
 
-    tva_filled = sum(1 for r in tva_results if r["filled"])
-    tva_total = len(tva_results)
-    tva_fill_rate = tva_filled / tva_total if tva_total else 0
-
-    # ── Anchor-nearby baseline (fair) ───────────────────────────────────
-    logger.info("=== Anchor-nearby Baseline ===")
-    rng = random.Random(42)
     from collections import defaultdict
     by_anchor = defaultdict(list)
     for r in tva_results:
         by_anchor[r["anchor_id"]].append(r)
 
-    nearby_results = []
-    for anchor_id, anchor_vecs_item in anchor_vecs.items():
+    def rate(results, key="filled"):
+        n = sum(1 for r in results if r.get(key))
+        return n, len(results), n/len(results) if results else 0
+
+    tva_v1 = rate(tva_results, "filled")
+    tva_v2 = rate(tva_results, "filled_v2")
+    tva_v3 = rate(tva_results, "filled_v3")
+    tva_fill_rate = tva_v1[2]
+
+    # ── Anchor-nearby baseline — also three versions ────────────────────
+    logger.info("=== Anchor-nearby Baseline (3 versions) ===")
+    rng = random.Random(42)
+
+    nearby_v1, nearby_v2, nearby_v3 = [], [], []
+    for anchor_id, anchor_vec_item in anchor_vecs.items():
         n_for_anchor = len(by_anchor[anchor_id])
         if n_for_anchor == 0:
             continue
-        res = anchor_nearby_baseline(
-            anchor_vecs_item, train_embeddings, train_ids,
-            val_matrix, fill_threshold,
-            n_samples=max(n_for_anchor * 3, BASELINE_SAMPLES // len(anchor_defs)),
-            rng=rng,
-        )
-        nearby_results.extend(res)
+        sims = train_embeddings @ anchor_vec_item
+        top_idx = sims.argsort()[::-1][:C1_POOL].tolist()
+        n_samp = max(n_for_anchor * 3, BASELINE_SAMPLES // len(anchor_defs))
+        for _ in range(n_samp):
+            i, j = rng.sample(top_idx, 2)
+            va = train_embeddings[i]
+            vb = train_embeddings[j]
+            mp = slerp_midpoint(va, vb)
+            f1, s1 = check_fill(mp, val_matrix, fill_threshold)
+            f2, s2 = check_fill(mp, val_matrix, fill_threshold,
+                                 anchor_vec=anchor_vec_item,
+                                 anchor_threshold=ANCHOR_THRESHOLD)
+            f3, s3 = check_fill(mp, val_matrix, fill_threshold,
+                                 anchor_vec=anchor_vec_item,
+                                 anchor_threshold=ANCHOR_THRESHOLD,
+                                 src_a=va, src_b=vb,
+                                 nontrivial_threshold=NONTRIVIAL_THRESHOLD)
+            nearby_v1.append({"filled": f1})
+            nearby_v2.append({"filled": f2})
+            nearby_v3.append({"filled": f3})
 
-    base_filled = sum(1 for r in nearby_results if r["filled"])
-    base_total = len(nearby_results)
-    base_fill_rate = base_filled / base_total if base_total else 0
+    base_v1 = rate(nearby_v1)
+    base_v2 = rate(nearby_v2)
+    base_v3 = rate(nearby_v3)
+    base_fill_rate = base_v1[2]
 
     # ── Statistics ───────────────────────────────────────────────────────
-    lift = tva_fill_rate / base_fill_rate if base_fill_rate > 0 else float("inf")
-    p_fisher = fisher_pvalue(tva_filled, tva_total, base_filled, base_total)
+    lift_v1 = tva_v1[2] / base_v1[2] if base_v1[2] > 0 else float("inf")
+    lift_v2 = tva_v2[2] / base_v2[2] if base_v2[2] > 0 else float("inf")
+    lift_v3 = tva_v3[2] / base_v3[2] if base_v3[2] > 0 else float("inf")
+    lift = lift_v1
+
+    p_fisher = fisher_pvalue(tva_v1[0], tva_v1[1], base_v1[0], base_v1[1])
 
     logger.info("Running shuffle test...")
     p_shuffle, null_dist = shuffle_test(
@@ -250,18 +317,23 @@ def run_validation(fill_threshold: float, skip_embed: bool = False):
     )
 
     # ── Print results ────────────────────────────────────────────────────
-    print(f"\n{'='*55}")
-    print(f"TVA fill rate:         {tva_filled}/{tva_total} = {tva_fill_rate:.1%}")
-    print(f"Anchor-nearby baseline:{base_filled}/{base_total} = {base_fill_rate:.1%}")
-    print(f"Lift:                  {lift:.2f}x")
-    print(f"Fisher p-value:        {p_fisher:.4f}")
-    print(f"Shuffle p-value:       {p_shuffle:.4f} ({SHUFFLE_ROUNDS} rounds)")
-    print(f"{'='*55}\n")
+    print(f"\n{'='*62}")
+    print(f"{'Version':<25} {'TVA':>12} {'Baseline':>12} {'Lift':>8}")
+    print(f"{'-'*62}")
+    print(f"{'v1 raw fill':<25} {tva_v1[0]}/{tva_v1[1]}={tva_v1[2]:.0%}  {base_v1[0]}/{base_v1[1]}={base_v1[2]:.0%}  {lift_v1:.2f}x")
+    print(f"{'v2 anchor-gated':<25} {tva_v2[0]}/{tva_v2[1]}={tva_v2[2]:.0%}  {base_v2[0]}/{base_v2[1]}={base_v2[2]:.0%}  {lift_v2:.2f}x")
+    print(f"{'v3 nontrivial':<25} {tva_v3[0]}/{tva_v3[1]}={tva_v3[2]:.0%}  {base_v3[0]}/{base_v3[1]}={base_v3[2]:.0%}  {lift_v3:.2f}x")
+    print(f"{'='*62}")
+    print(f"Fisher p (v1): {p_fisher:.4f}  |  Shuffle p: {p_shuffle:.4f}")
+    print(f"{'='*62}\n")
 
-    print("Per-anchor fill rate:")
+    print("Per-anchor fill rate (v1 / v2 / v3):")
     for anchor_id, results in sorted(by_anchor.items()):
-        n_f = sum(1 for r in results if r["filled"])
-        print(f"  {anchor_id:<15}: {n_f}/{len(results)} = {n_f/len(results):.0%}")
+        n1 = sum(1 for r in results if r["filled"])
+        n2 = sum(1 for r in results if r["filled_v2"])
+        n3 = sum(1 for r in results if r["filled_v3"])
+        n = len(results)
+        print(f"  {anchor_id:<15}: {n1}/{n}={n1/n:.0%}  {n2}/{n}={n2/n:.0%}  {n3}/{n}={n3/n:.0%}")
 
     # ── Save ─────────────────────────────────────────────────────────────
     output = {
