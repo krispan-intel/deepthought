@@ -1,14 +1,22 @@
-# Anchor Drift Metric in Knowledge Space — Working Draft
+# Anchor Drift Metric — Working Draft
 
 *2026-05-11. Kris Pan.*
 
 ---
 
-## Naming Note
+## Ontological Clarification
 
-> *We deliberately avoid the term "time" for `dD_C`. While it shares formal properties with temporal measures (monotonicity, accumulation, event ordering), it is defined purely on knowledge state space and makes no claim of physical or relativistic interpretation. Readers familiar with thermal time hypotheses or Page-Wootters formulations will recognize structural analogies; we intend none.*
+This framework does not posit the existence of light or time inside latent space.
 
-`dD_C` = **Anchor-relative drift** — the accumulated observable response of Anchor C to information changes.
+The terms "light" and "time" are used only as source-domain analogies:
+- physical light contributes the idea of a propagation/probing operation
+- physical time contributes the idea of accumulated state change
+
+In the formal model, these are replaced by:
+- an **Anchor-conditioned response operator** `R_C`
+- an **Anchor-relative drift coordinate** `D_C`
+
+Dynamic TVA contains no high-dimensional photons, no latent clock, and no physical temporal dimension. It only contains event-ordered transformations of knowledge states under an Anchor.
 
 ---
 
@@ -20,29 +28,32 @@ Anchor Drift is a knowledge-state metric — it only exists when a system's stat
 
 ---
 
-## The Revised Equation
+## Core Equations
 
-**Anchor C** is the key — the observer's intent or goal direction.
+$$\Delta O_C^{(n)} = R_C(K_n,\, \Delta I_n)$$
 
-Notation: **C** = Anchor vector, `Ĉ` = unit direction, `D*(C)` = optimal signal subspace.
+$$dD_C^{(n)} = \|\Delta O_C^{(n)}\|_C$$
 
-$$\boxed{\Delta \mathcal{D}_{\mathbf{C}} = \int_{\text{Path}} \langle d\mathbf{S}_{D^*(\mathbf{C})},\, \hat{\mathbf{C}} \rangle}$$
+$$D_C(N) = \sum_{n=1}^{N} dD_C^{(n)}$$
 
-**Reading:** Drift = accumulated projection of state displacement onto the Anchor direction, within the Anchor-defined signal subspace.
+Where:
+- `K_n` = corpus state after event n
+- `ΔI_n` = information injected at event n
+- `R_C` = Anchor-conditioned response operator
+- `D_C` = Anchor-relative drift coordinate (non-negative, event-ordered)
 
-| Problem | Resolution via Anchor |
-|---|---|
-| Coupling function undefined | Projection ⟨dS, Ĉ⟩ IS the coupling |
-| D* circular definition | D*(C) defined relative to Anchor; changes traceably |
-| Free-falling clock | Clock's Anchor = self-continuation; internal phase evolution is its drift |
+The response operator decomposes as `R_C = P_C ∘ W_C ∘ T`:
+- `T` = transition/propagation through knowledge state
+- `W_C` = Anchor weighting
+- `P_C` = Anchor projection
 
 ---
 
 ## Working Definition (Implementable)
 
-$$\Delta \mathcal{D}_{\mathbf{C}}(S_1 \to S_2) = \big\| \Pi_{D^*(\mathbf{C})}(S_2 - S_1) \big\| \cdot \cos\theta_{\mathbf{C}}$$
+$$\Delta D_C(S_1 \to S_2) = \big\| \Pi_{D^*(\mathbf{C})}(S_2 - S_1) \big\| \cdot \cos\theta_{\mathbf{C}}$$
 
-Three metric choices (not competitors — three levels):
+Three metric choices for `‖·‖_C`:
 
 | Layer | Formula | Use |
 |---|---|---|
@@ -50,80 +61,87 @@ Three metric choices (not competitors — three levels):
 | **KL divergence** | $D_{KL}(P_{\text{after}} \| P_{\text{before}})$ | Event-level distance |
 | **Anchor projection** | $\|\Pi_{D^*(\mathbf{C})}(S_2-S_1)\| \cdot \cos\theta$ | Observer-relative drift |
 
-Related formal frameworks: Page-Wootters (1983), thermal time (Rovelli-Connes 1994), Fubini-Study quantum metrics. No claim of physical identity — structural analogy at the operator level only.
+Related formal frameworks: Page-Wootters (1983), thermal time (Rovelli-Connes 1994), Fubini-Study quantum metrics. No claim of physical identity — structural analogy only.
 
 ---
 
-## Connection to Dynamic TVA
+## Three Open Problems Resolved by Anchor
 
-$$t_{\text{knowledge}} = \sum_{\text{events}} D_{KL}(P_{\text{after}} \,||\, P_{\text{before}})\big|_{D^*(\mathbf{C})}$$
-
-Properties:
-- 1000 trivial commits → small D_KL → little Anchor-drift
-- 1 paradigm-shifting paper → large D_KL → large Anchor-drift step
-
----
-
-## Applications (Concrete)
-
-**1. Dynamic TVA event ordering** — replace commit timestamp with cumulative ΔD_C.
-
-**2. LLM staleness** — LLM is stale when `Σ ΔD_C > θ_stale`. Measured in Anchor-relative drift, not months.
-
-**3. LLM thinking drift** — filler tokens have ΔD ≈ 0; key reasoning steps have large ΔD. True thinking drift ≠ token count.
+| Problem | Resolution |
+|---|---|
+| Coupling function undefined | `R_C` projection ⟨dS, Ĉ⟩ IS the coupling |
+| D* circular definition | D*(C) defined relative to Anchor; changes traceably |
+| Reflexivity | Reporting is a discrete D_C jump (see below) |
 
 ---
 
 ## The Bridge: Anchor IS the Bridge
 
-| TVA | Anchor Drift Metric |
+| S-TVA | Anchor Drift Metric |
 |---|---|
 | Anchor C filters 10^10 voids → meaningful ones | Anchor C filters infinite state changes → drift |
 | D*(C) = optimal signal subspace | D*(C) = signal subspace where drift is meaningful |
 | Void = unoccupied coordinate relative to Anchor | Drift = displacement relative to Anchor |
 
-Anchor is not a bridge between TVA and anchor drift. **Anchor IS the same mechanism at two scales.**
+Anchor is the same mechanism at two scales.
 
 ---
 
-## Dynamic TVA Formalization
+## Connection to D-TVA
 
-### Core equations
+$$D_C^{\text{knowledge}}(N) = \sum_{n=1}^{N} D_{KL}(P_n \,||\, P_{n-1})\big|_{D^*(\mathbf{C})}$$
 
-$$\Delta O_C = L_C(\mathcal{M}_\tau,\, \Delta I)$$
-$$dD_C = \|\Delta O_C\|_C$$
+- 1000 trivial commits → small D_KL → little drift
+- 1 paradigm-shifting paper → large D_KL → large drift step
 
-Where `L_C = P_C ∘ W_C ∘ T` is the **Anchor-conditioned illumination operator** (formally; "light" is metaphor only).
+---
 
-### Void velocity (answers Paper 1 open question #1)
+## Applications (Concrete)
 
-$$\vec{V}_{void}^C = \frac{dC_\tau}{dD_C}$$
+**1. D-TVA event ordering** — replace commit timestamp with cumulative `D_C`.
 
-### Reflexivity (answers Paper 1 open question #3)
+**2. LLM staleness** — LLM is stale when `D_C > θ_stale`. Measured in Anchor-relative drift, not months.
 
-Reporting a void is a discrete jump event, not a smooth limit:
+**3. LLM response quality** — filler tokens have `dD_C ≈ 0`; key reasoning steps have large `dD_C`. True response depth ≠ token count.
 
-```
-K_{τ-}, L_C^-  →  Report R injected  →  K_{τ+} = U_R(K_{τ-}), L_C^+ = U_R(L_C^-)
-dD_C^{report} = ‖O_C^+ - O_C^-‖_C
-```
+---
 
-Observation/reporting is a topological event that advances Anchor-drift. (See Issue #2.)
+## D-TVA Formalization
+
+### Void velocity
+
+Not physical velocity — drift-normalized void displacement:
+
+$$\vec{V}_{v}^{C} = \frac{dM_v}{dD_C}$$
+
+Where `M_v` = void midpoint / void representative.
+
+### Reflexivity as jump discontinuity
+
+$$K^-,\, R_C^- \xrightarrow{\text{Report } Q} K^+,\, R_C^+$$
+
+$$dD_C^{\text{report}} = \|O_C^+ - O_C^-\|_C$$
+
+$$D_C^+ = D_C^- + dD_C^{\text{report}}$$
+
+Reporting a void is a discrete D_C jump. Observation is a topological event that advances drift. (See Issue #2.)
 
 ---
 
 ## Collapse Pulse
 
-Entropy decrease ≠ time reversal. Falsification = compressive phase transition.
+Entropy decrease does not imply negative drift.
+
+`D_C` is accumulated response magnitude — non-negative by construction. A falsification event may reduce entropy, rank, or hypothesis volume, but still contributes positive `dD_C` because Anchor-observable structure has changed.
 
 ```
-Magnitude drift:  dD_C = ‖ΔO_C‖_C ≥ 0   (always forward)
-Entropy arrow:   σ_C = sign(ΔH_C)         (direction only)
+Magnitude:  dD_C = ‖ΔO_C‖_C ≥ 0   (always positive)
+Direction:  σ_C = sign(ΔH_C)         (separate scalar)
 ```
 
 **Full drift formula:**
 
-$$dD_C = \alpha\, W_2(\mu^{\tau+}, \mu^\tau) + \beta\, W_p(PD^{\tau+}, PD^\tau) + \gamma\, |\Delta H_C| + \delta\, |\Delta \text{rank}_C|$$
+$$dD_C = \alpha\, W_2 + \beta\, W_p(PD) + \gamma\, |\Delta H_C| + \delta\, |\Delta \text{rank}_C|$$
 
 **Event taxonomy:**
 
@@ -140,10 +158,10 @@ $$dD_C = \alpha\, W_2(\mu^{\tau+}, \mu^\tau) + \beta\, W_p(PD^{\tau+}, PD^\tau) 
 ## Axiom System
 
 1. **Anchor** — defines what differences are observable
-2. **Illumination operator L_C** — Anchor-conditioned operation: `L_C : (M_τ, ΔI) → ΔO_C`
-3. **Drift** — `D_C = Σ ‖ΔO_C‖_C ≥ 0`
-4. **Void** — illuminated absence under an Anchor
-5. **Collapse** — positive Anchor-drift + contraction of hypothesis topology
+2. **R_C** — Anchor-conditioned response operator: `R_C : (K_n, ΔI_n) → ΔO_C`
+3. **Drift D_C** — `D_C = Σ ‖ΔO_C‖_C ≥ 0`
+4. **Void** — position that is Anchor-responsive but absent
+5. **Collapse** — positive drift + contraction of hypothesis topology
 
 ---
 
@@ -152,18 +170,30 @@ $$dD_C = \alpha\, W_2(\mu^{\tau+}, \mu^\tau) + \beta\, W_p(PD^{\tau+}, PD^\tau) 
 | Type | Description |
 |---|---|
 | **True Void** | Genuine unfilled innovation space |
-| **False Void** | Appears empty but not viable — eliminated by compressive L_C (falsification) |
+| **False Void** | Appears empty but not viable — eliminated by compressive R_C |
 | **Shadow Void** | Caused by data gap or Anchor blind spot |
 | **Emergent Void** | Forming — not yet fully visible |
-| **Collapsed Void** | Killed by falsification evidence |
+| **Collapsed Void** | Killed by falsification |
 
-LLM hallucination = model fills **False Void** without compressive L_C (no falsification signal).
+LLM hallucination = model fills **False Void** without compressive R_C (no falsification signal).
+
+---
+
+## Ontology Table
+
+| Borrowed physical term | Formal replacement in D-TVA | Exists in latent space? |
+|---|---|---|
+| Light | Anchor-conditioned response operator `R_C` | No |
+| Time | Anchor-relative drift coordinate `D_C` | No physical time |
+| Velocity | Drift-normalized displacement `dM_v / dD_C` | Not physical velocity |
+| Collapse | Contraction of Anchor-visible hypothesis topology | Yes, as topology update |
+| Observation | Anchor-conditioned projection/update | Yes, as operation |
 
 ---
 
 ## Paper-ready sentence
 
-> **Dynamic TVA treats drift not as calendar duration, but as the accumulated deformation of an anchor-conditioned knowledge topology. The illumination operator is the operation that makes such deformation observable.**
+> **Dynamic TVA does not introduce light or time into latent space. It replaces them with their operational analogues: an Anchor-conditioned response operator R_C that makes latent differences observable, and an Anchor-relative drift coordinate D_C that accumulates the magnitude of such observable changes.**
 
 ---
 
@@ -173,8 +203,8 @@ Working draft. Not a paper yet.
 Return after TVV (Paper 2) is done.
 
 **Three papers:**
-- Paper 1 (TVA): Anchor defines meaningful voids
+- Paper 1 (S-TVA): Anchor defines meaningful voids
 - Paper 2 (TVV): Validates voids are real — *the bridge*
-- Paper 3 (DTVA): Voids move, collapse, form in Anchor-drift
+- Paper 3 (D-TVA): Voids move, collapse, form in Anchor-drift
 
 Open issues: #1 (norm), #2 (reflexivity jump), #3 (Linux experiment).
