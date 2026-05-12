@@ -86,24 +86,6 @@ Anchor is not a bridge between TVA and anchor drift. **Anchor IS the same mechan
 
 ---
 
-## Mapping to Calendar Time
-
-No bijection exists. Each Anchor has its own empirical mapping φ:
-
-$$\phi: t_{\text{human}} \mapsto \mathcal{D}_{\mathbf{C}}$$
-
-Built from sync points. Different domains → different φ shapes.
-
-**Experiment (Issue #3):**
-```python
-anchor = embed("Linux kernel scheduler design")
-# for each commit: compute dT_C = project(dS, anchor, D_star)
-# plot (wall_clock_time, cumulative_T_C)
-# expect: steep during CFS→EEVDF, flat during maintenance
-```
-
----
-
 ## Dynamic TVA Formalization
 
 ### Core equations
