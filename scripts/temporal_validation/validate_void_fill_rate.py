@@ -338,8 +338,19 @@ def run_validation(fill_threshold: float, skip_embed: bool = False):
     # ── Save ─────────────────────────────────────────────────────────────
     output = {
         "fill_threshold": fill_threshold,
-        "tva": {"total": tva_total, "filled": tva_filled, "fill_rate": tva_fill_rate, "results": tva_results},
-        "baseline_nearby": {"total": base_total, "filled": base_filled, "fill_rate": base_fill_rate},
+        "anchor_threshold": ANCHOR_THRESHOLD,
+        "tva": {
+            "total": tva_v1[1], "v1_filled": tva_v1[0], "v1_rate": tva_v1[2],
+            "v2_filled": tva_v2[0], "v2_rate": tva_v2[2],
+            "v3_filled": tva_v3[0], "v3_rate": tva_v3[2],
+            "results": tva_results,
+        },
+        "baseline_nearby": {
+            "total": base_v1[1], "v1_filled": base_v1[0], "v1_rate": base_v1[2],
+            "v2_filled": base_v2[0], "v2_rate": base_v2[2],
+            "v3_filled": base_v3[0], "v3_rate": base_v3[2],
+        },
+        "lift_v1": lift_v1, "lift_v2": lift_v2, "lift_v3": lift_v3,
         "lift": lift,
         "p_fisher": p_fisher,
         "p_shuffle": p_shuffle,
