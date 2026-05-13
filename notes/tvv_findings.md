@@ -98,6 +98,39 @@ This is the Paper 2 thesis.
 
 ---
 
+## Deeper Observation (not yet in paper)
+
+*2026-05-13. Kris Pan.*
+
+Fill rate contains an unexamined assumption:
+
+> **Fill velocity is assumed to be human research velocity.**
+
+When TVA is both the void-finder and the void-filler, this assumption collapses.
+
+| | Find speed | Fill measurement speed |
+|---|---|---|
+| Human | slow | slow (wait for papers) |
+| TVA | orders of magnitude faster | forced to wait for human papers |
+
+The 21.7% vs 32.8% comparison may not be a quality trade-off.
+It may be a **temporal-scale mismatch** — TVA's fill metric is measured on a human timescale that doesn't apply to machine-speed discovery.
+
+More precisely:
+- Human fill rate: 0.46 true fills / year across 28 years
+- TVA find rate: 60 void candidates in seconds
+- TVA-as-filler: would close voids in seconds, not years
+
+If finder and filler are both TVA, fill rate loses its meaning as a comparative metric.
+
+The correct question becomes: **from void discovery to void fill, how long does it take?** For TVA, this could be seconds. The 21.7% reflects human-speed fill measurement applied to machine-speed discovery.
+
+**Implication:** Fill rate is a human-centric metric. It measures research momentum at human velocity. TVA operates outside this timescale.
+
+**Decision pending:** whether and how to include this in Paper 2 framing.
+
+---
+
 ## Open Questions (for Paper 3 / D-TVA)
 
 - How does D_C (anchor-relative drift) correlate with void lifecycle events?
