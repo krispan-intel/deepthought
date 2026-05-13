@@ -59,9 +59,16 @@ Baseline's high fill rate is 74% false positive — geometrically close but epis
 
 ## Core Finding
 
-> **Raw fill rate measures research momentum, not void quality. TVA sacrifices fill frequency for epistemic fill quality.**
+> **Raw fill rate measures research momentum, not void quality.**
 
-This is the Paper 2 thesis.
+More precisely: raw fill rate is a property of the interaction between TVA candidates and the human research ecosystem within a time window. It is not a direct measure of void validity.
+
+TVA does not "sacrifice" fill rate — it selects different regions of knowledge space. Those regions exhibit lower observed near-term fill frequency because they are less aligned with current research momentum. Whether that is good or bad depends on what you want: if you want to predict the next incremental paper, baseline wins. If you want to find non-obvious gaps, TVA's lower fill rate may indicate it is looking in the right places.
+
+**The correct framing:**
+Raw fill rate conflates void quality with sociotechnical realization rate — whether the human research community happened to walk in that direction within the validation window. These are distinct quantities.
+
+This is Paper 2's core finding, not a claim that TVA is better.
 
 ---
 
@@ -74,6 +81,32 @@ This is the Paper 2 thesis.
 5. **Role-aware drift metric D_C** should weight epistemic events, not count fills
 
 ---
+
+## Scale Required for Strong Claims
+
+Current experiment is pilot-scale only. For publishable results:
+
+| Parameter | Current | Target |
+|---|---|---|
+| Anchors | 6 | 50–100 |
+| Voids per anchor | 10 | 50–100 |
+| Total voids | 60 | 2,500–5,000 |
+| Val horizon | 5 years | rolling windows (5×) |
+| Domains | cs.OS/AR/PL/SE | + cs.AI/LG/CL/CV, materials, bio |
+
+Rolling temporal windows needed:
+- train < 2010, val 2011–2015
+- train < 2012, val 2013–2017
+- train < 2014, val 2015–2019
+- train < 2016, val 2017–2021
+- train < 2018, val 2019–2023
+
+Baseline variants needed (reviewer will ask):
+- B1: anchor-nearby random (current)
+- B2: density-matched
+- B3: pair-distance-matched
+- B4: novelty-matched
+- B5: hot-zone continuation
 
 ## Limitations
 
