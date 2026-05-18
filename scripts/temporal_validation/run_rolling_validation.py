@@ -10,20 +10,23 @@ Splits:
   t4: train < 2016, val 2017-2021
   t5: train < 2018, val 2019-2023
 
-For each split:
-  1. Build train corpus embedding
-  2. Find TVA voids (top-K per anchor)
-  3. Build val corpus embedding
-  4. Compute fill rate + role classification
+Fill validation — three levels:
+  Level 0 (raw):          sim(midpoint, val_paper) > fill_threshold
+  Level 1 (anchor-gated): Level 0 AND sim(anchor, val_paper) > anchor_threshold
+  Level 2 (role-aware):   separate script (classify_void_fillers.py)
+
+TVA and baseline use the SAME gating condition (fair comparison).
 
 Usage:
     python scripts/temporal_validation/run_rolling_validation.py --splits t5
-    python scripts/temporal_validation/run_rolling_validation.py --splits t3 t4 t5
     python scripts/temporal_validation/run_rolling_validation.py --all --top-k 30
+    python scripts/temporal_validation/run_rolling_validation.py --splits t1 t2 --top-k 30
 """
 
 import argparse
 import json
+import random
+from collections import defaultdict
 from pathlib import Path
 
 from loguru import logger
@@ -39,7 +42,6 @@ SPLITS = {
     "t5": {"train_end": 2018, "val_start": 2019, "val_end": 2024},
 }
 
-# cs.* categories most relevant to Linux/x86 TVA corpus
 TARGET_CATEGORIES = {
     "cs.OS", "cs.AR", "cs.PL", "cs.SE", "cs.DC",
     "cs.NI", "cs.CR", "cs.AI", "cs.LG",
@@ -59,7 +61,9 @@ ANCHORS = {
 }
 
 FILL_THRESHOLD = 0.82
+ANCHOR_THRESHOLDS = [0.55, 0.60, 0.65, 0.70]  # sweep these
 BASELINE_PER_ANCHOR = 20
+C1_POOL = 300
 
 
 def paper_matches(paper: dict, categories: set) -> bool:
@@ -75,7 +79,6 @@ def get_year(paper: dict) -> int:
 
 
 def split_corpus(split_name: str, categories: set):
-    """Split arXiv into train and val JSONL for a given temporal split."""
     cfg = SPLITS[split_name]
     out_dir = OUTPUT_DIR / split_name
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -86,11 +89,9 @@ def split_corpus(split_name: str, categories: set):
         logger.info(f"[{split_name}] Using cached split files")
         return train_path, val_path
 
-    logger.info(f"[{split_name}] Splitting corpus: train<{cfg['train_end']}, val {cfg['val_start']}-{cfg['val_end']}")
+    logger.info(f"[{split_name}] Splitting: train<{cfg['train_end']}, val {cfg['val_start']}-{cfg['val_end']}")
     train_count = val_count = 0
-    with open(ARXIV_JSONL) as src, \
-         open(train_path, "w") as tf, \
-         open(val_path, "w") as vf:
+    with open(ARXIV_JSONL) as src, open(train_path, "w") as tf, open(val_path, "w") as vf:
         for line in src:
             try:
                 paper = json.loads(line)
@@ -121,7 +122,6 @@ def split_corpus(split_name: str, categories: set):
 
 
 def embed_corpus(jsonl_path: Path, collection_name: str, overwrite: bool = False):
-    """Embed a JSONL corpus into ChromaDB collection."""
     import chromadb
     import numpy as np
     from configs.settings import settings
@@ -133,7 +133,7 @@ def embed_corpus(jsonl_path: Path, collection_name: str, overwrite: bool = False
     if not overwrite:
         try:
             col = client.get_collection(collection_name)
-            logger.info(f"Collection '{collection_name}' exists ({col.count()} docs), skipping embed")
+            logger.info(f"Collection '{collection_name}' exists ({col.count()} docs), skipping")
             return col
         except Exception:
             pass
@@ -168,13 +168,12 @@ def embed_corpus(jsonl_path: Path, collection_name: str, overwrite: bool = False
 
 
 def find_voids(split_name: str, collection_name: str, top_k: int = 30):
-    """Run TVA void search on the train collection."""
     import chromadb
     import numpy as np
+    import re
     from configs.settings import settings
     from vectordb.embedder import create_embedder
     from core.deepthought_equation import DeepThoughtEquation, TechVector
-    from tqdm import tqdm
 
     out_dir = OUTPUT_DIR / split_name
     voids_path = out_dir / "voids.jsonl"
@@ -186,7 +185,6 @@ def find_voids(split_name: str, collection_name: str, top_k: int = 30):
     col = client.get_collection(collection_name)
     embedder = create_embedder()
 
-    # Fetch all embeddings
     FETCH = 5000
     total = col.count()
     ids, vecs, docs, metas = [], [], [], []
@@ -199,7 +197,6 @@ def find_voids(split_name: str, collection_name: str, top_k: int = 30):
     embeddings = np.array(vecs, dtype=np.float32)
     id_to_meta = {ids[i]: metas[i] for i in range(len(ids))}
 
-    # Load train abstracts for sparse tokens
     train_path = out_dir / "train.jsonl"
     id_to_abstract = {}
     with open(train_path) as f:
@@ -207,7 +204,6 @@ def find_voids(split_name: str, collection_name: str, top_k: int = 30):
             p = json.loads(line)
             id_to_abstract[p["id"]] = p.get("abstract", "") or ""
 
-    import re
     STOP = {"the","a","an","of","in","on","for","and","or","with","to","from",
             "is","are","be","by","at","as","we","our","this","that","which",
             "using","based","via","new","paper","work","method","approach",
@@ -221,7 +217,7 @@ def find_voids(split_name: str, collection_name: str, top_k: int = 30):
     for anchor_id, anchor_text in ANCHORS.items():
         anchor_vec = np.array(embedder.embed_query(anchor_text), dtype=np.float32)
         sims = embeddings @ anchor_vec
-        top_idx = sims.argsort()[::-1][:300].tolist()
+        top_idx = sims.argsort()[::-1][:C1_POOL].tolist()
         candidates = [
             TechVector(id=ids[i], vector=embeddings[i],
                        label=(docs[i] or ids[i])[:120],
@@ -239,10 +235,7 @@ def find_voids(split_name: str, collection_name: str, top_k: int = 30):
         )
         for v in landscape.voids:
             cid = v.candidate.id
-            if "::" in cid:
-                id_a, id_b = cid.split("::", 1)
-            else:
-                id_a = id_b = cid
+            id_a, id_b = (cid.split("::", 1) if "::" in cid else (cid, cid))
             meta_a = id_to_meta.get(id_a, {})
             meta_b = id_to_meta.get(id_b, {})
             all_voids.append({
@@ -258,15 +251,13 @@ def find_voids(split_name: str, collection_name: str, top_k: int = 30):
     with open(voids_path, "w") as f:
         for v in all_voids:
             f.write(json.dumps(v) + "\n")
-    logger.info(f"[{split_name}] Found {len(all_voids)} voids → {voids_path}")
+    logger.info(f"[{split_name}] {len(all_voids)} voids → {voids_path}")
     return voids_path
 
 
 def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: str):
-    """Compute fill rate for a split."""
     import chromadb
     import numpy as np
-    import random
     from configs.settings import settings
     from vectordb.embedder import create_embedder
 
@@ -274,7 +265,6 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
     train_col = client.get_collection(f"tvv_rolling_{split_name}_train")
     val_col = client.get_collection(val_collection_name)
 
-    # Fetch train embeddings
     FETCH = 5000
     t_ids, t_vecs = [], []
     for offset in range(0, train_col.count(), FETCH):
@@ -284,7 +274,6 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
     train_emb = np.array(t_vecs, dtype=np.float32)
     id_to_vec = {t_ids[i]: train_emb[i] for i in range(len(t_ids))}
 
-    # Fetch val embeddings
     v_ids, v_vecs = [], []
     for offset in range(0, val_col.count(), FETCH):
         b = val_col.get(limit=FETCH, offset=offset, include=["embeddings"])
@@ -296,77 +285,148 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
         c = a + b; n = np.linalg.norm(c)
         return c/n if n > 0 else c
 
-    def check(mp):
-        sims = val_emb @ mp
-        return sims.max() >= FILL_THRESHOLD
+    # Embed anchors
+    embedder = create_embedder()
+    anchor_vecs = {
+        aid: np.array(embedder.embed_query(atext), dtype=np.float32)
+        for aid, atext in ANCHORS.items()
+    }
+
+    def check_raw(mp):
+        return val_emb @ mp >= FILL_THRESHOLD
+
+    def check_gated(mp, av, anc_thresh):
+        sims_mid = val_emb @ mp
+        sims_anc = val_emb @ av
+        mask = sims_anc >= anc_thresh
+        if not mask.any():
+            return False
+        return bool((sims_mid[mask] >= FILL_THRESHOLD).any())
 
     voids = []
     with open(voids_path) as f:
         for line in f:
             voids.append(json.loads(line))
 
-    filled = 0
+    # Per-anchor counters
+    anchor_stats = {aid: {"total": 0, "raw": 0, **{f"g{int(t*100)}": 0 for t in ANCHOR_THRESHOLDS}}
+                    for aid in ANCHORS}
+
+    raw_filled = 0
+    gated_filled = {t: 0 for t in ANCHOR_THRESHOLDS}
+    valid_voids = 0
+
     for v in voids:
         va = id_to_vec.get(v["paper_a"]["id"])
         vb = id_to_vec.get(v["paper_b"]["id"])
         if va is None or vb is None:
             continue
-        if check(slerp(va, vb)):
-            filled += 1
+        mp = slerp(va, vb)
+        av = anchor_vecs.get(v["anchor_id"])
+        aid = v["anchor_id"]
+        valid_voids += 1
+        anchor_stats[aid]["total"] += 1
 
-    # Baseline
-    embedder = create_embedder()
+        raw = check_raw(mp).any()
+        if raw:
+            raw_filled += 1
+            anchor_stats[aid]["raw"] += 1
+        for t in ANCHOR_THRESHOLDS:
+            if av is not None and check_gated(mp, av, t):
+                gated_filled[t] += 1
+                anchor_stats[aid][f"g{int(t*100)}"] += 1
+
+    # Baseline — same gating
     rng = random.Random(42)
-    base_filled = base_total = 0
-    for anchor_id, anchor_text in ANCHORS.items():
-        av = np.array(embedder.embed_query(anchor_text), dtype=np.float32)
+    base_raw = 0
+    base_gated = {t: 0 for t in ANCHOR_THRESHOLDS}
+    base_total = 0
+
+    for anchor_id in ANCHORS:
+        av = anchor_vecs[anchor_id]
         sims = train_emb @ av
-        top_idx = sims.argsort()[::-1][:300].tolist()
+        top_idx = sims.argsort()[::-1][:C1_POOL].tolist()
         for _ in range(BASELINE_PER_ANCHOR):
             i, j = rng.sample(top_idx, 2)
-            if check(slerp(train_emb[i], train_emb[j])):
-                base_filled += 1
+            mp = slerp(train_emb[i], train_emb[j])
+            if check_raw(mp).any():
+                base_raw += 1
+            for t in ANCHOR_THRESHOLDS:
+                if check_gated(mp, av, t):
+                    base_gated[t] += 1
             base_total += 1
+
+    def safe_lift(a, na, b, nb):
+        if na == 0 or nb == 0 or b == 0:
+            return None
+        return round((a/na) / (b/nb), 4)
 
     result = {
         "split": split_name,
-        "tva": {"total": len(voids), "filled": filled,
-                "fill_rate": filled/len(voids) if voids else 0},
-        "baseline": {"total": base_total, "filled": base_filled,
-                     "fill_rate": base_filled/base_total if base_total else 0},
-        "lift": (filled/len(voids)) / (base_filled/base_total)
-               if base_filled > 0 and voids else None,
+        "fill_threshold": FILL_THRESHOLD,
+        "anchor_thresholds": ANCHOR_THRESHOLDS,
+        "tva": {
+            "total": valid_voids,
+            "raw_filled": raw_filled,
+            "raw_rate": round(raw_filled/valid_voids, 4) if valid_voids else 0,
+            **{f"gated_{int(t*100)}_filled": gated_filled[t] for t in ANCHOR_THRESHOLDS},
+            **{f"gated_{int(t*100)}_rate": round(gated_filled[t]/valid_voids, 4) if valid_voids else 0
+               for t in ANCHOR_THRESHOLDS},
+        },
+        "baseline": {
+            "total": base_total,
+            "raw_filled": base_raw,
+            "raw_rate": round(base_raw/base_total, 4) if base_total else 0,
+            **{f"gated_{int(t*100)}_filled": base_gated[t] for t in ANCHOR_THRESHOLDS},
+            **{f"gated_{int(t*100)}_rate": round(base_gated[t]/base_total, 4) if base_total else 0
+               for t in ANCHOR_THRESHOLDS},
+        },
+        "lifts": {
+            "raw": safe_lift(raw_filled, valid_voids, base_raw, base_total),
+            **{f"gated_{int(t*100)}": safe_lift(gated_filled[t], valid_voids, base_gated[t], base_total)
+               for t in ANCHOR_THRESHOLDS},
+        },
+        "per_anchor": anchor_stats,
     }
+
     out = OUTPUT_DIR / split_name / "fill_rate.json"
     with open(out, "w") as f:
         json.dump(result, f, indent=2)
-    logger.info(f"[{split_name}] TVA {filled}/{len(voids)}={filled/len(voids):.1%}  "
-                f"Base {base_filled}/{base_total}={base_filled/base_total:.1%}  "
-                f"Lift {result['lift']:.2f}x" if result['lift'] else "")
+
+    # Print summary
+    print(f"\n[{split_name}] Fill threshold={FILL_THRESHOLD}")
+    print(f"{'Metric':<20} {'TVA':>10} {'Baseline':>10} {'Lift':>8}")
+    print("-" * 52)
+    tva = result["tva"]
+    base = result["baseline"]
+    lifts = result["lifts"]
+    print(f"{'raw':<20} {tva['raw_filled']}/{tva['total']}={tva['raw_rate']:.0%}  "
+          f"{base['raw_filled']}/{base['total']}={base['raw_rate']:.0%}  "
+          f"{lifts['raw']:.2f}x" if lifts['raw'] else "N/A")
+    for t in ANCHOR_THRESHOLDS:
+        k = f"gated_{int(t*100)}"
+        print(f"{'anchor≥'+str(t):<20} {tva[k+'_filled']}/{tva['total']}={tva[k+'_rate']:.0%}  "
+              f"{base[k+'_filled']}/{base['total']}={base[k+'_rate']:.0%}  "
+              f"{lifts[k]:.2f}x" if lifts[k] else "N/A")
+
+    logger.info(f"[{split_name}] Results → {out}")
     return result
 
 
 def run_split(split_name: str, top_k: int, overwrite: bool):
-    logger.info(f"\n{'='*50}")
-    logger.info(f"SPLIT: {split_name}  ({SPLITS[split_name]})")
-    logger.info(f"{'='*50}")
-
+    logger.info(f"\n{'='*50}\nSPLIT: {split_name}  ({SPLITS[split_name]})\n{'='*50}")
     train_path, val_path = split_corpus(split_name, TARGET_CATEGORIES)
     train_col_name = f"tvv_rolling_{split_name}_train"
     val_col_name = f"tvv_rolling_{split_name}_val"
-
     embed_corpus(train_path, train_col_name, overwrite=overwrite)
     embed_corpus(val_path, val_col_name, overwrite=overwrite)
-
     voids_path = find_voids(split_name, train_col_name, top_k=top_k)
-    result = compute_fill_rate(split_name, voids_path, val_col_name)
-    return result
+    return compute_fill_rate(split_name, voids_path, val_col_name)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--splits", nargs="+", choices=list(SPLITS.keys()),
-                        default=["t5"])
+    parser.add_argument("--splits", nargs="+", choices=list(SPLITS.keys()), default=["t5"])
     parser.add_argument("--all", action="store_true")
     parser.add_argument("--top-k", type=int, default=30)
     parser.add_argument("--overwrite", action="store_true")
@@ -380,16 +440,23 @@ def main():
         result = run_split(split_name, args.top_k, args.overwrite)
         all_results.append(result)
 
-    print(f"\n{'='*55}")
-    print(f"{'Split':<8} {'TVA':>12} {'Baseline':>12} {'Lift':>8}")
-    print("-" * 55)
+    # Summary table
+    print(f"\n{'='*75}")
+    print(f"{'Split':<6} {'raw TVA':>9} {'raw Base':>9} {'raw Lift':>8} "
+          f"{'g65 TVA':>9} {'g65 Base':>9} {'g65 Lift':>8}")
+    print("-" * 75)
     for r in all_results:
-        tva = r["tva"]
-        base = r["baseline"]
-        lift = f"{r['lift']:.2f}x" if r["lift"] else "N/A"
-        print(f"{r['split']:<8} {tva['filled']}/{tva['total']}={tva['fill_rate']:.0%}  "
-              f"{base['filled']}/{base['total']}={base['fill_rate']:.0%}  {lift:>8}")
-    print(f"{'='*55}")
+        t = r["tva"]
+        b = r["baseline"]
+        l = r["lifts"]
+        print(f"{r['split']:<6} "
+              f"{t['raw_filled']}/{t['total']}={t['raw_rate']:.0%}  "
+              f"{b['raw_filled']}/{b['total']}={b['raw_rate']:.0%}  "
+              f"{str(l['raw'])+'x':>8}  "
+              f"{t['gated_65_filled']}/{t['total']}={t['gated_65_rate']:.0%}  "
+              f"{b['gated_65_filled']}/{b['total']}={b['gated_65_rate']:.0%}  "
+              f"{str(l['gated_65'])+'x':>8}")
+    print(f"{'='*75}")
 
     summary_path = OUTPUT_DIR / "rolling_summary.json"
     with open(summary_path, "w") as f:
