@@ -366,6 +366,27 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
     hybrid_filled = {q: 0 for q in HYBRID_QUANTILES}
     valid_voids = 0
 
+    # Load train abstracts for case output
+    train_path = OUTPUT_DIR / split_name / "train.jsonl"
+    val_path_jsonl = OUTPUT_DIR / split_name / "val.jsonl"
+    id_to_abstract_train = {}
+    if train_path.exists():
+        with open(train_path) as f:
+            for line in f:
+                p = json.loads(line)
+                id_to_abstract_train[p["id"]] = p.get("abstract", "")
+    id_to_abstract_val = {}
+    val_papers_meta = {}
+    if val_path_jsonl.exists():
+        with open(val_path_jsonl) as f:
+            for line in f:
+                p = json.loads(line)
+                id_to_abstract_val[p["id"]] = p.get("abstract", "")
+                val_papers_meta[p["id"]] = p
+
+    # Filled cases for role-aware classification
+    raw_filled_cases = []
+
     for v in voids:
         va = id_to_vec.get(v["paper_a"]["id"])
         vb = id_to_vec.get(v["paper_b"]["id"])
@@ -377,9 +398,47 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
         valid_voids += 1
         anchor_stats[aid]["total"] += 1
 
+        val_sims = val_emb @ mp
+        max_sim = float(val_sims.max())
+
         if check_raw(mp):
             raw_filled += 1
             anchor_stats[aid]["raw"] += 1
+            # Build case record for classification
+            best_idx = int(val_sims.argmax())
+            filler_id = v_ids[best_idx] if best_idx < len(v_ids) else None
+            filler_meta = val_papers_meta.get(filler_id, {}) if filler_id else {}
+            anchor_sim = float((val_emb[best_idx] @ av)) if av is not None and filler_id else None
+            raw_filled_cases.append({
+                "case_id": f"{split_name}_raw_tva_{v['void_id'][:20]}",
+                "split": split_name, "metric": "raw", "source": "tva",
+                "anchor_id": aid,
+                "anchor": ANCHORS.get(aid, ""),
+                "void_id": v["void_id"],
+                "source_a": {
+                    "id": v["paper_a"]["id"],
+                    "title": v["paper_a"]["title"],
+                    "abstract": id_to_abstract_train.get(v["paper_a"]["id"], ""),
+                    "year": v["paper_a"].get("year"),
+                },
+                "source_b": {
+                    "id": v["paper_b"]["id"],
+                    "title": v["paper_b"]["title"],
+                    "abstract": id_to_abstract_train.get(v["paper_b"]["id"], ""),
+                    "year": v["paper_b"].get("year"),
+                },
+                "filler": {
+                    "id": filler_id,
+                    "title": filler_meta.get("title", ""),
+                    "abstract": id_to_abstract_val.get(filler_id, "") if filler_id else "",
+                    "year": filler_meta.get("year"),
+                    "sim_to_midpoint": max_sim,
+                    "sim_to_anchor": anchor_sim,
+                },
+                "gate": {"type": "raw", "fill_threshold": FILL_THRESHOLD,
+                         "anchor_threshold": None, "passed_anchor_gate": None},
+            })
+
         for t in ANCHOR_THRESHOLDS:
             if av is not None and check_gated_fixed(mp, av, t):
                 gated_filled[t] += 1
@@ -400,6 +459,8 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
     base_pure_q = {q: 0 for q in ANCHOR_QUANTILES}
     base_hybrid = {q: 0 for q in HYBRID_QUANTILES}
     base_total = 0
+    base_filled_cases = []
+    base_case_counter = 0
 
     for anchor_id in ANCHORS:
         av = anchor_vecs[anchor_id]
@@ -408,8 +469,41 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
         for _ in range(BASELINE_PER_ANCHOR):
             i, j = rng.sample(top_idx, 2)
             mp = slerp(train_emb[i], train_emb[j])
+            val_sims = val_emb @ mp
+            max_sim = float(val_sims.max())
             if check_raw(mp):
                 base_raw += 1
+                best_idx = int(val_sims.argmax())
+                filler_id = v_ids[best_idx] if best_idx < len(v_ids) else None
+                filler_meta = val_papers_meta.get(filler_id, {}) if filler_id else {}
+                anchor_sim_f = float(val_emb[best_idx] @ av) if filler_id else None
+                base_filled_cases.append({
+                    "case_id": f"{split_name}_raw_base_{anchor_id}_{base_case_counter:03d}",
+                    "split": split_name, "metric": "raw", "source": "baseline",
+                    "anchor_id": anchor_id, "anchor": ANCHORS.get(anchor_id, ""),
+                    "void_id": f"base_{anchor_id}_{i}_{j}",
+                    "source_a": {
+                        "id": t_ids[i] if i < len(t_ids) else "",
+                        "title": "", "abstract": id_to_abstract_train.get(t_ids[i] if i < len(t_ids) else "", ""),
+                        "year": None,
+                    },
+                    "source_b": {
+                        "id": t_ids[j] if j < len(t_ids) else "",
+                        "title": "", "abstract": id_to_abstract_train.get(t_ids[j] if j < len(t_ids) else "", ""),
+                        "year": None,
+                    },
+                    "filler": {
+                        "id": filler_id,
+                        "title": filler_meta.get("title", ""),
+                        "abstract": id_to_abstract_val.get(filler_id, "") if filler_id else "",
+                        "year": filler_meta.get("year"),
+                        "sim_to_midpoint": max_sim,
+                        "sim_to_anchor": anchor_sim_f,
+                    },
+                    "gate": {"type": "raw", "fill_threshold": FILL_THRESHOLD,
+                             "anchor_threshold": None, "passed_anchor_gate": None},
+                })
+                base_case_counter += 1
             for t in ANCHOR_THRESHOLDS:
                 if check_gated_fixed(mp, av, t):
                     base_gated[t] += 1
@@ -420,6 +514,15 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
                 if check_gated_hybrid(mp, anchor_id, q):
                     base_hybrid[q] += 1
             base_total += 1
+
+    # Save filled cases for role-aware classification
+    all_cases = raw_filled_cases + base_filled_cases
+    random.Random(42).shuffle(all_cases)  # blind shuffle
+    cases_path = OUTPUT_DIR / split_name / "filled_cases_raw.jsonl"
+    with open(cases_path, "w") as f:
+        for c in all_cases:
+            f.write(json.dumps(c) + "\n")
+    logger.info(f"[{split_name}] Saved {len(raw_filled_cases)} TVA + {len(base_filled_cases)} baseline filled cases → {cases_path}")
 
     def safe_lift(a, na, b, nb):
         if na == 0 or nb == 0 or b == 0:
