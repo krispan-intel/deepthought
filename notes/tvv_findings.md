@@ -9,6 +9,52 @@ Role-aware epistemic classification reveals TVA's true advantage.
 
 ---
 
+## Anchor-Gating Diagnostics (t5)
+
+Val papers' mean cosine similarity to Anchors = **0.52** (std=0.047).
+At threshold 0.65, only 1% of val papers pass → gate too strict, almost nothing fills.
+
+Corpus-aware hybrid gate: `τ_C = max(Q80_val, Q_q_train)`
+
+| Gate | TVA | Baseline | Lift | Val pass rate |
+|---|---|---|---|---|
+| Raw | 28% | 36% | 0.78x | 100% |
+| Fixed 0.55 | 27% | 35% | 0.78x | ~25% |
+| Fixed 0.65 | 13% | 20% | 0.65x | ~1% |
+| Hybrid Q90 (floor≈0.58) | 27% | 35% | 0.78x | 5-7% |
+
+**Key finding:** Domain-filtered val corpus (cs.OS/AR/PL/SE) already limits semantic diversity. Further Anchor-gating (hybrid Q90) passes only 5-7% of val papers but converges to same lift as raw because the gate is still too narrow to discriminate TVA from baseline.
+
+Fixed 0.65 shows discriminative effect (0.65x lift) but at the cost of near-zero pass rate — the gate is filtering out real fills alongside noise.
+
+**Implication — Anchor Exposure Problem:**
+
+Anchor-gating reveals a deeper issue: **fill rate is exposure-limited** when the Anchor-gated validation set is small.
+
+When hybrid q90 gate passes only 5-7% of val papers, an unfilled void has three possible explanations:
+1. The void is genuinely not filled
+2. The void is filled but not in this validation corpus/window
+3. The Anchor-relevant future papers are too few to observe fill (*underexposure*)
+
+These cannot be distinguished from fill rate alone.
+
+**Raw fill rate conflates three factors: geometric proximity, research momentum, and Anchor exposure.**
+
+Anchor-gating separates Anchor exposure from midpoint proximity.
+Role-aware classification separates epistemic fill from geometric false positive.
+
+**Three-layer validation framework:**
+
+| Layer | Metric | What it measures |
+|---|---|---|
+| Geometric | Raw fill rate | Is any future paper near the midpoint? |
+| Eligibility | Anchor val pass rate | Does the validation window have enough Anchor-relevant evidence? |
+| Epistemic | Role-aware fill score | Is the nearby paper actually doing epistemic work? |
+
+**Minimum exposure threshold:** If Anchor-gated val papers < N_min or pass_rate < 10%, fill result should be marked as *underexposed*, not as evidence of void invalidity.
+
+---
+
 ## Rolling Temporal Validation Results
 
 Three temporal splits, 10 anchors × 30 voids = 300 TVA candidates per split.
@@ -27,7 +73,7 @@ t3 is nearly tied (0.97x lift) — in the 2015-2020 window, the research landsca
 
 **This confirms:** raw fill rate is a proxy for research momentum, not void quality. The trend across splits strengthens this interpretation.
 
-t1 and t2 not yet run.
+t1 and t2 not yet run. All three splits above use raw fill metric (no anchor-gating). See Anchor-Gating Diagnostics section for gated results on t5.
 
 ---
 
