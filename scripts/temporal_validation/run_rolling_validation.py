@@ -61,7 +61,8 @@ ANCHORS = {
 }
 
 FILL_THRESHOLD = 0.82
-ANCHOR_THRESHOLDS = [0.55, 0.60, 0.65, 0.70]  # sweep these
+ANCHOR_THRESHOLDS = [0.55, 0.60, 0.65, 0.70]  # fixed threshold sweep (diagnostic)
+ANCHOR_QUANTILES = [0.80, 0.85, 0.90, 0.95]   # quantile-based (main method)
 BASELINE_PER_ANCHOR = 20
 C1_POOL = 300
 
@@ -292,13 +293,32 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
         for aid, atext in ANCHORS.items()
     }
 
-    def check_raw(mp):
-        return val_emb @ mp >= FILL_THRESHOLD
+    # Precompute Anchor-local quantile thresholds from train corpus
+    anchor_quantile_thresholds = {}
+    for aid, av in anchor_vecs.items():
+        sims_train = train_emb @ av
+        anchor_quantile_thresholds[aid] = {
+            q: float(np.quantile(sims_train, q)) for q in ANCHOR_QUANTILES
+        }
+    logger.info(f"[{split_name}] Sample anchor thresholds (sched_opt): "
+                + str({q: round(v, 3) for q, v in
+                       anchor_quantile_thresholds.get("sched_opt", {}).items()}))
 
-    def check_gated(mp, av, anc_thresh):
+    def check_raw(mp):
+        return bool((val_emb @ mp >= FILL_THRESHOLD).any())
+
+    def check_gated_fixed(mp, av, anc_thresh):
         sims_mid = val_emb @ mp
-        sims_anc = val_emb @ av
-        mask = sims_anc >= anc_thresh
+        mask = val_emb @ av >= anc_thresh
+        if not mask.any():
+            return False
+        return bool((sims_mid[mask] >= FILL_THRESHOLD).any())
+
+    def check_gated_quantile(mp, aid, q):
+        av = anchor_vecs[aid]
+        tau = anchor_quantile_thresholds[aid][q]
+        sims_mid = val_emb @ mp
+        mask = val_emb @ av >= tau
         if not mask.any():
             return False
         return bool((sims_mid[mask] >= FILL_THRESHOLD).any())
@@ -308,12 +328,17 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
         for line in f:
             voids.append(json.loads(line))
 
-    # Per-anchor counters
-    anchor_stats = {aid: {"total": 0, "raw": 0, **{f"g{int(t*100)}": 0 for t in ANCHOR_THRESHOLDS}}
-                    for aid in ANCHORS}
+    # Counters
+    anchor_stats = {
+        aid: {"total": 0, "raw": 0,
+              **{f"g{int(t*100)}": 0 for t in ANCHOR_THRESHOLDS},
+              **{f"q{int(q*100)}": 0 for q in ANCHOR_QUANTILES}}
+        for aid in ANCHORS
+    }
 
     raw_filled = 0
     gated_filled = {t: 0 for t in ANCHOR_THRESHOLDS}
+    quantile_filled = {q: 0 for q in ANCHOR_QUANTILES}
     valid_voids = 0
 
     for v in voids:
@@ -327,19 +352,23 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
         valid_voids += 1
         anchor_stats[aid]["total"] += 1
 
-        raw = check_raw(mp).any()
-        if raw:
+        if check_raw(mp):
             raw_filled += 1
             anchor_stats[aid]["raw"] += 1
         for t in ANCHOR_THRESHOLDS:
-            if av is not None and check_gated(mp, av, t):
+            if av is not None and check_gated_fixed(mp, av, t):
                 gated_filled[t] += 1
                 anchor_stats[aid][f"g{int(t*100)}"] += 1
+        for q in ANCHOR_QUANTILES:
+            if check_gated_quantile(mp, aid, q):
+                quantile_filled[q] += 1
+                anchor_stats[aid][f"q{int(q*100)}"] += 1
 
-    # Baseline — same gating
+    # Baseline — same gating applied
     rng = random.Random(42)
     base_raw = 0
     base_gated = {t: 0 for t in ANCHOR_THRESHOLDS}
+    base_quantile = {q: 0 for q in ANCHOR_QUANTILES}
     base_total = 0
 
     for anchor_id in ANCHORS:
@@ -349,11 +378,14 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
         for _ in range(BASELINE_PER_ANCHOR):
             i, j = rng.sample(top_idx, 2)
             mp = slerp(train_emb[i], train_emb[j])
-            if check_raw(mp).any():
+            if check_raw(mp):
                 base_raw += 1
             for t in ANCHOR_THRESHOLDS:
-                if check_gated(mp, av, t):
+                if check_gated_fixed(mp, av, t):
                     base_gated[t] += 1
+            for q in ANCHOR_QUANTILES:
+                if check_gated_quantile(mp, anchor_id, q):
+                    base_quantile[q] += 1
             base_total += 1
 
     def safe_lift(a, na, b, nb):
@@ -364,7 +396,7 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
     result = {
         "split": split_name,
         "fill_threshold": FILL_THRESHOLD,
-        "anchor_thresholds": ANCHOR_THRESHOLDS,
+        "anchor_quantile_thresholds_sample": anchor_quantile_thresholds.get("sched_opt", {}),
         "tva": {
             "total": valid_voids,
             "raw_filled": raw_filled,
@@ -372,6 +404,9 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
             **{f"gated_{int(t*100)}_filled": gated_filled[t] for t in ANCHOR_THRESHOLDS},
             **{f"gated_{int(t*100)}_rate": round(gated_filled[t]/valid_voids, 4) if valid_voids else 0
                for t in ANCHOR_THRESHOLDS},
+            **{f"q{int(q*100)}_filled": quantile_filled[q] for q in ANCHOR_QUANTILES},
+            **{f"q{int(q*100)}_rate": round(quantile_filled[q]/valid_voids, 4) if valid_voids else 0
+               for q in ANCHOR_QUANTILES},
         },
         "baseline": {
             "total": base_total,
@@ -380,11 +415,16 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
             **{f"gated_{int(t*100)}_filled": base_gated[t] for t in ANCHOR_THRESHOLDS},
             **{f"gated_{int(t*100)}_rate": round(base_gated[t]/base_total, 4) if base_total else 0
                for t in ANCHOR_THRESHOLDS},
+            **{f"q{int(q*100)}_filled": base_quantile[q] for q in ANCHOR_QUANTILES},
+            **{f"q{int(q*100)}_rate": round(base_quantile[q]/base_total, 4) if base_total else 0
+               for q in ANCHOR_QUANTILES},
         },
         "lifts": {
             "raw": safe_lift(raw_filled, valid_voids, base_raw, base_total),
             **{f"gated_{int(t*100)}": safe_lift(gated_filled[t], valid_voids, base_gated[t], base_total)
                for t in ANCHOR_THRESHOLDS},
+            **{f"q{int(q*100)}": safe_lift(quantile_filled[q], valid_voids, base_quantile[q], base_total)
+               for q in ANCHOR_QUANTILES},
         },
         "per_anchor": anchor_stats,
     }
@@ -394,20 +434,26 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
         json.dump(result, f, indent=2)
 
     # Print summary
-    print(f"\n[{split_name}] Fill threshold={FILL_THRESHOLD}")
-    print(f"{'Metric':<20} {'TVA':>10} {'Baseline':>10} {'Lift':>8}")
-    print("-" * 52)
+    print(f"\n[{split_name}] fill_threshold={FILL_THRESHOLD}")
+    print(f"{'Metric':<22} {'TVA':>10} {'Baseline':>10} {'Lift':>8}")
+    print("-" * 55)
     tva = result["tva"]
     base = result["baseline"]
     lifts = result["lifts"]
-    print(f"{'raw':<20} {tva['raw_filled']}/{tva['total']}={tva['raw_rate']:.0%}  "
-          f"{base['raw_filled']}/{base['total']}={base['raw_rate']:.0%}  "
-          f"{lifts['raw']:.2f}x" if lifts['raw'] else "N/A")
+    rows = [
+        ("raw", tva["raw_filled"], tva["raw_rate"], base["raw_filled"], base["raw_rate"], lifts["raw"]),
+    ]
     for t in ANCHOR_THRESHOLDS:
         k = f"gated_{int(t*100)}"
-        print(f"{'anchor≥'+str(t):<20} {tva[k+'_filled']}/{tva['total']}={tva[k+'_rate']:.0%}  "
-              f"{base[k+'_filled']}/{base['total']}={base[k+'_rate']:.0%}  "
-              f"{lifts[k]:.2f}x" if lifts[k] else "N/A")
+        rows.append((f"fixed≥{t}", tva[k+"_filled"], tva[k+"_rate"],
+                      base[k+"_filled"], base[k+"_rate"], lifts[k]))
+    for q in ANCHOR_QUANTILES:
+        k = f"q{int(q*100)}"
+        rows.append((f"quantile q{int(q*100)}", tva[k+"_filled"], tva[k+"_rate"],
+                      base[k+"_filled"], base[k+"_rate"], lifts[k]))
+    for label, tf, tr, bf, br, lift in rows:
+        lift_str = f"{lift:.2f}x" if lift else "N/A"
+        print(f"{label:<22} {tf}/{tva['total']}={tr:.0%}  {bf}/{base['total']}={br:.0%}  {lift_str:>8}")
 
     logger.info(f"[{split_name}] Results → {out}")
     return result
