@@ -62,7 +62,9 @@ ANCHORS = {
 
 FILL_THRESHOLD = 0.82
 ANCHOR_THRESHOLDS = [0.55, 0.60, 0.65, 0.70]  # fixed threshold sweep (diagnostic)
-ANCHOR_QUANTILES = [0.80, 0.85, 0.90, 0.95]   # quantile-based (main method)
+ANCHOR_QUANTILES = [0.80, 0.85, 0.90, 0.95]   # pure quantile (diagnostic)
+TAU_MIN_QUANTILE = 0.80  # hybrid floor = Q80 of val-anchor sims (corpus-aware, ~top 20%)
+HYBRID_QUANTILES = [0.85, 0.90, 0.95]          # hybrid = max(TAU_MIN, Q_q) — main method
 BASELINE_PER_ANCHOR = 20
 C1_POOL = 300
 
@@ -293,16 +295,27 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
         for aid, atext in ANCHORS.items()
     }
 
-    # Precompute Anchor-local quantile thresholds from train corpus
-    anchor_quantile_thresholds = {}
+    # Precompute Anchor-local thresholds
+    # hybrid floor = Q{TAU_MIN_QUANTILE} of val-anchor sims (corpus-aware top-20% of val)
+    anchor_thresholds_computed = {}
     for aid, av in anchor_vecs.items():
         sims_train = train_emb @ av
-        anchor_quantile_thresholds[aid] = {
-            q: float(np.quantile(sims_train, q)) for q in ANCHOR_QUANTILES
+        sims_val = val_emb @ av
+        # floor = Q80 of actual val similarities (top 20% of val for this anchor)
+        tau_min_corpus = float(np.quantile(sims_val, TAU_MIN_QUANTILE))
+        pure_q = {q: float(np.quantile(sims_train, q)) for q in ANCHOR_QUANTILES}
+        # hybrid: max(corpus-aware floor, train-based quantile)
+        hybrid_q = {q: float(max(tau_min_corpus, np.quantile(sims_train, q))) for q in HYBRID_QUANTILES}
+        val_pass = {q: float((sims_val >= hybrid_q[q]).mean()) for q in HYBRID_QUANTILES}
+        anchor_thresholds_computed[aid] = {
+            "tau_min_corpus": tau_min_corpus,
+            "pure_q": pure_q, "hybrid_q": hybrid_q, "val_pass_rate": val_pass
         }
-    logger.info(f"[{split_name}] Sample anchor thresholds (sched_opt): "
-                + str({q: round(v, 3) for q, v in
-                       anchor_quantile_thresholds.get("sched_opt", {}).items()}))
+    sample = anchor_thresholds_computed.get("sched_opt", {})
+    logger.info(f"[{split_name}] sched_opt hybrid thresholds: "
+                + str({q: round(sample.get("hybrid_q",{}).get(q,0), 3) for q in HYBRID_QUANTILES})
+                + "  val pass: "
+                + str({q: f"{sample.get('val_pass_rate',{}).get(q,0):.0%}" for q in HYBRID_QUANTILES}))
 
     def check_raw(mp):
         return bool((val_emb @ mp >= FILL_THRESHOLD).any())
@@ -314,9 +327,19 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
             return False
         return bool((sims_mid[mask] >= FILL_THRESHOLD).any())
 
-    def check_gated_quantile(mp, aid, q):
+    def check_gated_pure_quantile(mp, aid, q):
         av = anchor_vecs[aid]
-        tau = anchor_quantile_thresholds[aid][q]
+        tau = anchor_thresholds_computed[aid]["pure_q"][q]
+        sims_mid = val_emb @ mp
+        mask = val_emb @ av >= tau
+        if not mask.any():
+            return False
+        return bool((sims_mid[mask] >= FILL_THRESHOLD).any())
+
+    def check_gated_hybrid(mp, aid, q):
+        """Hybrid: max(TAU_MIN, Q_q) — main method."""
+        av = anchor_vecs[aid]
+        tau = anchor_thresholds_computed[aid]["hybrid_q"][q]
         sims_mid = val_emb @ mp
         mask = val_emb @ av >= tau
         if not mask.any():
@@ -332,13 +355,15 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
     anchor_stats = {
         aid: {"total": 0, "raw": 0,
               **{f"g{int(t*100)}": 0 for t in ANCHOR_THRESHOLDS},
-              **{f"q{int(q*100)}": 0 for q in ANCHOR_QUANTILES}}
+              **{f"pq{int(q*100)}": 0 for q in ANCHOR_QUANTILES},
+              **{f"h{int(q*100)}": 0 for q in HYBRID_QUANTILES}}
         for aid in ANCHORS
     }
 
     raw_filled = 0
     gated_filled = {t: 0 for t in ANCHOR_THRESHOLDS}
-    quantile_filled = {q: 0 for q in ANCHOR_QUANTILES}
+    pure_q_filled = {q: 0 for q in ANCHOR_QUANTILES}
+    hybrid_filled = {q: 0 for q in HYBRID_QUANTILES}
     valid_voids = 0
 
     for v in voids:
@@ -360,15 +385,20 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
                 gated_filled[t] += 1
                 anchor_stats[aid][f"g{int(t*100)}"] += 1
         for q in ANCHOR_QUANTILES:
-            if check_gated_quantile(mp, aid, q):
-                quantile_filled[q] += 1
-                anchor_stats[aid][f"q{int(q*100)}"] += 1
+            if check_gated_pure_quantile(mp, aid, q):
+                pure_q_filled[q] += 1
+                anchor_stats[aid][f"pq{int(q*100)}"] += 1
+        for q in HYBRID_QUANTILES:
+            if check_gated_hybrid(mp, aid, q):
+                hybrid_filled[q] += 1
+                anchor_stats[aid][f"h{int(q*100)}"] += 1
 
-    # Baseline — same gating applied
+    # Baseline — same gating
     rng = random.Random(42)
     base_raw = 0
     base_gated = {t: 0 for t in ANCHOR_THRESHOLDS}
-    base_quantile = {q: 0 for q in ANCHOR_QUANTILES}
+    base_pure_q = {q: 0 for q in ANCHOR_QUANTILES}
+    base_hybrid = {q: 0 for q in HYBRID_QUANTILES}
     base_total = 0
 
     for anchor_id in ANCHORS:
@@ -384,8 +414,11 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
                 if check_gated_fixed(mp, av, t):
                     base_gated[t] += 1
             for q in ANCHOR_QUANTILES:
-                if check_gated_quantile(mp, anchor_id, q):
-                    base_quantile[q] += 1
+                if check_gated_pure_quantile(mp, anchor_id, q):
+                    base_pure_q[q] += 1
+            for q in HYBRID_QUANTILES:
+                if check_gated_hybrid(mp, anchor_id, q):
+                    base_hybrid[q] += 1
             base_total += 1
 
     def safe_lift(a, na, b, nb):
@@ -393,38 +426,55 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
             return None
         return round((a/na) / (b/nb), 4)
 
+    def rates(d, n):
+        return {k: round(v/n, 4) if n else 0 for k, v in d.items()}
+
     result = {
         "split": split_name,
         "fill_threshold": FILL_THRESHOLD,
-        "anchor_quantile_thresholds_sample": anchor_quantile_thresholds.get("sched_opt", {}),
+        "tau_min_quantile": TAU_MIN_QUANTILE,
+        "anchor_thresholds_sample": {
+            aid: anchor_thresholds_computed[aid]["hybrid_q"]
+            for aid in list(ANCHORS.keys())[:3]
+        },
+        "anchor_val_pass_rate_sample": {
+            aid: anchor_thresholds_computed[aid]["val_pass_rate"]
+            for aid in list(ANCHORS.keys())[:3]
+        },
         "tva": {
             "total": valid_voids,
-            "raw_filled": raw_filled,
-            "raw_rate": round(raw_filled/valid_voids, 4) if valid_voids else 0,
-            **{f"gated_{int(t*100)}_filled": gated_filled[t] for t in ANCHOR_THRESHOLDS},
-            **{f"gated_{int(t*100)}_rate": round(gated_filled[t]/valid_voids, 4) if valid_voids else 0
-               for t in ANCHOR_THRESHOLDS},
-            **{f"q{int(q*100)}_filled": quantile_filled[q] for q in ANCHOR_QUANTILES},
-            **{f"q{int(q*100)}_rate": round(quantile_filled[q]/valid_voids, 4) if valid_voids else 0
-               for q in ANCHOR_QUANTILES},
+            "raw": {"filled": raw_filled, "rate": round(raw_filled/valid_voids,4) if valid_voids else 0},
+            "fixed": {int(t*100): {"filled": gated_filled[t],
+                       "rate": round(gated_filled[t]/valid_voids,4) if valid_voids else 0}
+                      for t in ANCHOR_THRESHOLDS},
+            "pure_q": {int(q*100): {"filled": pure_q_filled[q],
+                        "rate": round(pure_q_filled[q]/valid_voids,4) if valid_voids else 0}
+                       for q in ANCHOR_QUANTILES},
+            "hybrid": {int(q*100): {"filled": hybrid_filled[q],
+                        "rate": round(hybrid_filled[q]/valid_voids,4) if valid_voids else 0}
+                       for q in HYBRID_QUANTILES},
         },
         "baseline": {
             "total": base_total,
-            "raw_filled": base_raw,
-            "raw_rate": round(base_raw/base_total, 4) if base_total else 0,
-            **{f"gated_{int(t*100)}_filled": base_gated[t] for t in ANCHOR_THRESHOLDS},
-            **{f"gated_{int(t*100)}_rate": round(base_gated[t]/base_total, 4) if base_total else 0
-               for t in ANCHOR_THRESHOLDS},
-            **{f"q{int(q*100)}_filled": base_quantile[q] for q in ANCHOR_QUANTILES},
-            **{f"q{int(q*100)}_rate": round(base_quantile[q]/base_total, 4) if base_total else 0
-               for q in ANCHOR_QUANTILES},
+            "raw": {"filled": base_raw, "rate": round(base_raw/base_total,4) if base_total else 0},
+            "fixed": {int(t*100): {"filled": base_gated[t],
+                       "rate": round(base_gated[t]/base_total,4) if base_total else 0}
+                      for t in ANCHOR_THRESHOLDS},
+            "pure_q": {int(q*100): {"filled": base_pure_q[q],
+                        "rate": round(base_pure_q[q]/base_total,4) if base_total else 0}
+                       for q in ANCHOR_QUANTILES},
+            "hybrid": {int(q*100): {"filled": base_hybrid[q],
+                        "rate": round(base_hybrid[q]/base_total,4) if base_total else 0}
+                       for q in HYBRID_QUANTILES},
         },
         "lifts": {
             "raw": safe_lift(raw_filled, valid_voids, base_raw, base_total),
-            **{f"gated_{int(t*100)}": safe_lift(gated_filled[t], valid_voids, base_gated[t], base_total)
+            **{f"fixed_{int(t*100)}": safe_lift(gated_filled[t], valid_voids, base_gated[t], base_total)
                for t in ANCHOR_THRESHOLDS},
-            **{f"q{int(q*100)}": safe_lift(quantile_filled[q], valid_voids, base_quantile[q], base_total)
+            **{f"pq{int(q*100)}": safe_lift(pure_q_filled[q], valid_voids, base_pure_q[q], base_total)
                for q in ANCHOR_QUANTILES},
+            **{f"h{int(q*100)}": safe_lift(hybrid_filled[q], valid_voids, base_hybrid[q], base_total)
+               for q in HYBRID_QUANTILES},
         },
         "per_anchor": anchor_stats,
     }
@@ -434,26 +484,32 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
         json.dump(result, f, indent=2)
 
     # Print summary
-    print(f"\n[{split_name}] fill_threshold={FILL_THRESHOLD}")
-    print(f"{'Metric':<22} {'TVA':>10} {'Baseline':>10} {'Lift':>8}")
-    print("-" * 55)
     tva = result["tva"]
     base = result["baseline"]
     lifts = result["lifts"]
-    rows = [
-        ("raw", tva["raw_filled"], tva["raw_rate"], base["raw_filled"], base["raw_rate"], lifts["raw"]),
-    ]
-    for t in ANCHOR_THRESHOLDS:
-        k = f"gated_{int(t*100)}"
-        rows.append((f"fixed≥{t}", tva[k+"_filled"], tva[k+"_rate"],
-                      base[k+"_filled"], base[k+"_rate"], lifts[k]))
-    for q in ANCHOR_QUANTILES:
-        k = f"q{int(q*100)}"
-        rows.append((f"quantile q{int(q*100)}", tva[k+"_filled"], tva[k+"_rate"],
-                      base[k+"_filled"], base[k+"_rate"], lifts[k]))
-    for label, tf, tr, bf, br, lift in rows:
+    nt, nb = tva["total"], base["total"]
+    print(f"\n[{split_name}] fill_threshold={FILL_THRESHOLD}  tau_min_q={TAU_MIN_QUANTILE}")
+    print(f"{'Gate':<24} {'TVA':>10} {'Base':>10} {'Lift':>8}")
+    print("-" * 56)
+    def row(label, tf, tr, bf, br, lift):
         lift_str = f"{lift:.2f}x" if lift else "N/A"
-        print(f"{label:<22} {tf}/{tva['total']}={tr:.0%}  {bf}/{base['total']}={br:.0%}  {lift_str:>8}")
+        print(f"{label:<24} {tf}/{nt}={tr:.0%}  {bf}/{nb}={br:.0%}  {lift_str:>8}")
+    row("raw", tva["raw"]["filled"], tva["raw"]["rate"],
+        base["raw"]["filled"], base["raw"]["rate"], lifts["raw"])
+    for t in ANCHOR_THRESHOLDS:
+        k = int(t*100)
+        row(f"fixed≥{t}", tva["fixed"][k]["filled"], tva["fixed"][k]["rate"],
+            base["fixed"][k]["filled"], base["fixed"][k]["rate"], lifts[f"fixed_{k}"])
+    for q in HYBRID_QUANTILES:
+        k = int(q*100)
+        row(f"hybrid(τ≥0.65,Q{k})", tva["hybrid"][k]["filled"], tva["hybrid"][k]["rate"],
+            base["hybrid"][k]["filled"], base["hybrid"][k]["rate"], lifts[f"h{k}"])
+    # val pass rate for main hybrid
+    print(f"\n  Val pass rates (hybrid q90):")
+    for aid in list(ANCHORS.keys())[:5]:
+        vpr = anchor_thresholds_computed[aid]["val_pass_rate"].get(0.90, 0)
+        tau = anchor_thresholds_computed[aid]["hybrid_q"].get(0.90, 0)
+        print(f"    {aid:<15} τ={tau:.3f}  pass={vpr:.0%}")
 
     logger.info(f"[{split_name}] Results → {out}")
     return result
@@ -489,19 +545,22 @@ def main():
     # Summary table
     print(f"\n{'='*75}")
     print(f"{'Split':<6} {'raw TVA':>9} {'raw Base':>9} {'raw Lift':>8} "
-          f"{'g65 TVA':>9} {'g65 Base':>9} {'g65 Lift':>8}")
+          f"{'h90 TVA':>9} {'h90 Base':>9} {'h90 Lift':>8}")
     print("-" * 75)
     for r in all_results:
         t = r["tva"]
         b = r["baseline"]
         l = r["lifts"]
+        tr = t["raw"]["rate"]; tf = t["raw"]["filled"]; tn = t["total"]
+        br = b["raw"]["rate"]; bf = b["raw"]["filled"]; bn = b["total"]
+        th90 = t["hybrid"].get(90, {})
+        bh90 = b["hybrid"].get(90, {})
+        lh90 = l.get("h90", "N/A")
         print(f"{r['split']:<6} "
-              f"{t['raw_filled']}/{t['total']}={t['raw_rate']:.0%}  "
-              f"{b['raw_filled']}/{b['total']}={b['raw_rate']:.0%}  "
-              f"{str(l['raw'])+'x':>8}  "
-              f"{t['gated_65_filled']}/{t['total']}={t['gated_65_rate']:.0%}  "
-              f"{b['gated_65_filled']}/{b['total']}={b['gated_65_rate']:.0%}  "
-              f"{str(l['gated_65'])+'x':>8}")
+              f"{tf}/{tn}={tr:.0%}  {bf}/{bn}={br:.0%}  {str(l['raw'])+'x':>8}  "
+              f"{th90.get('filled',0)}/{tn}={th90.get('rate',0):.0%}  "
+              f"{bh90.get('filled',0)}/{bn}={bh90.get('rate',0):.0%}  "
+              f"{str(lh90)+'x':>8}")
     print(f"{'='*75}")
 
     summary_path = OUTPUT_DIR / "rolling_summary.json"
