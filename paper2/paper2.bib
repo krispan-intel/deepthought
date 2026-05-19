@@ -1,131 +1,180 @@
 % paper2.bib — TVV Paper 2 bibliography
-% Populate as related work section is written
 
 % ---- TVA Paper 1 ----
-@article{pan2025tva,
-  title     = {Topological Void Analysis: Finding Knowledge Gaps in Scientific Literature},
-  author    = {Pan, Kris},
-  year      = {2025},
-  note      = {arXiv preprint}
+@misc{pan2025tva,
+  author       = {Pan, Kris},
+  title        = {Topological Void Analysis: A Mathematical Framework for Systematic Technical Innovation Discovery in Knowledge Spaces},
+  year         = {2025},
+  note         = {Preprint. \url{https://zenodo.org/records/TODO}}
 }
 
-% ---- LBD / Retrospective Validation ----
+% ---- Embedding model ----
+@misc{bge-m3,
+  author        = {Chen, Jianlv and Xiao, Shitao and Zhang, Peitian and Luo, Kun and Lian, Defu and Liu, Zheng},
+  title         = {{BGE M3-Embedding}: Multi-Lingual, Multi-Functionality, Multi-Granularity Text Embeddings Through Self-Knowledge Distillation},
+  year          = {2024},
+  eprint        = {2402.03216},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL}
+}
+
+% ---- Literature-Based Discovery ----
 @article{swanson1986fish,
-  title   = {Fish oil, {R}aynaud's syndrome, and undiscovered public knowledge},
   author  = {Swanson, Don R.},
+  title   = {Fish Oil, {R}aynaud's Syndrome, and Undiscovered Public Knowledge},
   journal = {Perspectives in Biology and Medicine},
+  year    = {1986},
   volume  = {30},
-  pages   = {7--18},
-  year    = {1986}
+  number  = {1},
+  pages   = {7--18}
 }
 
 @article{gordon1996using,
-  title   = {Using latent semantic indexing for literature-based discovery of new scientific knowledge},
   author  = {Gordon, Michael D. and Lindsay, Robert K.},
+  title   = {Toward Discovery Support Systems: A Replication, Re-Examination, and Extension of {Swanson}'s Work on Literature-Based Discovery},
   journal = {Journal of the American Society for Information Science},
+  year    = {1996},
   volume  = {47},
-  pages   = {301--307},
-  year    = {1996}
+  number  = {2},
+  pages   = {116--128}
 }
 
-% ---- Structural Holes ----
-@book{burt2004structural,
-  title     = {Structural Holes: The Social Structure of Competition},
-  author    = {Burt, Ronald S.},
-  year      = {2004},
-  publisher = {Harvard University Press}
-}
-
-% ---- Embedding space / Dense retrieval ----
-@inproceedings{bge-m3,
-  title     = {{BGE M3-Embedding}: Multi-Lingual, Multi-Functionality, Multi-Granularity Text Embeddings Through Self-Knowledge Distillation},
-  author    = {Chen, Jianlyu and others},
-  booktitle = {ACL Findings},
-  year      = {2024}
-}
-
-% ---- Scientometrics / Topic momentum ----
-@article{small1973cocitation,
-  title   = {Co-citation in the scientific literature: A new measure of the relationship between two documents},
-  author  = {Small, Henry},
-  journal = {Journal of the American Society for Information Science},
-  volume  = {24},
-  pages   = {265--269},
-  year    = {1973}
-}
-
-% ---- Novelty / First-story detection ----
-@inproceedings{allan1998topic,
-  title     = {Topic Detection and Tracking: Event-Based Information Organization},
-  author    = {Allan, James and others},
-  booktitle = {DARPA Broadcast News Transcription and Understanding Workshop},
-  year      = {1998}
-}
-
-% ---- Claim verification / overclaiming ----
-@inproceedings{wadden2020factcc,
-  title     = {Fact or Fiction: Verifying Scientific Claims},
-  author    = {Wadden, David and others},
-  booktitle = {EMNLP},
-  year      = {2020}
-}
-
-% ---- LBD additional ----
 @article{weeber2001using,
-  title   = {Using concepts in literature-based discovery: Simulating {Swanson}'s {Raynaud}--fish oil and migraine--magnesium discoveries},
-  author  = {Weeber, Marc and others},
-  journal = {Journal of the American Medical Informatics Association},
-  volume  = {8},
-  pages   = {304--314},
-  year    = {2001}
+  author  = {Weeber, Marc and Klein, Henny and de Jong-van den Berg, Lolkje T.~W. and Vos, Rein},
+  title   = {Using Concepts in Literature-Based Discovery: Simulating {Swanson}'s {Raynaud}--Fish Oil and Migraine--Magnesium Discoveries},
+  journal = {Journal of the American Society for Information Science and Technology},
+  year    = {2001},
+  volume  = {52},
+  number  = {7},
+  pages   = {548--557}
 }
 
-% ---- Novelty detection ----
-@inproceedings{zhang2002novelty,
-  title     = {The use of query expansion and structural analysis for document retrieval and the detection of novel items},
-  author    = {Zhang, Yi and Callan, Jamie and Minka, Tom},
-  booktitle = {SIGIR},
-  year      = {2002}
+% ---- Structural holes / scientometrics ----
+@article{burt2004structural,
+  author  = {Burt, Ronald S.},
+  title   = {Structural Holes and Good Ideas},
+  journal = {American Journal of Sociology},
+  year    = {2004},
+  volume  = {110},
+  number  = {2},
+  pages   = {349--399}
+}
+
+@article{small1973cocitation,
+  author  = {Small, Henry},
+  title   = {Co-Citation in the Scientific Literature: A New Measure of the Relationship Between Two Documents},
+  journal = {Journal of the American Society for Information Science},
+  year    = {1973},
+  volume  = {24},
+  number  = {4},
+  pages   = {265--269}
 }
 
 % ---- Embedding anisotropy ----
 @inproceedings{ethayarajh2019contextual,
-  title     = {How contextual are contextualized word representations?},
   author    = {Ethayarajh, Kawin},
-  booktitle = {EMNLP},
-  year      = {2019}
+  title     = {How Contextual Are Contextualized Word Representations? {Comparing} the Geometry of {BERT}, {ELMo}, and {GPT-2} Embeddings},
+  booktitle = {Proceedings of EMNLP-IJCNLP},
+  year      = {2019},
+  pages     = {55--65}
 }
 
-% ---- Argumentative zoning ----
-@article{teufel2000argumentative,
-  title   = {Argumentative zoning: Information extraction from scientific text},
+% ---- Novelty / first-story detection ----
+@inproceedings{allan1998topic,
+  author    = {Allan, James and Papka, Ron and Lavrenko, Victor},
+  title     = {On-Line New Event Detection and Tracking},
+  booktitle = {Proceedings of SIGIR},
+  year      = {1998},
+  pages     = {37--45}
+}
+
+@inproceedings{zhang2002novelty,
+  author    = {Zhang, Yi and Callan, Jamie and Minka, Thomas},
+  title     = {Novelty and Redundancy Detection in Adaptive Filtering},
+  booktitle = {Proceedings of SIGIR},
+  year      = {2002},
+  pages     = {81--88}
+}
+
+% ---- Scientific claim verification / argumentative role ----
+@inproceedings{wadden2020scifact,
+  author    = {Wadden, David and Lin, Shanchuan and Lo, Kyle and Wang, Lucy Lu and van Zuylen, Madeleine and Cohan, Arman and Hajishirzi, Hannaneh},
+  title     = {Fact or Fiction: Verifying Scientific Claims},
+  booktitle = {Proceedings of EMNLP},
+  year      = {2020},
+  pages     = {7534--7550}
+}
+
+@article{teufel2002summarizing,
   author  = {Teufel, Simone and Moens, Marc},
+  title   = {Summarizing Scientific Articles: Experiments with Relevance and Rhetorical Status},
   journal = {Computational Linguistics},
+  year    = {2002},
   volume  = {28},
-  year    = {2000}
+  number  = {4},
+  pages   = {409--445}
 }
 
-% ---- Overclaiming detection ----
 @inproceedings{wright2022generating,
-  title     = {Generating Scientific Claims for Zero-Shot Scientific Fact Checking},
   author    = {Wright, Dustin and Augenstein, Isabelle},
-  booktitle = {ACL},
-  year      = {2022}
+  title     = {Generating Scientific Claims for Zero-Shot Scientific Fact Checking},
+  booktitle = {Proceedings of ACL},
+  year      = {2022},
+  pages     = {2701--2720}
+}
+
+% ---- Topological Data Analysis (operational context) ----
+@book{edelsbrunner2010computational,
+  author    = {Edelsbrunner, Herbert and Harer, John},
+  title     = {Computational Topology: An Introduction},
+  publisher = {American Mathematical Society},
+  year      = {2010}
+}
+
+@article{carlsson2009topology,
+  author  = {Carlsson, Gunnar},
+  title   = {Topology and Data},
+  journal = {Bulletin of the American Mathematical Society},
+  year    = {2009},
+  volume  = {46},
+  number  = {2},
+  pages   = {255--308}
+}
+
+@article{ghrist2008barcodes,
+  author  = {Ghrist, Robert},
+  title   = {Barcodes: The Persistent Topology of Data},
+  journal = {Bulletin of the American Mathematical Society},
+  year    = {2008},
+  volume  = {45},
+  number  = {1},
+  pages   = {61--75}
 }
 
 % ---- Case studies ----
 @misc{case1,
-  title        = {Multi-Task Offloading over Vehicular Clouds under Graph-based Representation},
-  howpublished = {arXiv:1912.06243},
-  year         = {2019}
+  author        = {Zhang, Yuhao and others},
+  title         = {Multi-Task Offloading over Vehicular Clouds under Graph-Based Representation},
+  year          = {2019},
+  eprint        = {1912.06243},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.NI}
 }
+
 @misc{case2,
-  title        = {Optimization of Heterogeneous Systems with {AI} Planning Heuristics and Machine Learning},
-  howpublished = {arXiv:2106.01441},
-  year         = {2021}
+  author        = {Tsilifis, Panagiotis and others},
+  title         = {Optimization of Heterogeneous Systems with {AI} Planning Heuristics and Machine Learning},
+  year          = {2021},
+  eprint        = {2106.01441},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
 }
+
 @misc{case3,
-  title        = {Energy-Aware Virtual Network Embedding Approach for Distributed Cloud},
-  howpublished = {arXiv:1710.11590},
-  year         = {2017}
+  author        = {Blenk, Andreas and others},
+  title         = {Energy-Aware Virtual Network Embedding Approach for Distributed Cloud},
+  year          = {2017},
+  eprint        = {1710.11590},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.NI}
 }
