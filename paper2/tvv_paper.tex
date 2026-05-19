@@ -38,8 +38,9 @@ We show that raw fill rate---whether any future paper appears near a void's
 midpoint---fails as a validation target for three compounding reasons.
 First, it is confounded by local corpus density: a hot-zone baseline that samples
 high-density anchor-adjacent pairs outperforms \tva{} on raw fill (36\% vs.\ 28\%),
-but this apparent advantage disappears under a density-matched baseline
-(25\%; \tva{}/B2 lift $= 1.12\times$, 95\% CI $\lbrack 0.85, 1.48\rbrack$, not significant).
+but this hot-zone advantage is attenuated under a density-matched baseline:
+\tva{} shows only a modest directional lift over B2 ($1.05$--$1.12\times$ across
+three temporal splits), with all 95\% bootstrap CIs including~1.0.
 Second, it is limited by anchor observability: only 5--7\% of future papers are
 anchor-eligible per split, so many unfilled voids should be treated as right-censored
 rather than invalid.
@@ -195,8 +196,10 @@ t5 & 27\% & 24\% & $1.12\times$ & [0.85, 1.48] \\
 \end{tabular}
 \end{table}
 
-B1 consistently outperforms \tva{} by up to $1.30\times$. After density matching (B2),
-\tva{} achieves $1.03$--$1.12\times$ lift, but the t5 CI includes 1.0---not significant.
+B1 outperforms \tva{} by up to $1.30\times$. After density matching (B2),
+\tva{} shows a directional lift of $1.05$--$1.12\times$ across splits, but all 95\%
+bootstrap CIs include 1.0. The robust conclusion is not that \tva{} outperforms B2,
+but that raw fill comparisons are highly sensitive to local density and threshold choice.
 
 \subsubsection{Fixed Thresholds Are Not Portable}
 
@@ -402,7 +405,7 @@ density bias, anchor observability, and epistemic role.
 Under density matching, \tva{}'s apparent disadvantage disappears but is not
 statistically significant. Under null-calibrated thresholds, fill rates collapse to
 $\sim$0.7\%---most raw fills were null-zone noise.
-Role-aware classification confirms that genuine epistemic bridging is rare even among
+LLM-assisted role-aware classification suggests that genuine epistemic bridging is rare even among
 geometrically close, anchor-eligible future papers.
 
 We propose a three-layer validation framework and leave two open questions for future
