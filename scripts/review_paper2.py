@@ -41,13 +41,19 @@ Key experimental results:
 - Rolling temporal splits t3/t4/t5 (arXiv CS, 29k-51k train, 101k-193k val papers)
 - 10 anchors × 30 voids = 300 TVA candidates per split
 - B1 (hot-zone) baseline and B2 (density-matched) baseline
-- Calibrated null threshold: τ_fill(q,ρ,t) = Q_0.95 of density-matched null midpoint occupancy
-- Role classification: TRUE-FILL/PARTIAL-FILL/BOUNDARY-EXPANSION/DENSIFICATION/FALSE-POSITIVE
-- Role classification: n=204 TVA gated cases, n=1076 total across t3+t4+t5
+- Calibrated null threshold: FINITE-SAMPLE CONFORMAL QUANTILE k=ceil((n+1)*(1-α)), n=1000 nulls, 50/50 cal/test
+- Held-out null FPR: 6.3% vs nominal 5% (slightly liberal; reported as nominal operating point, not guarantee)
+- Role classification: n=204 TVA gated (n=1076 total), single LLM + small blinded human audit
 - Case studies: 3 arXiv papers with reference bridge analysis (authors verified)
-- Held-out null calibration: 80/20 split, observed FPR=6.3% vs target 5%
-- Bootstrap CI for all splits: TVA/B2 lift 1.05-1.12x, all CI contain 1.0 (not significant)
-- Paper framing: methodology stress-test, not confirmatory — TVA does not significantly outperform B2
+- PRIMARY STATS: HIERARCHICAL CLUSTER BOOTSTRAP (anchors→voids) + PAIRED SIGN-FLIP PERMUTATION
+- Table 1 paired Δpp results:
+  t3: +1.3pp [−5.0,+9.0] p=0.787 | calibrated: +0.7pp [−1.0,+2.3] p=0.691
+  t4: +2.4pp [−1.4,+7.1] p=0.352 | calibrated: −0.3pp [−1.4,+0.7] p=1.000
+  t5: +3.0pp [−2.0,+8.3] p=0.360 | calibrated: −0.7pp [−2.0,+0.7] p=0.629
+- All CIs include zero, all p>0.35: NO STATISTICALLY SIGNIFICANT TVA-B2 DIFFERENCE
+- Framing: 'necessary and sufficient' removed; 'confirms' → 'suggests'; void≠link novelty added
+- B2 = strong density-matched counterfactual (not weak random); parity is EXPECTED
+- New Related Work: 'Validation of Predicted Voids' gap paragraph — TVV is first to study this
 
 Claims:
 1. Raw fill rate is confounded by local corpus density
