@@ -106,17 +106,17 @@ $$\tau_{\text{fill}}(q,\rho,t) = Q_{1-\alpha}\!\left(\left\{\max_{P \in \text{Va
 
 where $\text{Null}(q,\rho,t)$ = density-matched null midpoints, same anchor $q$, density bucket $\rho$, split $t$; $\alpha=0.05$.
 
-**t5 calibration results** (why 0.82 is a bad global constant):
+**Calibration results across t3/t4/t5** (why 0.82 is not a valid constant):
 
-| Density bucket | null p50 | null p95 = τ\_fill | FPR at 0.82 |
-|---|---|---|---|
-| low | 0.786–0.811 | 0.790–0.859 | 1–18% |
-| mid | 0.802–0.832 | 0.818–0.861 | 5–80% |
-| high | 0.810–0.854 | 0.841–0.881 | **28–98%** |
-| **global mean** | — | **0.841** | **35.7%** |
+| Split | τ\_fill mean | τ\_fill range | FPR@0.82 mean | FPR@0.82 max |
+|---|---|---|---|---|
+| t3 | 0.841 | 0.805–0.897 | 33.9% | 99.0% |
+| t4 | 0.841 | 0.802–0.885 | 35.6% | 99.5% |
+| t5 | 0.841 | 0.790–0.881 | 35.7% | 98.0% |
 
-0.82 has 35.7% average FPR — it barely discriminates in high-density anchors.
-Calibrated τ\_fill ranges from 0.790 (ebpf\_obs low) to 0.881 (virt\_hyp high).
+τ\_fill is **stable at 0.841** across all splits — corpus density is the main driver,
+not temporal window. 0.82 is systematically 0.02 below the calibrated threshold.
+FPR@0.82 reaches 98–99% in high-density anchors (virt\_hyp, sched\_opt high bucket).
 
 **In paper**: use global τ\_fill=0.82 as legacy operating point for comparability,
 but report calibrated τ\_fill per (anchor, density bucket) in sensitivity analysis.
