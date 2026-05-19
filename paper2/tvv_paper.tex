@@ -578,6 +578,32 @@ epistemic closure. TVV provides the downstream adjudication protocol---calibrate
 geometric closure, anchor observability, and role-aware assessment---to determine
 whether a candidate void corresponds to a genuine epistemic gap.
 
+\paragraph{Human-machine division of labor.}
+The combinatorial search for candidate voids is machine-scale: a modest anchor
+neighborhood of 300 source papers induces ~45\,000 candidate pairs, and TVA
+generates 300 ranked void hypotheses across 10 anchors in minutes. Human experts
+are not designed for exhaustive enumeration at this scale, but are well-suited to
+adjudicating a compact, ranked list of interpretable $(q,A,B,m)$ candidates.
+TVA therefore functions as a high-throughput triage step that compresses a
+machine-scale search space to a human-auditable hypothesis set.
+
+\begin{table}[h!]
+\centering\small
+\caption{Division of labor: TVA performs high-throughput candidate generation;
+humans / LLM perform epistemic adjudication.}
+\begin{tabular}{lll}
+\toprule
+Task & Human expert & TVA/TVV \\
+\midrule
+Enumerate source pairs & Infeasible at scale & Automatic \\
+Rank candidate voids & Infeasible at scale & Automatic \\
+Assess anchor alignment & Difficult & Automatic \\
+Judge bridge meaning & Strong & Assisted/auditable \\
+Validate technical merit & Strong & Exploratory \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \tva{} should therefore be evaluated as a \emph{rare-event triage instrument}.
 Because genuine epistemic closure is a low-base-rate event, most candidate voids will
 not become validated closures within any finite corpus window. The relevant measure is
