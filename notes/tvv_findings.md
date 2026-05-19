@@ -55,6 +55,52 @@ Role-aware classification separates epistemic fill from geometric false positive
 
 ---
 
+## Fill Rate: Final Conclusion (2026-05-19)
+
+Raw fill rate is a diagnostic metric only, not a validation target.
+
+### t5 with B2 density-matched baseline
+
+| Method | Raw fill | vs TVA |
+|---|---:|---|
+| TVA | 28% | — |
+| B1 hot-zone baseline | 36% | TVA 0.78x |
+| **B2 density-matched** | **25%** | **TVA 1.12x** |
+
+**B1 shows the confound. B2 shows the corrected comparison.**
+
+B1 is biased toward high-density / high-momentum regions. When controlled for local historical density (B2), TVA achieves a modest positive lift. The apparent 0.78x raw underperformance is entirely explained by density bias.
+
+**Paper 2 claim:**
+> Raw fill rate is strongly confounded by local density and research momentum. After density matching, TVA no longer underperforms the baseline. This motivates a shift from raw occupancy metrics to role-aware epistemic validation.
+
+### Paper 2 Three Findings
+
+**Finding 1: Raw fill is density-confounded**
+- TVA 28%, B1 hot-zone 36%, B2 density-matched 25%
+- Hot-zone baseline inflates raw fill; density matching reverses apparent disadvantage
+
+**Finding 2: Anchor-gating reveals observability limits**
+- Hybrid gate pass rate 5–7%; mean sim_to_anchor ~0.52
+- Anchor eligibility is sparse; corpus exposure is limiting
+- Unfilled voids = right-censored, not invalid
+
+**Finding 3: Role-aware classification estimates epistemic precision**
+- TVA vs B2 on TRUE_FILL / PARTIAL_FILL / FALSE_POSITIVE distribution
+- (to be completed after role classification runs)
+
+### Closing sentence for fill rate section
+
+> We therefore do not use raw fill rate as the final validation target. Its main role is diagnostic: it reveals how much of apparent future occupancy is explained by local density and research momentum. After density matching, TVA no longer underperforms the baseline, motivating a shift from raw occupancy metrics to role-aware epistemic validation.
+
+### Reverse TVA / D-TVA (Future Work only)
+
+Do NOT expand Reverse TVA into Paper 2 main contribution. One paragraph in Discussion/Future Work:
+
+> The results suggest a natural dynamic extension: instead of asking whether a predicted void is eventually filled, one can classify each newly arriving paper by its pre-insertion topological effect on the knowledge space. This dynamic formulation, which treats vacancy as a temporal lock, is left to future work.
+
+---
+
 ## Rolling Temporal Validation Results
 
 Three temporal splits, 10 anchors × 30 voids = 300 TVA candidates per split.
@@ -229,6 +275,262 @@ The correct question becomes: **from void discovery to void fill, how long does 
 **Implication:** Fill rate is a human-centric metric. It measures research momentum at human velocity. TVA operates outside this timescale.
 
 **Decision pending:** whether and how to include this in Paper 2 framing.
+
+---
+
+---
+
+## Paper 2 Architecture (from deep research synthesis — 2026-05-19)
+
+### Core claim
+> Temporal validation of predicted voids must distinguish geometric closure from epistemic closure.
+
+### Three-layer fill predicate (formal)
+
+```
+ValidatedFill(P_t, V, q) = G(P_t, m) ∧ E(P_t, q) ∧ R(P_t, A, B, q)
+```
+
+| Layer | Predicate | Measures |
+|---|---|---|
+| G — Geometric | sim(P_t, midpoint) > τ_fill | Is any future paper near the midpoint? |
+| E — Eligibility | sim(P_t, anchor) > τ_anchor | Is P_t in the anchor's problem domain? |
+| R — Epistemic | role-aware classification | Does P_t actually fill the gap? |
+
+### Three topological event types (for role classification)
+
+| Event type | Definition | Role mapping |
+|---|---|---|
+| VOID_FILL | P_t lands in previously vacant midpoint region (C4 was satisfied before P_t) | TRUE_FILL, PARTIAL_FILL |
+| BOUNDARY_EXPANSION | P_t extends frontier without bridging the gap | INCREMENTAL_EXTENSION, SUPPORT_EVIDENCE |
+| DENSIFICATION | P_t falls in already occupied region, no new structure | FALSE_POSITIVE, SURVEY_OR_NAMING |
+
+### C4 Vacancy Lock / First-Filler Principle
+
+TVV exploits C4 as a temporal mutex:
+
+> The vacancy condition is evaluated against DB_{t-1} (corpus *before* P_t is inserted).
+> The first paper to satisfy midpoint vacancy for a given void receives the Void-Filler label.
+> Later papers entering the same region fail the C4 check and are downgraded to Boundary Expansion or Densification.
+
+This solves the reflexivity problem: after a breakthrough paper, follow-on papers cluster near the filled region but C4 is already broken, so they are automatically classified as non-fills.
+
+Formal statement:
+```
+VoidFiller(P_t, V) iff:
+  G(P_t, m) ∧ C4_pre(m, DB_{t-1})  [midpoint was vacant before P_t]
+```
+
+Where `C4_pre(m, DB_{t-1})` = no paper in DB_{t-1} within radius θ_v of midpoint m.
+
+### Limitations to state explicitly
+
+1. **Midpoint ≠ void center**: SLERP(A,B) is a geometric midpoint, not the topological center of the void. This is a known approximation.
+2. **Operational vacancy, not β₂ homology**: TVA defines an operational local-vacancy predicate, not persistent homology. "Topological" is used operationally.
+3. **BGE-M3 as coordinate system only**: BGE-M3 provides the embedding space; all void predicates and validation operators are external.
+4. **ANN approximate radius search**: C4 vacancy check via approximate NN is probabilistic, not exact.
+
+### Key sentence for Paper 2 intro
+
+> Prior LBD systems treat the future appearance of a predicted association as validation success. TVA validation requires a stricter notion: whether a future paper plays an epistemic bridging role relative to an Anchor-conditioned void.
+
+### Useful references from topological_research.md
+
+- [46] "From Topology to Retrieval: Decoding Embedding Spaces with Unified Signatures" (arxiv 2511.22150) — supports Anchor-local geometry predicts fill quality
+- [5] TDA Applications in NLP Survey (arxiv 2411.10298) — related work starting point
+- [17] TDA Engine v1.0 for Structural Voids — DTM filtration in practice
+
+---
+
+---
+
+## Reverse TVA Framing (2026-05-19)
+
+### The key insight
+
+Original framing (void-centered, hard):
+```
+TVA predicts voids.
+TVV checks whether future papers fill them.
+```
+
+Problem: unknown observability — if void is not filled, you cannot distinguish:
+- void is invalid
+- corpus has no coverage
+- window too short
+- anchor too narrow
+- embedding missed it
+
+Reverse TVA (paper-centered, tractable):
+```
+TVA defines what a void is.
+Reverse TVV asks: given a new paper P_t, is it the first occupant of a previously vacant bridge region?
+```
+
+You go from "searching for fillers" to "classifying incoming papers". This is a **streaming local impact classifier**, not a global future-search problem.
+
+### Three topological events (Reverse TVA)
+
+```
+1. DENSIFICATION       — P_t falls in already-dense region; no new structure
+2. BOUNDARY_EXPANSION  — P_t extends one direction but does not bridge gap
+3. VOID_FILL           — P_t is first to occupy vacant midpoint between A, B
+4. OUT_OF_DOMAIN       — P_t not in Anchor's problem space
+```
+
+### C4 becomes the core, not a side condition
+
+For a new paper P_t:
+1. Retrieve local historical neighborhood N_t from DB_{t-1}
+2. Find candidate bridge pair (A, B): both near P_t, but A-B dissimilar
+3. Compute midpoint m(A, B) via SLERP
+4. Check vacancy: was m(A,B) empty in DB_{t-1}? (C4 pre-insertion check)
+5. If vacant AND P_t near m(A,B) → CANDIDATE_VOID_FILL
+6. Insert P_t into DB → C4 broken for all future papers near same region
+
+Complexity: O(k²) local pair search, not O(|voids| × |future corpus|).
+
+### Reverse TVA online algorithm
+
+```
+Input:  DB_{t-1}, new paper P_t, optional Anchor q
+Output: event_label ∈ {DENSIFICATION, BOUNDARY_EXPANSION, CANDIDATE_VOID_FILL, OUT_OF_DOMAIN}
+
+1. embed(P_t)
+2. N_t = kNN(P_t, DB_{t-1}, k=50)
+3. local_density = mean sim of P_t to N_t
+4. for (A,B) in candidate_pairs(N_t):
+     bridge_score = sim(P,A) + sim(P,B) - 1.5*sim(A,B)
+5. best (A,B) = argmax bridge_score
+6. m = slerp(A, B)
+7. vacancy = (kNN(m, DB_{t-1}, k=5).max_sim < θ_vacant)
+8. classify:
+   if local_density > θ_dense → DENSIFICATION
+   elif not vacancy → BOUNDARY_EXPANSION
+   elif sim(P_t, m) > θ_fill → CANDIDATE_VOID_FILL
+   else → BOUNDARY_EXPANSION
+9. [optional] role-aware LLM verification for CANDIDATE_VOID_FILL
+10. insert P_t into DB
+```
+
+### Pipeline: still 3 stages, but cheaper
+
+```
+Stage 1 (geometric): Reverse TVA classifier → event_label
+Stage 2 (eligibility): Anchor gate on P_t
+Stage 3 (epistemic): LLM role-aware only on CANDIDATE_VOID_FILL cases
+```
+
+LLM cost drops dramatically because Stage 3 only runs on candidates, not all papers.
+
+### Paper 2 title candidate (revised)
+
+> Topological Void Validation: A Reverse TVA Framework for Classifying Scientific Papers as Void-Filling, Boundary-Expanding, or Densifying Events
+
+### Relationship to current temporal validation experiments
+
+The current t1-t5 rolling validation is still valid as **retrospective ground truth generation**:
+- Run Reverse TVA offline on historical splits
+- Use LLM role classification to label the results
+- Use these labels to calibrate θ_vacant, θ_fill, θ_dense thresholds
+- Then evaluate how well Reverse TVA predicts the LLM labels (precision/recall)
+
+The temporal split work is not wasted — it becomes the **calibration and evaluation corpus** for the Reverse TVA classifier.
+
+---
+
+---
+
+## Problem Redefinition (2026-05-19)
+
+### Why the original formulation was stuck
+
+Original question:
+> Does the void TVA found get filled by a future paper?
+
+Hidden dependencies that couldn't be controlled:
+- Does anyone research this direction?
+- Does the corpus cover it?
+- Is the window long enough?
+- Is the paper in the same Anchor domain?
+- Does the embedding capture it?
+- Is the baseline sitting in a hot zone?
+
+Result: any null finding could be void invalid, corpus gap, window too short, threshold wrong, or baseline unfair. Can't distinguish.
+
+### Correct problem definition
+
+New question:
+> Given a new paper P_t and the corpus that existed before it (DB_{t-1}), what kind of topological event did P_t induce?
+
+This is **local impact classification**, not global future search.
+
+Inputs are controlled: DB_{t-1} is fixed, P_t is observed, time ordering is clear.
+
+### Formal definition of Reverse TVA
+
+> Reverse TVA classifies a newly observed paper by the topological event it induces on the pre-existing knowledge space: densifying an occupied region, expanding a frontier, or occupying a previously vacant bridge between historically separated concepts.
+
+### Forward vs Reverse
+
+```
+Forward TVA:
+  Given DB_t and Anchor q → find candidate voids
+
+Reverse TVA:
+  Given DB_{t-1} and new paper P_t → classify event(P_t | DB_{t-1})
+```
+
+Forward TVA asks: **Where might innovation occur?**
+Reverse TVA asks: **What kind of innovation did this paper represent when it appeared?**
+
+### Research Questions for Paper 2
+
+**RQ1:**
+> Given a time-ordered stream of scientific papers and a fixed embedding-based knowledge space, can we classify each newly arriving paper as a densification, boundary expansion, or candidate void-filling event relative to the corpus that existed before it?
+
+**RQ2:**
+> Among geometrically detected candidate void-filling events, how many survive role-aware epistemic validation?
+
+### Two-layer output (stable taxonomy)
+
+```
+Geometric event layer:
+  DENSIFICATION          — P_t falls in already-dense region
+  BOUNDARY_EXPANSION     — P_t extends one direction, no bridge
+  CANDIDATE_VOID_FILL    — P_t first to occupy vacant bridge region
+
+Epistemic role layer (LLM validation, sampled):
+  TRUE_FILL / PARTIAL_FILL / INCREMENTAL / BENCHMARK / FALSE_POSITIVE
+```
+
+Do NOT call CANDIDATE_VOID_FILL a "breakthrough" — it is a geometric event pending epistemic confirmation.
+
+---
+
+## Implementation Roadmap (Paper 2 experiments — 2026-05-19)
+
+### DONE
+- [x] Rolling t1-t5 splits with raw, fixed-gate, hybrid-gate fill rates
+- [x] Anchor exposure diagnostics (val pass rates per anchor per split)
+- [x] Density-matched baseline (B2) added to run_rolling_validation.py
+- [x] 5-group case sampling: G1 tva(gated), G2 b1(gated), G3 tva(raw_only), G4 b1(raw_only), G5 tva(near_miss)
+- [x] Role classification prompt with overclaiming rubric: problem_conclusion_alignment, claim_evidence_strength, overclaiming_risk
+- [x] t5 role classification (old cases, 154 total)
+
+### TODO — NEXT
+- [ ] **t5 rerun** with new 5-group cases (running now)
+- [ ] **Role classification on new t5 cases** — include G3/G4/G5 groups
+- [ ] **Add `topological_event_type` field** to role classification prompt: VOID_FILL / BOUNDARY_EXPANSION / DENSIFICATION
+- [ ] **Anchor exposure table** — per anchor per split: n_future, mean_sim, q90_sim, pass_rate, tva_raw_fill, b1_raw_fill
+- [ ] **t3/t4 role classification** — run on existing filled_cases_raw.jsonl
+- [ ] **Case studies** — pick 3-5 strong TRUE_FILL from TVA, compare with FALSE_POSITIVE from baseline, include citation count
+
+### TODO — LATER (Paper 2 writing)
+- [ ] Formalize C4 vacancy lock as Definition 1
+- [ ] Write LBD retrospective validation as related work frame
+- [ ] Add right-censoring framing to unfilled voids: "unfilled within window ≠ invalid void"
+- [ ] Survival analysis as future work (not main claim)
 
 ---
 

@@ -81,11 +81,24 @@ Return strict JSON only (no markdown, no explanation outside JSON):
   "void_relevance": 0,
   "novelty_relative_to_sources": 0,
   "evidence_strength": 0,
+  "problem_conclusion_alignment": 0,
+  "claim_evidence_strength": 0,
+  "overclaiming_risk": "LOW",
+  "topological_event_type": "VOID_FILL",
   "reason": "one concise paragraph",
   "needs_full_text": false
 }}
 
-anchor_relevance, void_relevance, novelty_relative_to_sources, evidence_strength are integers 0-3."""
+anchor_relevance, void_relevance, novelty_relative_to_sources, evidence_strength are integers 0-3.
+problem_conclusion_alignment: does the conclusion match the problem scope? (0=mismatch/overclaim, 1=partial, 2=well-aligned)
+claim_evidence_strength: how well does the abstract evidence support the claimed contribution? (0=weak/speculative, 1=moderate, 2=strong)
+overclaiming_risk: does the paper claim more than its abstract evidence supports? (LOW / MEDIUM / HIGH)
+topological_event_type: what kind of topological event does this paper induce relative to the void?
+  VOID_FILL — first paper to occupy a previously vacant bridge region; substantively bridges the two source directions
+  BOUNDARY_EXPANSION — extends one or both source directions but does not bridge the gap
+  DENSIFICATION — falls in already-occupied region; no new structural contribution
+  RHETORICAL_BRIDGE — geometrically close but no epistemic work; overclaims bridging
+  COLLAPSE — undermines or invalidates the void itself"""
 
 
 def load_cases(path: Path, max_cases: int = None) -> list[dict]:

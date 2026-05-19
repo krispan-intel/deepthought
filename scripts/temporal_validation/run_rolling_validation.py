@@ -67,6 +67,8 @@ TAU_MIN_QUANTILE = 0.80  # hybrid floor = Q80 of val-anchor sims (corpus-aware, 
 HYBRID_QUANTILES = [0.85, 0.90, 0.95]          # hybrid = max(TAU_MIN, Q_q) — main method
 BASELINE_PER_ANCHOR = 20
 C1_POOL = 300
+DENSITY_K = 20           # k-NN neighbours for local density estimation
+DENSITY_POOL_SIZE = 300  # candidate pairs precomputed per anchor for B2
 
 
 def paper_matches(paper: dict, categories: set) -> bool:
@@ -346,6 +348,12 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
             return False
         return bool((sims_mid[mask] >= FILL_THRESHOLD).any())
 
+    def local_density(mp: "np.ndarray") -> float:
+        """Mean cosine sim of mp to its DENSITY_K nearest train neighbours."""
+        sims = train_emb @ mp
+        k = min(DENSITY_K, len(sims))
+        return float(np.sort(sims)[::-1][:k].mean())
+
     voids = []
     with open(voids_path) as f:
         for line in f:
@@ -359,6 +367,9 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
               **{f"h{int(q*100)}": 0 for q in HYBRID_QUANTILES}}
         for aid in ANCHORS
     }
+
+    # Collect (anchor_id, midpoint, density) for each valid TVA void — used later to density-match B2
+    valid_void_data: list[tuple[str, "np.ndarray", float]] = []
 
     raw_filled = 0
     gated_filled = {t: 0 for t in ANCHOR_THRESHOLDS}
@@ -385,7 +396,11 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
                 val_papers_meta[p["id"]] = p
 
     # Filled cases for role-aware classification
-    raw_filled_cases = []
+    raw_filled_cases = []        # group 1: TVA raw-filled + passed hybrid gate
+    raw_only_tva_cases = []      # group 3: TVA raw-filled but FAILED hybrid gate
+    near_miss_tva_cases = []     # group 5: TVA not raw-filled, sim in [0.75, FILL_THRESHOLD)
+
+    NEAR_MISS_LOW = 0.75
 
     for v in voids:
         va = id_to_vec.get(v["paper_a"]["id"])
@@ -397,47 +412,53 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
         aid = v["anchor_id"]
         valid_voids += 1
         anchor_stats[aid]["total"] += 1
+        valid_void_data.append((aid, mp, local_density(mp)))
 
         val_sims = val_emb @ mp
         max_sim = float(val_sims.max())
+        best_idx = int(val_sims.argmax())
+        filler_id = v_ids[best_idx] if best_idx < len(v_ids) else None
+        filler_meta = val_papers_meta.get(filler_id, {}) if filler_id else {}
+        anchor_sim = float((val_emb[best_idx] @ av)) if av is not None and filler_id else None
 
-        if check_raw(mp):
-            raw_filled += 1
-            anchor_stats[aid]["raw"] += 1
-            # Build case record for classification
-            best_idx = int(val_sims.argmax())
-            filler_id = v_ids[best_idx] if best_idx < len(v_ids) else None
-            filler_meta = val_papers_meta.get(filler_id, {}) if filler_id else {}
-            anchor_sim = float((val_emb[best_idx] @ av)) if av is not None and filler_id else None
-            raw_filled_cases.append({
-                "case_id": f"{split_name}_raw_tva_{v['void_id'][:20]}",
-                "split": split_name, "metric": "raw", "source": "tva",
-                "anchor_id": aid,
-                "anchor": ANCHORS.get(aid, ""),
+        def _make_tva_case(case_source: str, gate_type: str, passed_gate):
+            return {
+                "case_id": f"{split_name}_{gate_type}_tva_{v['void_id'][:20]}",
+                "split": split_name, "metric": gate_type, "source": case_source,
+                "anchor_id": aid, "anchor": ANCHORS.get(aid, ""),
                 "void_id": v["void_id"],
                 "source_a": {
-                    "id": v["paper_a"]["id"],
-                    "title": v["paper_a"]["title"],
+                    "id": v["paper_a"]["id"], "title": v["paper_a"]["title"],
                     "abstract": id_to_abstract_train.get(v["paper_a"]["id"], ""),
                     "year": v["paper_a"].get("year"),
                 },
                 "source_b": {
-                    "id": v["paper_b"]["id"],
-                    "title": v["paper_b"]["title"],
+                    "id": v["paper_b"]["id"], "title": v["paper_b"]["title"],
                     "abstract": id_to_abstract_train.get(v["paper_b"]["id"], ""),
                     "year": v["paper_b"].get("year"),
                 },
                 "filler": {
-                    "id": filler_id,
-                    "title": filler_meta.get("title", ""),
+                    "id": filler_id, "title": filler_meta.get("title", ""),
                     "abstract": id_to_abstract_val.get(filler_id, "") if filler_id else "",
                     "year": filler_meta.get("year"),
-                    "sim_to_midpoint": max_sim,
-                    "sim_to_anchor": anchor_sim,
+                    "sim_to_midpoint": max_sim, "sim_to_anchor": anchor_sim,
                 },
-                "gate": {"type": "raw", "fill_threshold": FILL_THRESHOLD,
-                         "anchor_threshold": None, "passed_anchor_gate": None},
-            })
+                "gate": {"type": gate_type, "fill_threshold": FILL_THRESHOLD,
+                         "anchor_threshold": None, "passed_anchor_gate": passed_gate},
+            }
+
+        is_raw = max_sim >= FILL_THRESHOLD
+        if is_raw:
+            raw_filled += 1
+            anchor_stats[aid]["raw"] += 1
+            # Determine whether hybrid-q90 gate also passes
+            passed_hybrid = check_gated_hybrid(mp, aid, 0.90)
+            if passed_hybrid:
+                raw_filled_cases.append(_make_tva_case("tva", "raw", True))
+            else:
+                raw_only_tva_cases.append(_make_tva_case("tva_raw_only_failed_gate", "raw_failed_gate", False))
+        elif NEAR_MISS_LOW <= max_sim < FILL_THRESHOLD:
+            near_miss_tva_cases.append(_make_tva_case("tva_near_miss", "near_miss", None))
 
         for t in ANCHOR_THRESHOLDS:
             if av is not None and check_gated_fixed(mp, av, t):
@@ -459,8 +480,10 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
     base_pure_q = {q: 0 for q in ANCHOR_QUANTILES}
     base_hybrid = {q: 0 for q in HYBRID_QUANTILES}
     base_total = 0
-    base_filled_cases = []
+    base_filled_cases = []      # group 2: baseline (B1) raw-filled + passed hybrid gate
+    base_raw_only_cases = []    # group 4: baseline (B1) raw-filled but FAILED hybrid gate
     base_case_counter = 0
+    base_raw_only_counter = 0
 
     for anchor_id in ANCHORS:
         av = anchor_vecs[anchor_id]
@@ -477,9 +500,9 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
                 filler_id = v_ids[best_idx] if best_idx < len(v_ids) else None
                 filler_meta = val_papers_meta.get(filler_id, {}) if filler_id else {}
                 anchor_sim_f = float(val_emb[best_idx] @ av) if filler_id else None
-                base_filled_cases.append({
-                    "case_id": f"{split_name}_raw_base_{anchor_id}_{base_case_counter:03d}",
-                    "split": split_name, "metric": "raw", "source": "baseline",
+                passed_hybrid_b1 = check_gated_hybrid(mp, anchor_id, 0.90)
+                _base_case = {
+                    "split": split_name, "metric": "raw",
                     "anchor_id": anchor_id, "anchor": ANCHORS.get(anchor_id, ""),
                     "void_id": f"base_{anchor_id}_{i}_{j}",
                     "source_a": {
@@ -501,9 +524,18 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
                         "sim_to_anchor": anchor_sim_f,
                     },
                     "gate": {"type": "raw", "fill_threshold": FILL_THRESHOLD,
-                             "anchor_threshold": None, "passed_anchor_gate": None},
-                })
-                base_case_counter += 1
+                             "anchor_threshold": None, "passed_anchor_gate": passed_hybrid_b1},
+                }
+                if passed_hybrid_b1:
+                    _base_case["case_id"] = f"{split_name}_raw_base_{anchor_id}_{base_case_counter:03d}"
+                    _base_case["source"] = "baseline"
+                    base_filled_cases.append(_base_case)
+                    base_case_counter += 1
+                else:
+                    _base_case["case_id"] = f"{split_name}_raw_base_fo_{anchor_id}_{base_raw_only_counter:03d}"
+                    _base_case["source"] = "baseline_raw_only_failed_gate"
+                    base_raw_only_cases.append(_base_case)
+                    base_raw_only_counter += 1
             for t in ANCHOR_THRESHOLDS:
                 if check_gated_fixed(mp, av, t):
                     base_gated[t] += 1
@@ -515,14 +547,111 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
                     base_hybrid[q] += 1
             base_total += 1
 
-    # Save filled cases for role-aware classification
-    all_cases = raw_filled_cases + base_filled_cases
+    # Baseline B2 — density-matched (one pair per TVA void, matched on local train density)
+    # For each TVA void, precompute DENSITY_POOL_SIZE candidate pairs from C1 pool of its anchor,
+    # score each by |density(pair) - density(void)|, pick the closest.
+    b2_raw = 0
+    b2_gated = {t: 0 for t in ANCHOR_THRESHOLDS}
+    b2_pure_q = {q: 0 for q in ANCHOR_QUANTILES}
+    b2_hybrid = {q: 0 for q in HYBRID_QUANTILES}
+    b2_total = 0
+    b2_filled_cases = []
+    b2_case_counter = 0
+
+    # Precompute per-anchor C1 pool indices (same as B1)
+    anchor_c1_idx = {}
+    for anchor_id in ANCHORS:
+        av = anchor_vecs[anchor_id]
+        sims = train_emb @ av
+        anchor_c1_idx[anchor_id] = sims.argsort()[::-1][:C1_POOL].tolist()
+
+    rng_b2 = random.Random(99)
+    for (aid, tva_mp, tva_density) in valid_void_data:
+        c1_idx = anchor_c1_idx[aid]
+        # Generate DENSITY_POOL_SIZE candidate pair midpoints and their densities
+        sample_size = min(DENSITY_POOL_SIZE, len(c1_idx) * (len(c1_idx) - 1) // 2)
+        pairs = [rng_b2.sample(c1_idx, 2) for _ in range(sample_size)]
+        best_pair = None
+        best_diff = float("inf")
+        for i, j in pairs:
+            mp_b2 = slerp(train_emb[i], train_emb[j])
+            d = local_density(mp_b2)
+            diff = abs(d - tva_density)
+            if diff < best_diff:
+                best_diff = diff
+                best_pair = (i, j, mp_b2)
+
+        if best_pair is None:
+            continue
+        bi, bj, mp = best_pair
+        av = anchor_vecs[aid]
+        b2_total += 1
+        val_sims = val_emb @ mp
+        max_sim = float(val_sims.max())
+
+        if check_raw(mp):
+            b2_raw += 1
+            best_idx = int(val_sims.argmax())
+            filler_id = v_ids[best_idx] if best_idx < len(v_ids) else None
+            filler_meta = val_papers_meta.get(filler_id, {}) if filler_id else {}
+            anchor_sim_f = float(val_emb[best_idx] @ av) if filler_id else None
+            b2_filled_cases.append({
+                "case_id": f"{split_name}_raw_b2_{aid}_{b2_case_counter:03d}",
+                "split": split_name, "metric": "raw", "source": "b2_density",
+                "anchor_id": aid, "anchor": ANCHORS.get(aid, ""),
+                "void_id": f"b2_{aid}_{bi}_{bj}",
+                "density_match": {"tva_density": round(tva_density, 4), "b2_density": round(local_density(mp), 4), "delta": round(best_diff, 4)},
+                "source_a": {
+                    "id": t_ids[bi] if bi < len(t_ids) else "",
+                    "title": "", "abstract": id_to_abstract_train.get(t_ids[bi] if bi < len(t_ids) else "", ""),
+                    "year": None,
+                },
+                "source_b": {
+                    "id": t_ids[bj] if bj < len(t_ids) else "",
+                    "title": "", "abstract": id_to_abstract_train.get(t_ids[bj] if bj < len(t_ids) else "", ""),
+                    "year": None,
+                },
+                "filler": {
+                    "id": filler_id,
+                    "title": filler_meta.get("title", ""),
+                    "abstract": id_to_abstract_val.get(filler_id, "") if filler_id else "",
+                    "year": filler_meta.get("year"),
+                    "sim_to_midpoint": max_sim,
+                    "sim_to_anchor": anchor_sim_f,
+                },
+                "gate": {"type": "raw", "fill_threshold": FILL_THRESHOLD,
+                         "anchor_threshold": None, "passed_anchor_gate": None},
+            })
+            b2_case_counter += 1
+        for t in ANCHOR_THRESHOLDS:
+            if check_gated_fixed(mp, av, t):
+                b2_gated[t] += 1
+        for q in ANCHOR_QUANTILES:
+            if check_gated_pure_quantile(mp, aid, q):
+                b2_pure_q[q] += 1
+        for q in HYBRID_QUANTILES:
+            if check_gated_hybrid(mp, aid, q):
+                b2_hybrid[q] += 1
+
+    # Save filled cases for role-aware classification (5-group sampling)
+    # Group 1: tva                         — TVA raw-filled + passed hybrid gate
+    # Group 2: baseline                    — B1 raw-filled + passed hybrid gate
+    # Group 3: tva_raw_only_failed_gate    — TVA raw-filled but failed hybrid gate
+    # Group 4: baseline_raw_only_failed_gate — B1 raw-filled but failed hybrid gate
+    # Group 5: tva_near_miss               — TVA not filled, sim in [0.75, threshold)
+    all_cases = (raw_filled_cases + base_filled_cases + b2_filled_cases
+                 + raw_only_tva_cases + base_raw_only_cases + near_miss_tva_cases)
     random.Random(42).shuffle(all_cases)  # blind shuffle
     cases_path = OUTPUT_DIR / split_name / "filled_cases_raw.jsonl"
     with open(cases_path, "w") as f:
         for c in all_cases:
             f.write(json.dumps(c) + "\n")
-    logger.info(f"[{split_name}] Saved {len(raw_filled_cases)} TVA + {len(base_filled_cases)} baseline filled cases → {cases_path}")
+    logger.info(
+        f"[{split_name}] Cases saved → {cases_path}\n"
+        f"  G1 tva(gated)={len(raw_filled_cases)}  G2 b1(gated)={len(base_filled_cases)}"
+        f"  G3 tva(raw_only)={len(raw_only_tva_cases)}  G4 b1(raw_only)={len(base_raw_only_cases)}"
+        f"  G5 near_miss={len(near_miss_tva_cases)}  B2={len(b2_filled_cases)}"
+    )
 
     def safe_lift(a, na, b, nb):
         if na == 0 or nb == 0 or b == 0:
@@ -557,7 +686,7 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
                         "rate": round(hybrid_filled[q]/valid_voids,4) if valid_voids else 0}
                        for q in HYBRID_QUANTILES},
         },
-        "baseline": {
+        "baseline_b1": {
             "total": base_total,
             "raw": {"filled": base_raw, "rate": round(base_raw/base_total,4) if base_total else 0},
             "fixed": {int(t*100): {"filled": base_gated[t],
@@ -570,13 +699,35 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
                         "rate": round(base_hybrid[q]/base_total,4) if base_total else 0}
                        for q in HYBRID_QUANTILES},
         },
-        "lifts": {
+        "baseline_b2_density": {
+            "total": b2_total,
+            "raw": {"filled": b2_raw, "rate": round(b2_raw/b2_total,4) if b2_total else 0},
+            "fixed": {int(t*100): {"filled": b2_gated[t],
+                       "rate": round(b2_gated[t]/b2_total,4) if b2_total else 0}
+                      for t in ANCHOR_THRESHOLDS},
+            "pure_q": {int(q*100): {"filled": b2_pure_q[q],
+                        "rate": round(b2_pure_q[q]/b2_total,4) if b2_total else 0}
+                       for q in ANCHOR_QUANTILES},
+            "hybrid": {int(q*100): {"filled": b2_hybrid[q],
+                        "rate": round(b2_hybrid[q]/b2_total,4) if b2_total else 0}
+                       for q in HYBRID_QUANTILES},
+        },
+        "lifts_b1": {
             "raw": safe_lift(raw_filled, valid_voids, base_raw, base_total),
             **{f"fixed_{int(t*100)}": safe_lift(gated_filled[t], valid_voids, base_gated[t], base_total)
                for t in ANCHOR_THRESHOLDS},
             **{f"pq{int(q*100)}": safe_lift(pure_q_filled[q], valid_voids, base_pure_q[q], base_total)
                for q in ANCHOR_QUANTILES},
             **{f"h{int(q*100)}": safe_lift(hybrid_filled[q], valid_voids, base_hybrid[q], base_total)
+               for q in HYBRID_QUANTILES},
+        },
+        "lifts_b2": {
+            "raw": safe_lift(raw_filled, valid_voids, b2_raw, b2_total),
+            **{f"fixed_{int(t*100)}": safe_lift(gated_filled[t], valid_voids, b2_gated[t], b2_total)
+               for t in ANCHOR_THRESHOLDS},
+            **{f"pq{int(q*100)}": safe_lift(pure_q_filled[q], valid_voids, b2_pure_q[q], b2_total)
+               for q in ANCHOR_QUANTILES},
+            **{f"h{int(q*100)}": safe_lift(hybrid_filled[q], valid_voids, b2_hybrid[q], b2_total)
                for q in HYBRID_QUANTILES},
         },
         "per_anchor": anchor_stats,
@@ -588,25 +739,34 @@ def compute_fill_rate(split_name: str, voids_path: Path, val_collection_name: st
 
     # Print summary
     tva = result["tva"]
-    base = result["baseline"]
-    lifts = result["lifts"]
-    nt, nb = tva["total"], base["total"]
+    b1 = result["baseline_b1"]
+    b2 = result["baseline_b2_density"]
+    l1 = result["lifts_b1"]
+    l2 = result["lifts_b2"]
+    nt, nb1, nb2 = tva["total"], b1["total"], b2["total"]
     print(f"\n[{split_name}] fill_threshold={FILL_THRESHOLD}  tau_min_q={TAU_MIN_QUANTILE}")
-    print(f"{'Gate':<24} {'TVA':>10} {'Base':>10} {'Lift':>8}")
-    print("-" * 56)
-    def row(label, tf, tr, bf, br, lift):
-        lift_str = f"{lift:.2f}x" if lift else "N/A"
-        print(f"{label:<24} {tf}/{nt}={tr:.0%}  {bf}/{nb}={br:.0%}  {lift_str:>8}")
-    row("raw", tva["raw"]["filled"], tva["raw"]["rate"],
-        base["raw"]["filled"], base["raw"]["rate"], lifts["raw"])
+    print(f"{'Gate':<24} {'TVA':>8} {'B1(hot)':>9} {'L1':>6} {'B2(dens)':>9} {'L2':>6}")
+    print("-" * 67)
+    def row(label, tf, tr, b1f, b1r, l1v, b2f, b2r, l2v):
+        l1s = f"{l1v:.2f}x" if l1v else "N/A"
+        l2s = f"{l2v:.2f}x" if l2v else "N/A"
+        print(f"{label:<24} {tf}/{nt}={tr:.0%}  {b1f}/{nb1}={b1r:.0%} {l1s:>6}  {b2f}/{nb2}={b2r:.0%} {l2s:>6}")
+    row("raw",
+        tva["raw"]["filled"], tva["raw"]["rate"],
+        b1["raw"]["filled"], b1["raw"]["rate"], l1["raw"],
+        b2["raw"]["filled"], b2["raw"]["rate"], l2["raw"])
     for t in ANCHOR_THRESHOLDS:
         k = int(t*100)
-        row(f"fixed≥{t}", tva["fixed"][k]["filled"], tva["fixed"][k]["rate"],
-            base["fixed"][k]["filled"], base["fixed"][k]["rate"], lifts[f"fixed_{k}"])
+        row(f"fixed≥{t}",
+            tva["fixed"][k]["filled"], tva["fixed"][k]["rate"],
+            b1["fixed"][k]["filled"], b1["fixed"][k]["rate"], l1[f"fixed_{k}"],
+            b2["fixed"][k]["filled"], b2["fixed"][k]["rate"], l2[f"fixed_{k}"])
     for q in HYBRID_QUANTILES:
         k = int(q*100)
-        row(f"hybrid(τ≥0.65,Q{k})", tva["hybrid"][k]["filled"], tva["hybrid"][k]["rate"],
-            base["hybrid"][k]["filled"], base["hybrid"][k]["rate"], lifts[f"h{k}"])
+        row(f"hybrid(Q{k})",
+            tva["hybrid"][k]["filled"], tva["hybrid"][k]["rate"],
+            b1["hybrid"][k]["filled"], b1["hybrid"][k]["rate"], l1[f"h{k}"],
+            b2["hybrid"][k]["filled"], b2["hybrid"][k]["rate"], l2[f"h{k}"])
     # val pass rate for main hybrid
     print(f"\n  Val pass rates (hybrid q90):")
     for aid in list(ANCHORS.keys())[:5]:
@@ -646,25 +806,31 @@ def main():
         all_results.append(result)
 
     # Summary table
-    print(f"\n{'='*75}")
-    print(f"{'Split':<6} {'raw TVA':>9} {'raw Base':>9} {'raw Lift':>8} "
-          f"{'h90 TVA':>9} {'h90 Base':>9} {'h90 Lift':>8}")
-    print("-" * 75)
+    print(f"\n{'='*90}")
+    print(f"{'Split':<6} {'TVA raw':>8} {'B1 raw':>7} {'L1raw':>6} {'B2 raw':>7} {'L2raw':>6} "
+          f"{'TVA h90':>8} {'B1 h90':>7} {'L1h90':>6} {'B2 h90':>7} {'L2h90':>6}")
+    print("-" * 90)
     for r in all_results:
         t = r["tva"]
-        b = r["baseline"]
-        l = r["lifts"]
-        tr = t["raw"]["rate"]; tf = t["raw"]["filled"]; tn = t["total"]
-        br = b["raw"]["rate"]; bf = b["raw"]["filled"]; bn = b["total"]
+        b1 = r["baseline_b1"]
+        b2 = r["baseline_b2_density"]
+        l1 = r["lifts_b1"]
+        l2 = r["lifts_b2"]
+        nt = t["total"]; nb1 = b1["total"]; nb2 = b2["total"]
         th90 = t["hybrid"].get(90, {})
-        bh90 = b["hybrid"].get(90, {})
-        lh90 = l.get("h90", "N/A")
+        b1h90 = b1["hybrid"].get(90, {})
+        b2h90 = b2["hybrid"].get(90, {})
+        l1r = l1.get("raw"); l2r = l2.get("raw")
+        l1h = l1.get("h90"); l2h = l2.get("h90")
+        fmt = lambda v: f"{v:.2f}x" if v else "N/A"
         print(f"{r['split']:<6} "
-              f"{tf}/{tn}={tr:.0%}  {bf}/{bn}={br:.0%}  {str(l['raw'])+'x':>8}  "
-              f"{th90.get('filled',0)}/{tn}={th90.get('rate',0):.0%}  "
-              f"{bh90.get('filled',0)}/{bn}={bh90.get('rate',0):.0%}  "
-              f"{str(lh90)+'x':>8}")
-    print(f"{'='*75}")
+              f"{t['raw']['filled']}/{nt}={t['raw']['rate']:.0%}  "
+              f"{b1['raw']['filled']}/{nb1}={b1['raw']['rate']:.0%} {fmt(l1r):>6}  "
+              f"{b2['raw']['filled']}/{nb2}={b2['raw']['rate']:.0%} {fmt(l2r):>6}  "
+              f"{th90.get('filled',0)}/{nt}={th90.get('rate',0):.0%}  "
+              f"{b1h90.get('filled',0)}/{nb1}={b1h90.get('rate',0):.0%} {fmt(l1h):>6}  "
+              f"{b2h90.get('filled',0)}/{nb2}={b2h90.get('rate',0):.0%} {fmt(l2h):>6}")
+    print(f"{'='*90}")
 
     summary_path = OUTPUT_DIR / "rolling_summary.json"
     with open(summary_path, "w") as f:
