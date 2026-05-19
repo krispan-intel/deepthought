@@ -87,27 +87,67 @@ def get_density_bucket(density: float, buckets: dict) -> str:
     return "mid"  # overridden in run_split with proper bucket assignment
 
 
-def bootstrap_lift(filled_a: list[int], filled_b: list[int], n_boot: int, seed: int):
+def hierarchical_bootstrap_diff(
+    anchor_tva: dict[str, list[int]],
+    anchor_b2: dict[str, list[int]],
+    n_boot: int,
+    seed: int,
+):
     """
-    Bootstrap CI for lift = (mean_a / mean_b).
-    filled_a, filled_b: per-void binary fill indicator (0/1).
-    Returns (lift, ci_low, ci_high).
+    Hierarchical cluster bootstrap for TVA - B2 fill-rate difference (pp).
+    Resampling: anchors (outer) → voids within anchor (inner).
+    Returns (observed_diff_pp, ci_low, ci_high).
+    anchor_tva / anchor_b2: {anchor_id → list of binary fill indicators}
     """
     rng = np.random.default_rng(seed)
-    n_a, n_b = len(filled_a), len(filled_b)
-    arr_a = np.array(filled_a, dtype=float)
-    arr_b = np.array(filled_b, dtype=float)
-    observed_lift = arr_a.mean() / arr_b.mean() if arr_b.mean() > 0 else np.nan
-    boot_lifts = []
+    anchors = list(anchor_tva.keys())
+    n_anchors = len(anchors)
+
+    def anchor_diff(anchor_subset):
+        tva_vals, b2_vals = [], []
+        for a in anchor_subset:
+            tva_vals.extend(anchor_tva.get(a, []))
+            b2_vals.extend(anchor_b2.get(a, []))
+        if not tva_vals or not b2_vals:
+            return np.nan
+        return np.mean(tva_vals) * 100 - np.mean(b2_vals) * 100
+
+    observed = anchor_diff(anchors)
+    boot_diffs = []
     for _ in range(n_boot):
-        ba = arr_a[rng.integers(0, n_a, size=n_a)]
-        bb = arr_b[rng.integers(0, n_b, size=n_b)]
-        if bb.mean() > 0:
-            boot_lifts.append(ba.mean() / bb.mean())
-    boot_lifts = np.array(boot_lifts)
-    ci_low = float(np.percentile(boot_lifts, 2.5))
-    ci_high = float(np.percentile(boot_lifts, 97.5))
-    return float(observed_lift), ci_low, ci_high
+        sampled_anchors = list(rng.choice(anchors, size=n_anchors, replace=True))
+        boot_diffs.append(anchor_diff(sampled_anchors))
+    boot_diffs = np.array([d for d in boot_diffs if not np.isnan(d)])
+    ci_low = float(np.percentile(boot_diffs, 2.5))
+    ci_high = float(np.percentile(boot_diffs, 97.5))
+    return float(observed), ci_low, ci_high
+
+
+def anchor_permutation_pvalue(
+    anchor_tva: dict[str, list[int]],
+    anchor_b2: dict[str, list[int]],
+    n_perm: int = 10000,
+    seed: int = 0,
+) -> float:
+    """
+    Anchor-level sign-flip permutation test for TVA - B2 difference.
+    Each anchor: d_a = mean(TVA_i) - mean(B2_i). Flip signs randomly.
+    Returns two-sided p-value.
+    """
+    rng = np.random.default_rng(seed)
+    anchors = list(anchor_tva.keys())
+    anchor_diffs = []
+    for a in anchors:
+        tva = np.mean(anchor_tva.get(a, [0])) if anchor_tva.get(a) else 0.0
+        b2  = np.mean(anchor_b2.get(a, [0]))  if anchor_b2.get(a)  else 0.0
+        anchor_diffs.append(tva - b2)
+    anchor_diffs = np.array(anchor_diffs)
+    observed = np.abs(anchor_diffs.mean())
+    perm_stats = []
+    for _ in range(n_perm):
+        signs = rng.choice([-1, 1], size=len(anchor_diffs))
+        perm_stats.append(np.abs((signs * anchor_diffs).mean()))
+    return float(np.mean(np.array(perm_stats) >= observed))
 
 
 def run_split(split_name: str, n_bootstrap: int):
@@ -180,9 +220,11 @@ def run_split(split_name: str, n_bootstrap: int):
 
     id_to_vec = {t_ids[i]: train_emb[i] for i in range(len(t_ids))}
 
-    # --- TVA fill indicators ---
-    tva_legacy = []   # 1 if max_val_sim >= 0.82
-    tva_calib  = []   # 1 if max_val_sim >= τ_fill(q,ρ,t)
+    # --- TVA fill indicators (per-anchor for hierarchical bootstrap) ---
+    tva_legacy = []
+    tva_calib  = []
+    anchor_tva_legacy: dict[str, list[int]] = {a: [] for a in ANCHORS}
+    anchor_tva_calib:  dict[str, list[int]] = {a: [] for a in ANCHORS}
 
     for v in voids:
         va = id_to_vec.get(v["paper_a"]["id"])
@@ -194,27 +236,29 @@ def run_split(split_name: str, n_bootstrap: int):
         av = anchor_vecs[aid]
         tau_q = anchor_tau_q[aid]
 
-        # Val_q: anchor-eligible val papers
         val_anchor_sims = val_emb @ av
         eligible_mask = val_anchor_sims >= tau_q
         if not eligible_mask.any():
-            tva_legacy.append(0)
-            tva_calib.append(0)
+            tva_legacy.append(0); tva_calib.append(0)
+            anchor_tva_legacy[aid].append(0); anchor_tva_calib[aid].append(0)
             continue
 
         eligible_val = val_emb[eligible_mask]
         max_sim = float((eligible_val @ mp).max())
-
         mid_density = local_density(mp, train_emb)
         tau_c = get_calib_tau(aid, mid_density)
 
-        tva_legacy.append(1 if max_sim >= LEGACY_TAU else 0)
-        tva_calib.append(1 if max_sim >= tau_c else 0)
+        fl = 1 if max_sim >= LEGACY_TAU else 0
+        fc = 1 if max_sim >= tau_c else 0
+        tva_legacy.append(fl); tva_calib.append(fc)
+        anchor_tva_legacy[aid].append(fl); anchor_tva_calib[aid].append(fc)
 
-    # --- B2 density-matched fill indicators ---
+    # --- B2 density-matched fill indicators (per-anchor for hierarchical bootstrap) ---
     rng_b2 = random.Random(99)
     b2_legacy = []
     b2_calib  = []
+    anchor_b2_legacy: dict[str, list[int]] = {a: [] for a in ANCHORS}
+    anchor_b2_calib:  dict[str, list[int]] = {a: [] for a in ANCHORS}
 
     valid_void_data = []  # (aid, mp, density) for B2 matching
     for v in voids:
@@ -258,8 +302,10 @@ def run_split(split_name: str, n_bootstrap: int):
         max_sim = float((eligible_val @ mp).max())
         tau_c = get_calib_tau(aid, mid_d)
 
-        b2_legacy.append(1 if max_sim >= LEGACY_TAU else 0)
-        b2_calib.append(1 if max_sim >= tau_c else 0)
+        fl = 1 if max_sim >= LEGACY_TAU else 0
+        fc = 1 if max_sim >= tau_c else 0
+        b2_legacy.append(fl); b2_calib.append(fc)
+        anchor_b2_legacy[aid].append(fl); anchor_b2_calib[aid].append(fc)
 
     # Results
     tva_rate_legacy = np.mean(tva_legacy)
@@ -267,25 +313,36 @@ def run_split(split_name: str, n_bootstrap: int):
     b2_rate_legacy  = np.mean(b2_legacy)
     b2_rate_calib   = np.mean(b2_calib)
 
-    lift_legacy, ci_l_lo, ci_l_hi = bootstrap_lift(tva_legacy, b2_legacy, n_bootstrap, BOOTSTRAP_SEED)
-    lift_calib,  ci_c_lo, ci_c_hi = bootstrap_lift(tva_calib,  b2_calib,  n_bootstrap, BOOTSTRAP_SEED + 1)
+    # Hierarchical cluster bootstrap (anchor level) for paired difference pp
+    diff_legacy, hb_l_lo, hb_l_hi = hierarchical_bootstrap_diff(
+        anchor_tva_legacy, anchor_b2_legacy, n_bootstrap, BOOTSTRAP_SEED)
+    diff_calib, hb_c_lo, hb_c_hi = hierarchical_bootstrap_diff(
+        anchor_tva_calib, anchor_b2_calib, n_bootstrap, BOOTSTRAP_SEED + 1)
+
+    # Anchor-level paired sign-flip permutation test
+    pval_legacy = anchor_permutation_pvalue(anchor_tva_legacy, anchor_b2_legacy, seed=BOOTSTRAP_SEED)
+    pval_calib  = anchor_permutation_pvalue(anchor_tva_calib,  anchor_b2_calib,  seed=BOOTSTRAP_SEED + 1)
 
     result = {
         "split": split_name,
         "n_tva": len(tva_legacy),
         "n_b2": len(b2_legacy),
+        "n_anchors": len([a for a in ANCHORS if anchor_tva_legacy.get(a)]),
         "legacy_tau": LEGACY_TAU,
         "tva_legacy": {"rate": round(float(tva_rate_legacy), 4), "n_filled": int(sum(tva_legacy))},
         "b2_legacy":  {"rate": round(float(b2_rate_legacy),  4), "n_filled": int(sum(b2_legacy))},
         "tva_calib":  {"rate": round(float(tva_rate_calib),  4), "n_filled": int(sum(tva_calib))},
         "b2_calib":   {"rate": round(float(b2_rate_calib),   4), "n_filled": int(sum(b2_calib))},
-        "lift_legacy_tva_b2": {
-            "lift": round(lift_legacy, 4),
-            "ci_95": [round(ci_l_lo, 4), round(ci_l_hi, 4)],
+        # Primary: paired difference + hierarchical CI (anchor-clustered)
+        "diff_legacy_pp": {
+            "diff": round(diff_legacy, 2),
+            "hierarchical_ci_95": [round(hb_l_lo, 2), round(hb_l_hi, 2)],
+            "permutation_pval": round(pval_legacy, 4),
         },
-        "lift_calib_tva_b2": {
-            "lift": round(lift_calib, 4),
-            "ci_95": [round(ci_c_lo, 4), round(ci_c_hi, 4)],
+        "diff_calib_pp": {
+            "diff": round(diff_calib, 2),
+            "hierarchical_ci_95": [round(hb_c_lo, 2), round(hb_c_hi, 2)],
+            "permutation_pval": round(pval_calib, 4),
         },
     }
 
@@ -294,13 +351,14 @@ def run_split(split_name: str, n_bootstrap: int):
         json.dump(result, f, indent=2)
     logger.info(f"Saved → {out_path}")
 
-    print(f"\n[{split_name}] SENSITIVITY ANALYSIS")
-    print(f"{'':20} {'τ=0.82 (legacy)':>18} {'calibrated τ':>18}")
-    print("-" * 60)
-    print(f"{'TVA fill rate':20} {tva_rate_legacy:>17.1%} {tva_rate_calib:>17.1%}")
-    print(f"{'B2 fill rate':20} {b2_rate_legacy:>17.1%} {b2_rate_calib:>17.1%}")
-    print(f"{'TVA/B2 lift':20} {lift_legacy:>17.2f}x {lift_calib:>17.2f}x")
-    print(f"{'95% CI':20} [{ci_l_lo:.2f}, {ci_l_hi:.2f}]x     [{ci_c_lo:.2f}, {ci_c_hi:.2f}]x")
+    print(f"\n[{split_name}] SENSITIVITY (hierarchical bootstrap, n_anchors={result['n_anchors']})")
+    print(f"{'':22} {'τ=0.82 (legacy)':>20} {'calibrated τ':>20}")
+    print("-" * 65)
+    print(f"{'TVA fill rate':22} {tva_rate_legacy:>19.1%} {tva_rate_calib:>19.1%}")
+    print(f"{'B2 fill rate':22} {b2_rate_legacy:>19.1%} {b2_rate_calib:>19.1%}")
+    print(f"{'Δ pp (TVA-B2)':22} {diff_legacy:>+18.1f}pp {diff_calib:>+18.1f}pp")
+    print(f"{'Hierarch. 95% CI':22} [{hb_l_lo:+.1f},{hb_l_hi:+.1f}]pp   [{hb_c_lo:+.1f},{hb_c_hi:+.1f}]pp")
+    print(f"{'Permut. p-val':22} {pval_legacy:>19.3f} {pval_calib:>19.3f}")
     print()
 
     return result

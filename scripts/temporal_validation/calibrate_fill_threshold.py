@@ -60,7 +60,7 @@ ANCHORS = {
 TAU_ANCHOR = 0.55
 TAU_MIN_QUANTILE = 0.80
 C1_POOL = 300
-NULL_SAMPLES = 200   # null midpoints per (anchor, density_bucket)
+NULL_SAMPLES = 1000  # null midpoints per cell — split 50/50 cal/test
 DENSITY_K = 20
 DENSITY_BUCKETS = 3  # low / mid / high density
 
@@ -164,13 +164,17 @@ def run_split(split_name: str, alpha: float):
                 sims_to_m = eligible_val @ m
                 all_null.append(float(sims_to_m.max()))
 
-            # 80/20 split: calibrate on first 80%, evaluate on held-out 20%
-            n_cal = int(len(all_null) * 0.80)
+            # 50/50 split: calibrate on first half, evaluate on held-out half
+            n_cal = len(all_null) // 2
             cal_sims = np.array(all_null[:n_cal])
             heldout_sims = np.array(all_null[n_cal:])
 
             null_max_sims = np.array(all_null)
-            tau_calibrated = float(np.quantile(cal_sims, 1 - alpha))
+            # Finite-sample conformal quantile: k = ceil((n+1)*(1-alpha))
+            k = int(np.ceil((n_cal + 1) * (1 - alpha)))
+            k = min(k, n_cal)  # clamp
+            sorted_cal = np.sort(cal_sims)
+            tau_calibrated = float(sorted_cal[k - 1])  # 1-indexed → 0-indexed
             fpr_at_082 = float((null_max_sims >= 0.82).mean())
             heldout_fpr = float((heldout_sims >= tau_calibrated).mean()) if len(heldout_sims) > 0 else None
 
