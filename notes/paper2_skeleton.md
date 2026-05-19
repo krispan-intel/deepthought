@@ -228,7 +228,18 @@ Key sentence: Hot-zone baseline inflates raw fill by sampling high-density,
 high-momentum regions. After density matching, TVA achieves a modest but consistent
 positive lift across all temporal splits.
 
-TODO: Add 95% bootstrap CI over void candidates for TVA/B2 lift.
+Table 1b: Sensitivity under calibrated τ_fill(q,ρ,t) with bootstrap CI (t5)
+
+| | τ=0.82 (legacy) | Calibrated τ≈0.841 |
+|---|---|---|
+| TVA fill rate | 27.3% | **0.7%** |
+| B2 fill rate | 24.3% | **0.7%** |
+| TVA/B2 lift | 1.12× | 1.00× |
+| 95% bootstrap CI | [0.85, 1.48]× | [0.00, 4.00]× |
+
+**Key result**: Under calibrated τ, fill rate drops from ~27% to ~0.7% — nearly all raw fills at τ=0.82 are in the null occupancy zone. TVA/B2 lift disappears (1.00×). The 1.12× legacy lift is **not statistically significant** (CI contains 1.0).
+
+Interpretation: The 27% raw fill was almost entirely composed of geometrically close papers that fall within the null distribution at their anchor-density level. The "fills" were not fills at all — they were noise. This is the strongest version of Finding 1.
 
 ### 4.1.1 Fixed Similarity Thresholds Are Not Portable
 
@@ -344,6 +355,63 @@ Pattern is consistent across t4 and t5. Finding 3 is robust.
 
 ---
 
+## 4.4 Case Studies: Three Geometric Fills, Three Epistemic Roles
+
+To illustrate the role decomposition, we examine three representative cases selected from t4/t5 role classification results. These are not claimed as typical — they are illustrative.
+
+---
+
+**Case 1: Partial Fill — "Multi-Task Offloading over Vehicular Clouds" (arXiv:1912.06243, 2019)**
+
+- Anchor: virtualization and hypervisor design for cloud workloads
+- Source A (1412.6149): VM management / cloud resource alloc
+- Source B (1607.06269): VM-level resource assignment
+- sim_to_midpoint: 0.835  |  citations: 18
+
+Role: PARTIAL_FILL. The paper connects vehicular cloud task offloading with VM resource allocation. Backward references confirm: 10+ task-offloading citations (B-side), only 1 marginal virtualization reference (A-side). It bridges the gap partially but does not engage with hypervisor design. Forward citations are within the vehicular cloud community only — no cross-community uptake to virtualization.
+
+Illustrates: A paper can be epistemically adjacent to the void without resolving it. Reference bridge is one-sided.
+
+---
+
+**Case 2: Boundary Expansion — "Optimization of Heterogeneous Systems with AI Planning" (arXiv:2106.01441, 2021)**
+
+- Anchor: kernel scheduler optimization and CPU affinity for multicore systems
+- Source A (1208.1922): task scheduling in multiprocessor systems (heuristic)
+- Source B (1606.05134): combinatorial optimization on heterogeneous systems
+- sim_to_midpoint: 0.855  |  citations: 7
+
+Role: INCREMENTAL_EXTENSION / BOUNDARY_EXPANSION. Extends B-direction (heterogeneous optimization) using AI planning. Zero kernel-scheduler or CPU-affinity references in the entire bibliography. Forward citations all within HPC/heterogeneous community. Never touches A-side.
+
+Illustrates: Pure boundary expansion. Geometrically near the void midpoint, but never bridges to the other side. High geometric proximity does not imply any bridging intent.
+
+---
+
+**Case 3: False Positive — "Energy-Aware Virtual Network Embedding" (arXiv:1710.11590, 2017)**
+
+- Anchor: storage I/O path optimization and NVMe device drivers
+- Source A (1504.06855): energy-aware VM placement
+- Source B (1412.6149): cloud computing resource alloc
+- sim_to_midpoint: 0.875 (highest of the three)  |  citations: 6
+
+Role: FALSE_POSITIVE / DENSIFICATION. Zero storage I/O or NVMe references. All 19 references are within energy-aware VNE literature. Despite having the highest sim_to_midpoint, the paper has nothing to do with the anchor. The "fill" is a dense-region artifact — the VNE cluster is geometrically near the cloud/storage cluster, but epistemically unrelated.
+
+Illustrates: The highest geometric similarity case is the clearest false positive. Dense cluster proximity triggers fill detection with no epistemic signal.
+
+---
+
+**Reference bridge summary** (backward references):
+
+| Case | A-side refs | B-side refs | Bridge ratio | D-TVA implication |
+|---|---|---|---|---|
+| Partial fill (vehicular) | 1 marginal | 10+ | low | slow accumulation toward A-side |
+| Boundary expansion (AI HPC) | 0 | 30+ | none | pure B-side momentum |
+| False positive (VNE) | 0 | 19 (own cluster) | none | densification of existing region |
+
+> Case studies suggest that geometrically similar fill events have different pre-history and post-uptake dynamics. Tracking these differences requires treating papers as events relative to an evolving knowledge space — the key motivation for dynamic TVA.
+
+---
+
 ## 5. Discussion
 
 ### 5.1 Raw Fill Fails for Three Reasons
@@ -441,10 +509,9 @@ We leave the development of streaming, event-driven, and dynamic extensions to f
 
 ### Priority A — must before writing
 
-- [ ] **Table 1b**: recompute TVA/B1/B2 fill rates under calibrated τ_fill(q,ρ,t) for t5 (sensitivity)
-      → confirm: density matching still matters, TVA/B2 conclusion doesn't reverse
-- [ ] **Bootstrap CI**: TVA/B2 lift under τ=0.82 AND calibrated τ (resample voids, 95% CI)
-      → 1.03–1.12x is modest; need CI to defend against reviewer
+- [x] **Table 1b**: calibrated τ sensitivity — TVA/B2 both drop to 0.7%, lift=1.00×
+      → **stronger than expected**: 27% raw fill was almost entirely null-zone noise
+- [x] **Bootstrap CI**: τ=0.82 lift 1.12× CI=[0.85,1.48] (not significant); calibrated CI=[0.00,4.00]
 - [ ] **t3 role sanity check**: confirm t3 also shows high FP / rare TRUE_FILL
       (file exists, needs verification)
 
