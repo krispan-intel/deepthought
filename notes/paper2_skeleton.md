@@ -78,13 +78,15 @@ $$m(A,B) = \frac{\mathbf{a}+\mathbf{b}}{\|\mathbf{a}+\mathbf{b}\|}$$
 
 ### Three-layer fill predicate (core formula)
 
-$$\text{Fill}(P,V,q) = G(P,m) \wedge E(P,q) \wedge R(P,A,B)$$
+$$\text{Fill}(P,V,q) = G(V) \wedge E(P,q) \wedge R(P,A,B)$$
 
 | Layer | Condition | Threshold |
 |---|---|---|
-| G geometric | $\text{sim}(P,m) > \tau_{\text{fill}}$ | $\tau_{\text{fill}}=0.82$ |
+| G geometric | $\max_{P \in \text{Val}_q} \text{sim}(P,m_V) \geq \tau_{\text{fill}}(q,\rho(V))$ | calibrated (see below) |
 | E eligibility | $\text{sim}(P,q) > \tau_q$ | $\tau_q = \max(Q_{80}^{\text{val}},\ Q_{90}^{\text{train}})$ |
 | R epistemic | $\text{role}(P,A,B) \in \{\text{TRUE-FILL, PARTIAL-FILL}\}$ | LLM |
+
+**G uses void-level max-sim, not paper-level sim** — this compensates for val corpus size.
 
 ### Anchor exposure (Finding 2)
 
@@ -98,6 +100,27 @@ $$\rho(P) = \frac{1}{k}\sum_{i=1}^{k}\text{sim}(P,\ \text{kNN}_i(P,\text{train})
 
 B2 match: $\arg\min_j|\rho(B_j)-\rho(V)|$ over 300 candidates per anchor.
 
+### Calibrated fill threshold (replaces 0.82)
+
+$$\tau_{\text{fill}}(q,\rho,t) = Q_{1-\alpha}\!\left(\left\{\max_{P \in \text{Val}_q}\text{sim}(P,m_0) : m_0 \in \text{Null}(q,\rho,t)\right\}\right)$$
+
+where $\text{Null}(q,\rho,t)$ = density-matched null midpoints, same anchor $q$, density bucket $\rho$, split $t$; $\alpha=0.05$.
+
+**t5 calibration results** (why 0.82 is a bad global constant):
+
+| Density bucket | null p50 | null p95 = τ\_fill | FPR at 0.82 |
+|---|---|---|---|
+| low | 0.786–0.811 | 0.790–0.859 | 1–18% |
+| mid | 0.802–0.832 | 0.818–0.861 | 5–80% |
+| high | 0.810–0.854 | 0.841–0.881 | **28–98%** |
+| **global mean** | — | **0.841** | **35.7%** |
+
+0.82 has 35.7% average FPR — it barely discriminates in high-density anchors.
+Calibrated τ\_fill ranges from 0.790 (ebpf\_obs low) to 0.881 (virt\_hyp high).
+
+**In paper**: use global τ\_fill=0.82 as legacy operating point for comparability,
+but report calibrated τ\_fill per (anchor, density bucket) in sensitivity analysis.
+
 ### Role-aware fill score (Table 3)
 
 $$s(P) = \begin{cases} 1.0 & \text{TRUE-FILL} \\ 0.7 & \text{PARTIAL-FILL} \\ 0.5 & \text{SUPPORT-EVIDENCE} \\ 0.3 & \text{SURVEY-OR-NAMING} \\ 0.2 & \text{INCREMENTAL-EXT} \\ 0.0 & \text{FALSE-POSITIVE} \end{cases} \qquad \bar{s} = \frac{1}{|C|}\sum_{P\in C}s(P)$$
@@ -106,7 +129,7 @@ $$s(P) = \begin{cases} 1.0 & \text{TRUE-FILL} \\ 0.7 & \text{PARTIAL-FILL} \\ 0.
 
 | Question | Math |
 |---|---|
-| Geometrically close enough? | $\text{sim}(P,m)>0.82$ |
+| Geometrically close enough? | $\max_{P \in \text{Val}_q}\text{sim}(P,m_V) \geq \tau_{\text{fill}}(q,\rho(V))$ |
 | In anchor's problem domain? | $\text{sim}(P,q)>\tau_q$ |
 | How to set $\tau_q$? | $\max(Q_{80}^{\text{val}},Q_{90}^{\text{train}})$ |
 | How many future papers observable? | $\pi_{q,t}$ |
