@@ -1,0 +1,195 @@
+\documentclass[sigconf]{acmart}
+
+% ---- Packages ----
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{subcaption}
+
+% ---- Theorem environments ----
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+
+% ---- Macros ----
+\newcommand{\tva}{\textsf{TVA}}
+\newcommand{\tvv}{\textsf{TVV}}
+\newcommand{\anchor}{q}
+\newcommand{\valq}{\mathrm{Val}_{\anchor}}
+\newcommand{\midpoint}{m_V}
+\newcommand{\taufill}{\tau_{\mathrm{fill}}}
+\newcommand{\tauanchor}{\tau_{\anchor}}
+
+% ================================================================
+\begin{document}
+
+\title{Topological Void Validation:\\
+Density-Controlled and Role-Aware Evaluation of Predicted Research Voids}
+
+\author{Kris Pan}
+\affiliation{\institution{Independent}}
+\email{TODO}
+
+% ================================================================
+\begin{abstract}
+Topological Void Analysis (TVA) identifies candidate research voids in scientific
+knowledge spaces as geometric gaps between anchor-conditioned paper clusters. A
+natural validation question is whether future papers fill these predicted voids. We
+show that raw fill rate---whether any future paper appears near a void's
+midpoint---fails as a validation target for three reasons: it is confounded by local
+corpus density, limited by anchor observability, and weakly correlated with genuine
+epistemic resolution. A hot-zone baseline outperforms TVA on raw fill rate (36\%
+vs.\ 28\%), but this apparent advantage disappears under a density-matched baseline
+(25\%, TVA/B2 lift $= 1.12\times$, $\mathrm{CI}_{95\%} = [0.85, 1.48]$, not
+significant). We further show that anchor eligibility gating exposes a corpus
+observability limit: only 5--7\% of future papers are anchor-eligible, so many
+unfilled voids should be treated as right-censored. We also demonstrate that a fixed
+similarity threshold of 0.82 corresponds to a 35.7\% average null occupancy rate,
+ranging from 1\% to 99\% across anchor-density cells; the correct 5\%-FPR threshold
+averages 0.841 and is stable across all temporal splits. Under this calibrated
+threshold, fill rate drops from $\sim$27\% to $\sim$0.7\%, confirming that most raw
+fills are null-zone noise. Finally, role-aware epistemic classification shows that
+even anchor-eligible geometric fills rarely correspond to genuine void resolution:
+59--76\% are false positives across all groups and splits, with most non-false cases
+representing boundary expansion rather than void closure. These findings motivate a
+three-layer validation framework---geometric closure, anchor eligibility, and epistemic
+role---and show that raw fill rate measures future local activity near predicted voids
+but does not by itself validate epistemic closure.
+\end{abstract}
+
+\maketitle
+
+% ================================================================
+\section{Introduction}
+\label{sec:intro}
+
+% TODO: write full intro
+% Key sentences:
+% - Classical IR: given query, find relevant docs.
+%   TVA: given anchor, find missing knowledge.
+% - Contributions 1–5
+
+% ================================================================
+\section{Background}
+\label{sec:background}
+
+\subsection{Topological Void Analysis}
+% C1–C4 brief recap, anchor/void/midpoint
+
+\subsection{Temporal Validation in Literature-Based Discovery}
+% LBD time-slicing, Recall@K, AP
+
+\subsection{Research Momentum and Dense-Region Confounding}
+% Structural holes, hot zones, density bias
+
+% ================================================================
+\section{Experimental Setup}
+\label{sec:setup}
+
+\subsection{Corpus and Temporal Splits}
+% t3/t4/t5 table
+
+\subsection{TVA Void Generation}
+% BGE-M3, 10 anchors, top-30 MMR voids
+
+\subsection{Baselines}
+
+\paragraph{B1 (hot-zone baseline).}
+% random pairs from top-300 anchor C1 pool
+
+\paragraph{B2 (density-matched baseline).}
+% greedy nearest-density match from 300 candidates
+
+\subsection{Three-Layer Fill Predicate}
+
+Let $\valq = \{P \in \mathrm{Val}_t : \mathrm{sim}(P, \anchor) \ge \tauanchor\}$
+and
+$P_V^* = \arg\max_{P \in \valq} \mathrm{sim}(P, \midpoint)$.
+
+Geometric closure:
+\begin{equation}
+G(V) = \mathbf{1}\!\left[\mathrm{sim}(P_V^*, \midpoint) \ge \taufill(\anchor, \rho(V), t)\right]
+\end{equation}
+
+Validated epistemic fill:
+\begin{equation}
+\mathrm{Fill}(V) = G(V) \wedge R(P_V^*, A, B, \anchor)
+\end{equation}
+
+where $R = 1$ iff $\mathrm{role}(P_V^*, A, B, \anchor) \in
+\{\mathrm{TRUE\text{-}FILL},\ \mathrm{PARTIAL\text{-}FILL}\}$.
+
+\paragraph{Calibrated threshold.}
+\begin{equation}
+\taufill(\anchor, \rho, t) =
+Q_{1-\alpha}\!\bigl(
+  \{\max_{P \in \valq} \mathrm{sim}(P, m_0) : m_0 \in \mathrm{Null}(\anchor, \rho, t)\}
+\bigr)
+\end{equation}
+where $\mathrm{Null}(\anchor, \rho, t)$ are density-matched null midpoints ($\alpha = 0.05$).
+
+% ================================================================
+\section{Results}
+\label{sec:results}
+
+\subsection{Finding 1: Raw Fill Rate Is Density-Confounded}
+% Table 1 (legacy) + Table 1b (calibrated)
+
+\subsubsection{Fixed Thresholds Are Not Portable}
+% Table: FPR@0.82 mean=35.7%, range 1–99%; tau_calib=0.841 stable
+
+\subsection{Finding 2: Anchor Eligibility Reveals Observability Limits}
+% Table 2 anchor exposure
+
+\subsection{Finding 3: Geometric Fill Rarely Equals Epistemic Fill}
+% Table 3a role decomposition, Table 3b topological event type
+
+\subsection{Case Studies}
+% Case 1 PARTIAL_FILL, Case 2 BOUNDARY_EXPANSION, Case 3 FALSE_POSITIVE
+
+% ================================================================
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Raw Fill Fails for Three Reasons}
+
+\subsection{From Fill Detection to Role Decomposition}
+
+\subsection{Descriptive, Not Evaluative}
+
+\subsection{Dynamic Extension (Future Work)}
+% One paragraph: papers as events, D-TVA, outside scope
+
+\subsection{Threats to Validity}
+
+% ================================================================
+\section{Related Work}
+\label{sec:related}
+
+% 1. LBD retrospective validation
+% 2. Novelty / first-story detection
+% 3. Structural holes and scientometrics
+% 4. Dense-region bias in embeddings
+% 5. Claim verification / overclaiming
+
+% ================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+Temporal validation of predicted research voids requires separating geometric
+occupancy, density bias, anchor observability, and epistemic role. Raw fill rate
+alone is insufficient: it conflates void quality with local corpus density and
+research momentum. After density matching, the apparent TVA disadvantage
+reverses but is not statistically significant. Under calibrated thresholds, fill
+rate drops to $\sim$0.7\%, revealing that most raw fills were null-zone noise.
+Role-aware classification confirms that geometric fill substantially overestimates
+epistemic resolution. We propose a three-layer validation framework and leave
+event-driven dynamic extensions to future work.
+
+% ================================================================
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{paper2}
+
+\end{document}
