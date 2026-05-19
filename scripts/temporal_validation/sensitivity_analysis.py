@@ -375,19 +375,21 @@ def main():
         r = run_split(s, args.n_bootstrap)
         all_results.append(r)
 
-    print(f"\n{'='*75}")
-    print(f"{'Split':<6} {'TVA@0.82':>9} {'B2@0.82':>8} {'L(0.82)':>9} {'CI':>16}  "
-          f"{'TVA@cal':>8} {'B2@cal':>7} {'L(cal)':>8} {'CI':>16}")
-    print("-" * 105)
+    print(f"\n{'='*85}")
+    print(f"{'Split':<6} {'TVA@0.82':>9} {'B2@0.82':>8} {'Δpp':>6} {'Hierarch.CI':>14} {'p':>6}  "
+          f"{'TVA@cal':>8} {'B2@cal':>7} {'Δpp':>6} {'CI':>14} {'p':>6}")
+    print("-" * 95)
     for r in all_results:
+        dl = r['diff_legacy_pp']
+        dc = r['diff_calib_pp']
         print(f"{r['split']:<6} "
               f"{r['tva_legacy']['rate']:>8.1%} {r['b2_legacy']['rate']:>7.1%} "
-              f"{r['lift_legacy_tva_b2']['lift']:>8.2f}x "
-              f"[{r['lift_legacy_tva_b2']['ci_95'][0]:.2f},{r['lift_legacy_tva_b2']['ci_95'][1]:.2f}]  "
+              f"{dl['diff']:>+5.1f}pp [{dl['hierarchical_ci_95'][0]:+.1f},{dl['hierarchical_ci_95'][1]:+.1f}] "
+              f"{dl['permutation_pval']:>5.3f}  "
               f"{r['tva_calib']['rate']:>7.1%} {r['b2_calib']['rate']:>6.1%} "
-              f"{r['lift_calib_tva_b2']['lift']:>7.2f}x "
-              f"[{r['lift_calib_tva_b2']['ci_95'][0]:.2f},{r['lift_calib_tva_b2']['ci_95'][1]:.2f}]")
-    print(f"{'='*75}")
+              f"{dc['diff']:>+5.1f}pp [{dc['hierarchical_ci_95'][0]:+.1f},{dc['hierarchical_ci_95'][1]:+.1f}] "
+              f"{dc['permutation_pval']:>5.3f}")
+    print(f"{'='*85}")
 
 
 if __name__ == "__main__":

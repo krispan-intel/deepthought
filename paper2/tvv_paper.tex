@@ -74,10 +74,13 @@ relevant knowledge is \emph{absent}?
 knowledge space---regions between anchor-conditioned paper clusters where expected
 connections, evidence, or conceptual bridges are missing.
 
-Validating predicted voids requires asking: do they correspond to real epistemic gaps,
-or to geometric artifacts? The natural operationalization is temporal fill rate:
-does any future paper appear near the void's predicted midpoint?
-This measure appears transparent, but we show it is confounded at every layer.
+Validating predicted voids is not the same as validating a predicted link.
+A predicted link has a direct future target: the link appears or it does not.
+A predicted void has a richer failure mode: future literature may occupy the region
+geometrically while failing to bridge the source concepts epistemically.
+The natural operationalization---temporal fill rate, whether any future paper appears
+near the void's predicted midpoint---is therefore insufficient, and this paper studies
+why.
 
 \textbf{Contributions:}
 \begin{enumerate}
@@ -89,8 +92,8 @@ This measure appears transparent, but we show it is confounded at every layer.
   calibrated thresholds collapse raw fill to $\sim$0.7\%.
 \item Anchor eligibility exposes an observability limit: only $\sim$6\% of future
   papers are anchor-eligible; unfilled voids are right-censored, not invalid.
-\item Role-aware classification confirms that geometric fill substantially
-  overestimates epistemic resolution (59--76\% FP across all groups).
+\item LLM-assisted role-aware audit suggests that geometric fill substantially
+  overestimates epistemic resolution: 59--76\% FP across all groups and splits.
 \end{enumerate}
 
 \textbf{Scope and framing.} This paper is a \emph{validation stress test}: we do not
@@ -455,8 +458,10 @@ Raw temporal fill rate is not a sensitive metric for that kind of value.
 Future papers near void midpoints decompose into true fills, boundary expansions, and
 false positives. The scarcity of true fills reveals that genuine epistemic closure is
 a much stricter condition than geometric occupancy.
-\emph{Geometric closure and anchor eligibility are screening conditions; epistemic
-role is the validation condition.}
+\emph{The three layers are operational screens for disentangling three sources of
+evidence that raw fill rate conflates: geometric occupancy, observability, and
+epistemic role. They are not claimed to be necessary and sufficient conditions
+for scientific discovery.}
 
 \subsection{Descriptive, Not Evaluative}
 
@@ -489,6 +494,17 @@ consistent with the inherent interpretability of the task.
 (5)~\emph{Domain specificity}: CS arXiv categories only.
 
 \section{Related Work}
+
+\textbf{Validation of Predicted Voids.}
+Prior retrospective evaluations in LBD~\cite{swanson1986fish,gordon1996using,weeber2001using}
+typically validate predicted connections by checking whether future publications instantiate
+an A--B association. Knowledge-graph completion similarly evaluates whether missing edges
+are recoverable under a fixed relation schema. These settings differ from void validation:
+a \tva{} void is not a predicted edge but an anchor-conditioned geometric vacancy whose
+future occupancy may represent true bridging, boundary expansion, or false-positive
+proximity. To our knowledge, prior work has not evaluated embedding-space voids under
+density-controlled, observability-aware, and role-aware temporal validation. \tvv{}
+addresses this gap.
 
 \textbf{Literature-Based Discovery.}
 Swanson's ABC model~\cite{swanson1986fish} and subsequent LBD work~\cite{gordon1996using,weeber2001using} validate predictions by checking future
