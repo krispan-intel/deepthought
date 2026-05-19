@@ -78,15 +78,26 @@ $$m(A,B) = \frac{\mathbf{a}+\mathbf{b}}{\|\mathbf{a}+\mathbf{b}\|}$$
 
 ### Three-layer fill predicate (core formula)
 
-$$\text{Fill}(P,V,q) = G(V) \wedge E(P,q) \wedge R(P,A,B)$$
+First, define anchor-eligible val papers and the geometric filler candidate:
+
+$$\text{Val}_q = \{P \in \text{Val}_t : \text{sim}(P,q) \geq \tau_q\}$$
+
+$$P_V^* = \arg\max_{P \in \text{Val}_q} \text{sim}(P, m_V)$$
+
+Then:
+
+$$G(V) = \mathbf{1}\!\left[\text{sim}(P_V^*, m_V) \geq \tau_{\text{fill}}(q,\rho(V),t)\right]$$
+
+$$\text{Fill}(V) = G(V) \wedge R(P_V^*,A,B,q)$$
 
 | Layer | Condition | Threshold |
 |---|---|---|
-| G geometric | $\max_{P \in \text{Val}_q} \text{sim}(P,m_V) \geq \tau_{\text{fill}}(q,\rho(V))$ | calibrated (see below) |
-| E eligibility | $\text{sim}(P,q) > \tau_q$ | $\tau_q = \max(Q_{80}^{\text{val}},\ Q_{90}^{\text{train}})$ |
-| R epistemic | $\text{role}(P,A,B) \in \{\text{TRUE-FILL, PARTIAL-FILL}\}$ | LLM |
+| E eligibility (inside $\text{Val}_q$) | $\text{sim}(P,q) \geq \tau_q$ | $\tau_q = \max(Q_{80}^{\text{val}},\ Q_{90}^{\text{train}})$ |
+| G geometric | $\text{sim}(P_V^*,m_V) \geq \tau_{\text{fill}}(q,\rho(V),t)$ | null-calibrated |
+| R epistemic | $\text{role}(P_V^*,A,B) \in \{\text{TRUE-FILL, PARTIAL-FILL}\}$ | LLM |
 
-**G uses void-level max-sim, not paper-level sim** — this compensates for val corpus size.
+$P_V^*$ is the void-level best candidate — void-level max-sim compensates for val corpus size.
+Anchor eligibility is absorbed into $\text{Val}_q$, so $E$ is not a separate predicate.
 
 ### Anchor exposure (Finding 2)
 
@@ -218,6 +229,38 @@ high-momentum regions. After density matching, TVA achieves a modest but consist
 positive lift across all temporal splits.
 
 TODO: Add 95% bootstrap CI over void candidates for TVA/B2 lift.
+
+### 4.1.1 Fixed Similarity Thresholds Are Not Portable
+
+Density affects not only what baselines fill, but also what a fixed geometric threshold means.
+
+We calibrate τ_fill per (anchor, density_bucket, split) using density-matched null midpoints.
+For each cell, we generate 200 null midpoints (same anchor, same density) and compute the
+95th percentile of max anchor-eligible future similarity — this is τ_fill at α=0.05.
+
+Results across t3/t4/t5:
+
+| Split | τ\_fill mean | range | FPR@0.82 mean | FPR@0.82 max |
+|---|---|---|---|---|
+| t3 | 0.841 | 0.805–0.897 | 33.9% | 99.0% |
+| t4 | 0.841 | 0.802–0.885 | 35.6% | 99.5% |
+| t5 | 0.841 | 0.790–0.881 | 35.7% | 98.0% |
+
+Key result: **0.82 has a 35.7% average null false-positive rate**, ranging from 1% (sparse
+anchors) to 98–99% (high-density anchors). The correct 5%-FPR threshold averages 0.841 and
+is stable across all splits — the threshold is driven by corpus density, not time window.
+
+> In high-dimensional anisotropic embedding spaces, there is no universally valid cosine
+> fill threshold. The threshold is a function of the embedding model, corpus density, anchor,
+> and validation window size. Geometric closure must be calibrated against the vector
+> database itself.
+
+This also explains the virt_hyp / power_mgmt high raw fill rates (Table 1): those anchors
+sit in high-density regions where even null midpoints are frequently "filled" at 0.82.
+
+**In paper**: report 0.82 as legacy operating point for comparability. Sensitivity analysis
+replaces it with τ_fill(q,ρ,t). The gap between 0.82 and 0.841 quantifies density bias at
+the threshold level — a second layer of density confounding beyond baseline hot-zone bias.
 
 ### 4.2 Finding 2: Anchor Eligibility Reveals Observability Limits
 
