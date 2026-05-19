@@ -18,13 +18,13 @@
   from prior art.
 
   We present *Topological Void Analysis* (TVA), a mathematical
-  framework that defines *topological voids* as triads $(A, B, C)$
-  in a dense-sparse hybrid embedding space.  A void requires three
-  conditions: (i) both concepts $A$ and $B$ are semantically cohesive
-  with domain anchor $C$; (ii) their pairwise similarity falls within a
-  calibrated marginality band—avoiding both obvious combinations and
-  unrelated noise; and (iii) they share a sparse lexical bridge while
-  the geodesic midpoint on the embedding hypersphere is unoccupied.
+  framework that identifies *candidate topological voids*: triads $(A, B, C)$
+  in a dense-sparse hybrid embedding space satisfying domain cohesion,
+  calibrated marginality, sparse lexical bridge, and vacancy conditions.
+  These candidates are geometrically plausible, domain-relevant absences;
+  they are not guaranteed epistemic gaps by geometry alone, and downstream
+  review, density calibration, and, in temporal settings, role-aware
+  validation are required to assess whether a proposed bridge is meaningful.
 
   Applied to $$140k indexed documents, TVA generates 2,128
   invention candidates across 96 targets; 90\
@@ -52,15 +52,18 @@ This paper asks: *can we formalise and automate the discovery of unexplored tech
 
 We answer yes, and make the following contributions:
 
-- A formal definition of a *topological void*
+- A formal definition of a *candidate topological void*
   (Section ): a triad $(A, B, C)$ satisfying
-  domain cohesion, calibrated marginality, and sparse lexical bridge
-  conditions in a hybrid dense-sparse embedding space.
+  domain cohesion, calibrated marginality, sparse lexical bridge, and
+  vacancy conditions in a hybrid dense-sparse embedding space.
+  Conditions C1--C4 are *admissibility conditions* for candidate generation,
+  not validation truth conditions or proof of epistemic closure.
 
 - A *vacancy probing* mechanism
   (Section ) based on spherical linear interpolation
   (SLERP) that rejects pseudo-voids whose midpoint is occupied by
-  existing documents.
+  existing documents.  Vacancy is interpreted relative to corpus density
+  and domain, not as a universal cosine-distance constant.
 
 - An *adaptive threshold calibration* procedure
   (Section ) that derives domain-specific
@@ -98,13 +101,14 @@ approximately isometric: if $((A),
 to be distant in the LLM's implicit representation space.
 
 This convergence provides the theoretical basis for TVA's design.
-A topological void identified in BGE-M3 space—a pair $(A,B)$ whose
-geodesic midpoint is unoccupied—serves as a  for an underexplored region in the frontier LLM's
-reasoning space.  The compact model acts as an efficient navigator;
-the LLM supplies the high-resolution generative capability to fill
-the identified gap.  Geometric alignment across scales, formalised via
-CKA , supports this proxy relationship
-empirically.
+A candidate void identified in BGE-M3 space—a pair $(A,B)$ whose
+geodesic midpoint is unoccupied—serves as a computational cue for exploring
+a potentially underexplored region.  We do not assume that geometric vacancy
+alone proves a corresponding gap in the frontier LLM's reasoning space; rather,
+TVA uses the compact embedding space as an efficient proposal mechanism, with
+downstream adversarial review and, separately, temporal validation required to
+assess whether the proposed bridge is meaningful.  Geometric alignment across
+scales, formalised via CKA, supports this proxy relationship empirically.
 
 ### Limitations of Prior Art Search
 
@@ -193,9 +197,11 @@ Let $A, B  $ be two corpus documents and let
 $C = m((A),\,(B))  S^d-1$
 (Definition ) be their synthetic
 *void midpoint*—the geodesic bridge concept.
-The pair $(A, B)$ forms a *topological void*
-with respect to a domain query vector $  S^d-1$ if
-all of the following hold:
+The pair $(A, B)$ forms a *candidate topological void*
+with respect to a domain query vector $\mathbf{q} \in S^{d-1}$ if
+all of the following admissibility conditions hold.  These conditions
+define a search region for downstream generation and review; they are
+not truth conditions for innovation nor proof of epistemic closure.
 
 **C1
 
@@ -896,6 +902,9 @@ voids.  This pilot requires no additional calibration, as both
 partitions share the same embedding space and marginality band.
 We leave this validation to future work.
 
+**Discovery vs.\ Validation.**
+TVA is a *candidate-generation* framework: C1--C4 identify geometrically plausible void locations in a static corpus snapshot.  Determining whether such candidates correspond to genuine epistemic gaps---whether future literature fills them, partially fills them, or merely expands nearby boundaries---requires a separate temporal validation framework.  Raw fill rate is an insufficient proxy for epistemic closure; it is confounded by local corpus density, anchor observability, and epistemic role.  The separation between candidate generation and epistemic validation is the primary architectural distinction between static TVA (this work) and Topological Void Validation (companion work).
+
 **Dynamic Topological Voids.**
 The present work establishes *static TVA*: the corpus is fixed, and voids are identified relative to a stable geometric snapshot.  This is the proven regime.  A natural and substantially harder open problem is *dynamic TVA*: corpora that evolve over time — as new papers are published, patents granted, and codebases updated — produce voids with a lifecycle.  A void that exists today may close as the field advances, or widen as adjacent areas diverge.  The open questions are: (i) how to assign a *velocity vector* to a void — is it expanding, contracting, or stable? (ii) how to detect *forming voids* before they are fully established, giving inventors a time advantage; and (iii) how to handle the reflexivity problem noted above, where the act of reporting a void accelerates its closure.  Dynamic TVA would require temporal embeddings, void-tracking across corpus snapshots, and a revised vacancy probe that accounts for trajectory rather than position alone.  We mark this as the primary open research direction.
 
@@ -949,7 +958,11 @@ for systematic technical innovation discovery.  By defining topological
 voids as triads satisfying domain cohesion, calibrated marginality,
 sparse lexical bridge, and vacancy conditions in a hybrid
 dense-sparse embedding space, TVA converts the informal notion of
-``unexplored region'' into a decidable predicate.
+``unexplored region'' into a decidable *candidate predicate*: a reproducible
+test for whether a pair of concepts is worth downstream generation and review.
+TVA is a discovery framework; determining whether identified candidates
+correspond to genuine epistemic gaps requires a separate validation step
+that controls for corpus density, anchor observability, and epistemic role.
 
 Applied to a 140k-document corpus of Linux kernel and hardware
 specifications, TVA generated 2,128 invention candidates, 90\
