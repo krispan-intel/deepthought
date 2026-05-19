@@ -80,9 +80,13 @@ Validating predicted voids is not the same as validating a predicted link.
 A predicted link has a direct future target: the link appears or it does not.
 A predicted void has a richer failure mode: future literature may occupy the region
 geometrically while failing to bridge the source concepts epistemically.
-The natural operationalization---temporal fill rate, whether any future paper appears
-near the void's predicted midpoint---is therefore insufficient, and this paper studies
-why.
+Unlike document retrieval or link prediction, predicted research voids have no
+established gold-standard benchmark: exhaustive human annotation would require
+enumerating all candidate gaps, searching all future literature, and adjudicating
+whether each future paper plays a bridging role relative to specific source papers---a
+task infeasible at corpus scale. TVV addresses this by turning void validation into a
+staged, auditable protocol. The natural starting point---temporal fill rate---appears
+straightforward but is insufficient, and this paper studies why.
 
 \textbf{Contributions:}
 \begin{enumerate}
@@ -573,6 +577,18 @@ reading: it prioritizes candidate locations for inspection, but does not certify
 epistemic closure. TVV provides the downstream adjudication protocol---calibrated
 geometric closure, anchor observability, and role-aware assessment---to determine
 whether a candidate void corresponds to a genuine epistemic gap.
+
+\tva{} should therefore be evaluated as a \emph{rare-event triage instrument}.
+Because genuine epistemic closure is a low-base-rate event, most candidate voids will
+not become validated closures within any finite corpus window. The relevant measure is
+not absolute conversion rate but \emph{enrichment}: does TVA concentrate observable
+future-bridging events into a smaller, inspectable candidate set relative to unguided
+or density-only search? Three rates matter at distinct levels: (i)~\emph{detection
+rate}---does TVA surface the right anchor domain? (ii)~\emph{interpretability rate}---does
+the A/B/q hypothesis make structural sense? and (iii)~\emph{realization rate}---does
+a future paper actually close the predicted gap? Only the first two are directly
+measurable from pre-publication corpora; realization is what TVV attempts to
+evaluate, and it is expectedly rare.
 
 \begin{table}[h!]
 \centering\small
