@@ -122,7 +122,7 @@ future fill rates, creating a density-confounded comparison.
 
 \subsection{Corpus and Temporal Splits}
 
-arXiv metadata (cs.OS/AR/PL/SE/DC/NI/CR/AI/LG), three rolling splits:
+arXiv metadata (9 CS categories: OS, AR, PL, SE, DC, NI, CR, AI, LG), three rolling splits:
 
 \begin{table}[h!]
 \centering
@@ -155,27 +155,22 @@ midpoint local density $\rho(m) = \frac{1}{k}\sum \mathrm{sim}(m, \mathrm{kNN}_i
 
 Anchor-eligible val papers:
 \[
-\valq = \{P \in \mathrm{Val}_t : \mathrm{sim}(P,q) \ge \tauanchor\},
-\quad \tauanchor = \max(Q_{80}^{\mathrm{val}},\, Q_{90}^{\mathrm{train}})
+\valq = \{P \in \mathrm{Val}_t : \mathrm{sim}(P,q) \ge \tauanchor\}
 \]
+where $\tauanchor = \max(Q_{80}^{\mathrm{val}},\, Q_{90}^{\mathrm{train}})$.
 
-Geometric filler candidate: $P_V^* = \arg\max_{P \in \valq} \mathrm{sim}(P, m_V)$
+Geometric filler: $P_V^* = \arg\max_{P \in \valq} \mathrm{sim}(P, m_V)$.
 
-Geometric closure:
+Geometric closure and validated fill:
+\begin{align}
+G(V) &= \mathbf{1}[\mathrm{sim}(P_V^*, m_V) \ge \taufill(q, \rho(V), t)] \nonumber\\
+\mathrm{Fill}(V) &= G(V) \wedge R(P_V^*, A, B, q) \nonumber
+\end{align}
+where $R=1$ iff $\mathrm{role} \in \{\mathrm{TRUE\text{-}FILL},\allowbreak\,\mathrm{PARTIAL\text{-}FILL}\}$.
+
+\textbf{Calibrated threshold} ($\alpha{=}0.05$). Let $Z(m_0)=\max_{P\in\valq}\mathrm{sim}(P,m_0)$:
 \[
-G(V) = \mathbf{1}[\mathrm{sim}(P_V^*, m_V) \ge \taufill(q, \rho(V), t)]
-\]
-
-Validated epistemic fill:
-\[
-\mathrm{Fill}(V) = G(V) \wedge R(P_V^*, A, B, q)
-\]
-where $R=1$ iff $\mathrm{role} \in \{\mathrm{TRUE\text{-}FILL, PARTIAL\text{-}FILL}\}$.
-
-\textbf{Calibrated threshold:}
-\[
-\taufill(q,\rho,t) = Q_{1-\alpha}\bigl(\{\max_{P\in\valq}\mathrm{sim}(P,m_0) :
-m_0 \in \mathrm{Null}(q,\rho,t)\}\bigr), \quad \alpha=0.05
+\taufill(q,\rho,t) = Q_{1-\alpha}\bigl(\{Z(m_0): m_0\in\mathrm{Null}(q,\rho,t)\}\bigr)
 \]
 
 \section{Results}
@@ -183,17 +178,18 @@ m_0 \in \mathrm{Null}(q,\rho,t)\}\bigr), \quad \alpha=0.05
 \subsection{Finding 1: Raw Fill Rate Is Density-Confounded}
 
 \begin{table}[h!]
-\centering
-\caption{Raw fill rates under legacy $\tau=0.82$. CI from 1000 bootstrap resamples (t5).}
-\begin{tabular}{lccccc}
+\centering\small
+\caption{Raw fill rates ($\tau{=}0.82$). t5 CI: [0.85,\,1.48].}
+\begin{tabular}{lcccc}
 \toprule
-Split & \tva{} & B1 (hot) & B2 (density) & \tva{}/B2 lift & 95\% CI \\
+Split & \tva{} & B1 & B2 & Lift \\
 \midrule
-t3 & 31\% & 32\% & 30\% & $1.03\times$ & -- \\
-t4 & 26\% & 32\% & 23\% & $1.12\times$ & -- \\
-t5 & 27\% & 36\% & 24\% & $1.12\times$ & [0.85, 1.48] \\
+t3 & 31\% & 32\% & 30\% & $1.03\times$ \\
+t4 & 26\% & 32\% & 23\% & $1.12\times$ \\
+t5 & 27\% & 36\% & 24\% & $1.12\times^*$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}\\[2pt]
+{\footnotesize $^*$95\% CI [0.85, 1.48], not significant.}
 \end{table}
 
 B1 consistently outperforms \tva{} by up to $1.30\times$. After density matching (B2),
@@ -202,16 +198,16 @@ B1 consistently outperforms \tva{} by up to $1.30\times$. After density matching
 \subsubsection{Fixed Thresholds Are Not Portable}
 
 \begin{table}[h!]
-\centering
-\caption{Calibrated threshold and null FPR@0.82 by density bucket (t5 mean).}
+\centering\small
+\caption{Null FPR@0.82 and $\taufill$ by density (t5).}
 \begin{tabular}{lccc}
 \toprule
-Density bucket & Null p50 & $\taufill$ (p95) & FPR@0.82 \\
+Bucket & p50 & $\taufill$ & FPR \\
 \midrule
-Low  & 0.787--0.811 & 0.790--0.859 & 1--18\% \\
-Mid  & 0.802--0.832 & 0.818--0.861 & 5--80\% \\
-High & 0.810--0.854 & 0.841--0.881 & 28--99\% \\
-Global mean & -- & \textbf{0.841} & \textbf{35.7\%} \\
+Low  & 0.79--0.81 & 0.79--0.86 & 1--18\% \\
+Mid  & 0.80--0.83 & 0.82--0.86 & 5--80\% \\
+High & 0.81--0.85 & 0.84--0.88 & 28--99\% \\
+\textbf{Mean} & -- & \textbf{0.841} & \textbf{35.7\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -226,7 +222,7 @@ Most raw fills at $\tau=0.82$ are null-zone occupancy, not significant geometric
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.95\textwidth]{figures/fig2_threshold_calibration.png}
+\includegraphics[width=\columnwidth]{figures/fig2_threshold_calibration.png}
 \caption{Calibrated threshold by density bucket (left) and null FPR at 0.82 (right).
 The fixed threshold 0.82 has 35.7\% average null FPR, reaching 99\% in high-density
 anchor cells. Calibrated $\taufill\approx 0.841$ is stable across all splits.}
@@ -235,11 +231,11 @@ anchor cells. Calibrated $\taufill\approx 0.841$ is stable across all splits.}
 \subsection{Finding 2: Anchor Eligibility Reveals Observability Limits}
 
 \begin{table}[h!]
-\centering
-\caption{Anchor exposure (t5 sample). Mean sim and hybrid gate pass rate.}
+\centering\small
+\caption{Anchor exposure sample (t5).}
 \begin{tabular}{lcccc}
 \toprule
-Anchor & Mean sim & $\tauanchor$ & Pass rate & \tva{} fill \\
+Anchor & $\bar{\mathrm{sim}}$ & $\tauanchor$ & Pass & Fill \\
 \midrule
 sched\_opt & 0.520 & 0.582 & 5.8\% & 40\% \\
 ebpf\_obs  & 0.495 & 0.547 & 6.5\% & 0\%  \\
@@ -256,7 +252,7 @@ exposure does not guarantee eligible papers overlap predicted void neighborhoods
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.55\textwidth]{figures/fig4_anchor_exposure.png}
+\includegraphics[width=\columnwidth]{figures/fig4_anchor_exposure.png}
 \caption{Anchor eligibility pass rate (\%) by anchor and split (hybrid gate).
 Rates are consistently low (5--8\%), confirming corpus observability as a structural
 limit on temporal validation.}
@@ -265,19 +261,19 @@ limit on temporal validation.}
 \subsection{Finding 3: Geometric Fill Rarely Equals Epistemic Fill}
 
 \begin{table}[h!]
-\centering
-\caption{Epistemic role decomposition (t3/t4/t5 combined, 500 sampled cases).
-Void res.\ = TRUE-FILL + PARTIAL-FILL; Boundary = IE + SE + SN; FP = FALSE-POSITIVE.}
-\begin{tabular}{lccccc}
+\centering\small
+\caption{Role decomposition (500 cases, t3--t5). VR=void resolution; BA=boundary; FP=false positive.}
+\begin{tabular}{lrcccc}
 \toprule
-Source & $n$ & Void res. & Boundary & FP & Score $\bar{s}$ \\
+Source & $n$ & VR & BA & FP & $\bar{s}$ \\
 \midrule
-TVA (gated)  & 98  & 0\% & 33\% & 69\% & 0.068 \\
-B1 (gated)   & 73  & 0\% & 33\% & 70\% & 0.062 \\
-B2 density   & 107 & 3\% & 36\% & 62\% & 0.104 \\
-Near-miss    & 219 & 2\% & 13\% & 84\% & 0.043 \\
+TVA   & 98  & 0\% & 33\% & 69\% & 0.07 \\
+B1    & 73  & 0\% & 33\% & 70\% & 0.06 \\
+B2    & 107 & 3\% & 36\% & 62\% & 0.10 \\
+NM$^\dagger$ & 219 & 2\% & 13\% & 84\% & 0.04 \\
 \bottomrule
-\end{tabular}
+\end{tabular}\\[2pt]
+{\footnotesize $^\dagger$Near-miss (sim$\in$[0.75,0.82)).}
 \end{table}
 
 59--76\% of gated raw fills are false positives across all groups and splits.
@@ -287,7 +283,7 @@ TVA and B1 are statistically indistinguishable; B2 performs marginally better.
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.75\textwidth]{figures/fig1_role_decomposition.png}
+\includegraphics[width=\columnwidth]{figures/fig1_role_decomposition.png}
 \caption{Epistemic role decomposition by source group (t5, 200 sampled cases).
 Most raw fills are geometric false positives regardless of method. Near-miss
 controls show the highest FP rate, confirming that geometric proximity is
@@ -298,24 +294,23 @@ a weak but non-zero signal.}
 
 Three representative cases from t4/t5:
 
-\textbf{Case 1 -- Partial Fill} (arXiv:1912.06243, 2019, 18 citations):
-Vehicular cloud multi-task offloading. $\mathrm{sim}(P,m)=0.835$. Contains 10+
-task-offloading refs (B-side) but only 1 marginal virtualization ref (A-side).
-Role: PARTIAL-FILL---one-sided bridging.
+\textbf{Case~1 -- Partial Fill} (1912.06243, 2019, 18 cit.):
+Vehicular cloud offloading. $\mathrm{sim}{=}0.835$. 10+ offloading refs
+(B-side), 1 marginal VM ref (A-side). Role: PARTIAL-FILL.
 
-\textbf{Case 2 -- Boundary Expansion} (arXiv:2106.01441, 2021, 7 citations):
-AI planning for heterogeneous system optimization. $\mathrm{sim}(P,m)=0.855$.
-Zero kernel-scheduler refs; all 44 refs in heterogeneous HPC.
-Role: INCREMENTAL-EXTENSION---pure boundary expansion along B-direction.
+\textbf{Case~2 -- Boundary Expansion} (2106.01441, 2021, 7 cit.):
+AI planning, heterogeneous HPC. $\mathrm{sim}{=}0.855$.
+Zero kernel-scheduler refs; all 44 refs in HPC optimization.
+Role: INCREMENTAL-EXTENSION.
 
-\textbf{Case 3 -- False Positive} (arXiv:1710.11590, 2017, 6 citations):
-Energy-aware virtual network embedding. $\mathrm{sim}(P,m)=0.875$ (highest).
-Zero storage I/O or NVMe refs. Anchor is storage I/O---completely unrelated.
-Role: FALSE-POSITIVE---dense-region artifact.
+\textbf{Case~3 -- False Positive} (1710.11590, 2017, 6 cit.):
+Energy-aware VNE. $\mathrm{sim}{=}0.875$ (highest of three).
+Zero storage I/O refs; anchor is NVMe/storage---unrelated.
+Role: FALSE-POSITIVE.
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.75\textwidth]{figures/fig5_void_valley.png}
+\includegraphics[width=\columnwidth]{figures/fig5_void_valley.png}
 \caption{Local density profile along the A--B bridge for the highest-MMR void
 in anchor sched\_opt (t5). The density valley at $\lambda\approx 0.5$ marks
 the void midpoint region---two dense source communities with a less-occupied bridge.}
