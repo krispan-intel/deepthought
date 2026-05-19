@@ -363,17 +363,20 @@ events are rare, both methods are exposed to the same small set of future papers
 current corpus and validation windows may lack the statistical power to distinguish
 structured void discovery from density-matched background occupancy.
 
-Critically, parity should not be read as validating either method equally.
-B2 is not designed to produce interpretable void hypotheses.
-\tva{}'s distinctive contribution is that it turns a latent region into a named,
-inspectable, and actionable ex-ante hypothesis $(A,B,q,m)$ before any future paper
-exists. That B2 reaches the same sparse occupancy rate while providing no such
-interpretive output is a statement about the limits of temporal fill rate as a
-discriminative evaluation metric, not about the limits of \tva{}.
+Parity with B2 is in fact the expected outcome under a properly controlled design.
+B2 matches the anchor and local density of \tva{} voids, so it estimates the background
+arrival rate of future papers in comparable regions.
+A large \tva{} advantage under this control would imply either strong method-specific
+predictive signal or residual confounding; we observe neither.
+Instead, both methods converge to the same low calibrated fill rate, indicating that
+significant geometric closure is primarily base-rate limited in this corpus.
 
-\tva{} does not beat the density baseline on future occupancy, but it matches it
-while producing interpretable hypotheses. In a validation regime where fill events
-are too rare to distinguish methods, this is a nontrivial conservative lower bound.
+B2 is intentionally conservative: it makes raw-fill superiority difficult to claim
+without evidence of signal beyond anchor and density.
+\tva{} does not provide that signal at this scale---but it was not designed to win
+on fill rate. Its value lies in turning a latent region into a named, inspectable,
+and actionable ex-ante hypothesis $(A,B,q,m)$ before any future paper exists.
+Raw temporal fill rate is not a sensitive metric for that kind of value.
 
 \subsection{From Geometric Occupancy to Role Decomposition}
 
