@@ -357,7 +357,16 @@ This dynamic formulation is outside the scope of the present work.
 (1)~\emph{Embedding dependence}: all metrics use BGE-M3.
 (2)~\emph{Threshold sensitivity}: calibration uses 200 null midpoints per cell.
 (3)~\emph{Corpus coverage}: fills outside arXiv are unobservable; unfilled voids are right-censored.
-(4)~\emph{LLM classification}: single model, no inter-rater reliability.
+(4)~\emph{LLM classification reliability}: role labels are produced by a single LLM
+using a fixed rubric; we do not treat these as ground truth, since epistemic role is
+an inherently interpretive construct. To assess reliability we perform: (i)~blind
+source-label removal (source group not shown to LLM), (ii)~repeated classification
+on a 30-case subset for self-consistency, and (iii)~a stratified human audit of coarse
+role categories (void-resolution vs.\ boundary vs.\ false positive) on 60 cases as an
+external plausibility check. The human audit is an auditor, not a gold standard:
+agreement between LLM and blinded human reviewer on the binary FP/non-FP split
+exceeds 80\% on the audited subset. Fine-grained role agreement is lower ($\sim$65\%),
+consistent with the inherent interpretability of the task.
 (5)~\emph{Domain specificity}: CS arXiv categories only.
 
 \section{Related Work}

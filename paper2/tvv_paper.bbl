@@ -44,6 +44,11 @@ Michael~D. Gordon and Robert~K. Lindsay.
 \newblock {\em Journal of the American Society for Information Science},
   47(2):116--128, 1996.
 
+\bibitem{case1}
+Minghui Liwang, Zhibin Gao, Seyyedali Hosseinalipour, and Huaiyu Dai.
+\newblock Multi-task offloading over vehicular clouds under graph-based
+  representation, 2019.
+
 \bibitem{pan2025tva}
 Kris Pan.
 \newblock Topological void analysis: A mathematical framework for systematic
@@ -95,10 +100,5 @@ Dustin Wright and Isabelle Augenstein.
 Yi~Zhang, Jamie Callan, and Thomas Minka.
 \newblock Novelty and redundancy detection in adaptive filtering.
 \newblock In {\em Proceedings of SIGIR}, pages 81--88, 2002.
-
-\bibitem{case1}
-Yuhao Zhang et~al.
-\newblock Multi-task offloading over vehicular clouds under graph-based
-  representation, 2019.
 
 \end{thebibliography}
