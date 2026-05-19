@@ -6,7 +6,7 @@ James Allan, Ron Papka, and Victor Lavrenko.
 \newblock In {\em Proceedings of SIGIR}, pages 37--45, 1998.
 
 \bibitem{case3}
-Andreas Blenk et~al.
+Amal~S. Alzahrani and Ashraf~A. Shahin.
 \newblock Energy-aware virtual network embedding approach for distributed
   cloud, 2017.
 
@@ -49,6 +49,11 @@ Minghui Liwang, Zhibin Gao, Seyyedali Hosseinalipour, and Huaiyu Dai.
 \newblock Multi-task offloading over vehicular clouds under graph-based
   representation, 2019.
 
+\bibitem{case2}
+Suejb Memeti and Sabri Pllana.
+\newblock Optimization of heterogeneous systems with {AI} planning heuristics
+  and machine learning: A performance and energy aware approach, 2021.
+
 \bibitem{pan2025tva}
 Kris Pan.
 \newblock Topological void analysis: A mathematical framework for systematic
@@ -72,11 +77,6 @@ Simone Teufel and Marc Moens.
 \newblock Summarizing scientific articles: Experiments with relevance and
   rhetorical status.
 \newblock {\em Computational Linguistics}, 28(4):409--445, 2002.
-
-\bibitem{case2}
-Panagiotis Tsilifis et~al.
-\newblock Optimization of heterogeneous systems with {AI} planning heuristics
-  and machine learning, 2021.
 
 \bibitem{wadden2020scifact}
 David Wadden, Shanchuan Lin, Kyle Lo, Lucy~Lu Wang, Madeleine van Zuylen, Arman
