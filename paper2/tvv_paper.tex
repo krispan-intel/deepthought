@@ -352,23 +352,28 @@ Raw fill conflates void quality with sociotechnical realization rate:
 
 \subsection{B2 Is a Control, Not a Competitor}
 
-B2 should not be interpreted as a competing discovery method.
-It is a density-matched counterfactual: it asks how often future occupancy would occur
-in anchor-adjacent regions with matched local density but without \tva{}'s
-void-selection criteria (C1--C4).
-Parity between \tva{} and B2 under calibrated thresholds therefore does not imply that
-B2 would produce equally interpretable void hypotheses.
-Rather, it shows that temporal occupancy alone is too sparse and density-dependent to
-evaluate the additional value of \tva{}'s structured, ex-ante void descriptions.
+B2 is a strong counterfactual rather than a weak random baseline: it fixes the anchor
+and matches local midpoint density, estimating the background rate at which future
+literature occupies comparable regions without \tva{}'s structured void-selection criteria
+(C1--C4).
 
-\tva{}'s distinctive contribution is not that it increases the base rate of future paper
-arrival, but that it turns an otherwise latent region into a named, inspectable,
-and actionable hypothesis before any future paper exists.
-B2 only estimates the background rate at which the research community naturally occupies
-density-matched regions.
-Temporal fill rate validation cannot distinguish structured void discovery from that
-background tendency; it can only show whether the two are distinguishable at the
-occupancy level---and, as our results show, they are not, at this scale.
+Under calibrated thresholds, \tva{} reaches parity with B2 but does not outperform it.
+We interpret this as a conservative result in a low-base-rate, corpus-limited regime: fill
+events are rare, both methods are exposed to the same small set of future papers, and the
+current corpus and validation windows may lack the statistical power to distinguish
+structured void discovery from density-matched background occupancy.
+
+Critically, parity should not be read as validating either method equally.
+B2 is not designed to produce interpretable void hypotheses.
+\tva{}'s distinctive contribution is that it turns a latent region into a named,
+inspectable, and actionable ex-ante hypothesis $(A,B,q,m)$ before any future paper
+exists. That B2 reaches the same sparse occupancy rate while providing no such
+interpretive output is a statement about the limits of temporal fill rate as a
+discriminative evaluation metric, not about the limits of \tva{}.
+
+\tva{} does not beat the density baseline on future occupancy, but it matches it
+while producing interpretable hypotheses. In a validation regime where fill events
+are too rare to distinguish methods, this is a nontrivial conservative lower bound.
 
 \subsection{From Geometric Occupancy to Role Decomposition}
 
