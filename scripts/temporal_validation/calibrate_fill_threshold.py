@@ -146,8 +146,10 @@ def run_split(split_name: str, alpha: float):
             if d < d_high:  return "mid"
             return "high"
 
-        # For each density bucket: generate NULL_SAMPLES null midpoints,
-        # compute max sim to eligible val papers
+        # For each density bucket: generate NULL_SAMPLES null midpoints split 80/20.
+        # Calibrate τ on first 80%, verify held-out FPR on remaining 20%.
+        # Expected held-out FPR ≈ α if calibration is valid.
+        rng_heldout = random.Random(77)
         bucket_results = {}
         for bucket in ["low", "mid", "high"]:
             bucket_idx = [i for i, d in zip(c1_idx, c1_densities)
@@ -155,23 +157,32 @@ def run_split(split_name: str, alpha: float):
             if len(bucket_idx) < 2:
                 continue
 
-            null_max_sims = []
+            all_null = []
             for _ in range(NULL_SAMPLES):
                 i, j = rng.sample(bucket_idx, 2)
                 m = slerp(train_emb[i], train_emb[j])
                 sims_to_m = eligible_val @ m
-                null_max_sims.append(float(sims_to_m.max()))
+                all_null.append(float(sims_to_m.max()))
 
-            null_max_sims = np.array(null_max_sims)
-            tau_calibrated = float(np.quantile(null_max_sims, 1 - alpha))
+            # 80/20 split: calibrate on first 80%, evaluate on held-out 20%
+            n_cal = int(len(all_null) * 0.80)
+            cal_sims = np.array(all_null[:n_cal])
+            heldout_sims = np.array(all_null[n_cal:])
+
+            null_max_sims = np.array(all_null)
+            tau_calibrated = float(np.quantile(cal_sims, 1 - alpha))
             fpr_at_082 = float((null_max_sims >= 0.82).mean())
+            heldout_fpr = float((heldout_sims >= tau_calibrated).mean()) if len(heldout_sims) > 0 else None
 
             bucket_results[bucket] = {
                 "n_null": len(null_max_sims),
+                "n_cal": n_cal,
+                "n_heldout": len(heldout_sims),
                 "null_mean": round(float(null_max_sims.mean()), 4),
                 "null_p50": round(float(np.percentile(null_max_sims, 50)), 4),
                 "null_p90": round(float(np.percentile(null_max_sims, 90)), 4),
                 "null_p95": round(float(np.percentile(null_max_sims, 95)), 4),
+                "heldout_fpr": round(heldout_fpr, 4) if heldout_fpr is not None else None,
                 "null_p99": round(float(np.percentile(null_max_sims, 99)), 4),
                 "tau_calibrated": round(tau_calibrated, 4),
                 "fpr_at_0.82": round(fpr_at_082, 4),
@@ -191,31 +202,35 @@ def run_split(split_name: str, alpha: float):
     logger.info(f"Saved → {out_path}")
 
     # Print table
-    print(f"\n{'='*90}")
+    print(f"\n{'='*105}")
     print(f"[{split_name}] FILL THRESHOLD CALIBRATION  (α={alpha}, target FPR={alpha:.0%})")
-    print(f"{'Anchor':<13} {'Bucket':<6} {'null_p50':>9} {'null_p90':>9} {'τ_calib(95)':>12} {'FPR@0.82':>10}")
+    print(f"{'Anchor':<13} {'Bucket':<6} {'null_p50':>9} {'τ_calib':>9} {'FPR@0.82':>10} {'HeldoutFPR':>12} {'ΔExpected':>10}")
     print("-" * 90)
     for anchor_id, ar in results.items():
         for bucket, br in ar["density_buckets"].items():
             print(f"{anchor_id:<13} {bucket:<6} "
                   f"{br['null_p50']:>9.4f} "
-                  f"{br['null_p90']:>9.4f} "
-                  f"{br['tau_calibrated']:>12.4f} "
-                  f"{br['fpr_at_0.82']:>9.1%}")
+                  f"{br['tau_calibrated']:>9.4f} "
+                  f"{br['fpr_at_0.82']:>9.1%} "
+                  f"{br.get('heldout_fpr', 0) or 0:>11.1%} "
+                  f"{(br.get('heldout_fpr',0) or 0) - alpha:>+9.3f}")
 
-    # Summary: where does 0.82 sit globally?
+    # Summary
     all_taus = [br["tau_calibrated"]
                 for ar in results.values()
                 for br in ar["density_buckets"].values()]
     all_fprs = [br["fpr_at_0.82"]
                 for ar in results.values()
                 for br in ar["density_buckets"].values()]
+    all_hfprs = [br["heldout_fpr"] for ar in results.values()
+                 for br in ar["density_buckets"].values()
+                 if br.get("heldout_fpr") is not None]
     print(f"\n  Global τ_calibrated: mean={np.mean(all_taus):.4f}  "
           f"min={np.min(all_taus):.4f}  max={np.max(all_taus):.4f}")
-    print(f"  FPR at 0.82:         mean={np.mean(all_fprs):.1%}  "
-          f"min={np.min(all_fprs):.1%}  max={np.max(all_fprs):.1%}")
-    print(f"  → 0.82 is the {np.mean([br['null_p50'] <= 0.82 for ar in results.values() for br in ar['density_buckets'].values()]):.0%} "
-          f"of null midpoints below 0.82 on average")
+    print(f"  FPR at 0.82:         mean={np.mean(all_fprs):.1%}")
+    if all_hfprs:
+        print(f"  Held-out FPR at τ:   mean={np.mean(all_hfprs):.1%}  "
+              f"(target={alpha:.0%}, Δ={np.mean(all_hfprs)-alpha:+.3f})")
 
     return results
 

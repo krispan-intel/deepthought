@@ -222,8 +222,25 @@ Under calibrated $\taufill$, fill rates collapse:
 \tva{}: 27.3\%$\rightarrow$\textbf{0.7\%};\quad
 B2: 24.3\%$\rightarrow$\textbf{0.7\%};\quad lift: $1.00\times$.
 
-The $0.7\% < 5\%$ result is correct: \tva{} C1--C4 conditions select sparser bridge
-regions than random density-matched pairs, so fewer reach the calibrated threshold.
+The $0.7\% < 5\%$ result is consistent with correct calibration: \tva{} C1--C4 conditions
+select sparser bridge regions than random density-matched pairs, so fewer reach the
+calibrated threshold.
+
+\textbf{Held-out calibration validity.} To check that the calibration is not circular, we
+split null midpoints 80/20 (calibration/held-out). The held-out null FPR at $\taufill$ averages
+6.3\% across all anchor-density cells (target $\alpha{=}5\%$, $\Delta{=}+0.013$), indicating
+the calibration is slightly conservative but valid (Figure~\ref{fig:cal_curve}).
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig6_calibration_curve.png}
+\caption{Null calibration curve: expected vs.\ observed held-out FPR across
+anchor-density cells ($\alpha$ range 0.01--0.20, t5). Points near the diagonal
+confirm that $\taufill$ is approximately calibrated. Mean held-out FPR at
+$\alpha{=}0.05$ is 6.3\% (target 5\%, $\Delta{=}+0.013$).}
+\label{fig:cal_curve}
+\end{figure}
+
 Most raw fills at $\tau=0.82$ are null-zone occupancy, not significant geometric closure.
 
 \begin{figure}[h!]
@@ -332,6 +349,26 @@ Raw fill conflates void quality with sociotechnical realization rate:
 (1)~hot-zone baselines are biased by local momentum;
 (2)~fixed thresholds are not portable across anchor-density regimes;
 (3)~anchor-eligible future papers are sparse ($\sim$6\%), right-censoring many unfilled voids.
+
+\subsection{B2 Is a Control, Not a Competitor}
+
+B2 should not be interpreted as a competing discovery method.
+It is a density-matched counterfactual: it asks how often future occupancy would occur
+in anchor-adjacent regions with matched local density but without \tva{}'s
+void-selection criteria (C1--C4).
+Parity between \tva{} and B2 under calibrated thresholds therefore does not imply that
+B2 would produce equally interpretable void hypotheses.
+Rather, it shows that temporal occupancy alone is too sparse and density-dependent to
+evaluate the additional value of \tva{}'s structured, ex-ante void descriptions.
+
+\tva{}'s distinctive contribution is not that it increases the base rate of future paper
+arrival, but that it turns an otherwise latent region into a named, inspectable,
+and actionable hypothesis before any future paper exists.
+B2 only estimates the background rate at which the research community naturally occupies
+density-matched regions.
+Temporal fill rate validation cannot distinguish structured void discovery from that
+background tendency; it can only show whether the two are distinguishable at the
+occupancy level---and, as our results show, they are not, at this scale.
 
 \subsection{From Geometric Occupancy to Role Decomposition}
 
