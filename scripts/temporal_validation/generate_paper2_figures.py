@@ -133,7 +133,7 @@ def fig2_threshold_calibration():
     colors = ["#85c1e9", "#3498db", "#1a5276"]
     bplot = ax.boxplot(
         [taus["low"], taus["mid"], taus["high"]],
-        labels=["Low density", "Mid density", "High density"],
+        tick_labels=["Low density", "Mid density", "High density"],
         patch_artist=True,
     )
     for patch, color in zip(bplot["boxes"], colors):
@@ -150,7 +150,7 @@ def fig2_threshold_calibration():
     ax = axes[1]
     bplot2 = ax.boxplot(
         [np.array(fprs["low"])*100, np.array(fprs["mid"])*100, np.array(fprs["high"])*100],
-        labels=["Low density", "Mid density", "High density"],
+        tick_labels=["Low density", "Mid density", "High density"],
         patch_artist=True,
     )
     for patch, color in zip(bplot2["boxes"], colors):

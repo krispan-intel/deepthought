@@ -239,7 +239,11 @@ Table 1b: Sensitivity under calibrated τ_fill(q,ρ,t) with bootstrap CI (t5)
 
 **Key result**: Under calibrated τ, fill rate drops from ~27% to ~0.7% — nearly all raw fills at τ=0.82 are in the null occupancy zone. TVA/B2 lift disappears (1.00×). The 1.12× legacy lift is **not statistically significant** (CI contains 1.0).
 
-Interpretation: The 27% raw fill was almost entirely composed of geometrically close papers that fall within the null distribution at their anchor-density level. The "fills" were not fills at all — they were noise. This is the strongest version of Finding 1.
+Sanity: 0.7% < 5% null FPR is **correct and meaningful** — TVA voids (C1-C4 filtered) sit in sparser bridge regions than random null pairs. TVA selects regions that are harder to fill, not easier.
+
+Interpretation: The 27% raw fill was almost entirely composed of geometrically close papers that fall within the null distribution at their anchor-density level. The "fills" were not statistically significant geometric closures — they were null-zone occupancy.
+
+**This is the strongest version of Finding 1**: fixed cosine thresholds manufacture apparent fill signals; null-calibrated geometric closure reveals that significant occupancy is rare.
 
 ### 4.1.1 Fixed Similarity Thresholds Are Not Portable
 
