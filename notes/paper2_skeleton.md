@@ -439,12 +439,30 @@ We leave the development of streaming, event-driven, and dynamic extensions to f
 - [x] Mathematics reference section written
 - [x] Paper 2 skeleton with abstract, contributions, findings, discussion, threats to validity
 
-### Still needed
-- [ ] Case studies: pick 2–3 PARTIAL\_FILL cases from B2, look up citation count
-- [ ] Bootstrap CI on Table 1 TVA/B2 lift (resample voids, report 95% CI)
-- [ ] t3 role classification (file exists but not verified — run sanity check)
-- [ ] Related work section: write 5 paragraphs (LBD, novelty detection, structural holes, dense-region bias, claim verification)
-- [ ] Write up formally in LaTeX / Overleaf
+### Priority A — must before writing
+
+- [ ] **Table 1b**: recompute TVA/B1/B2 fill rates under calibrated τ_fill(q,ρ,t) for t5 (sensitivity)
+      → confirm: density matching still matters, TVA/B2 conclusion doesn't reverse
+- [ ] **Bootstrap CI**: TVA/B2 lift under τ=0.82 AND calibrated τ (resample voids, 95% CI)
+      → 1.03–1.12x is modest; need CI to defend against reviewer
+- [ ] **t3 role sanity check**: confirm t3 also shows high FP / rare TRUE_FILL
+      (file exists, needs verification)
+
+### Priority B — paper polish
+
+- [ ] Case studies: 2–3 PARTIAL_FILL / boundary expansion examples with citation count
+- [ ] Related work: 5 paragraphs (LBD, novelty detection, structural holes, dense-region bias, claim verification)
+- [ ] Write formally in LaTeX / Overleaf
+
+### Priority C — optional
+
+- [ ] Small role-aware sample under calibrated τ (~30×4 cases) if candidate set changes materially
+
+### Writing strategy note
+
+Report τ=0.82 results as **legacy operating point** for comparability.
+Report calibrated τ_fill(q,ρ,t) as **sensitivity analysis / principled correction**.
+Do NOT claim "we replace 0.82" unless all tables are recomputed under calibrated τ.
 
 ---
 
