@@ -10,6 +10,8 @@
 \usepackage{enumitem}
 \usepackage{amsthm}
 \newtheorem{definition}{Definition}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
 
 \newcommand{\tva}{\textsf{TVA}}
 \newcommand{\tvv}{\textsf{TVV}}
@@ -317,21 +319,91 @@ a weak but non-zero signal.}
 
 \subsection{Case Studies}
 
-Three representative cases from t4/t5:
+The following three cases are selected from the t4/t5 role audit to illustrate
+why geometric proximity alone does not determine epistemic role.
+For each case we report the anchor direction, the two source-side communities,
+why the future paper is geometrically close, and why the role differs.
 
-\textbf{Case~1 -- Partial Fill}~\cite{case1} (2019):
-Vehicular cloud offloading. $\mathrm{sim}{=}0.835$. 10+ offloading refs
-(B-side), 1 marginal VM ref (A-side). Role: PARTIAL-FILL.
+\paragraph{Case 1 -- Partial Fill~\cite{case1} (2019).}
+Anchor: virtualization and cloud resource management.
+Source~A lies on the VM resource allocation side; Source~B lies on
+vehicular task-scheduling. The future paper studies multi-task offloading
+over vehicular clouds, combining resource allocation, task scheduling,
+and cloud/edge execution. Its embedding falls near the midpoint
+($\mathrm{sim}(P,m){=}0.835$) because it shares vocabulary from both sides.
+However, its reference list contains 10+ task-offloading citations (B-side)
+but only one marginal VM reference (A-side).
+It approaches the bridge but does not fully connect both source communities.
+Role: PARTIAL-FILL.
 
-\textbf{Case~2 -- Boundary Expansion}~\cite{case2} (2021):
-AI planning, heterogeneous HPC. $\mathrm{sim}{=}0.855$.
-Zero kernel-scheduler refs; all refs in HPC optimization.
+\paragraph{Case 2 -- Boundary Expansion~\cite{case2} (2021).}
+Anchor: kernel scheduling and CPU affinity for heterogeneous systems.
+Source~A represents the kernel-scheduler/CPU-affinity side; Source~B represents
+heterogeneous-system optimization. The future paper proposes AI planning heuristics
+for heterogeneous HPC configuration and is geometrically close to the midpoint
+($\mathrm{sim}(P,m){=}0.855$) through shared language of scheduling, planning,
+and resource optimization.
+Its entire bibliography (44 references) remains within the HPC optimization
+literature; there are no kernel scheduler, CPU-affinity, or OS-level references.
+It extends Source~B's direction without crossing toward Source~A.
 Role: INCREMENTAL-EXTENSION.
 
-\textbf{Case~3 -- False Positive}~\cite{case3} (2017):
-Energy-aware VNE. $\mathrm{sim}{=}0.875$ (highest of three).
-Zero storage I/O refs; anchor is NVMe/storage---unrelated.
+\paragraph{Case 3 -- False Positive~\cite{case3} (2017).}
+Anchor: storage I/O path optimization and NVMe driver design.
+Despite having the \emph{highest} midpoint similarity of the three cases
+($\mathrm{sim}(P,m){=}0.875$), the paper studies energy-aware virtual network
+embedding. The high similarity is driven by generic vocabulary---``virtual'',
+``resource'', ``energy'', ``allocation''---shared with cloud infrastructure papers
+on both source sides, not by substantive connection to storage or NVMe research.
+Its 19 references contain no storage I/O, NVMe, block-layer, or anchor-domain
+citations. It is geometrically close but epistemically off-target.
 Role: FALSE-POSITIVE.
+
+\begin{figure}[h!]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[
+  nd/.style={circle,draw,thick,minimum size=5.5mm,font=\scriptsize},
+  lbl/.style={font=\scriptsize},
+  ar/.style={-Latex,thick}
+]
+% Panel (a): Partial Fill  sim=0.835
+\node[lbl] at (0,2.2) {(a) Partial};
+\node[nd,fill=blue!20]  (Aa) at (-1.1,1.2) {$A$};
+\node[nd,fill=orange!20](Ba) at ( 1.1,1.2) {$B$};
+\node[nd,fill=gray!20]  (ma) at ( 0,  1.2) {$m$};
+\node[nd,fill=green!25] (Pa) at ( 0.3,0.2) {$P$};
+\draw[dashed] (Aa)--(ma)--(Ba);
+\draw[ar] (Pa)--(ma);
+\node[lbl,align=center] at (0,-0.45) {sim=0.835\\PARTIAL};
+
+% Panel (b): Boundary Expansion  sim=0.855
+\node[lbl] at (3.6,2.2) {(b) Boundary};
+\node[nd,fill=blue!20]  (Ab) at (2.5,1.2) {$A$};
+\node[nd,fill=orange!20](Bb) at (4.7,1.2) {$B$};
+\node[nd,fill=gray!20]  (mb) at (3.6,1.2) {$m$};
+\node[nd,fill=green!25] (Pb) at (4.5,0.2) {$P$};
+\draw[dashed] (Ab)--(mb)--(Bb);
+\draw[ar] (Pb)--(Bb);
+\node[lbl,align=center] at (3.6,-0.45) {sim=0.855\\BOUNDARY};
+
+% Panel (c): False Positive  sim=0.875
+\node[lbl] at (7.2,2.2) {(c) False Pos.};
+\node[nd,fill=blue!20]  (Ac) at (6.1,1.2) {$A$};
+\node[nd,fill=orange!20](Bc) at (8.3,1.2) {$B$};
+\node[nd,fill=gray!20]  (mc) at (7.2,1.2) {$m$};
+\node[nd,fill=green!25] (Pc) at (7.2,0.2) {$P$};
+\draw[dashed] (Ac)--(mc)--(Bc);
+\draw[ar,red] (Pc)--(mc);
+\node[lbl,align=center] at (7.2,-0.45) {sim=0.875 (highest)\\FP};
+\end{tikzpicture}%
+}% end resizebox
+\caption{Case-study role patterns. Case~(c) has the \emph{highest}
+$\mathrm{sim}(P,m)$ yet is a false positive; Case~(a) has lower similarity
+but partially bridges both source sides. Geometric proximity alone does not
+determine epistemic role.}
+\label{fig:cases}
+\end{figure}
 
 \begin{figure}[h!]
 \centering
