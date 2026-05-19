@@ -2,47 +2,45 @@ This is BibTeX, Version 0.99d (TeX Live 2023/Debian)
 Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: tvv_paper.aux
 The style file: plain.bst
-I found no \citation commands---while reading file tvv_paper.aux
 Database file #1: paper2.bib
-You've used 0 entries,
+You've used 18 entries,
             2118 wiz_defined-function locations,
-            497 strings with 3997 characters,
-and the built_in function-call counts, 18 in all, are:
-= -- 0
-> -- 0
-< -- 0
-+ -- 0
-- -- 0
-* -- 2
-:= -- 7
-add.period$ -- 0
-call.type$ -- 0
-change.case$ -- 0
+            599 strings with 6954 characters,
+and the built_in function-call counts, 6146 in all, are:
+= -- 604
+> -- 263
+< -- 5
++ -- 104
+- -- 86
+* -- 391
+:= -- 973
+add.period$ -- 50
+call.type$ -- 18
+change.case$ -- 93
 chr.to.int$ -- 0
-cite$ -- 0
-duplicate$ -- 0
-empty$ -- 1
-format.name$ -- 0
-if$ -- 1
+cite$ -- 18
+duplicate$ -- 237
+empty$ -- 521
+format.name$ -- 86
+if$ -- 1319
 int.to.chr$ -- 0
-int.to.str$ -- 0
-missing$ -- 0
-newline$ -- 3
-num.names$ -- 0
-pop$ -- 0
+int.to.str$ -- 18
+missing$ -- 14
+newline$ -- 89
+num.names$ -- 36
+pop$ -- 124
 preamble$ -- 1
-purify$ -- 0
+purify$ -- 76
 quote$ -- 0
-skip$ -- 1
+skip$ -- 200
 stack$ -- 0
-substring$ -- 0
-swap$ -- 0
-text.length$ -- 0
+substring$ -- 408
+swap$ -- 66
+text.length$ -- 5
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 0
+type$ -- 70
 warning$ -- 0
-while$ -- 0
-width$ -- 0
-write$ -- 2
-(There was 1 error message)
+while$ -- 65
+width$ -- 20
+write$ -- 186

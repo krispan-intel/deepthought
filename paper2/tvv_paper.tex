@@ -51,10 +51,11 @@ $\sim$27\% to $\sim$0.7\%, confirming that most raw fills are null-zone noise.
 Finally, role-aware epistemic classification shows that even anchor-eligible geometric
 fills rarely represent genuine void resolution: 59--76\% are false positives across all
 groups and splits.
-These findings motivate a three-layer validation framework---calibrated geometric
-closure, anchor eligibility, and epistemic role---and establish that raw fill rate
-measures future local activity near predicted voids but does not validate epistemic
-closure.
+We do not find statistically significant evidence that TVA produces more epistemic fills
+than density-matched baselines (TVA/B2 lift $1.12\times$, CI $\lbrack 0.85,1.48\rbrack$).
+Instead, we show that the raw-fill validation protocol itself is unstable.
+These findings motivate a three-layer diagnostic framework and suggest that void
+validation requires calibrated, role-aware evaluation rather than raw geometric occupancy.
   \end{minipage}
   \end{center}
   \vspace{1em}
@@ -89,14 +90,17 @@ This measure appears transparent, but we show it is confounded at every layer.
   overestimates epistemic resolution (59--76\% FP across all groups).
 \end{enumerate}
 
-\textbf{Scope.} This paper concerns static retrospective validation against a
-pre-committed future corpus window. Dynamic event-driven extensions are outside scope.
+\textbf{Scope and framing.} This paper is a \emph{validation stress test}: we do not
+find statistically significant evidence that TVA outperforms density-matched baselines
+in epistemic fill prediction. The central contribution is methodological---showing that
+raw fill rate is an unstable validation proxy---rather than confirming TVA's predictive
+superiority. Dynamic event-driven extensions are outside scope.
 
 \section{Background}
 
 \subsection{Topological Void Analysis}
 
-\tva{} operates on a corpus embedded with BGE-M3 ($d=1024$, cosine similarity).
+\tva{}~\cite{pan2025tva} operates on a corpus embedded with BGE-M3~\cite{bge-m3} ($d=1024$, cosine similarity).
 For anchor $q$ and source papers $A$, $B$, a candidate void satisfies four conditions:
 (C1)~domain cohesion; (C2)~calibrated marginality; (C3)~sparse lexical bridge;
 (C4)~midpoint vacancy. The midpoint is:
@@ -262,24 +266,26 @@ limit on temporal validation.}
 
 \begin{table}[h!]
 \centering\small
-\caption{Role decomposition (500 cases, t3--t5). VR=void resolution; BA=boundary; FP=false positive.}
-\begin{tabular}{lrcccc}
+\caption{Role audit (500 cases, t3--t5; exploratory, not confirmatory). VR=void resolution; FP=false positive. 95\% Wilson CI in brackets.}
+\begin{tabular}{lrccc}
 \toprule
-Source & $n$ & VR & BA & FP & $\bar{s}$ \\
+Source & $n$ & FP & FP CI & VR CI \\
 \midrule
-TVA   & 98  & 0\% & 33\% & 69\% & 0.07 \\
-B1    & 73  & 0\% & 33\% & 70\% & 0.06 \\
-B2    & 107 & 3\% & 36\% & 62\% & 0.10 \\
-NM$^\dagger$ & 219 & 2\% & 13\% & 84\% & 0.04 \\
+TVA   & 98  & 69\% & [60,78] & [0,4] \\
+B1    & 73  & 70\% & [59,79] & [0,5] \\
+B2    & 107 & 62\% & [52,70] & [1,8] \\
+NM$^\dagger$ & 219 & 84\% & [79,88] & [1,5] \\
 \bottomrule
 \end{tabular}\\[2pt]
-{\footnotesize $^\dagger$Near-miss (sim$\in$[0.75,0.82)).}
+{\footnotesize $^\dagger$Near-miss (sim$\in[0.75,0.82)$). CI in \%.}
 \end{table}
 
-59--76\% of gated raw fills are false positives across all groups and splits.
-Near-miss controls show the highest FP rate (84\%) and lowest score, confirming that
-geometric proximity carries some signal but is insufficient.
-TVA and B1 are statistically indistinguishable; B2 performs marginally better.
+An exploratory role audit shows 59--76\% false positives across all groups and splits
+(pilot-scale; n$=$98 TVA gated cases, role labels from a single LLM).
+Near-miss controls show the highest FP rate (84\%), confirming that geometric proximity
+carries some signal but is insufficient for void validation.
+TVA and B1 are indistinguishable; B2 is marginally better.
+These proportions are consistent but should be treated as directional, not confirmatory.
 
 \begin{figure}[h!]
 \centering
@@ -294,16 +300,16 @@ a weak but non-zero signal.}
 
 Three representative cases from t4/t5:
 
-\textbf{Case~1 -- Partial Fill} (1912.06243, 2019, 18 cit.):
+\textbf{Case~1 -- Partial Fill}~\cite{case1} (2019, 18 cit.):
 Vehicular cloud offloading. $\mathrm{sim}{=}0.835$. 10+ offloading refs
 (B-side), 1 marginal VM ref (A-side). Role: PARTIAL-FILL.
 
-\textbf{Case~2 -- Boundary Expansion} (2106.01441, 2021, 7 cit.):
+\textbf{Case~2 -- Boundary Expansion}~\cite{case2} (2021, 7 cit.):
 AI planning, heterogeneous HPC. $\mathrm{sim}{=}0.855$.
 Zero kernel-scheduler refs; all 44 refs in HPC optimization.
 Role: INCREMENTAL-EXTENSION.
 
-\textbf{Case~3 -- False Positive} (1710.11590, 2017, 6 cit.):
+\textbf{Case~3 -- False Positive}~\cite{case3} (2017, 6 cit.):
 Energy-aware VNE. $\mathrm{sim}{=}0.875$ (highest of three).
 Zero storage I/O refs; anchor is NVMe/storage---unrelated.
 Role: FALSE-POSITIVE.
@@ -357,28 +363,29 @@ This dynamic formulation is outside the scope of the present work.
 \section{Related Work}
 
 \textbf{Literature-Based Discovery.}
-Swanson's ABC model and subsequent LBD work validate predictions by checking future
+Swanson's ABC model~\cite{swanson1986fish} and subsequent LBD work~\cite{gordon1996using,weeber2001using} validate predictions by checking future
 publication appearance. \tvv{} extends this tradition by requiring epistemic bridging
 role, not merely geometric proximity.
 
 \textbf{Novelty and First-Story Detection.}
-Topic Detection and Tracking introduced first-story detection; novelty detection in IR
+Topic Detection and Tracking~\cite{allan1998topic} introduced first-story detection; novelty detection in IR~\cite{zhang2002novelty}
 measures whether a document adds new information relative to a query set. Our
 first-filler intuition shares the event-ordering structure but operates on knowledge
 structure rather than event reporting.
 
 \textbf{Structural Holes and Scientometrics.}
-Burt's structural hole theory shows brokers spanning gaps accumulate informational
-advantage. Our density-matched baseline directly controls for hot-zone momentum.
+Burt's structural hole theory~\cite{burt2004structural} shows brokers spanning gaps accumulate informational
+advantage. Co-citation analysis~\cite{small1973cocitation} and our density-matched baseline directly control for hot-zone momentum.
 
 \textbf{Dense-Region Bias in Embeddings.}
-Anisotropy in high-dimensional text embeddings compresses cosine similarities into a
+Anisotropy in high-dimensional text embeddings~\cite{ethayarajh2019contextual} compresses cosine similarities into a
 narrow range. We show this anisotropy makes fixed thresholds non-portable in
-downstream void validation.
+downstream void validation. Our use of ``topological'' is operational rather than
+homological~\cite{carlsson2009topology,edelsbrunner2010computational}.
 
 \textbf{Scientific Claim Verification.}
-Epistemic classification of scientific contributions---argumentative zoning,
-overclaiming detection---provides precedents for our role-aware rubric.
+Epistemic classification of scientific contributions---argumentative zoning~\cite{teufel2002summarizing},
+overclaiming detection~\cite{wright2022generating}---provides precedents for our role-aware rubric. \cite{wadden2020scifact} introduced scientific fact verification as a retrieval task.
 
 \section{Conclusion}
 
