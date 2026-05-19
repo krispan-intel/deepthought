@@ -88,7 +88,7 @@ def fig1_role_decomposition():
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=10)
     ax.set_ylabel("Cases (%)", fontsize=11)
-    ax.set_title("Epistemic Role Decomposition", fontsize=11)
+
     ax.legend(loc="lower right", fontsize=9)
     ax.set_ylim(0, 115)
     ax.axhline(100, color="gray", lw=0.5, ls="--")
@@ -142,7 +142,7 @@ def fig2_threshold_calibration():
     ax.axhline(0.82, color="red", lw=1.5, ls="--", label="Legacy τ=0.82")
     ax.axhline(0.841, color="green", lw=1.5, ls="--", label="Mean calibrated τ=0.841")
     ax.set_ylabel("τ_fill (calibrated 5%-FPR threshold)", fontsize=10)
-    ax.set_title("Calibrated threshold by density bucket", fontsize=10)
+
     ax.legend(fontsize=8)
     ax.set_ylim(0.77, 0.91)
 
@@ -160,11 +160,11 @@ def fig2_threshold_calibration():
     ax.axhline(np.mean([v for vals in fprs.values() for v in vals])*100,
                color="red", lw=1.5, ls="--", label=f"Mean FPR@0.82 = {np.mean([v for vals in fprs.values() for v in vals])*100:.0f}%")
     ax.set_ylabel("Null FPR at τ=0.82 (%)", fontsize=10)
-    ax.set_title("FPR of 0.82 by density bucket (t5)", fontsize=10)
+
     ax.legend(fontsize=8)
     ax.set_ylim(-5, 105)
 
-    fig.suptitle("Threshold Calibration — Fixed τ=0.82 is Not Portable", fontsize=11)
+
     plt.tight_layout()
     out = FIGURES_DIR / "fig2_threshold_calibration.pdf"
     plt.savefig(out, bbox_inches="tight")
@@ -224,7 +224,7 @@ def fig3_fill_rates_ci():
     ax.legend(fontsize=9)
     ax.set_ylim(-0.2, 3)
 
-    fig.suptitle("Fill Rates — Legacy vs Calibrated Threshold", fontsize=11)
+
     plt.tight_layout()
     out = FIGURES_DIR / "fig3_fill_rates_ci.pdf"
     plt.savefig(out, bbox_inches="tight")
@@ -264,7 +264,7 @@ def fig4_anchor_exposure():
             ax.text(j, i, f"{matrix[i,j]:.1f}%", ha="center", va="center",
                     fontsize=7, color="black" if matrix[i,j] < 10 else "white")
 
-    ax.set_title("Anchor Exposure (hybrid gate pass rate)", fontsize=10)
+
     plt.tight_layout()
     out = FIGURES_DIR / "fig4_anchor_exposure.pdf"
     plt.savefig(out, bbox_inches="tight")
@@ -337,7 +337,7 @@ def fig5_void_valley(split="t5", anchor_id="sched_opt", case_id=None):
 
     ax.set_xlabel("Interpolation λ (0=A, 1=B)", fontsize=11)
     ax.set_ylabel("Mean k-NN cosine sim (local density)", fontsize=11)
-    ax.set_title(f"Local Density Profile Along A–B Bridge\nAnchor: {anchor_id}  |  Split: {split}", fontsize=10)
+
     ax.legend(fontsize=9)
     plt.tight_layout()
     out = FIGURES_DIR / "fig5_void_valley.pdf"
@@ -420,7 +420,7 @@ def fig6_calibration_curve():
                color="red", lw=1, ls=":", alpha=0.5)
     ax.set_xlabel("Expected FPR (α)", fontsize=11)
     ax.set_ylabel("Observed held-out FPR", fontsize=11)
-    ax.set_title("Null Calibration Curve\nPoints near diagonal → calibration valid", fontsize=10)
+
     ax.legend(fontsize=8)
     ax.set_xlim(0, 0.22); ax.set_ylim(0, 0.22)
     plt.tight_layout()
