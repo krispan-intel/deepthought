@@ -86,7 +86,7 @@ $$P_V^* = \arg\max_{P \in \text{Val}_q} \text{sim}(P, m_V)$$
 
 Then:
 
-$$G(V) = \mathbf{1}\!\left[\text{sim}(P_V^*, m_V) \geq \tau_{\text{fill}}(q,\rho(V),t)\right]$$
+$$G(V) = \mathbf{1}[\text{sim}(P_V^*, m_V) \geq \tau_{\text{fill}}(q,\rho(V),t)]$$
 
 $$\text{Fill}(V) = G(V) \wedge R(P_V^*,A,B,q)$$
 
@@ -113,7 +113,7 @@ B2 match: $\arg\min_j|\rho(B_j)-\rho(V)|$ over 300 candidates per anchor.
 
 ### Calibrated fill threshold (replaces 0.82)
 
-$$\tau_{\text{fill}}(q,\rho,t) = Q_{1-\alpha}\!\left(\left\{\max_{P \in \text{Val}_q}\text{sim}(P,m_0) : m_0 \in \text{Null}(q,\rho,t)\right\}\right)$$
+$$\tau_{\text{fill}}(q,\rho,t) = Q_{1-\alpha}\bigl(\{\max_{P \in \text{Val}_q}\text{sim}(P,m_0) : m_0 \in \text{Null}(q,\rho,t)\}\bigr)$$
 
 where $\text{Null}(q,\rho,t)$ = density-matched null midpoints, same anchor $q$, density bucket $\rho$, split $t$; $\alpha=0.05$.
 
