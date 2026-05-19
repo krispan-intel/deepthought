@@ -1,0 +1,40 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{2}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Background}{3}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Topological Void Analysis}{3}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Temporal Validation in LBD}{3}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Research Momentum and Dense-Region Confounding}{3}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Experimental Setup}{3}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Corpus and Temporal Splits}{3}{subsection.3.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Temporal splits.}}{3}{table.caption.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}TVA Void Generation}{3}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Baselines}{3}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Three-Layer Fill Predicate}{3}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Results}{4}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Finding 1: Raw Fill Rate Is Density-Confounded}{4}{subsection.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Raw fill rates under legacy $\tau =0.82$. CI from 1000 bootstrap resamples (t5).}}{4}{table.caption.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.1.1}Fixed Thresholds Are Not Portable}{4}{subsubsection.4.1.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Calibrated threshold and null FPR@0.82 by density bucket (t5 mean).}}{4}{table.caption.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Finding 2: Anchor Eligibility Reveals Observability Limits}{4}{subsection.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Calibrated threshold by density bucket (left) and null FPR at 0.82 (right). The fixed threshold 0.82 has 35.7\% average null FPR, reaching 99\% in high-density anchor cells. Calibrated $\tau _{\mathrm  {fill}}\approx 0.841$ is stable across all splits.}}{5}{figure.caption.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Anchor exposure (t5 sample). Mean sim and hybrid gate pass rate.}}{5}{table.caption.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Anchor eligibility pass rate (\%) by anchor and split (hybrid gate). Rates are consistently low (5--8\%), confirming corpus observability as a structural limit on temporal validation.}}{5}{figure.caption.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Finding 3: Geometric Fill Rarely Equals Epistemic Fill}{5}{subsection.4.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Epistemic role decomposition (t3/t4/t5 combined, 500 sampled cases). Void res.\ = TRUE-FILL + PARTIAL-FILL; Boundary = IE + SE + SN; FP = FALSE-POSITIVE.}}{6}{table.caption.7}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Epistemic role decomposition by source group (t5, 200 sampled cases). Most raw fills are geometric false positives regardless of method. Near-miss controls show the highest FP rate, confirming that geometric proximity is a weak but non-zero signal.}}{6}{figure.caption.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Case Studies}{6}{subsection.4.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Local density profile along the A--B bridge for the highest-MMR void in anchor sched\_opt (t5). The density valley at $\lambda \approx 0.5$ marks the void midpoint region---two dense source communities with a less-occupied bridge.}}{7}{figure.caption.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion}{7}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Raw Fill Fails for Three Reasons}{7}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}From Geometric Occupancy to Role Decomposition}{7}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Descriptive, Not Evaluative}{7}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Dynamic Extension (Future Work)}{7}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Threats to Validity}{7}{subsection.5.5}\protected@file@percent }
+\bibstyle{plain}
+\bibdata{paper2}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Related Work}{8}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{8}{section.7}\protected@file@percent }
+\gdef \@abspage@last{8}
