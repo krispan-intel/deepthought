@@ -287,22 +287,22 @@ limit on temporal validation.}
 
 \begin{table}[h!]
 \centering\small
-\caption{Role audit (500 cases, t3--t5; exploratory, not confirmatory). VR=void resolution; FP=false positive. 95\% Wilson CI in brackets.}
+\caption{Role audit (1076 cases, t3+t4+t5; exploratory). VR=void resolution; FP=false positive. 95\% Wilson CI in brackets (\%).}
 \begin{tabular}{lrccc}
 \toprule
 Source & $n$ & FP & FP CI & VR CI \\
 \midrule
-TVA   & 98  & 69\% & [60,78] & [0,4] \\
-B1    & 73  & 70\% & [59,79] & [0,5] \\
-B2    & 107 & 62\% & [52,70] & [1,8] \\
-NM$^\dagger$ & 219 & 84\% & [79,88] & [1,5] \\
+TVA   & 204 & 71\% & [65,77] & [1,6] \\
+B1    & 158 & 75\% & [67,81] & [0,2] \\
+B2    & 202 & 67\% & [60,73] & [1,6] \\
+NM$^\dagger$ & 512 & 84\% & [81,87] & [1,4] \\
 \bottomrule
 \end{tabular}\\[2pt]
 {\footnotesize $^\dagger$Near-miss (sim$\in[0.75,0.82)$). CI in \%.}
 \end{table}
 
 An exploratory role audit shows 59--76\% false positives across all groups and splits
-(pilot-scale; n$=$98 TVA gated cases, role labels from a single LLM).
+(pilot-scale; n$=$204 TVA gated cases across t3+t4+t5, role labels from a single LLM).
 Near-miss controls show the highest FP rate (84\%), confirming that geometric proximity
 carries some signal but is insufficient for void validation.
 TVA and B1 are indistinguishable; B2 is marginally better.
