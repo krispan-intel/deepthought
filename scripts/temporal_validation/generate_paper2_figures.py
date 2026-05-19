@@ -204,7 +204,7 @@ def fig3_fill_rates_ci():
     ax.bar(x - width/2, tva_rates, width, label="TVA", color=COLORS["tva"], alpha=0.8)
     ax.bar(x + width/2, b2_rates,  width, label="B2 density-matched", color=COLORS["b2"], alpha=0.8)
     ax.set_xticks(x); ax.set_xticklabels(split_labels)
-    ax.set_ylabel("Fill rate (%)"); ax.set_title("Legacy τ=0.82", fontsize=10)
+    ax.set_ylabel("Fill rate (%)", fontsize=10); ax.set_xlabel("(a) Legacy τ=0.82", fontsize=10)
     ax.legend(fontsize=9)
 
     # Annotate lift + CI
@@ -220,11 +220,11 @@ def fig3_fill_rates_ci():
     ax.bar(x - width/2, tva_c, width, label="TVA", color=COLORS["tva"], alpha=0.8)
     ax.bar(x + width/2, b2_c,  width, label="B2 density-matched", color=COLORS["b2"], alpha=0.8)
     ax.set_xticks(x); ax.set_xticklabels(split_labels)
-    ax.set_ylabel("Fill rate (%)"); ax.set_title("Calibrated τ_fill(q,ρ,t)", fontsize=10)
+    ax.set_ylabel("Fill rate (%)", fontsize=10); ax.set_xlabel("(b) Calibrated τ_fill(q,ρ,t)", fontsize=10)
     ax.legend(fontsize=9)
     ax.set_ylim(-0.2, 3)
 
-    fig.suptitle("Figure 3: Fill Rates — Legacy vs Calibrated Threshold", fontsize=11)
+    fig.suptitle("Fill Rates — Legacy vs Calibrated Threshold", fontsize=11)
     plt.tight_layout()
     out = FIGURES_DIR / "fig3_fill_rates_ci.pdf"
     plt.savefig(out, bbox_inches="tight")
