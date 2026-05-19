@@ -84,7 +84,7 @@ $$\text{Fill}(P,V,q) = G(P,m) \wedge E(P,q) \wedge R(P,A,B)$$
 |---|---|---|
 | G geometric | $\text{sim}(P,m) > \tau_{\text{fill}}$ | $\tau_{\text{fill}}=0.82$ |
 | E eligibility | $\text{sim}(P,q) > \tau_q$ | $\tau_q = \max(Q_{80}^{\text{val}},\ Q_{90}^{\text{train}})$ |
-| R epistemic | $\text{role}(P,A,B) \in \{\text{TRUE\_FILL, PARTIAL\_FILL}\}$ | LLM |
+| R epistemic | $\text{role}(P,A,B) \in \{\text{TRUE-FILL, PARTIAL-FILL}\}$ | LLM |
 
 ### Anchor exposure (Finding 2)
 
@@ -100,7 +100,7 @@ B2 match: $\arg\min_j|\rho(B_j)-\rho(V)|$ over 300 candidates per anchor.
 
 ### Role-aware fill score (Table 3)
 
-$$s(P) = \begin{cases} 1.0 & \text{TRUE\_FILL} \\ 0.7 & \text{PARTIAL\_FILL} \\ 0.5 & \text{SUPPORT\_EVIDENCE} \\ 0.3 & \text{SURVEY\_OR\_NAMING} \\ 0.2 & \text{INCREMENTAL\_EXTENSION} \\ 0.0 & \text{FALSE\_POSITIVE} \end{cases} \qquad \bar{s} = \frac{1}{|C|}\sum_{P\in C}s(P)$$
+$$s(P) = \begin{cases} 1.0 & \text{TRUE-FILL} \\ 0.7 & \text{PARTIAL-FILL} \\ 0.5 & \text{SUPPORT-EVIDENCE} \\ 0.3 & \text{SURVEY-OR-NAMING} \\ 0.2 & \text{INCREMENTAL-EXT} \\ 0.0 & \text{FALSE-POSITIVE} \end{cases} \qquad \bar{s} = \frac{1}{|C|}\sum_{P\in C}s(P)$$
 
 ### When to use what
 
@@ -108,7 +108,7 @@ $$s(P) = \begin{cases} 1.0 & \text{TRUE\_FILL} \\ 0.7 & \text{PARTIAL\_FILL} \\ 
 |---|---|
 | Geometrically close enough? | $\text{sim}(P,m)>0.82$ |
 | In anchor's problem domain? | $\text{sim}(P,q)>\tau_q$ |
-| How to set $\tau_q$? | $\max(Q_{80}^{\text{val\_sims}},Q_{90}^{\text{train\_sims}})$ |
+| How to set $\tau_q$? | $\max(Q_{80}^{\text{val}},Q_{90}^{\text{train}})$ |
 | How many future papers observable? | $\pi_{q,t}$ |
 | Hot-zone bias present? | Compare $\rho(\text{B1})$ vs $\rho(\text{TVA})$ |
 | Is paper epistemic fill? | $s(P)$ via LLM role label |
