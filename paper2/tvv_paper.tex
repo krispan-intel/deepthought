@@ -1,14 +1,15 @@
-\documentclass[11pt,a4paper]{article}
-\usepackage{amsmath,amssymb}
+\documentclass[11pt,twocolumn]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{microtype}
 \usepackage{hyperref}
-\usepackage{geometry}
-\geometry{margin=1in}
-\usepackage{parskip}
-\usepackage{titlesec}
+\hypersetup{hidelinks}
 \usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{amsthm}
+\newtheorem{definition}{Definition}
 
 \newcommand{\tva}{\textsf{TVA}}
 \newcommand{\tvv}{\textsf{TVV}}
@@ -16,18 +17,20 @@
 \newcommand{\taufill}{\tau_{\mathrm{fill}}}
 \newcommand{\tauanchor}{\tau_{q}}
 
-\title{\textbf{Topological Void Validation:}\\
-Density-Controlled and Role-Aware Evaluation\\of Predicted Research Voids\\[0.5em]
-\large\textit{Draft --- 2026-05-19}}
+\title{Topological Void Validation:\\
+       Density-Controlled and Role-Aware Evaluation\\
+       of Predicted Research Voids}
 \author{Kris Pan \\ Independent Researcher}
 \date{}
 
 \begin{document}
-\maketitle
-\tableofcontents
-\newpage
 
-\begin{abstract}
+\twocolumn[
+  \maketitle
+  \begin{@twocolumnfalse}
+  \begin{center}
+  \begin{minipage}{0.92\textwidth}
+  \textbf{Abstract.}
 Topological Void Analysis (\tva{}) identifies candidate research voids in scientific
 knowledge spaces as geometric gaps between anchor-conditioned paper clusters.
 A natural validation question is whether future papers fill these predicted voids.
@@ -36,7 +39,7 @@ midpoint---fails as a validation target for three compounding reasons.
 First, it is confounded by local corpus density: a hot-zone baseline that samples
 high-density anchor-adjacent pairs outperforms \tva{} on raw fill (36\% vs.\ 28\%),
 but this apparent advantage disappears under a density-matched baseline
-(25\%; \tva{}/B2 lift $= 1.12\times$, 95\% CI $[0.85, 1.48]$, not significant).
+(25\%; \tva{}/B2 lift $= 1.12\times$, 95\% CI $\lbrack 0.85, 1.48\rbrack$, not significant).
 Second, it is limited by anchor observability: only 5--7\% of future papers are
 anchor-eligible per split, so many unfilled voids should be treated as right-censored
 rather than invalid.
@@ -52,7 +55,11 @@ These findings motivate a three-layer validation framework---calibrated geometri
 closure, anchor eligibility, and epistemic role---and establish that raw fill rate
 measures future local activity near predicted voids but does not validate epistemic
 closure.
-\end{abstract}
+  \end{minipage}
+  \end{center}
+  \vspace{1em}
+  \end{@twocolumnfalse}
+]
 
 \section{Introduction}
 
