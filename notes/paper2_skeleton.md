@@ -365,12 +365,20 @@ We leave the development of streaming, event-driven, and dynamic extensions to f
 
 ## TODO for Paper 2
 
-- [ ] Finalize Table 3 (role distribution after classification completes)
-- [ ] Add t3/t4 B2 results to Table 1 (rolling trend)
-- [ ] Anchor exposure table (Table 2) from anchor_exposure_table.py
-- [ ] Case studies: 2–3 TRUE_FILL examples with citation count
-- [ ] Related work: LBD retrospective validation, structural holes, dense-region bias
-- [ ] Write up formally
+### Done
+- [x] Table 3: role classification t4+t5 confirmed (59–68% FP, pattern consistent)
+- [x] Table 1: t3/t4/t5 B2 rolling results (1.03x / 1.12x / 1.12x)
+- [x] Table 2: anchor exposure table (6.2% mean hybrid pass, per-anchor breakdown)
+- [x] Three-layer fill predicate formalized
+- [x] Mathematics reference section written
+- [x] Paper 2 skeleton with abstract, contributions, findings, discussion, threats to validity
+
+### Still needed
+- [ ] Case studies: pick 2–3 PARTIAL\_FILL cases from B2, look up citation count
+- [ ] Bootstrap CI on Table 1 TVA/B2 lift (resample voids, report 95% CI)
+- [ ] t3 role classification (file exists but not verified — run sanity check)
+- [ ] Related work section: write 5 paragraphs (LBD, novelty detection, structural holes, dense-region bias, claim verification)
+- [ ] Write up formally in LaTeX / Overleaf
 
 ---
 
