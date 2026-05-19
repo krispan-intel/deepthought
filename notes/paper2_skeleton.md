@@ -237,18 +237,18 @@ Near-miss controls provide a sanity check: FP rate 84%, role-aware score 0.054 �
 than all gated groups, confirming that geometric proximity carries signal, but proximity
 alone is insufficient.
 
-Table 3a: Role decomposition (t5, three-category summary)
+Table 3a: Role decomposition (t5, counts — three mutually exclusive categories)
 
-| Source | n | Void resolution | Boundary activity | Geometric FP |
-|---|---|---|---|---|
-| TVA (gated) | 36 | 0% | 36% (IE+SE+SN) | 67% |
-| B1 hot-zone (gated) | 30 | 0% | 33% | 67% |
-| B2 density-matched | 44 | 5% (PARTIAL) | 36% | 59% |
-| Near-miss controls | 88 | 3% | 13% | 84% |
+| Source | n | Void resolution | Boundary activity | Geometric FP | Other/Unclear |
+|---|---|---|---|---|---|
+| TVA (gated) | 36 | 0 | 12 (33%) | 24 (67%) | 0 |
+| B1 hot-zone (gated) | 30 | 0 | 10 (33%) | 20 (67%) | 0 |
+| B2 density-matched | 44 | 2 (5%) | 16 (36%) | 26 (59%) | 0 |
+| Near-miss controls | 88 | 3 (3%) | 11 (13%) | 74 (84%) | 0 |
 
-*Void resolution = TRUE_FILL + PARTIAL_FILL*
-*Boundary activity = INCREMENTAL_EXTENSION + SUPPORT_EVIDENCE + SURVEY_OR_NAMING*
-*Geometric FP = FALSE_POSITIVE*
+*Void resolution = TRUE-FILL + PARTIAL-FILL*
+*Boundary activity = INCREMENTAL-EXTENSION + SUPPORT-EVIDENCE + SURVEY-OR-NAMING*
+*Geometric FP = FALSE-POSITIVE (three categories sum to 100%)*
 
 Table 3b: Topological event type (new rubric, t5)
 
@@ -300,32 +300,32 @@ distinction operationalizable.
 > Epistemic role is the validation condition.
 
 ### 5.3 Descriptive, Not Evaluative
+
 We do not interpret boundary expansion or densification as low-value. Replication,
 refinement, and consolidation are essential scientific activities. TVV classifies the
 type of validation evidence produced by future literature, not the intrinsic merit of
 papers.
 
 ### 5.4 Right-Censoring and Unfilled Voids
+
 Unfilled voids should be treated as right-censored, not false positives.
 Harder voids may require longer windows or denser domain coverage.
 
-### 5.3 Descriptive, Not Evaluative
-We do not interpret non-fill, densification, or boundary expansion as low-value.
-Replication, refinement, and consolidation are essential scientific roles. TVV is
-descriptive: it classifies the type of validation evidence produced by future literature,
-rather than assigning intrinsic merit to papers.
+### 5.5 Dynamic Extension (Future Work)
 
-### 5.4 Dynamic Extension (Future Work)
-These results suggest a natural dynamic extension: instead of asking whether a predicted
-void is eventually filled, one can classify each newly arriving paper by its pre-insertion
-topological effect on the knowledge space. This dynamic formulation is outside the scope
-of the present work.
+Paper 2 validates voids against a fixed future window using a static embedded corpus.
+It does not implement event-driven observation of the knowledge space. The distinction:
 
-> These results suggest that future void-validation systems should not treat papers as
-> static future points only, but as events that update the state of a knowledge space.
-> We leave streaming and event-driven formulations of TVA to future work.
+```
+Paper 2 (done): static corpus → find voids → fixed window → observe fill
+D-TVA (future): paper arrives → pre-insertion DB check → classify event → update DB
+```
 
-### 5.5 Threats to Validity
+These results suggest that future void-validation systems should not treat papers as
+static future points only, but as events that update the state of a knowledge space.
+We leave streaming and event-driven formulations of TVA to future work.
+
+### 5.6 Threats to Validity
 1. **Embedding dependence**: BGE-M3 defines the coordinate system; results may vary with embedding model choice.
 2. **Threshold sensitivity**: geometric closure and anchor gates depend on calibrated thresholds; we use density-matched controls and report sensitivity across threshold sweep.
 3. **Corpus coverage**: unobserved fills may occur outside the corpus; unfilled voids are right-censored.
@@ -342,8 +342,8 @@ density bias, anchor observability, and epistemic role.
 Raw fill rate alone is insufficient: it conflates void quality with local corpus density
 and research momentum. After density matching, TVA's apparent disadvantage reverses.
 After anchor eligibility gating, the observability limit becomes explicit — unfilled voids
-are right-censored, not invalid. After role-aware classification, TVA's epistemic
-precision is confirmed.
+are right-censored, not invalid. After role-aware classification, the gap between geometric
+fill and epistemic fill becomes explicit: raw fill substantially overestimates void resolution.
 
 Three hooks for future work — left intentionally undeveloped:
 
