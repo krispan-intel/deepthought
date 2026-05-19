@@ -1,0 +1,170 @@
+{
+  "paper": "TVV Paper 2",
+  "model_deep_thinker": "claude-sonnet-4-5",
+  "model_judge": "claude-sonnet-4-6",
+  "reviews": [
+    {
+      "verdict": "MAJOR_REVISION",
+      "score": 4,
+      "summary": "The paper correctly identifies that fixed cosine thresholds are not portable and that raw \u201cfill rate\u201d is heavily confounded by local corpus density and observability. However, the embedding-space reasoning relies on ad hoc cosine-threshold geometry (midpoints, occupancy) without a technically adequate treatment of anisotropy/hubness and without standard retrieval-style evaluation, making several conclusions fragile despite the careful stress-test framing.",
+      "strengths": [
+        "Sound high-level diagnosis that cosine similarity distributions shift across subspaces/time/density, making global thresholds (e.g., 0.82) technically unjustified for bi-encoder embeddings.",
+        "Good experimental hygiene in acknowledging non-significance, reporting CIs, and explicitly treating the work as a methodological stress-test rather than confirmatory SOTA claims.",
+        "The attempt at per-cell null calibration to control a target false positive rate is directionally aligned with IR calibration practice (distribution-aware thresholding) and is empirically sanity-checked (held-out FPR near target)."
+      ],
+      "weaknesses": [
+        "Cosine-threshold \u201cclosure via midpoint occupancy\u201d is not well-justified in high-dimensional anisotropic embedding spaces: midpoints and neighborhoods are strongly affected by mean direction, hubness, and concentration of measure, so geometric \u2018fills\u2019 may largely reflect embedding artifacts rather than semantic closure.",
+        "The null calibration method (\u03c4 = Q_0.95 of density-matched null midpoint occupancy) is underspecified and likely statistically brittle: quantile estimates can be noisy per (q,\u03c1,t) cell, may suffer multiple-comparisons inflation across many cells/voids, and can be implicitly tuned to the corpus prior (making the observed collapse in fill rate potentially a calibration-induced conservatism rather than a discovery about \u201crarity\u201d).",
+        "The density-matched baseline is not a standard IR baseline and risks conflating retrieval/prediction quality with corpus statistics: matching on density can erase real signal and/or bake in the same embedding-space biases the method is being evaluated on, while \u201cfill rate\u201d ignores ranking quality and graded relevance (epistemic roles)."
+      ],
+      "fatal_flaw": "",
+      "questions_for_authors": [
+        "Precisely how is the null constructed and how is \u201cmidpoint occupancy\u201d computed (binary within-\u03c4, count within radius, kNN density)? How many null samples per (q,\u03c1,t) cell, and what is the uncertainty of Q_0.95 (e.g., via order-statistic CI) given the discrete/possibly heavy-tailed occupancy distribution?",
+        "What explicit steps address embedding anisotropy/hubness (e.g., mean-centering, whitening, CSLS, local scaling, or density-normalized similarity)? If none, can you show that results (threshold portability, calibrated fill collapse, role FP rates) are stable under standard anisotropy mitigation for the chosen encoder?"
+      ],
+      "suggested_fix": "Recast validation as an embedding-based retrieval task and evaluate with judged relevance using ranking metrics (MRR/nDCG@k/MAP over future papers per void/query), while explicitly mitigating and analyzing anisotropy/hubness (mean-centering/whitening or local-scaled similarities) and re-deriving calibration with uncertainty/multiple-comparisons control.",
+      "reviewer": "ir_embedding",
+      "role": "IR Researcher \u2014 Dense Retrieval and Embedding-Space Search"
+    },
+    {
+      "verdict": "MAJOR_REVISION",
+      "score": 4,
+      "summary": "The paper makes a useful, IR-relevant methodological point: na\u00efve \u201cfuture fill rate\u201d is a poor target for validating knowledge-gap detectors due to density confounding, threshold non-portability, and severe observability/eligibility censoring. However, the proposed three-layer framework is not yet convincingly shown to be sufficient or general, and the epistemic role taxonomy/labeling evidence is too thin to support the stronger claims for a top-tier IR/scientometrics venue.",
+      "strengths": [
+        "Clear diagnosis of evaluation failure modes that novelty/knowledge-gap work in IR often under-addresses: density confounding (hot-zone baseline beating on raw fill), calibration drift across anchor-density cells, and right-censoring induced by low anchor eligibility (5\u20137%).",
+        "Principled move toward calibrated validation via a density-matched null and held-out calibration with near-target FPR (6.3% vs 5%), which is closer in spirit to IR\u2019s controlled evaluation (proper baselines, calibration, error-rate targeting) than many scientometric \u201cface validity\u201d studies.",
+        "Important separation of geometric/structural closure from epistemic contribution via role-aware labeling, aligning with knowledge discovery goals (distinguishing genuine gap closure from boundary expansion or mere densification)."
+      ],
+      "weaknesses": [
+        "Core effectiveness claims are statistically weak: TVA/B2 lift 1.05\u20131.12\u00d7 with all bootstrap CIs containing 1.0 (not significant). This is fine for a stress-test paper, but then the paper should avoid \u201cnecessary and sufficient\u201d framing and more explicitly position contributions as evaluation cautions rather than validated validators.",
+        "Role-aware classification scheme is under-specified as an epistemic discriminator and lacks reliability evidence: labeling counts (n=204 gated, n=1076 total) are modest, but the bigger issue is missing inter-annotator agreement, adjudication protocol, construct validity (what operational signals separate TRUE-FILL vs BOUNDARY-EXPANSION), and sensitivity of conclusions to taxonomy boundaries.",
+        "Comparison to existing novelty detection / first-story detection (FSD) in IR is incomplete: the paper implicitly re-derives known problems (base-rate effects, threshold drift, confounds with activity) but does not map TVA validation to established novelty/FSD evaluation practices (time-sliced detection, burst/first-mention definitions, calibrated false-alarm control, and event/topic-level ground truth), nor does it show that the proposed layers improve decision quality for downstream discovery tasks."
+      ],
+      "fatal_flaw": "",
+      "questions_for_authors": [
+        "Role taxonomy validity: What is the annotation protocol (guidelines, examples, training), how many annotators, and what are agreement metrics (e.g., Krippendorff\u2019s alpha) for TRUE-FILL vs BOUNDARY-EXPANSION vs DENSIFICATION? How sensitive are the headline \u201859\u201376% false positives\u2019 and \u2018boundary expansion dominates\u2019 findings to alternative but plausible label merges/splits?",
+        "Necessity/sufficiency and generality: Do the three layers predict any external outcome consistent with \u2018void quality\u2019 (e.g., later cross-community uptake, forward-citation acceleration, or topic-bridging effects), and does the framework hold beyond arXiv CS / cosine-threshold embedding spaces / the specific anchor-conditioning scheme?"
+      ],
+      "suggested_fix": "Add an explicit, reproducible validation study of the role-aware layer with (i) multi-annotator labeling + agreement, (ii) ablations showing how each layer changes conclusions compared to standard novelty/FSD-style evaluation, and (iii) at least one citation- or diffusion-based external criterion (forward citations, cross-community citation uptake, or reference-bridge persistence) to test whether \u2018true fills\u2019 correspond to measurable knowledge integration rather than just geometric occupancy.",
+      "reviewer": "ir_knowledge_discovery",
+      "role": "IR Researcher \u2014 Knowledge Discovery and Scientific Information Retrieval"
+    },
+    {
+      "verdict": "MAJOR_REVISION",
+      "score": 4,
+      "summary": "The paper makes a valuable methodological point: na\u00efve \u201cfuture fill rate\u201d is an invalid target for evaluating predicted research voids due to density confounding, threshold non-portability, and observability/censoring. However, for a top-tier IR/scientometrics venue, the positioning within LBD/temporal IR evaluation and the rigor of the evaluation design (baselines, ground-truth framing, statistical power, and annotation validity) need strengthening before the proposed framework can be considered a general evaluation contribution.",
+      "strengths": [
+        "Clear identification of key evaluation confounds (density, threshold drift across cells, and limited observability), which aligns with known pitfalls in time-sliced LBD validation (e.g., \u201crediscovery\u201d artifacts and temporal leakage).",
+        "Null-calibrated thresholding per (q, \u03c1, t) cell and explicit FPR targeting is a step toward principled calibration rather than ad-hoc cosine cutoffs, and the held-out calibration check (\u22486.3% vs 5%) is a good practice.",
+        "The paper usefully separates geometric closure from epistemic interpretation via role-aware labels, which\u2014if validated\u2014could prevent over-claiming \u201cdiscoveries\u201d from purely embedding/topological proximity."
+      ],
+      "weaknesses": [
+        "Positioning gap: the paper should more explicitly connect to LBD evaluation methodology (Swanson A-B-C, Weeber-style time-slicing/rediscovery validation, and modern embedding-based discovery evaluation) and to predictive IR evaluation frameworks (time-sliced ranking evaluation, survival/time-to-event analysis, calibration under distribution shift). As written, it risks sounding like an ad-hoc validation critique rather than an IR-methodology contribution grounded in prior evaluation literature.",
+        "Baseline set is likely insufficient for an IR venue: \u201chot-zone\u201d and \u201cdensity-matched\u201d are good controls, but the paper should include stronger LBD/temporal baselines (e.g., co-citation/bibliographic coupling heuristics, graph link prediction, embedding-nearest-neighbor bridging, randomized/matched void generation with multiple matching criteria, and a simple supervised forecaster using only density/age features). Otherwise it is unclear whether TVA is being evaluated against the best competing retrieval hypotheses for \u2018future bridging/filling\u2019.",
+        "Retrieval-vs-validation and PR/RC framing are not yet methodologically tight: \u2018fill\u2019 is treated as a target without a well-defined, exhaustively observable ground truth, so recall is fundamentally undefined under censoring and anchor-eligibility gating. Any F-measure analogue must be justified carefully (what is TP/FP/FN when positives are partially unobservable?), and the \u201cnecessary and sufficient\u201d claim is too strong given single-corpus scope, limited candidate counts (300 voids/split), and role-labeling sample sizes without reported inter-annotator agreement or error analysis."
+      ],
+      "fatal_flaw": "",
+      "questions_for_authors": [
+        "What is the formal evaluation object: are you evaluating a retrieval system that ranks void candidates (queries = anchors; documents = void regions), or a calibrated predictor of a future event (void closure)? Please specify the unit of evaluation, the decision/ranking outputs, and the exact definition of a \u2018relevant\u2019 future event under censoring/eligibility\u2014then map metrics to that definition.",
+        "How reliable is the role-aware epistemic classification? Please report annotation protocol, annotator expertise, inter-annotator agreement (e.g., Krippendorff\u2019s \u03b1), and sensitivity of your headline conclusions (e.g., 59\u201376% FP) to label noise and to alternative operationalizations of \u2018epistemic closure\u2019 (citations/bridging paths, controlled vocabulary, topic model shifts, etc.)."
+      ],
+      "suggested_fix": "Recast the evaluation explicitly as a time-to-event (survival) + calibration problem grounded in LBD time-slicing: define the prediction target and observability model, use censoring-aware estimators (e.g., Kaplan\u2013Meier / Cox or discrete-time hazards) for \u2018time-to-fill\u2019 under anchor-eligibility, and benchmark TVA against a broader set of LBD/temporal baselines; then only use precision-style quantities where a well-defined, observable positive set exists (or clearly state when only calibrated risk estimates\u2014not recall\u2014are identifiable).",
+      "reviewer": "ir_temporal",
+      "role": "Senior IR Researcher \u2014 Temporal Retrieval and Literature-Based Discovery"
+    },
+    {
+      "verdict": "REJECT",
+      "score": 2,
+      "summary": "The paper\u2019s main statistical scaffolding (per-cell null calibration, FPR control, and bootstrap uncertainty on lift) is not valid as stated under the dependence and finite-sample regime described. Several headline numbers (e.g., \u201c5% FPR\u201d calibration, CI on TVA/B2 lift) are not interpretable without a correct null-generating process, explicit exchangeability assumptions, and a dependence-aware resampling design.",
+      "strengths": [
+        "Correctly identifies density as a confound and attempts density-matched baselines rather than relying on raw fill rates.",
+        "Acknowledges non-significance and frames the work as a stress-test rather than claiming TVA beats a strong baseline.",
+        "At least attempts held-out calibration and reports an out-of-sample FPR diagnostic (rare in this literature)."
+      ],
+      "weaknesses": [
+        "Null calibration is not demonstrably valid: using \u03c4 = empirical Q0.95 of \u201cdensity-matched null midpoint occupancy\u201d can be circular unless the null reproduces the entire selection + scoring pipeline; even under a correct null, an empirical 0.95 quantile from n=200 typically yields expected FPR >5% (order-statistic bias/discreteness), consistent with the reported 6.3%, so the claim of 5% control is overstated.",
+        "Bootstrap CI for TVA/B2 lift is likely wrong if resampling is done at the paper level; the resampling unit must be the void (and arguably a hierarchical cluster bootstrap: split \u2192 anchor \u2192 void) because 300 voids share only 10 anchors and are correlated within split/anchor, violating IID assumptions and making CIs too narrow/unstable.",
+        "Per-cell calibration across ~30 anchor-density cells with only ~200 null samples per cell is statistically fragile for tail quantiles; bucket boundaries (tertiles) and 0.95-tail thresholds will be noisy, and any cell-wise reporting/selection effectively creates a multiple-comparisons problem unless controlled (and mixture-over-cells FPR is not guaranteed at 5% even if each cell were individually controlled)."
+      ],
+      "fatal_flaw": "The paper\u2019s central inferential claims rely on (i) a null-calibration procedure that does not guarantee the advertised 5% false-positive rate under the described finite-sample and selection pipeline, and (ii) uncertainty estimates (bootstrap CIs on lift) that likely ignore strong dependence (voids nested in anchors and splits). As a result, both the calibration-based collapse in fill rates and the reported (non-)significance of lift are not statistically defensible as stated.",
+      "questions_for_authors": [
+        "Precisely define the null-generating process and the density-matching procedure: does the null reproduce (a) anchor selection, (b) void construction, (c) candidate filtering, and (d) the exact midpoint scoring used at test time? If any step differs, why is exchangeability between null and test statistics justified?",
+        "How exactly are bootstrap CIs computed (resampling unit and scheme)? Please report results under a dependence-aware design (e.g., cluster/hierarchical bootstrap over voids with anchors/splits as clusters) and compare CI widths vs the current method."
+      ],
+      "suggested_fix": "Replace the current per-cell empirical-quantile \u201c5% FPR\u201d calibration + paper-level bootstrap with a dependence-aware, formally valid calibration/inference stack: use a proper held-out/split-conformal-style thresholding (or calibrated order-statistic correction) that targets marginal FPR under the full null pipeline, and compute lift uncertainty via void-level (preferably hierarchical) cluster bootstrap; then report both per-cell and pooled (mixture-weighted) error rates with multiplicity handled when making cell-wise claims.",
+      "reviewer": "statistical_calibration",
+      "role": "Statistical Calibration and Null-Model Expert"
+    },
+    {
+      "verdict": "MAJOR_REVISION",
+      "score": 4,
+      "summary": "The paper raises important evaluation concerns (density confounding, threshold non-portability, observability/anchor-eligibility) and is commendably willing to report null results. However, key parts of the evaluation are not yet reproducible at a SIGIR/ECIR/CIKM standard, and several statistical and validity threats (dependence structure, calibration adequacy, and LLM-based role labeling variance) are insufficiently controlled to support the stronger methodological claims.",
+      "strengths": [
+        "Identifies and empirically demonstrates a plausible density confound and shows that naive \u201cfill rate\u201d comparisons can reverse under density-matched baselines, which is a valuable evaluation insight for scientometrics-style IR tasks.",
+        "Treats observability limitations explicitly via anchor-eligibility and right-censoring framing, which is closer to a principled evaluation target than unconditional \u201cfuture fill\u201d.",
+        "Attempts null-calibrated thresholding by anchor\u2013density cells and includes a held-out calibration check instead of tuning and evaluating on the same data."
+      ],
+      "weaknesses": [
+        "Reproducibility is currently unclear: the protocol needs exact definitions and releaseable artifacts for (i) anchor selection, (ii) void generation, (iii) density computation/\u03c1 binning, (iv) baseline construction (B1/B2 sampling algorithm), (v) null generation procedure, and (vi) how candidates are deduplicated and how dependence across anchors/voids is handled. Without these, another lab cannot replicate the reported lifts and FPRs.",
+        "Statistical inference is under-specified/likely mis-calibrated for the design: naive bootstrap CIs over voids/papers can be invalid under strong clustering (30 voids per anchor, shared embedding space, shared time window). A randomization/permutation test aligned to the actual assignment mechanism (e.g., permuting TVA vs B2 labels within matched strata) or a hierarchical model/cluster bootstrap (by anchor, by time slice) is more appropriate; reporting only CIs without well-defined sampling units and dependence handling is not sufficient.",
+        "Calibration evidence is weak: an observed held-out null FPR of 6.3% vs 5% may or may not be acceptable depending on its uncertainty and on per-cell behavior (the paper itself notes 1\u201399% variation under fixed \u03c4). You need binomial/Beta-binomial CIs for FPR, calibration curves across (q,\u03c1,t) cells, and an explicit acceptance criterion; otherwise the thresholding step is not demonstrably controlling Type I error.",
+        "LLM-based role classification introduces uncontrolled variance and potential circularity unless tightly validated: prompts, model version, temperature, adjudication, and decision rules must be fixed; you also need human gold labels (at least a stratified subset) with inter-annotator agreement, plus robustness across multiple LLMs and prompt variants. As described, role proportions (e.g., 59\u201376% false positives) could be dominated by labeling noise/bias.",
+        "Temporal splitting needs stronger leakage controls: rolling t3/t4/t5 helps, but you must ensure no leakage via embedding training (e.g., using all-time corpora), anchor definition (anchors chosen using future citations/metadata), density estimates computed with future papers, or calibration thresholds learned using any information from the evaluation horizon. The paper should explicitly state what is trained/fit on which time interval and verify with an audit.",
+        "Sample size is likely inadequate for several claims: n=204 \u201cTVA gated\u201d cases for role classification is small given 5-way labeling and stratification by split/anchor/density; uncertainty on class proportions will be large and dependence likely high. Similarly, 300 TVA candidates per split is modest once clustered by 10 anchors; non-significance may be driven by low power and/or correlated units rather than genuine absence of effect."
+      ],
+      "fatal_flaw": "",
+      "questions_for_authors": [
+        "What is the exact statistical unit for inference (void, anchor, anchor\u00d7time cell, paper), and how do you account for dependence among the 30 voids per anchor and shared embedding/time-window effects? Please specify the resampling scheme (if bootstrap) or the randomization scheme (if permutation) and justify why it matches the data-generating process.",
+        "How is the null constructed for \u03c4_fill(q,\u03c1,t) (what is randomized, what is held fixed, how many null draws), and can you provide per-cell calibration diagnostics (FPR with CIs) plus an explicit criterion for \u2018acceptable\u2019 calibration? Also, how is density \u03c1 computed strictly from pre-t data to avoid leakage?"
+      ],
+      "suggested_fix": "Make the evaluation reproducible and inference valid by (1) releasing a complete, executable protocol (data snapshots by time, anchor/void generation, B1/B2 sampling, null generation, \u03c4 estimation) and (2) replacing/augmenting bootstrap CIs with a dependence-aware significance analysis (cluster bootstrap or stratified permutation/randomization test), alongside formal calibration diagnostics (per-cell FPR with uncertainty) and a human-validated audit of the LLM role labels (gold subset + agreement + robustness).",
+      "reviewer": "ir_evaluation_methodology",
+      "role": "IR Researcher \u2014 Evaluation Methodology and Experimental Design"
+    },
+    {
+      "verdict": "MAJOR_REVISION",
+      "score": 4,
+      "summary": "The role-classification component is currently an under-validated measurement instrument: a single-LLM labeler with limited, underspecified human checking cannot support strong quantitative claims like \u201c59\u201376% false positives\u201d with known error bounds. The rest of the paper\u2019s calibration/density/observability analysis may still be valuable, but the epistemic-role results need a publishable annotation protocol with reliability, uncertainty propagation, and operational definitions.",
+      "strengths": [
+        "Recognizes that \u201cgeometric fill\u201d is not equivalent to epistemic closure and attempts to decompose outcomes into roles rather than reporting a single fill rate.",
+        "Attempts at reliability checking (blinding to source labels; a human audit) are directionally appropriate and show awareness of evaluator bias risks.",
+        "Collapsing roles (9\u21923) is a reasonable strategy in principle to improve annotatability if backed by clear decision rules and demonstrated agreement."
+      ],
+      "weaknesses": [
+        "Single-LLM primary labeling is a black-box instrument without demonstrated reliability (model/prompt/temperature sensitivity, inter-run stability, and construct validity are not reported); dataset size (n=1076) does not compensate for unknown label error.",
+        "\u201cBlind source-label removal\u201d is not sufficient as a reliability check: it reduces expectation bias but does not measure correctness, and cases may still leak provenance cues through content; it also does not address LLM consistency or boundary ambiguity between roles.",
+        "The 60-case human audit is underpowered and underdescribed (sampling scheme, annotator identity/expertise, independence, instructions, adjudication, and per-class confusion are missing). Reporting \u201c>80% FP/non-FP agreement\u201d only evaluates a binary collapse, not the full multi-class role taxonomy; even if 48/60 agree (~80%), the implied 95% CI on agreement is wide (~0.68\u20130.88), and agreement \u2260 accuracy."
+      ],
+      "fatal_flaw": "",
+      "questions_for_authors": [
+        "Please fully specify the annotation instrument: LLM model/version, decoding settings (temperature, top_p), prompt(s), role definitions shown to the model, use of chain-of-thought (if any), and any post-processing. What is label stability across (a) multiple seeds, (b) prompt variants, and (c) at least one alternative model family?",
+        "Describe the 60-case audit protocol in detail: who annotated (domain expertise; author vs independent), whether they were blind to TVA/B1/B2 condition and time split, sampling (random vs stratified by predicted role/score/density cell), whether duplicates were used to estimate intra-annotator consistency, and provide a confusion matrix (LLM vs human) for the original 5 roles and for the collapsed 3 roles."
+      ],
+      "suggested_fix": "Replace the current \u201cLLM-primary + plausibility audit\u201d with a defensible measurement pipeline: (1) publish operational, decision-tree-style role guidelines (including explicit negative/edge cases) and pre-register the collapse mapping; (2) obtain double-blind human labels from \u22652 independent expert annotators on a stratified random sample large enough to bound error (e.g., 200\u2013300 cases, stratified by split and predicted role; include 10\u201320% repeated items), report Krippendorff\u2019s alpha (nominal) and per-class F1 via adjudicated gold; (3) treat the LLM as an auxiliary annotator\u2014estimate its confusion matrix vs gold, then propagate measurement error into the reported 59\u201376% FP rate (e.g., Bayesian misclassification model / sensitivity analysis), so the FP conclusion is accompanied by uncertainty intervals that reflect label noise.",
+      "reviewer": "llm_annotation_reliability",
+      "role": "LLM Annotation and Human Evaluation Expert"
+    }
+  ],
+  "chairman": {
+    "final_verdict": "MAJOR_REVISION",
+    "average_score": 4.0,
+    "consensus": "Reviewers broadly agree the paper raises important evaluation pitfalls (density confounding, threshold non-portability, censoring), but disagree with (or do not yet buy) the current geometric/role-based evidence as sufficiently justified or validated for strong claims.",
+    "top_strengths": [
+      "Clear, IR-relevant diagnosis that global cosine thresholds and raw future \u201cfill rate\u201d are non-portable and heavily confounded by density/observability.",
+      "Careful experimental framing and hygiene (stress-test positioning, CIs/non-significance reporting) plus a directionally sound move toward calibrated, error-rate-controlled validation."
+    ],
+    "top_concerns": [
+      "Geometric \u201cmidpoint occupancy / closure\u201d reasoning is under-justified in anisotropic, hubness-prone embedding spaces; conclusions may reflect embedding artifacts rather than semantic closure.",
+      "Calibration via per-cell null quantiles is underspecified and may be statistically brittle (noisy quantiles, multiple comparisons across many cells, potential conservatism induced by calibration choices).",
+      "Epistemic role results rest on an under-validated annotation instrument (LLM-primary labeling with limited human audit), so quantitative FP claims lack reliability/uncertainty bounds."
+    ],
+    "required_revisions": [
+      "Recast/augment validation as a retrieval-style evaluation with judged relevance and standard ranking metrics (e.g., nDCG/MRR/MAP over time-sliced \u2018future fill\u2019 candidates), and explicitly analyze/mitigate anisotropy and hubness (e.g., mean-centering/whitening, local scaling/CSLS) to demonstrate robustness of the key findings.",
+      "Make the role-labeling pipeline publishable: provide operational role definitions and annotation protocol; collect sufficient double-blind human labels with agreement statistics and confusion matrices; quantify LLM label stability; and propagate label noise into reported FP rates with uncertainty intervals."
+    ],
+    "optional_improvements": [
+      "Strengthen connections to established IR novelty/FSD evaluation practices and add dependence-aware significance testing plus per-cell calibration diagnostics with uncertainty/multiple-comparisons control."
+    ],
+    "recommendation_to_authors": "Position the paper primarily as an evaluation-methods contribution, and support it with retrieval-standard metrics and robust embedding-space analysis. Then rebuild the epistemic-role component as a defensible measurement instrument with human reliability and uncertainty propagation; with these additions, the work could become a strong methodological reference for IR/scientometrics novelty validation."
+  }
+}
