@@ -337,6 +337,49 @@ controls show the highest FP rate, confirming that geometric proximity is
 a weak but non-zero signal.}
 \end{figure}
 
+\subsection{Landmark Positive-Control Analysis}
+
+Full-corpus temporal fills are rare, making method-level comparisons low-powered.
+As an independent sanity check, we select five landmark \emph{bridge-type} papers
+published 2019--2023 using criteria pre-specified before running TVA (widely cited,
+cross-area, arXiv CS categories). For each landmark $P$ published in year $Y$, we
+embed $P$'s title and measure: (i)~anchor eligibility ($\mathrm{sim}(P, q) > $ 90th
+percentile of train corpus), and (ii)~whether TVA produces a geometrically close void
+midpoint for that anchor.
+
+\begin{table}[h!]
+\centering\small
+\caption{Landmark anchor eligibility (5 pre-specified bridge papers). $\mathrm{AncSim}$
+= sim(landmark, best TVA anchor). $P_{90}$ = 90th percentile of train-anchor similarities.
+Papers above $P_{90}$ are anchor-eligible in the TVA framework.}
+\begin{tabular}{lcccc}
+\toprule
+Landmark & Year & Anchor & AncSim & $>P_{90}$? \\
+\midrule
+vLLM / PagedAttention & 2023 & mm\_vm & 0.718 & \textbf{Yes} \\
+MLIR                  & 2020 & hwsw\_x86 & 0.632 & \textbf{Yes} \\
+Devign                & 2019 & ebpf\_obs & 0.643 & \textbf{Yes} \\
+Ansor                 & 2020 & hwsw\_x86 & 0.599 & No \\
+FlashAttention        & 2022 & hwsw\_x86 & 0.572 & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three of five landmarks are anchor-eligible: vLLM (OS virtual memory anchor), MLIR
+(hardware/software co-design anchor), and Devign (kernel tracing/observability anchor).
+The two ineligible papers (Ansor, FlashAttention) have weaker alignment with the
+\textsf{hwsw\_x86} anchor, which focuses on hardware co-design rather than ML algorithms.
+
+Critically, while anchor eligibility is recoverable, the corresponding bridge voids are
+not fully visible in pre-2018 corpora: the identified void midpoints do not yet correspond
+to interpretable A/B bridge pairs for these landmark papers. This is consistent with
+Finding~2---the underlying bridge concepts (LLM serving, tensor compilation, graph-based
+vulnerability detection) are insufficiently represented in the pre-2018 corpus to form
+detectable void pairs. The landmark analysis thus confirms two aspects of the TVV
+framework simultaneously: (i)~landmark bridge papers are often anchor-eligible, and
+(ii)~pre-publication voids may be observability-limited before the bridge communities
+accumulate sufficient corpus coverage.
+
 \subsection{Case Studies}
 
 The following three cases are selected from the t4/t5 role audit to illustrate

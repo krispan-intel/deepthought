@@ -1,0 +1,472 @@
+[
+  {
+    "landmark": {
+      "arxiv_id": "2006.06762",
+      "title": "Ansor: Generating High-Performance Tensor Programs for Deep Learning",
+      "year": 2020,
+      "split": "t5",
+      "anchor": "hwsw_x86",
+      "a_side": "ML framework / tensor computation",
+      "b_side": "compiler optimization / loop tiling / code generation",
+      "bridge_rationale": "Re-defines tensor program generation as ML-guided compiler search space exploration"
+    },
+    "sim_to_anchor": 0.5985,
+    "sim_to_train_background": {
+      "p90": 0.5996,
+      "p95": 0.615,
+      "p99": 0.6434
+    },
+    "n_voids_checked": 30,
+    "top5_voids": [
+      {
+        "void_id": "1107.5847::1105.1973",
+        "sim_landmark_to_midpoint": 0.6883,
+        "sim_landmark_to_anchor": 0.5985,
+        "paper_a": {
+          "id": "1107.5847",
+          "title": "Proceedings 10th International Workshop on the Foundations of   Coordination Languages and Software Architectures"
+        },
+        "paper_b": {
+          "id": "1105.1973",
+          "title": "Brain-like infrastructure for embedded SoC diagnosis"
+        },
+        "mmr_score": 0.8460060932712805
+      },
+      {
+        "void_id": "1001.3734::0909.2145",
+        "sim_landmark_to_midpoint": 0.68,
+        "sim_landmark_to_anchor": 0.5985,
+        "paper_a": {
+          "id": "1001.3734",
+          "title": "Software Components for Web Services"
+        },
+        "paper_b": {
+          "id": "0909.2145",
+          "title": "A general XML-based distributed software architecture for accessing and   sharing ressources"
+        },
+        "mmr_score": 0.840638956083866
+      },
+      {
+        "void_id": "1409.2620::0710.4809",
+        "sim_landmark_to_midpoint": 0.6788,
+        "sim_landmark_to_anchor": 0.5985,
+        "paper_a": {
+          "id": "1409.2620",
+          "title": "Learning Machines Implemented on Non-Deterministic Hardware"
+        },
+        "paper_b": {
+          "id": "0710.4809",
+          "title": "C Based Hardware Design for Wireless Applications"
+        },
+        "mmr_score": 0.8480615163348687
+      },
+      {
+        "void_id": "0710.4850::1603.03022",
+        "sim_landmark_to_midpoint": 0.6751,
+        "sim_landmark_to_anchor": 0.5985,
+        "paper_a": {
+          "id": "0710.4850",
+          "title": "Hardware Support for QoS-based Function Allocation in Reconfigurable   Systems"
+        },
+        "paper_b": {
+          "id": "1603.03022",
+          "title": "Towards Automatic Learning of Heuristics for Mechanical Transformations   of Procedural Code"
+        },
+        "mmr_score": 0.8399098862291633
+      },
+      {
+        "void_id": "1204.1232::1503.03584",
+        "sim_landmark_to_midpoint": 0.6685,
+        "sim_landmark_to_anchor": 0.5985,
+        "paper_a": {
+          "id": "1204.1232",
+          "title": "Experimenting with Component-Based Middleware for Adaptive Fault   Tolerant Computing"
+        },
+        "paper_b": {
+          "id": "1503.03584",
+          "title": "Human Factors in Software Reliability Engineering"
+        },
+        "mmr_score": 0.8448332849688812
+      }
+    ],
+    "best_void_sim": 0.6883,
+    "best_void_rank_in_corpus": null,
+    "best_void_percentile_vs_train": 0.9997
+  },
+  {
+    "landmark": {
+      "arxiv_id": "2205.14135",
+      "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",
+      "year": 2022,
+      "split": "t5",
+      "anchor": "hwsw_x86",
+      "a_side": "ML algorithm design / Transformer attention",
+      "b_side": "hardware memory hierarchy / IO complexity (HBM vs SRAM)",
+      "bridge_rationale": "Re-interprets attention as IO-complexity problem, bridging GPU memory analysis to ML algorithm design"
+    },
+    "sim_to_anchor": 0.5723,
+    "sim_to_train_background": {
+      "p90": 0.5787,
+      "p95": 0.5918,
+      "p99": 0.6163
+    },
+    "n_voids_checked": 30,
+    "top5_voids": [
+      {
+        "void_id": "1107.5847::1105.1973",
+        "sim_landmark_to_midpoint": 0.6525,
+        "sim_landmark_to_anchor": 0.5723,
+        "paper_a": {
+          "id": "1107.5847",
+          "title": "Proceedings 10th International Workshop on the Foundations of   Coordination Languages and Software Architectures"
+        },
+        "paper_b": {
+          "id": "1105.1973",
+          "title": "Brain-like infrastructure for embedded SoC diagnosis"
+        },
+        "mmr_score": 0.8460060932712805
+      },
+      {
+        "void_id": "1309.7321::1001.3781",
+        "sim_landmark_to_midpoint": 0.648,
+        "sim_landmark_to_anchor": 0.5723,
+        "paper_a": {
+          "id": "1309.7321",
+          "title": "Recycled Error Bits: Energy-Efficient Architectural Support for Higher   Precision Floating Point"
+        },
+        "paper_b": {
+          "id": "1001.3781",
+          "title": "An Architectural Approach for Decoding and Distributing Functions in   FPUs in a Functional Processor System"
+        },
+        "mmr_score": 0.8381513241403755
+      },
+      {
+        "void_id": "0710.4850::1603.03022",
+        "sim_landmark_to_midpoint": 0.6477,
+        "sim_landmark_to_anchor": 0.5723,
+        "paper_a": {
+          "id": "0710.4850",
+          "title": "Hardware Support for QoS-based Function Allocation in Reconfigurable   Systems"
+        },
+        "paper_b": {
+          "id": "1603.03022",
+          "title": "Towards Automatic Learning of Heuristics for Mechanical Transformations   of Procedural Code"
+        },
+        "mmr_score": 0.8399098862291633
+      },
+      {
+        "void_id": "1103.2635::1405.2913",
+        "sim_landmark_to_midpoint": 0.6446,
+        "sim_landmark_to_anchor": 0.5723,
+        "paper_a": {
+          "id": "1103.2635",
+          "title": "Accelerating Nearest Neighbor Search on Manycore Systems"
+        },
+        "paper_b": {
+          "id": "1405.2913",
+          "title": "Resource-Aware Replication on Heterogeneous Multicores: Challenges and   Opportunities"
+        },
+        "mmr_score": 0.8338343908048411
+      },
+      {
+        "void_id": "1307.1955::1606.04427",
+        "sim_landmark_to_midpoint": 0.6252,
+        "sim_landmark_to_anchor": 0.5723,
+        "paper_a": {
+          "id": "1307.1955",
+          "title": "Revisiting Co-Processing for Hash Joins on the Coupled CPU-GPU   Architecture"
+        },
+        "paper_b": {
+          "id": "1606.04427",
+          "title": "Splotch: porting and optimizing for the Xeon Phi"
+        },
+        "mmr_score": 0.8497288123078487
+      }
+    ],
+    "best_void_sim": 0.6525,
+    "best_void_rank_in_corpus": null,
+    "best_void_percentile_vs_train": 0.9997
+  },
+  {
+    "landmark": {
+      "arxiv_id": "2309.06180",
+      "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention",
+      "year": 2023,
+      "split": "t5",
+      "anchor": "mm_vm",
+      "a_side": "LLM inference / ML serving",
+      "b_side": "OS virtual memory management / paging",
+      "bridge_rationale": "Ports OS paging concept to KV cache management, bridging OS and LLM serving communities"
+    },
+    "sim_to_anchor": 0.7179,
+    "sim_to_train_background": {
+      "p90": 0.6036,
+      "p95": 0.6185,
+      "p99": 0.6461
+    },
+    "n_voids_checked": 30,
+    "top5_voids": [
+      {
+        "void_id": "1404.4629::1506.02558",
+        "sim_landmark_to_midpoint": 0.7254,
+        "sim_landmark_to_anchor": 0.7179,
+        "paper_a": {
+          "id": "1404.4629",
+          "title": "A Survey of Methods For Analyzing and Improving GPU Energy Efficiency"
+        },
+        "paper_b": {
+          "id": "1506.02558",
+          "title": "Towards a Grid-based approach to Traffic Routing in VANET"
+        },
+        "mmr_score": 0.8341564613794868
+      },
+      {
+        "void_id": "1606.06726::0909.1763",
+        "sim_landmark_to_midpoint": 0.7239,
+        "sim_landmark_to_anchor": 0.7179,
+        "paper_a": {
+          "id": "1606.06726",
+          "title": "Adaptive Just-in-time Value Class Optimization for Lowering Memory   Consumption and Improving Execution Time Performance"
+        },
+        "paper_b": {
+          "id": "0909.1763",
+          "title": "Remembrance: The Unbearable Sentience of Being Digital"
+        },
+        "mmr_score": 0.8355125229535045
+      },
+      {
+        "void_id": "0810.2021::1501.01252",
+        "sim_landmark_to_midpoint": 0.7121,
+        "sim_landmark_to_anchor": 0.7179,
+        "paper_a": {
+          "id": "0810.2021",
+          "title": "Visualization Optimization : Application to the RoboCup Rescue Domain"
+        },
+        "paper_b": {
+          "id": "1501.01252",
+          "title": "Optimisation using Natural Language Processing: Personalized Tour   Recommendation for Museums"
+        },
+        "mmr_score": 0.8482637558836248
+      },
+      {
+        "void_id": "1310.2954::1109.2297",
+        "sim_landmark_to_midpoint": 0.7042,
+        "sim_landmark_to_anchor": 0.7179,
+        "paper_a": {
+          "id": "1310.2954",
+          "title": "Improved Spectrum Mobility using Virtual Reservation in Collaborative   Cognitive Radio Networks"
+        },
+        "paper_b": {
+          "id": "1109.2297",
+          "title": "An Efficient Paging Algorithm for Multi-Carrier CDMA System"
+        },
+        "mmr_score": 0.8302140294755894
+      },
+      {
+        "void_id": "1205.6423::1709.03413",
+        "sim_landmark_to_midpoint": 0.6975,
+        "sim_landmark_to_anchor": 0.7179,
+        "paper_a": {
+          "id": "1205.6423",
+          "title": "Proposed Challenges And Areas of Concern in Operating System Research   and Development"
+        },
+        "paper_b": {
+          "id": "1709.03413",
+          "title": "Gigamachine: incremental machine learning on desktop computers"
+        },
+        "mmr_score": 0.828949967154711
+      }
+    ],
+    "best_void_sim": 0.7254,
+    "best_void_rank_in_corpus": null,
+    "best_void_percentile_vs_train": 1.0
+  },
+  {
+    "landmark": {
+      "arxiv_id": "2002.11054",
+      "title": "MLIR: Scaling Compiler Infrastructure for Domain Specific Computation",
+      "year": 2020,
+      "split": "t5",
+      "anchor": "hwsw_x86",
+      "a_side": "traditional compiler infrastructure (LLVM ecosystem)",
+      "b_side": "ML hardware accelerators / domain-specific languages (XLA, TPU)",
+      "bridge_rationale": "Unified IR hierarchy allowing compiler and ML hardware designers to share infrastructure"
+    },
+    "sim_to_anchor": 0.6319,
+    "sim_to_train_background": {
+      "p90": 0.5768,
+      "p95": 0.5908,
+      "p99": 0.6171
+    },
+    "n_voids_checked": 30,
+    "top5_voids": [
+      {
+        "void_id": "cs/0501002::0911.5438",
+        "sim_landmark_to_midpoint": 0.6895,
+        "sim_landmark_to_anchor": 0.6319,
+        "paper_a": {
+          "id": "cs/0501002",
+          "title": "A Survey of Fault-Tolerance and Fault-Recovery Techniques in Parallel   Systems"
+        },
+        "paper_b": {
+          "id": "0911.5438",
+          "title": "Building and Installing a Hadoop/MapReduce Cluster from Commodity   Components"
+        },
+        "mmr_score": 0.831090065820116
+      },
+      {
+        "void_id": "1207.3872::0710.4700",
+        "sim_landmark_to_midpoint": 0.6888,
+        "sim_landmark_to_anchor": 0.6319,
+        "paper_a": {
+          "id": "1207.3872",
+          "title": "Top Down Approach: SIMULINK Mixed Hardware / Software Design"
+        },
+        "paper_b": {
+          "id": "0710.4700",
+          "title": "A Decompilation Approach to Partitioning Software for   Microprocessor/FPGA Platforms"
+        },
+        "mmr_score": 0.8494601555560374
+      },
+      {
+        "void_id": "1107.5847::1105.1973",
+        "sim_landmark_to_midpoint": 0.6886,
+        "sim_landmark_to_anchor": 0.6319,
+        "paper_a": {
+          "id": "1107.5847",
+          "title": "Proceedings 10th International Workshop on the Foundations of   Coordination Languages and Software Architectures"
+        },
+        "paper_b": {
+          "id": "1105.1973",
+          "title": "Brain-like infrastructure for embedded SoC diagnosis"
+        },
+        "mmr_score": 0.8460060932712805
+      },
+      {
+        "void_id": "1001.3734::0909.2145",
+        "sim_landmark_to_midpoint": 0.677,
+        "sim_landmark_to_anchor": 0.6319,
+        "paper_a": {
+          "id": "1001.3734",
+          "title": "Software Components for Web Services"
+        },
+        "paper_b": {
+          "id": "0909.2145",
+          "title": "A general XML-based distributed software architecture for accessing and   sharing ressources"
+        },
+        "mmr_score": 0.840638956083866
+      },
+      {
+        "void_id": "1301.1629::1109.0456",
+        "sim_landmark_to_midpoint": 0.6713,
+        "sim_landmark_to_anchor": 0.6319,
+        "paper_a": {
+          "id": "1301.1629",
+          "title": "Partial Orders for Efficient BMC of Concurrent Software"
+        },
+        "paper_b": {
+          "id": "1109.0456",
+          "title": "Aligning component upgrades"
+        },
+        "mmr_score": 0.8324520407868693
+      }
+    ],
+    "best_void_sim": 0.6895,
+    "best_void_rank_in_corpus": null,
+    "best_void_percentile_vs_train": 0.9999
+  },
+  {
+    "landmark": {
+      "arxiv_id": "1909.03496",
+      "title": "Devign: Effective Vulnerability Identification by Learning Comprehensive Program Semantics via Graph Neural Networks",
+      "year": 2019,
+      "split": "t3",
+      "anchor": "ebpf_obs",
+      "a_side": "software vulnerability detection / static analysis",
+      "b_side": "graph neural networks / program representation learning",
+      "bridge_rationale": "First large-scale benchmark combining CFG+DFG+AST graph representation with GNN for vulnerability detection"
+    },
+    "sim_to_anchor": 0.6433,
+    "sim_to_train_background": {
+      "p90": 0.5904,
+      "p95": 0.6041,
+      "p99": 0.6308
+    },
+    "n_voids_checked": 30,
+    "top5_voids": [
+      {
+        "void_id": "1010.2511::1210.5443",
+        "sim_landmark_to_midpoint": 0.7007,
+        "sim_landmark_to_anchor": 0.6433,
+        "paper_a": {
+          "id": "1010.2511",
+          "title": "The use of machine learning with signal- and NLP processing of source   code to fingerprint, detect, and classify vulnerabilities and weaknesses with   MARFCAT"
+        },
+        "paper_b": {
+          "id": "1210.5443",
+          "title": "Secure Abstraction with Code Capabilities"
+        },
+        "mmr_score": 0.7943945749344602
+      },
+      {
+        "void_id": "cs/0607088::cs/9809100",
+        "sim_landmark_to_midpoint": 0.6944,
+        "sim_landmark_to_anchor": 0.6433,
+        "paper_a": {
+          "id": "cs/0607088",
+          "title": "Using Answer Set Programming in an Inference-Based approach to Natural   Language Semantics"
+        },
+        "paper_b": {
+          "id": "cs/9809100",
+          "title": "Data Flies Standby with ABR Service"
+        },
+        "mmr_score": 0.7322087341152489
+      },
+      {
+        "void_id": "1208.3773::1111.4752",
+        "sim_landmark_to_midpoint": 0.6864,
+        "sim_landmark_to_anchor": 0.6433,
+        "paper_a": {
+          "id": "1208.3773",
+          "title": "Haskell_#: Coordinating Functional Processes"
+        },
+        "paper_b": {
+          "id": "1111.4752",
+          "title": "Solving the TTC 2011 Reengineering Case with Henshin"
+        },
+        "mmr_score": 0.8162236473559653
+      },
+      {
+        "void_id": "1008.2186::1302.6214",
+        "sim_landmark_to_midpoint": 0.6694,
+        "sim_landmark_to_anchor": 0.6433,
+        "paper_a": {
+          "id": "1008.2186",
+          "title": "RDFViewS: A Storage Tuning Wizard for RDF Applications"
+        },
+        "paper_b": {
+          "id": "1302.6214",
+          "title": "Modification of conceptual clustering algorithm Cobweb for numerical   data using fuzzy membership function"
+        },
+        "mmr_score": 0.8091249809740644
+      },
+      {
+        "void_id": "0807.2383::1304.2723",
+        "sim_landmark_to_midpoint": 0.6689,
+        "sim_landmark_to_anchor": 0.6433,
+        "paper_a": {
+          "id": "0807.2383",
+          "title": "CPBVP: A Constraint-Programming Framework for Bounded Program   Verification"
+        },
+        "paper_b": {
+          "id": "1304.2723",
+          "title": "Temporal Reasoning About Uncertain Worlds"
+        },
+        "mmr_score": 0.8244639101345664
+      }
+    ],
+    "best_void_sim": 0.7007,
+    "best_void_rank_in_corpus": null,
+    "best_void_percentile_vs_train": 1.0
+  }
+]
