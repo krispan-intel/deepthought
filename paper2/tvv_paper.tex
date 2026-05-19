@@ -303,7 +303,61 @@ Rates are consistently low (5--8\%), confirming corpus observability as a struct
 limit on temporal validation.}
 \end{figure}
 
+\subsection{Role Classification Pipeline and Reliability}
+\label{sec:role-pipeline}
+
+The LLM role classifier is the primary annotator; human review is an external
+plausibility check, not a gold standard (epistemic role is inherently interpretive).
+
+\paragraph{Model and prompt.}
+We use \texttt{claude-sonnet-4-5} (temperature 0.1) with a fixed nine-label rubric
+and structured JSON output. The system prompt instructs the model to judge the
+candidate paper solely relative to the anchor and source papers, ignoring general
+merit. Source group labels (\textsf{TVA}/\textsf{B1}/\textsf{B2}/near-miss) are
+\emph{not shown} to the classifier (blind protocol).
+
+\paragraph{Reliability checks.}
+(i)~\emph{Self-consistency}: we re-run classification on a 100-case stratified subset
+three times; binary FP/non-FP agreement across runs exceeds 90\%.
+(ii)~\emph{Human audit}: 60 cases stratified by source group and LLM label are
+reviewed by a blinded human auditor using the collapsed three-class rubric
+(void-resolution / boundary / FP). The auditor saw only anchor text, A/B titles
+and abstracts, and candidate filler title and abstract.
+Binary FP/non-FP agreement between LLM and human auditor: $>80\%$.
+Three-way collapsed label agreement: $\sim65\%$, consistent with label boundary
+ambiguity in the PARTIAL-FILL / BOUNDARY-EXPANSION region.
+
+\paragraph{Quantitative scope.}
+All quantitative claims use collapsed three-way labels. Fine-grained nine-class labels
+are used only for qualitative case-study interpretation.
+
 \subsection{Finding 3: Geometric Fill Rarely Equals Epistemic Fill}
+
+Role labels are collapsed into three mutually exclusive classes for quantitative
+reporting. Table~\ref{tab:rubric} defines each class operationally.
+
+\begin{table}[h!]
+\centering\small
+\caption{Collapsed three-class role taxonomy. Fine-grained 9-class labels
+(TRUE-FILL, PARTIAL-FILL, IE, SE, BM, SN, RC, FP, UNCLEAR) are used for
+qualitative analysis only; all quantitative claims use the 3-class collapse.}
+\label{tab:rubric}
+\begin{tabular}{p{1.8cm}p{4.5cm}}
+\toprule
+Class & Operational criterion \\
+\midrule
+\textbf{Void-resolution} & Paper explicitly bridges A and B under anchor $q$:
+proposes new method, mechanism, or synthesis connecting both source directions.
+Fine-grained: TRUE-FILL or PARTIAL-FILL. \\
+\textbf{Boundary activity} & Paper extends one source direction or provides support,
+measurement, or naming relevant to the gap without bridging both sides.
+Fine-grained: IE, SE, BM, or SN. \\
+\textbf{False positive} & Paper is geometrically close but does not address the
+anchor-conditioned void; topic, references, and framing are off-target.
+Fine-grained: FP. \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{table}[h!]
 \centering\small
@@ -598,5 +652,102 @@ state.
 
 \bibliographystyle{plain}
 \bibliography{paper2}
+
+\newpage
+\appendix
+
+\section{Reproducibility Protocol}
+\label{app:protocol}
+
+\paragraph{Corpus.}
+arXiv metadata (title, abstract, categories, update\_date) for categories
+cs.OS, cs.AR, cs.PL, cs.SE, cs.DC, cs.NI, cs.CR, cs.AI, cs.LG.
+Filtered by category; year assigned from update\_date.
+
+\paragraph{Temporal splits.}
+Three non-overlapping splits. For split $s$ with cutoff $T_s$:
+train = papers with year $< T_s$; val = papers with year $\in [T_s, T_s+5)$.
+
+\paragraph{Embedding.}
+BGE-M3 (BAAI/bge-m3, 1024-dimensional, cosine similarity, offline/local mode).
+Papers embedded as ``\textit{title} \textit{abstract}'' concatenation.
+
+\paragraph{TVA void generation.}
+For each anchor $q$ in Table~\ref{tab:anchors} and each split:
+(1)~embed anchor text with BGE-M3;
+(2)~retrieve top-300 cosine-nearest train papers (C1 pool);
+(3)~enumerate all pairs and apply C1--C4 conditions;
+(4)~rank by MMR score and output top-30 voids.
+No anchor added or removed after validation runs began.
+
+\begin{table}[h]
+\centering\small
+\caption{TVA anchor list (pre-specified, fixed across all splits).}
+\label{tab:anchors}
+\begin{tabular}{ll}
+\toprule
+Key & Anchor phrase \\
+\midrule
+sched\_opt & kernel scheduler optimization and CPU affinity for multicore systems \\
+mm\_vm & virtual memory management and page reclamation in operating systems \\
+ebpf\_obs & eBPF programs for kernel tracing and system call observability \\
+hwsw\_x86 & hardware-software co-design for x86 processor microarchitecture \\
+net\_io & high-performance network I/O and packet processing in the kernel \\
+sync\_lock & synchronization primitives and lock-free data structures \\
+mem\_alloc & memory allocator design and heap fragmentation in systems software \\
+virt\_hyp & virtualization and hypervisor design for cloud workloads \\
+power\_mgmt & dynamic power management and CPU frequency scaling \\
+storage\_io & storage I/O path optimization and NVMe device drivers \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{B1 baseline.}
+For each anchor, sample 20 random pairs without replacement from the C1 pool
+(seed 42). No void conditions applied.
+
+\paragraph{B2 density-matched baseline.}
+For each TVA void $V$, compute midpoint density $\rho(m_V)$ (mean cosine
+similarity to $k{=}20$ nearest train neighbors). Sample 300 B1-style pairs
+from the same anchor's C1 pool (seed 99). Select the pair whose midpoint
+density is closest to $\rho(m_V)$ as the B2 counterpart.
+
+\paragraph{Local density.}
+$\rho(m) = \frac{1}{k}\sum_{i=1}^{k}\mathrm{sim}(m, \mathrm{kNN}_i(m, \mathrm{train}))$,
+$k{=}20$, kNN over the train embedding matrix.
+
+\paragraph{Anchor-eligibility threshold.}
+$\tauanchor = \max(Q_{80}(\mathrm{val\text{-}anchor\text{-}sims}),\,
+Q_{90}(\mathrm{train\text{-}anchor\text{-}sims}))$,
+computed per anchor and split.
+
+\paragraph{Null-calibrated threshold.}
+For each cell (anchor $q$, density bucket $b \in \{$low, mid, high$\}$, split $t$):
+(1)~generate $n{=}1000$ null midpoints from C1 pool;
+(2)~split 50/50 calibration/held-out;
+(3)~compute $Z(m_0) = \max_{P \in \mathrm{Val}_q}\mathrm{sim}(P,m_0)$ for each null;
+(4)~$\taufill = s_{(k)}$ where $k = \lceil(n_\mathrm{cal}+1)(1-\alpha)\rceil$
+(finite-sample conformal quantile), $\alpha{=}0.05$.
+
+\paragraph{Statistical tests.}
+Primary inference uses \emph{hierarchical cluster bootstrap} (outer: resample anchors
+with replacement; inner: resample voids within each anchor) for TVA--B2 difference in
+percentage points. Secondary check: \emph{anchor-level sign-flip permutation test}
+(randomly flip sign of per-anchor mean TVA--B2 difference; $n_\mathrm{perm}{=}10000$).
+Both report two-sided $p$-values.
+
+\paragraph{Role annotation.}
+Model: \texttt{claude-sonnet-4-5}, temperature 0.1.
+Input: anchor text, source A title+abstract (truncated), source B title+abstract,
+candidate filler title+abstract.
+Output: JSON with role label, confidence, and six ordinal scores.
+Source group labels are not shown (blind classification).
+Final labels use the collapsed three-class taxonomy (Table~\ref{tab:rubric}).
+Prompt and full rubric text available at: \url{https://github.com/krispan-intel/deepthought}.
+
+\paragraph{Code and data availability.}
+Experiment scripts, prompts, and configuration files are available at
+\url{https://github.com/krispan-intel/deepthought} (branch: \texttt{dynamic\_tva}).
+Derived labels for the role-classified 1076 cases will be released upon acceptance.
 
 \end{document}
