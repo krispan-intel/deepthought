@@ -135,8 +135,8 @@ def check2_toy_graph():
     a_vecs /= np.linalg.norm(a_vecs, axis=1, keepdims=True)
     b_vecs /= np.linalg.norm(b_vecs, axis=1, keepdims=True)
 
-    # Bridge node: halfway between A and B
-    p_vec = (a_center + b_center); p_vec /= np.linalg.norm(p_vec)
+    # Bridge node: perpendicular to the A-B axis (connects both sides)
+    p_vec = np.zeros(d); p_vec[1] = 1.0  # orthogonal direction, close to both
 
     # R_eff before
     all_vecs = np.vstack([a_vecs, b_vecs])
@@ -257,7 +257,7 @@ def check4_dimensionality_collapse():
         b_vecs = b_center + 0.3*np.random.randn(50, d)
         a_vecs /= np.linalg.norm(a_vecs, axis=1, keepdims=True)
         b_vecs /= np.linalg.norm(b_vecs, axis=1, keepdims=True)
-        p_vec = (a_center + b_center); p_vec /= np.linalg.norm(p_vec)
+        p_vec = np.zeros(d); p_vec[1] = 1.0  # bridge node orthogonal to A-B axis
 
         all_before = np.vstack([a_vecs, b_vecs])
         sims = all_before @ all_before.T; np.fill_diagonal(sims, 0)
