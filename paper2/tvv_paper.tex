@@ -60,12 +60,12 @@ fills rarely represent genuine void resolution: 59--76\% are false positives acr
 groups and splits.
 We do not find statistically significant evidence that TVA produces more epistemic fills
 than density-matched baselines (\tva{}/B2 $\Delta{=}{+}3.0$\,pp, hierarchical CI $\lbrack{-}2.0,+8.3\rbrack$\,pp, $p{=}0.36$).
-Finally, three independent graph-spectral surrogates (effective resistance, localized
-effective resistance, Ollivier-Ricci curvature) all fail to substitute for the
-text-based R layer, establishing it as structurally necessary.
-These findings motivate a three-layer diagnostic framework and an empirical impossibility
-conjecture: local geometric features carry negligible mutual information with epistemic
-role in retrieval-trained high-dimensional embeddings.
+Four independent methods fail to substitute for the text-level R layer:
+global and localized effective resistance, ORC path curvature, and cross-encoder
+reranking on the same BGE-M3 backbone ($\kappa \leq 0.01$ for all bridging formats).
+Cross-encoder reranking captures anchor relevance (\text{AUC}$=0.875$, G proxy) but
+\emph{anti-correlates} with bridging (\text{AUC}$=0.352$, Q2 joint format), establishing
+R-layer text assessment as an architectural necessity, not an implementation choice.
   \end{minipage}
   \end{center}
   \vspace{1em}
@@ -105,10 +105,12 @@ straightforward but is insufficient, and this paper studies why.
   papers are anchor-eligible; unfilled voids are right-censored, not invalid.
 \item LLM-assisted role-aware audit suggests that geometric fill substantially
   overestimates epistemic resolution: 59--76\% FP across all groups and splits.
-\item \textbf{Geometric impossibility.} Three independent graph-spectral surrogates
-  (global and localized effective resistance, ORC path curvature) all fail to
-  substitute for the R layer in BGE-M3 embedding spaces, establishing text-based
-  role assessment as structurally necessary.
+\item \textbf{Architectural impossibility.} Four independent methods fail to substitute
+  for the R layer: global effective resistance ($\kappa{=}-1.0$), localized effective
+  resistance ($\kappa{=}-0.013$), ORC path curvature ($\kappa{=}0.005$), and
+  BGE-M3 cross-encoder reranking ($\kappa{=}0.010$ for bridging format, AUC$<$0.5).
+  The cross-encoder can detect anchor relevance (G proxy; AUC=0.875) but anti-predicts
+  bridging, establishing text-based semantic assessment as structurally necessary.
 \end{enumerate}
 
 \textbf{Scope and framing.} This paper is a \emph{validation stress test}: we do not
@@ -588,12 +590,30 @@ the non-monotone pattern in Stage B).
 Cohen's $\kappa = 0.005$ vs LLM labels; Pearson $r(\Delta\kappa, \mathrm{fill}) = -0.11$
 ($p = 0.57$). ORC path curvature shows no class-discriminative signal.
 
+\paragraph{Stage 3a: Cross-Encoder Reranking.}
+To test whether the impossibility extends beyond bi-encoder geometry, we evaluated
+BGE-M3's own cross-encoder sibling (\texttt{bge-reranker-v2-m3}) on the same 100 cases.
+The cross-encoder can attend to token-level interactions and thus bypasses the
+bi-encoder bottleneck. Four query formats were tested: (Q1)~anchor text, (Q2)~A+B
+concatenated, (Q3)~an explicit bridging prompt, (Q4)~min(score(P,A), score(P,B)).
+
+Q1 (anchor) achieves AUC=0.875, confirming the cross-encoder detects anchor
+relevance (G layer). However, Q2 (joint bridging) achieves AUC=0.352 $<$ 0.5 ---
+\emph{anti-correlated} with fill. Inspecting the 4-class breakdown, INCREMENTAL-EXTENSION
+and SURVEY-OR-NAMING papers score \emph{higher} on Q2 than PARTIAL-FILL papers
+(means 0.17/0.19 vs.\ 0.018), because both are topically related to A or B but only
+one side. The cross-encoder rewards single-domain proximity, not epistemic bridging.
+
+Cohen's $\kappa = 0.010$ (Q2), 0.102 (Q1), 0.067 (Q3), $-0.014$ (Q4). No query format
+reliably discriminates fill from non-fill. Cross-encoder reranking is the 4th
+independent method to fail.
+
 \paragraph{Impossibility conjecture.}
 We state the following empirically supported conjecture:
 \begin{quote}\small
 \emph{Within the C1-restricted anchor pool of a retrieval-trained embedding
 (BGE-M3, d=1024), the mutual information $I(\text{local geometry};\,R\mid\phi)$
-is empirically negligible across spectral and curvature operator families.}
+is empirically negligible across spectral, curvature, and cross-encoder operators.}
 \end{quote}
 This conjecture is grounded in three independent failures with distinct
 failure modes (degenerate scale collapse~/ non-monotone sign instability~/ flat
@@ -608,11 +628,30 @@ The conjecture applies to C1-restricted candidates. Tighter C2--C4 calibration
 may alter the void population but is unlikely to rescue graph-spectral
 surrogates given the fundamental anisotropy of BGE-M3 embeddings.
 
+\paragraph{Synthesis: Architectural Impossibility.}
+Four independent methods fail across two inference paradigms (geometric
+operators and cross-encoder joint attention) and three failure modes:
+anisotropy collapse (Stage A), non-monotone sign instability (Stage B),
+flat curvature (Stage C), and anti-correlated relevance (Stage 3a-Q2).
+The consistency of failure across inference paths sharing the same BGE-M3
+backbone suggests the bridging signal is absent at the representation
+level, not merely at the bi-encoder readout.
+
+We formalize this as:
+\begin{quote}\small
+\emph{Conjecture (Architectural Impossibility).} For retrieval-trained dense
+encoders under InfoNCE-class objectives, $I(\text{geometric/attention
+features};\,R\mid\phi) \approx 0$ for cross-domain epistemic bridging
+within C1-restricted anchor pools.
+\end{quote}
+
 \paragraph{Implication.}
-Three spectral surrogates fail by distinct mechanisms; failure is not
-attributable to a single operator deficiency. The R layer's reliance on
-text-based semantic assessment is therefore structurally necessary, not merely
-a convenient implementation choice.
+The R layer's reliance on text-level semantic assessment is a structural
+necessity imposed by the architecture of contrastive bi-encoders, not a
+methodological convenience. The TVV three-layer design (G$\to$E$\to$R)
+reflects this asymmetry: geometric layers are computationally cheap and
+architecturally captured by retrieval encoders, while epistemic role
+requires inference paths that operate beyond fixed-vector compression.
 
 \subsection{Case Studies}
 

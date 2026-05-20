@@ -59,7 +59,7 @@ ANCHORS = {
 }
 
 
-def load_reranker(model_name="BAAI/bge-reranker-v2-m3"):
+def load_reranker(model_name="data/models/bge-reranker-v2-m3"):
     from sentence_transformers import CrossEncoder
     logger.info(f"Loading cross-encoder: {model_name}")
     model = CrossEncoder(model_name, max_length=512)
@@ -179,24 +179,30 @@ def run_full(model, split_name: str, max_cases: int = 100):
         if not p_text or not a_text:
             continue
 
-        # Query format 1: A+B concat
-        score_ab = rerank_score(model, a_text[:400] + " " + b_text[:400], p_text[:400])
-        # Query format 2: anchor
-        score_q  = rerank_score(model, anchor[:400], p_text[:400])
-        # Asymmetry: |score(P|A) - score(P|B)|
-        score_a  = rerank_score(model, a_text[:400], p_text[:400])
-        score_b  = rerank_score(model, b_text[:400], p_text[:400])
-        asymmetry = abs(score_a - score_b)
+        # Q1: anchor only (G proxy baseline)
+        score_q1 = rerank_score(model, anchor[:400], p_text[:400])
+        # Q2: A+B concat (joint bridging)
+        score_q2 = rerank_score(model, a_text[:300] + " [SEP] " + b_text[:300], p_text[:400])
+        # Q3: prompt-based
+        q3_prompt = f"How does this paper bridge '{a_title[:60]}' and '{b_title[:60]}'?"
+        score_q3 = rerank_score(model, q3_prompt, p_text[:400])
+        # Q4: asymmetry — score each side separately
+        score_a_only = rerank_score(model, a_text[:400], p_text[:400])
+        score_b_only = rerank_score(model, b_text[:400], p_text[:400])
+        asymmetry = abs(score_a_only - score_b_only)
+        score_q4 = min(score_a_only, score_b_only)  # bridging requires BOTH sides
 
         results.append({
             "case_id": case.get("case_id", ""),
             "role_llm": role,
             "is_fill_llm": is_fill,
-            "score_ab": round(score_ab, 4),
-            "score_anchor": round(score_q, 4),
-            "score_a_only": round(score_a, 4),
-            "score_b_only": round(score_b, 4),
-            "asymmetry": round(asymmetry, 4),
+            "score_q1_anchor": round(score_q1, 4),
+            "score_q2_joint":  round(score_q2, 4),
+            "score_q3_prompt": round(score_q3, 4),
+            "score_q4_min":    round(score_q4, 4),
+            "score_a_only":    round(score_a_only, 4),
+            "score_b_only":    round(score_b_only, 4),
+            "asymmetry":       round(asymmetry, 4),
         })
 
         if (idx + 1) % 10 == 0:
@@ -206,8 +212,10 @@ def run_full(model, split_name: str, max_cases: int = 100):
     if not results:
         return
 
-    scores_ab = np.array([r["score_ab"] for r in results])
-    scores_q  = np.array([r["score_anchor"] for r in results])
+    scores_q1 = np.array([r["score_q1_anchor"] for r in results])
+    scores_q2 = np.array([r["score_q2_joint"]  for r in results])
+    scores_q3 = np.array([r["score_q3_prompt"] for r in results])
+    scores_q4 = np.array([r["score_q4_min"]    for r in results])
     llm_fill  = np.array([r["is_fill_llm"] for r in results], dtype=int)
 
     def eval_metric(scores, llm_fill, label):
@@ -254,15 +262,32 @@ def run_full(model, split_name: str, max_cases: int = 100):
         return {"label": label, "kappa": round(best_kappa, 4), "auc": round(auc, 4), "pearson_r": round(r_c, 4)}
 
     print(f"\n{'='*60}")
-    print(f"STAGE 3a: CROSS-ENCODER RERANKING (n={len(results)}, {total_time:.0f}s)")
-    print(f"Query formats: (1) A+B concat  (2) anchor  (3) asymmetry")
-    res1 = eval_metric(scores_ab, llm_fill, "A+B concat")
-    res2 = eval_metric(scores_q,  llm_fill, "anchor query")
+    print(f"STAGE 3a: CROSS-ENCODER RERANKING (n={len(results)}, {total_time:.0f}s, {total_time/len(results):.1f}s/case)")
+    print(f"Query formats: Q1=anchor  Q2=A+B joint  Q3=prompt  Q4=min(A,B)")
+    res1 = eval_metric(scores_q1, llm_fill, "Q1 anchor")
+    res2 = eval_metric(scores_q2, llm_fill, "Q2 A+B joint")
+    res3 = eval_metric(scores_q3, llm_fill, "Q3 prompt")
+    res4 = eval_metric(scores_q4, llm_fill, "Q4 min(A,B)")
+
+    # Asymmetry analysis
+    asym = np.array([r["asymmetry"] for r in results])
+    print(f"\n  [Asymmetry |score(A)-score(B)|]")
+    print(f"  mean={asym.mean():.4f}  p50={np.median(asym):.4f}  p90={np.percentile(asym,90):.4f}")
+
+    # 4-class breakdown for best format
+    best_scores = scores_q2  # typically best candidate
+    roles = [r["role_llm"] for r in results]
+    for cls in ["TRUE_FILL", "PARTIAL_FILL", "INCREMENTAL_EXTENSION", "FALSE_POSITIVE"]:
+        cls_scores = [best_scores[i] for i, r in enumerate(results) if r["role_llm"] == cls]
+        if cls_scores:
+            print(f"  {cls}: n={len(cls_scores)} mean={np.mean(cls_scores):.3f} p50={np.median(cls_scores):.3f}")
 
     out = {
         "split": split_name, "stage": "3a", "n_cases": len(results),
         "total_time_sec": round(total_time, 1),
-        "formats": [res1, res2],
+        "sec_per_case": round(total_time/len(results), 2),
+        "formats": [res1, res2, res3, res4],
+        "asymmetry_mean": round(float(asym.mean()), 4),
         "cases": results,
     }
     out_path = OUTPUT_DIR / split_name / "er_stage3a_crossencoder.json"
