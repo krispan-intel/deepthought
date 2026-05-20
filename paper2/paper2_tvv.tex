@@ -200,7 +200,8 @@ $\tauanchor = \max(Q_{80}^{\mathrm{val}},\, Q_{90}^{\mathrm{train}})$.
 
 \paragraph{Calibrated threshold.} Let $Z(m_0)=\max_{P\in\valq}\mathrm{sim}(P,m_0)$:
 \[
-\taufill = Q_{1-\alpha}\bigl(\{Z(m_0): m_0{\in}\mathrm{Null}(q,\rho,t)\}\bigr),\;\alpha{=}0.05
+\taufill = Q_{1-\alpha}\!\bigl(\{Z(m_0): m_0{\in}\mathrm{Null}(q,\rho,t)\}\bigr),\;
+\alpha{=}0.05
 \]
 using conformal rank $k{=}\lceil(n_\mathrm{cal}{+}1)(1{-}\alpha)\rceil$.
 
@@ -217,7 +218,7 @@ R(V) &:= \mathbf{1}[\mathrm{role}(P_V^*,A,B,q) \in \mathcal{R}_\mathrm{fill}]
          \tag{R}
 \end{align}
 
-\noindent where $\mathcal{R}_\mathrm{fill}{=}\{\mathrm{TRUE\text{-}FILL},\mathrm{PARTIAL\text{-}FILL}\}$;
+\noindent where $\mathcal{R}_\mathrm{fill}{=}\{\mathrm{TRUE\text{-}FILL},\allowbreak\mathrm{PARTIAL\text{-}FILL}\}$;
 E=eligibility, G=geometric closure, R=epistemic role.
 
 \begin{equation}
@@ -898,10 +899,10 @@ valuable scientific activities.
 
 \subsection{Dynamic Extension (Future Work)}
 
-These results suggest a natural extension: instead of asking whether a predicted void
-is eventually filled within a fixed window, one can classify each newly arriving paper
-by its pre-insertion topological impact on the existing knowledge space.
-This dynamic formulation is outside the scope of the present work.
+The static-snapshot design of \tvv{} evaluates fill outcomes at a fixed
+time horizon. A natural extension is to evaluate void evolution
+continuously as new papers arrive. We leave the formalization and
+empirical study of such dynamic protocols to future work.
 
 \subsection{Threats to Validity}
 
