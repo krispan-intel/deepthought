@@ -786,6 +786,35 @@ on fill rate. Its value lies in turning a latent region into a named, inspectabl
 and actionable ex-ante hypothesis $(A,B,q,m)$ before any future paper exists.
 Raw temporal fill rate is not a sensitive metric for that kind of value.
 
+\subsection{Why the R Layer Requires Language Models}
+
+Our empirical impossibility result (Finding~4) has a natural theoretical grounding
+in the form-meaning distinction articulated by \citet{bender2020climbing}:
+\emph{"A system trained only on form has a priori no way to learn meaning."}
+Dense retrieval encoders such as BGE-M3 are trained on form-form alignment: they
+optimize whether two symbol sequences (query and document) co-occur in relevance-annotated
+pairs. This is sufficient for topical similarity (the G layer succeeds on anchor
+relevance, Stage 3a Q1 AUC$=0.875$) but structurally insufficient for adjudicating
+\emph{communicative intent}~--- whether a document's authors synthesize two research
+traditions, rather than merely cite them.
+
+The key distinction is \emph{compositionality} rather than dimensionality.
+Bi-encoders compress each paper into a single fixed-length vector; this compression
+discards compositional structure: the information that P uses B's method to address
+A's problem.
+Cross-encoders add joint attention but still collapse to a scalar readout; the
+bridging signal is lost at that final compression step (Stage 3a Q2 AUC$=0.352$,
+anti-correlated with fill).
+Language models, by contrast, preserve the full token sequence of P and can
+\emph{dynamically recompose} A- and B-side concepts during inference.
+The R layer does not require an LLM because bridging is somehow ``in a higher
+dimension''~--- it requires an LLM because bridging is a relational, compositional
+property that fixed-vector compression discards.
+
+The Q1 vs Q2 AUC gap on the cross-encoder (0.875 $\to$ 0.352) provides direct
+empirical evidence of this gap: the encoder can rank by form-level proximity
+(Q1), but negatively ranks by compositional synthesis (Q2).
+
 \subsection{TVA as a Rapid Triage Instrument}
 
 The absence of a significant TVA--B2 fill-rate advantage should not be interpreted
