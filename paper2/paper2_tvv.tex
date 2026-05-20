@@ -230,7 +230,7 @@ For any void $V$: $\mathrm{Fill}(V) \le \mathrm{Fill}_{\mathrm{raw}}(V)$.
 Equality requires $E{=}G{=}R{=}1$ and $\tau_{\mathrm{raw}} \le \taufill(q,\rho,t)$.
 Each additional layer can only reduce apparent fill; no layer inflates it.
 
-\paragraph{Algorithm 1 — TVV adjudication.}
+\paragraph{Algorithm 1 --- TVV adjudication.}
 \begin{enumerate}[nosep,label=\arabic*:]
 \item Compute $\valq$; if $|\valq| < n_{\min}$: return $(0;\,E{=}0)$.
 \item $P_V^* \leftarrow \arg\max_{P\in\valq}\mathrm{sim}(P,m_V)$.
@@ -244,7 +244,7 @@ Each additional layer can only reduce apparent fill; no layer inflates it.
 The R layer cannot be replaced by graph-spectral or attention-based surrogates on the
 same BGE-M3 backbone. We establish this via four independent experiments (global/local
 effective resistance, ORC curvature, cross-encoder reranking) detailed in
-§\ref{sec:finding4}. Briefly: bi-encoder compression discards compositional structure
+Section~\ref{sec:finding4}. Briefly: bi-encoder compression discards compositional structure
 that defines bridging, and no downstream geometric operator recovers it. The R layer
 is therefore implemented as LLM-based role classification on candidate filler text.
 
@@ -920,14 +920,14 @@ empirical study of such dynamic protocols to future work.
 (Claude Sonnet~4.5) using a fixed rubric. To assess reliability: (i)~blind
 source-label removal (source group not shown to classifier); (ii)~cross-LLM
 re-annotation on 100 stratified t5 cases (Claude~4.5 vs.\ GPT-5.2;
-$\kappa_3{=}0.44$, ``moderate''; see §4.3); (iii)~a blinded human audit on
+$\kappa_3{=}0.44$, ``moderate''; see \S4.3); (iii)~a blinded human audit on
 60 cases ($>$80\% binary FP agreement, $\sim$65\% 3-class). Epistemic role is
 inherently interpretive; neither cross-LLM nor human labels constitute ground truth.
 (5)~\emph{Domain specificity}: CS arXiv categories only.
 (6)~\emph{Encoder generality}: the architectural impossibility result is established
 on BGE-M3 and its cross-encoder sibling. Replication on E5, GTE, or
 instruction-tuned encoders is left to future work.
-(7)~\emph{Calibration and inference assumptions}. The null calibration in §4.1
+(7)~\emph{Calibration and inference assumptions}. The null calibration in \S4.1
 assumes exchangeability of null midpoints within anchor-density cells; we argue
 informally based on the stratified sampling construction, but do not provide a
 formal identification proof. Multiplicity across the four geometric impossibility
