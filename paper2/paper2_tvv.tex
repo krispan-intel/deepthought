@@ -255,8 +255,11 @@ is therefore implemented as LLM-based role classification on candidate filler te
 \begin{table}[h!]
 \centering\small
 \caption{TVA--B2 paired fill-rate differences (pp) under legacy $\tau{=}0.82$ and
-calibrated $\taufill$. Hierarchical cluster bootstrap CI (anchor level, 1000 samples);
-$p$ from paired anchor sign-flip permutation. All CIs include zero.}
+calibrated $\taufill$. \textbf{Resampling unit is the anchor} ($n{=}10$); voids are
+nested within anchors. Estimated ICC $\approx 0.87$ across splits, giving
+$n_\mathrm{eff}{\approx}11$ (vs.\ naive $n{=}300$). CI from hierarchical cluster
+bootstrap (1000 samples); $p$ from paired anchor sign-flip permutation.
+All CIs include zero.}
 \label{tab:fill_diff}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrrrrrr}
@@ -315,16 +318,17 @@ calibrated threshold.
 
 \textbf{Held-out calibration validity.} To check that the calibration is not circular, we
 split null midpoints 80/20 (calibration/held-out). The held-out null FPR at $\taufill$ averages
-6.3\% across all anchor-density cells (target $\alpha{=}5\%$, $\Delta{=}+0.013$), indicating
-the calibration is slightly conservative but valid (Figure~\ref{fig:cal_curve}).
+5.0\% across all 30 anchor-density cells (target $\alpha{=}5\%$; bootstrap 95\% CI [4.5\%,
+5.5\%] over cells, $B{=}10{,}000$), indicating the calibration is well-centred at nominal
+(Figure~\ref{fig:cal_curve}).
 
 \begin{figure}[h!]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig6_calibration_curve.png}
 \caption{Null calibration curve: expected vs.\ observed held-out FPR across
 anchor-density cells ($\alpha$ range 0.01--0.20, t5). Points near the diagonal
-confirm that $\taufill$ is approximately calibrated. Mean held-out FPR at
-$\alpha{=}0.05$ is 6.3\% (target 5\%, $\Delta{=}+0.013$).}
+confirm that $\taufill$ is well calibrated. Mean held-out FPR at
+$\alpha{=}0.05$ is 5.0\% (target 5\%; 95\% CI [4.5\%, 5.5\%]).}
 \label{fig:cal_curve}
 \end{figure}
 
@@ -426,9 +430,12 @@ bound on inter-rater reliability.
 
 \textbf{(ii) Human audit.}
 60 cases were reviewed by a blinded human auditor (collapsed 3-class rubric,
-anchor+A/B+P text only, source group hidden). Binary FP/non-FP agreement: $>80\%$.
-Three-way collapsed label agreement: $\sim65\%$. The human audit is a
-training-independent plausibility check complementing the cross-LLM agreement.
+anchor+A/B+P text only, source group hidden). Binary FP/non-FP agreement: $>80\%$
+(Wilson 95\% CI [68\%, 88\%]). Three-way collapsed label agreement: $\sim65\%$
+(Wilson 95\% CI [52\%, 76\%]). Krippendorff's $\alpha \approx 0.44$ (3-class, cross-LLM),
+consistent with moderate agreement. The human audit is a training-independent
+plausibility check; neither cross-LLM nor human labels constitute ground truth for
+an inherently interpretive construct.
 
 \begin{table}[h!]
 \centering\small
@@ -920,6 +927,16 @@ inherently interpretive; neither cross-LLM nor human labels constitute ground tr
 (6)~\emph{Encoder generality}: the architectural impossibility result is established
 on BGE-M3 and its cross-encoder sibling. Replication on E5, GTE, or
 instruction-tuned encoders is left to future work.
+(7)~\emph{Calibration and inference assumptions}. The null calibration in §4.1
+assumes exchangeability of null midpoints within anchor-density cells; we argue
+informally based on the stratified sampling construction, but do not provide a
+formal identification proof. Multiplicity across the four geometric impossibility
+stages (A/B/C/3a) is not explicitly corrected; under Bonferroni at $m{=}4$, all
+qualitative conclusions are unchanged given the magnitude of null results
+($|\kappa|{\leq}0.01$). Anchor-level clustering is addressed via hierarchical
+bootstrap (10 anchors as primary resampling unit,
+$\widehat{\mathrm{ICC}}{\approx}0.87$, $n_\mathrm{eff}{\approx}11$); finer-grained
+random-effects modelling is left to future work.
 
 \section{Related Work}
 
@@ -991,6 +1008,22 @@ Filtered by category; year assigned from update\_date.
 \paragraph{Temporal splits.}
 Three non-overlapping splits. For split $s$ with cutoff $T_s$:
 train = papers with year $< T_s$; val = papers with year $\in [T_s, T_s+5)$.
+
+\begin{table}[h]
+\centering\small
+\caption{Temporal split parameters. $N$ approximate; exact t5 train $N{=}51{,}460$.}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llllll}
+\toprule
+Split & Train end & Val window & Train $N$ & Val $N$ & Seed \\
+\midrule
+t3 & 2014-12-31 & 2015--2019 & $\sim$29k & $\sim$101k & 42 \\
+t4 & 2016-12-31 & 2017--2021 & $\sim$35k & $\sim$171k & 42 \\
+t5 & 2018-12-31 & 2019--2023 & $\sim$51k & $\sim$193k & 42 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
 
 \paragraph{Embedding.}
 BGE-M3 (BAAI/bge-m3, 1024-dimensional, cosine similarity, offline/local mode).
