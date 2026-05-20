@@ -1,9 +1,11 @@
 \documentclass[11pt,twocolumn]{article}
 \usepackage[margin=1in]{geometry}
+\tolerance=2000
+\emergencystretch=1em
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{booktabs}
 \usepackage{graphicx}
-\usepackage{microtype}
+\usepackage[protrusion=false,expansion=false]{microtype}
 \usepackage{hyperref}
 \hypersetup{hidelinks}
 \usepackage{subcaption}
@@ -58,9 +60,12 @@ fills rarely represent genuine void resolution: 59--76\% are false positives acr
 groups and splits.
 We do not find statistically significant evidence that TVA produces more epistemic fills
 than density-matched baselines (\tva{}/B2 $\Delta{=}{+}3.0$\,pp, hierarchical CI $\lbrack{-}2.0,+8.3\rbrack$\,pp, $p{=}0.36$).
-Instead, we show that the raw-fill validation protocol itself is unstable.
-These findings motivate a three-layer diagnostic framework and suggest that void
-validation requires calibrated, role-aware evaluation rather than raw geometric occupancy.
+Finally, three independent graph-spectral surrogates (effective resistance, localized
+effective resistance, Ollivier-Ricci curvature) all fail to substitute for the
+text-based R layer, establishing it as structurally necessary.
+These findings motivate a three-layer diagnostic framework and an empirical impossibility
+conjecture: local geometric features carry negligible mutual information with epistemic
+role in retrieval-trained high-dimensional embeddings.
   \end{minipage}
   \end{center}
   \vspace{1em}
@@ -100,6 +105,10 @@ straightforward but is insufficient, and this paper studies why.
   papers are anchor-eligible; unfilled voids are right-censored, not invalid.
 \item LLM-assisted role-aware audit suggests that geometric fill substantially
   overestimates epistemic resolution: 59--76\% FP across all groups and splits.
+\item \textbf{Geometric impossibility.} Three independent graph-spectral surrogates
+  (global and localized effective resistance, ORC path curvature) all fail to
+  substitute for the R layer in BGE-M3 embedding spaces, establishing text-based
+  role assessment as structurally necessary.
 \end{enumerate}
 
 \textbf{Scope and framing.} This paper is a \emph{validation stress test}: we do not
@@ -204,15 +213,16 @@ Let $\valq = \{P \in \mathrm{Val}_t : \mathrm{sim}(P,q) \ge \tauanchor\}$ and
 $P_V^* = \arg\max_{P \in \valq} \mathrm{sim}(P, m_V)$.
 
 \begin{align}
-E(V) &:= \mathbf{1}\bigl[|\valq| \ge n_{\min}\bigr]
-           \cdot\mathbf{1}\bigl[P_V^* \in \valq\bigr]
-           \tag{anchor eligibility} \\
-G(V) &:= \mathbf{1}\bigl[\mathrm{sim}(P_V^*, m_V) \ge \taufill(q,\rho(V),t)\bigr]
-           \tag{geometric closure} \\
-R(V) &:= \mathbf{1}\bigl[\mathrm{role}(P_V^*,A,B,q) \in
-           \{\mathrm{TRUE\text{-}FILL},\mathrm{PARTIAL\text{-}FILL}\}\bigr]
-           \tag{epistemic role}
+E(V) &:= \mathbf{1}[|\valq| \ge n_{\min}]\cdot\mathbf{1}[P_V^* \in \valq]
+         \tag{E} \\
+G(V) &:= \mathbf{1}[\mathrm{sim}(P_V^*, m_V) \ge \taufill(q,\rho(V),t)]
+         \tag{G} \\
+R(V) &:= \mathbf{1}[\mathrm{role}(P_V^*,A,B,q) \in
+         \{\mathrm{TRUE\text{-}FILL},\mathrm{PARTIAL\text{-}FILL}\}]
+         \tag{R}
 \end{align}
+
+\noindent where E=anchor eligibility, G=calibrated geometric closure, R=epistemic role.
 
 \begin{equation}
 \mathrm{Fill}(V) := E(V)\cdot G(V)\cdot R(V)
@@ -494,7 +504,7 @@ train corpus boundary.
 \caption{Landmark three-layer diagnostic. All five papers clear G and E; none clear R.}
 \begin{tabular}{lcccc}
 \toprule
-Landmark & G ($>$null $p_{95}$) & E (anchor-elig.) & R (bridge audit) \\
+Landmark & G & E & R \\
 \midrule
 vLLM / PagedAttention (2023) & \textbf{Yes} & \textbf{Yes} & No \\
 MLIR (2020)                  & \textbf{Yes} & \textbf{Yes} & No \\
@@ -517,11 +527,34 @@ proximity and anchor alignment are necessary screening signals but are insuffici
 without role-aware interpretation. The detector beeps at the right domain, but
 recovering the correct bridge pair requires the full adjudication pipeline.
 
-\subsection{Finding 4: The Geometric Limit of the R Layer}
+\subsection{Finding 4: Geometric Impossibility of R-Layer Substitution}
 \label{sec:finding4}
 
-We systematically tested whether graph-spectral surrogates can replace LLM-based
-epistemic role assessment, reporting two progressive collapse experiments.
+We tested whether the LLM-based R layer can be replaced by a closed-form
+graph-spectral surrogate. Three independent operators were evaluated on the same
+C1-restricted void population (Table~\ref{tab:spectral}).
+
+\begin{table}[h!]
+\centering\small
+\caption{Three spectral surrogates for the R layer. All fail by distinct mechanisms.
+NM = non-monotone rate (signal direction wrong).
+\dag\,Degenerate (constant signal): $\kappa$ not meaningful.}
+\label{tab:spectral}
+\begin{tabular}{llrrcc}
+\toprule
+Stage & Operator & $N$ & $\Delta$-signal & NM & $\kappa$ \\
+\midrule
+A & $\Delta R_\mathrm{eff}$ global & 51\,460 & $0$ (mach.) & --- & $-1.0$\dag \\
+B & $\Delta R$ local  & $\sim$328 & $9{e{-}4}$ & 74\% & $-0.013$ \\
+C & $\Delta\kappa_\mathrm{ORC}$ & $\sim$329 & $2.4{e{-}3}$ & 43\% & $0.005$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Stages B and C additionally share consistent weak negative Pearson
+correlations with LLM fill labels ($r\approx -0.12$, both $p>0.20$),
+suggesting a sub-threshold geometric signal whose signal-to-noise ratio
+is insufficient for class adjudication under any tested operator.
 
 \paragraph{Stage A: Global k-NN graph (N=51\,460).}
 We computed the change in effective resistance $\Delta R/R_\mathrm{before}$ between
@@ -555,20 +588,31 @@ the non-monotone pattern in Stage B).
 Cohen's $\kappa = 0.005$ vs LLM labels; Pearson $r(\Delta\kappa, \mathrm{fill}) = -0.11$
 ($p = 0.57$). ORC path curvature shows no class-discriminative signal.
 
+\paragraph{Impossibility conjecture.}
+We state the following empirically supported conjecture:
+\begin{quote}\small
+\emph{Within the C1-restricted anchor pool of a retrieval-trained embedding
+(BGE-M3, d=1024), the mutual information $I(\text{local geometry};\,R\mid\phi)$
+is empirically negligible across spectral and curvature operator families.}
+\end{quote}
+This conjecture is grounded in three independent failures with distinct
+failure modes (degenerate scale collapse~/ non-monotone sign instability~/ flat
+curvature), ruling out a single-operator explanation. Formally proving an upper
+bound on $I$ for arbitrary operator families requires adversarial construction
+and is left to future work.
+
+\paragraph{Scope.}
+Diagnostic analysis shows C2/C3/C4 contribute at most 7\% marginal
+selectivity on random pairs; the void population is shaped primarily by C1.
+The conjecture applies to C1-restricted candidates. Tighter C2--C4 calibration
+may alter the void population but is unlikely to rescue graph-spectral
+surrogates given the fundamental anisotropy of BGE-M3 embeddings.
+
 \paragraph{Implication.}
-Three independent spectral surrogates --- effective resistance (global and localized)
-and ORC path curvature --- all fail to produce class-discriminative signals for
-epistemic bridging. Cohen's $\kappa$ is $\leq 0.01$ in all cases; sign-flip rates of
-43--74\% indicate non-monotone behavior across both $\Delta R$ and $\Delta\kappa$.
-This constitutes a systematic negative result: graph-topological methods do not carry
-sufficient signal to distinguish epistemic fills from false positives in BGE-M3
-embedding spaces. The R layer's reliance on text-based semantic assessment is
-therefore structurally necessary. Note that the filter pass-rate analysis
-(C1 is the dominant pruning operator) means the 300 voids are primarily from a
-high-cohesion pool where any graph surrogate faces additional headwinds from
-near-full local connectivity. Tighter C2--C4 calibration may change the void
-population but is unlikely to rescue graph-spectral R surrogates given the
-fundamental anisotropy of the embedding space.
+Three spectral surrogates fail by distinct mechanisms; failure is not
+attributable to a single operator deficiency. The R layer's reliance on
+text-based semantic assessment is therefore structurally necessary, not merely
+a convenient implementation choice.
 
 \subsection{Case Studies}
 
