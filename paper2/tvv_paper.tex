@@ -504,6 +504,46 @@ proximity and anchor alignment are necessary screening signals but are insuffici
 without role-aware interpretation. The detector beeps at the right domain, but
 recovering the correct bridge pair requires the full adjudication pipeline.
 
+\subsection{Finding 4: The Geometric Limit of the R Layer}
+\label{sec:finding4}
+
+We systematically tested whether graph-spectral surrogates can replace LLM-based
+epistemic role assessment, reporting two progressive collapse experiments.
+
+\paragraph{Stage A: Global k-NN graph (N=51\,460).}
+We computed the change in effective resistance $\Delta R/R_\mathrm{before}$ between
+A- and B-side communities before and after inserting candidate filler $P$ into the
+full BGE-M3 train corpus k-NN graph.
+$\Delta R/R = 0.0000$ at machine precision across all 100 tested cases.
+Cohen's $\kappa = -1.0$ vs LLM labels (degenerate: signal is a constant).
+Root cause: in BGE-M3's anisotropic 1024-dimensional space, the global k-NN graph is
+nearly fully connected, leaving no detectable resistance contrast.
+
+\paragraph{Stage B: Localized subgraph (N$\approx$328).}
+We restricted the graph to the C1 anchor pool plus $k$-NN neighborhoods of A, B,
+and the midpoint (N$\approx$328, well within the regime where von Luxburg's
+commute-time collapse should not apply).
+$\Delta R/R$ showed a non-zero but uninformative distribution
+(mean $= 9 \times 10^{-4}$, p50 $= 6 \times 10^{-4}$, p90 $= 3 \times 10^{-3}$).
+Critically, 74\% of cases showed $\Delta R > 0$ (resistance \emph{increased}
+after P was inserted), indicating non-monotone behavior: new nodes change the
+degree distribution of both endpoints, and $\Delta R$ can be negative for true
+bridges and positive for false positives (a network-level Braess-paradox effect).
+Cohen's $\kappa = -0.013$ vs LLM labels, and Pearson $r(\Delta R, \mathrm{fill}) = -0.13$
+($p = 0.21$). The signal is structurally noise.
+
+\paragraph{ORC/ERC Stage C.} [TODO: add after Stage 2 runs]
+
+\paragraph{Implication.}
+Both global and localized effective resistance fail as R-layer surrogates.
+The localized experiment rules out scale as the primary cause: even N$\approx$328
+cannot produce class-discriminative $\Delta R$. This establishes a preliminary
+negative result: graph-topological proximity does not carry sufficient signal for
+epistemic bridging detection in BGE-M3 embedding spaces.
+We conclude that the R layer's reliance on text-based semantic assessment is
+structurally necessary, not merely convenient. Completing the impossibility survey
+by testing ORC/ERC is ongoing (Stage C).
+
 \subsection{Case Studies}
 
 The following three cases are selected from the t4/t5 role audit to illustrate
