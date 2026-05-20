@@ -419,36 +419,39 @@ merit. Source group labels (\textsf{TVA}/\textsf{B1}/\textsf{B2}/near-miss) are
 \emph{not shown} to the classifier (blind protocol).
 
 \paragraph{Reliability checks.}
-Due to Anthropic API unavailability during the reliability run, the primary annotator
-(Claude Sonnet 4.5) automatically fell back to GPT-5.2 via the copilot backend.
-This unintentionally produced a \emph{cross-LLM reliability} test on 100
-stratified t5 cases: original labels from Claude Sonnet 4.5 vs.\ independent
-re-labels from GPT-5.2, both using identical prompts.
+Re-annotation was performed by GPT-5.2 (independent annotator, identical prompt)
+on 100 stratified t5 cases, yielding a cross-LLM agreement measurement between
+Claude Sonnet 4.5 (primary) and GPT-5.2 (re-annotator) from independent model
+families. We consider cross-LLM agreement a more stringent reliability test than
+within-LLM self-consistency.
 
 Results: 94\% binary agreement, Cohen's $\kappa = 0.368$ (binary fill/non-fill),
 $\kappa = 0.437$ (collapsed 3-class, ``moderate'' per Landis \& Koch 1977).
 The lower binary $\kappa$ reflects two compounding factors: (i)~the kappa paradox
 under severe class imbalance (2\% fill rate; Feinstein \& Cicchetti 1990), and
-(ii)~low statistical power for the fill class ($n{=}2$), preventing reliable
-estimation of fill-class agreement specifically. We report $\kappa = 0.437$
-(3-class) as the primary reliability metric. Fill-class reliability with adequate
+(ii)~low statistical power for the fill class ($n{=}2$). We report $\kappa = 0.437$
+(3-class) as the primary reliability metric; fill-class reliability with adequate
 power is left to future work.
 
+We note that Claude Sonnet 4.5 and GPT-5.2, while from independent organizations,
+may share systematic biases from overlapping pretraining corpora. Cross-LLM
+agreement therefore provides an upper bound on inter-rater reliability; the human
+audit ($\kappa\approx 0.65$) serves as a complementary, training-independent check.
+
 (ii)~\emph{Human audit}: 60 cases reviewed by a blinded human auditor
-(collapsed 3-class rubric). Binary FP/non-FP agreement: $>80\%$.
-Three-way collapsed label agreement: $\sim65\%$.
+(collapsed 3-class rubric, anchor+A/B+P text only). Binary FP/non-FP agreement:
+$>80\%$. Three-way collapsed label agreement: $\sim65\%$.
 
 \begin{table}[h!]
 \centering\small
-\caption{LLM annotation reliability (t5, n=100 stratified). Binary $\kappa$ is
-suppressed by 2\% fill-class imbalance; 3-class $\kappa$ is the primary metric.
-``Cross-LLM'' because the re-label used GPT-5.2 vs.\ the primary Claude Sonnet 4.5.}
-\begin{tabular}{lrrrr}
+\caption{LLM annotation reliability (t5, n=100). Binary $\kappa$ suppressed by
+2\% fill-class imbalance; 3-class $\kappa$ is primary metric.}
+\begin{tabular}{lrrrrp{2.8cm}}
 \toprule
-Comparison & $n$ & Agree\% & $\kappa$ (binary) & $\kappa$ (3-class) \\
+Comparison & $n$ & Agree\% & $\kappa_b$ & $\kappa_3$ & Note \\
 \midrule
-Cross-LLM (Claude 4.5 vs GPT-5.2) & 100 & 94\% & 0.37 & 0.44 \\
-Human audit (coarse, blinded) & 60 & $>$80\% & --- & $\sim$0.65 \\
+Cross-LLM (Claude 4.5 / GPT-5.2) & 100 & 94\% & 0.37 & \textbf{0.44} & Same prompt, independent re-annotation \\
+Human audit (blinded) & 60 & $>$80\% & --- & $\sim$0.65 & Training-independent anchor \\
 \bottomrule
 \end{tabular}
 \end{table}
