@@ -208,3 +208,48 @@ Return after TVV (Paper 2) is done.
 - Paper 3 (D-TVA): Voids move, collapse, form in Anchor-drift
 
 Open issues: #1 (norm), #2 (reflexivity jump), #3 (Linux experiment).
+
+---
+
+## External Peer Suggestions (2026-05-20)
+
+### Issue #1 — Metric mismatch in Collapse Pulse formula
+
+The four terms in:
+
+$$dD_C = \alpha\, W_2 + \beta\, W_p(PD) + \gamma\, |\Delta H_C| + \delta\, |\Delta \text{rank}_C|$$
+
+come from fundamentally different mathematical worlds (optimal transport, TDA, information theory, linear algebra) with incompatible scales. Cross-corpus scaling (10k → 1M documents) will break the linear weighting.
+
+**Suggested directions:**
+- Use $W_2$ as the base metric; treat the other three as perturbation terms on the manifold rather than co-equal summands.
+- Normalize via Fisher Information Metric / information geometry — project all four terms into the tangent space of the same Riemannian manifold before combining.
+- Or: treat $\alpha, \beta, \gamma, \delta$ as attention-style dynamic weights learned per anchor, rather than global hyperparameters.
+
+### Issue #2 — Reflexivity damping (anti-snowball)
+
+The discrete reflexivity jump:
+
+$$D_C^+ = D_C^- + dD_C^{\text{report}}$$
+
+risks positive-feedback explosion in a closed-loop AI system (AI finds void → AI fills void → AI re-evaluates → more shadow voids from the reporting act itself → runaway drift).
+
+**Suggested fix:** Introduce a damping factor or gauge-theory-style cancellation term in $R_C$ to absorb observation-induced false topology deformation. Distinguish "epistemic drift from new knowledge" vs "drift from the act of reporting."
+
+### Issue #3 — Linux experiment as calibration oracle
+
+Linux kernel commit history is the natural ground-truth test:
+- 1000 routine driver fixes → $D_{KL} \approx 0$, no meaningful drift
+- Linus merging a core memory architecture rewrite → large $dD_C$ spike
+
+**Key prediction:** Under Euclidean L2, large-diff maintenance commits (10k lines of boilerplate) will dominate over a 10-line paradigm-shifting change. Under Anchor-projection + $\cos\theta_{\mathbf{C}}$, the 10-line core change should produce higher drift. This comparison *validates the observer-relative drift formulation* — it's a falsifiable test.
+
+Use this to reverse-engineer Issue #1: whichever norm choice makes the Linux ground-truth ranking correct IS the right norm.
+
+### LLM hallucination definition — keep in abstract
+
+The sentence:
+
+> **"LLM hallucination = model fills False Void without compressive $R_C$"**
+
+is paper-abstract quality. The topological explanation (model follows geodesic into empty region, lacks reality-world compressive validation) is the cleanest formal definition of hallucination in the literature. Do not bury it.
