@@ -114,7 +114,7 @@ def effective_resistance(edges, N: int, src_nodes: list[int], tgt_nodes: list[in
     L_reg = L + eps * speye(total_nodes, format="csr")
 
     try:
-        x, info = cg(L_reg, b, maxiter=1000, tol=1e-8)
+        x, info = cg(L_reg, b, maxiter=1000, atol=1e-8)
         if info != 0:
             x = spsolve(L_reg, b)
     except Exception:

@@ -77,7 +77,7 @@ def er_localized(local_vecs: np.ndarray, a_local_idx: int, b_local_idx: int,
         L = L.tocsr()
         b = np.zeros(total); b[s]=1; b[t]=-1
         L_reg = L + 1e-8 * speye(total, format="csr")
-        x, _ = cg(L_reg, b, maxiter=2000, tol=1e-10)
+        x, _ = cg(L_reg, b, maxiter=2000, atol=1e-10)
         return max(float(x[s] - x[t]), 0)
 
     # Before: vecs without P
