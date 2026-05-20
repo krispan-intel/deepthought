@@ -1,0 +1,73 @@
+================================================================================
+TID SEARCH RESULTS SUMMARY
+================================================================================
+
+SEARCH REQUEST:
+- Looking for TID about: Unified Virtual Timer Plane, APIC Timer, Synthetic Clockevent
+- Repository: /home/pankris/workspace/deepthought
+- Date: 2026-04-19
+
+FINDINGS:
+--------------------------------------------------------------------------------
+
+PRIMARY SOURCE FILE:
+/home/pankris/workspace/deepthought/data/pending_human_review/run-485fe33a2a22.json
+
+FILE CONTENTS:
+This JSON file contains a multi-reviewer TID development session with debate rounds.
+Final status: REVISE (7 of 10 reviewers requested revisions)
+
+THREE CANDIDATE FINAL DRAFTS IN THIS RUN:
+1. Per-CPU LAPIC Timer Advance Calibration Using TSC-Deadline Jitter Profiling
+2. Scheduler Domain IPI Cost Profiling for Cluster-Aware Load Balancing
+3. Topology-Clustered LAPIC Timer Advance Calibration with Skew-Bounded Scheduler Group Pruning for Hybrid x86 Architectures
+
+MOST COMPLETE DRAFT (DRAFT #3):
+--------------------------------------------------------------------------------
+
+TITLE:
+Topology-Clustered LAPIC Timer Advance Calibration with Skew-Bounded Scheduler Group Pruning for Hybrid x86 Architectures
+
+ONE-LINER:
+A per-core-type-cluster LAPIC timer advance calibration framework that profiles asymmetric interrupt delivery latency across heterogeneous x86 topologies (Intel Alder Lake/Raptor Lake P/E-cores, AMD Zen 4/4c), indexes calibration state by a new hybrid_cluster_id derived from cpu_type enumeration rather than per-CPU or per-domain-level, and injects measured worst-case skew as an additive bias into update_sg_lb_stats() group capacity accounting so that find_busiest_group() can skip groups whose skew-adjusted spare capacity cannot beat the current best migration candidate—converting the linear group scan into an early-exit search with O(1) best-case pruning.
+
+KEY PROBLEMS ADDRESSED:
+1. Asymmetric LAPIC timer delivery latency on hybrid x86 (P-cores vs E-cores)
+   - P-core delivery: 120-180ns (Golden Cove)
+   - E-core delivery: 500-750ns (Gracemont) or 800-950ns with C1E exit
+   - Divergence: 320-830ns systematic wakeup skew
+
+2. Inefficient CFS load balancer group scanning
+   - Current: O(n) linear scan through all groups
+   - Impact on 288-CPU systems: 2-8us per load_balance() call
+   - Gap: no awareness of timer delivery skew in scheduling decisions
+
+PROPOSED SOLUTION COMPONENTS:
+1. Topology-Clustered Calibration Engine
+   - Derives hybrid_cluster_id from X86 CPUID (0x1A for Intel, Fn80000026 for AMD)
+   - Per-cluster EMA-based timer advance calibration
+   - Reduces calibration from O(N) to O(K) where K=core types (2-4)
+
+2. Skew-Bounded CFS Group Pruning
+   - Adds skew_bias_pct to sched_group_capacity
+   - Enables early termination when no group can improve on current best
+   - Target: 40-60% reduction in groups evaluated, 1.5-3.5us latency reduction
+
+3. Runtime Recalibration & Thermal Adaptation
+   - Lightweight recalibration every 10 seconds
+   - Captures thermal throttling effects on E-cores
+   - DVFS-aware (frequency changes automatically affect latency)
+
+VALIDATION PLAN:
+- Microbenchmarks: Calibration accuracy, scheduler pruning latency, scheduling decision latency
+- Macrobenchmarks: MySQL sysbench (5-15% p99 improvement), schbench (200-500ns p99 reduction)
+- Cross-architecture: Intel (Alder Lake, Raptor Lake, Meteor Lake) + AMD (Zen 4)
+
+FILE OUTPUT LOCATION:
+/home/pankris/workspace/deepthought/output/LAPIC_Timer_TID_Draft.json
+
+REVIEWER STATUSES FROM THIS RUN:
+  Reviewer 1: REVISE
+  Reviewer 2: REVISE
+  Reviewer 3: APPROVE
+  Reviewer 4: REVISE

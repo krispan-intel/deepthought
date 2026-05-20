@@ -1,0 +1,121 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\citation{pan2026tva}
+\citation{bge-m3}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Background}{2}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Topological Void Analysis}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Temporal Validation in LBD}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Research Momentum and Dense-Region Confounding}{2}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Experimental Setup}{2}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Corpus and Temporal Splits}{2}{subsection.3.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Temporal splits.}}{3}{table.caption.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}TVA Void Generation}{3}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Filter pass rates.}{3}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Baselines}{3}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}TVV Three-Layer Protocol}{3}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Local density.}{3}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Anchor-eligibility threshold.}{3}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Calibrated geometric threshold.}{3}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Three-layer indicators.}{3}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Algorithm 1 — TVV adjudication.}{3}{section*.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Why R requires text-based classification.}{4}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Results}{4}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Finding 1: Raw Fill Rate Is Density-Confounded}{4}{subsection.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces TVA--B2 paired fill-rate differences (pp) under legacy $\tau {=}0.82$ and calibrated $\tau _{\mathrm  {fill}}$. Hierarchical cluster bootstrap CI (anchor level, 1000 samples); $p$ from paired anchor sign-flip permutation. All CIs include zero.}}{4}{table.caption.15}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab:fill_diff}{{2}{4}{TVA--B2 paired fill-rate differences (pp) under legacy $\tau {=}0.82$ and calibrated $\taufill $. Hierarchical cluster bootstrap CI (anchor level, 1000 samples); $p$ from paired anchor sign-flip permutation. All CIs include zero}{table.caption.15}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.1.1}Fixed Thresholds Are Not Portable}{4}{subsubsection.4.1.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Null FPR@0.82 and $\tau _{\mathrm  {fill}}$ by density (t5).}}{4}{table.caption.16}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Finding 2: Anchor Eligibility Reveals Observability Limits}{4}{subsection.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Null calibration curve: expected vs.\ observed held-out FPR across anchor-density cells ($\alpha $ range 0.01--0.20, t5). Points near the diagonal confirm that $\tau _{\mathrm  {fill}}$ is approximately calibrated. Mean held-out FPR at $\alpha {=}0.05$ is 6.3\% (target 5\%, $\Delta {=}+0.013$).}}{5}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:cal_curve}{{1}{5}{Null calibration curve: expected vs.\ observed held-out FPR across anchor-density cells ($\alpha $ range 0.01--0.20, t5). Points near the diagonal confirm that $\taufill $ is approximately calibrated. Mean held-out FPR at $\alpha {=}0.05$ is 6.3\% (target 5\%, $\Delta {=}+0.013$)}{figure.caption.17}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Anchor exposure sample (t5).}}{5}{table.caption.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Exposure-conditioned fill (censoring diagnostic).}{5}{section*.20}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Calibrated threshold by density bucket (left) and null FPR at 0.82 (right). The fixed threshold 0.82 has 35.7\% average null FPR, reaching 99\% in high-density anchor cells. Calibrated $\tau _{\mathrm  {fill}}\approx 0.841$ is stable across all splits.}}{5}{figure.caption.18}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Exposure-conditioned fill (t5). Fill increases monotonically with $|Val_q|$, indicating that non-fill partly reflects observability limits rather than false predictions. We therefore treat unfilled voids as right-censored, not as negatives.}}{5}{table.caption.21}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Role Classification Pipeline and Reliability}{5}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:role-pipeline}{{4.3}{5}{Role Classification Pipeline and Reliability}{subsection.4.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Anchor eligibility pass rate (\%) by anchor and split (hybrid gate). Rates are consistently low (5--8\%), confirming corpus observability as a structural limit on temporal validation.}}{6}{figure.caption.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Model and prompt.}{6}{section*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Reliability checks.}{6}{section*.24}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Quantitative scope.}{6}{section*.25}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Finding 3: Geometric Fill Rarely Equals Epistemic Fill}{6}{subsection.4.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Collapsed three-class role taxonomy. Fine-grained 9-class labels (TRUE-FILL, PARTIAL-FILL, IE, SE, BM, SN, RC, FP, UNCLEAR) are used for qualitative analysis only; all quantitative claims use the 3-class collapse.}}{6}{table.caption.26}\protected@file@percent }
+\newlabel{tab:rubric}{{6}{6}{Collapsed three-class role taxonomy. Fine-grained 9-class labels (TRUE-FILL, PARTIAL-FILL, IE, SE, BM, SN, RC, FP, UNCLEAR) are used for qualitative analysis only; all quantitative claims use the 3-class collapse}{table.caption.26}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Role audit (1076 cases, t3+t4+t5; exploratory). VR=void resolution; FP=false positive. 95\% Wilson CI in brackets (\%).}}{6}{table.caption.27}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Epistemic role decomposition by source group (t5, 200 sampled cases). Most raw fills are geometric false positives regardless of method. Near-miss controls show the highest FP rate, confirming that geometric proximity is a weak but non-zero signal.}}{7}{figure.caption.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Landmark Three-Layer Diagnostic}{7}{subsection.4.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Landmark three-layer diagnostic. All five papers clear G and E; none clear R.}}{7}{table.caption.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Finding 4: Geometric Impossibility of R-Layer Substitution}{7}{subsection.4.6}\protected@file@percent }
+\newlabel{sec:finding4}{{4.6}{7}{Finding 4: Geometric Impossibility of R-Layer Substitution}{subsection.4.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Three spectral surrogates for the R layer. All fail by distinct mechanisms. NM = non-monotone rate (signal direction wrong). \dag  \,Degenerate (constant signal): $\kappa $ not meaningful.}}{7}{table.caption.30}\protected@file@percent }
+\newlabel{tab:spectral}{{9}{7}{Three spectral surrogates for the R layer. All fail by distinct mechanisms. NM = non-monotone rate (signal direction wrong). \dag \,Degenerate (constant signal): $\kappa $ not meaningful}{table.caption.30}{}}
+\@writefile{toc}{\contentsline {paragraph}{Stage A: Global k-NN graph (N=51\,460).}{8}{section*.31}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Stage B: Localized subgraph (N$\approx $328).}{8}{section*.32}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Stage C: ORC path curvature (N$\approx $329, n=30).}{8}{section*.33}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Stage 3a: Cross-Encoder Reranking.}{8}{section*.34}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Impossibility conjecture.}{8}{section*.35}\protected@file@percent }
+\citation{case1}
+\citation{case2}
+\citation{case3}
+\@writefile{toc}{\contentsline {paragraph}{Scope.}{9}{section*.36}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Synthesis: Architectural Impossibility.}{9}{section*.37}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Implication.}{9}{section*.38}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.7}Case Studies}{9}{subsection.4.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Case 1 -- Partial Fill~\cite  {case1} (2019).}{9}{section*.39}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Case 2 -- Boundary Expansion~\cite  {case2} (2021).}{9}{section*.40}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Case 3 -- False Positive~\cite  {case3} (2017).}{9}{section*.41}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Case-study role patterns. Case~(c) has the \emph  {highest} $\mathrm  {sim}(P,m)$ yet is a false positive; Case~(a) has lower similarity but partially bridges both source sides. Geometric proximity alone does not determine epistemic role.}}{10}{figure.caption.42}\protected@file@percent }
+\newlabel{fig:cases}{{5}{10}{Case-study role patterns. Case~(c) has the \emph {highest} $\mathrm {sim}(P,m)$ yet is a false positive; Case~(a) has lower similarity but partially bridges both source sides. Geometric proximity alone does not determine epistemic role}{figure.caption.42}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Local density profile along the A--B bridge for the highest-MMR void in anchor sched\_opt (t5). The density valley at $\lambda \approx 0.5$ marks the void midpoint region---two dense source communities with a less-occupied bridge.}}{10}{figure.caption.43}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion}{10}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Raw Fill Fails for Three Reasons}{10}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}B2 Is a Control, Not a Competitor}{10}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}TVA as a Rapid Triage Instrument}{10}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Human-machine division of labor.}{11}{section*.44}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces Division of labor: TVA performs high-throughput candidate generation; humans / LLM perform epistemic adjudication.}}{11}{table.caption.45}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {11}{\ignorespaces Operational distinction between TVA and B2.}}{11}{table.caption.46}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}From Geometric Occupancy to Role Decomposition}{11}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Descriptive, Not Evaluative}{11}{subsection.5.5}\protected@file@percent }
+\citation{swanson1986fish}
+\citation{gordon1996using}
+\citation{weeber2001using}
+\citation{swanson1986fish}
+\citation{gordon1996using}
+\citation{weeber2001using}
+\citation{allan1998topic}
+\citation{zhang2002novelty}
+\citation{burt2004structural}
+\citation{small1973cocitation}
+\citation{ethayarajh2019contextual}
+\citation{carlsson2009topology}
+\citation{edelsbrunner2010computational}
+\citation{teufel2002summarizing}
+\citation{wright2022generating}
+\citation{wadden2020scifact}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Dynamic Extension (Future Work)}{12}{subsection.5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.7}Threats to Validity}{12}{subsection.5.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Related Work}{12}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{12}{section.7}\protected@file@percent }
+\bibstyle{plain}
+\bibdata{paper2}
+\@writefile{toc}{\contentsline {section}{\numberline {A}Reproducibility Protocol}{13}{appendix.A}\protected@file@percent }
+\newlabel{app:protocol}{{A}{13}{Reproducibility Protocol}{appendix.A}{}}
+\@writefile{toc}{\contentsline {paragraph}{Corpus.}{13}{section*.47}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Temporal splits.}{13}{section*.48}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Embedding.}{13}{section*.49}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{TVA void generation.}{13}{section*.50}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {12}{\ignorespaces TVA anchor list (pre-specified, fixed across all splits).}}{13}{table.caption.51}\protected@file@percent }
+\newlabel{tab:anchors}{{12}{13}{TVA anchor list (pre-specified, fixed across all splits)}{table.caption.51}{}}
+\@writefile{toc}{\contentsline {paragraph}{B1 baseline.}{13}{section*.52}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{B2 density-matched baseline.}{13}{section*.53}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Local density.}{14}{section*.54}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Anchor-eligibility threshold.}{14}{section*.55}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Null-calibrated threshold.}{14}{section*.56}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Statistical tests.}{14}{section*.57}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Role annotation.}{14}{section*.58}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Code and data availability.}{14}{section*.59}\protected@file@percent }
+\gdef \@abspage@last{14}
