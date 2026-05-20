@@ -167,27 +167,58 @@ Biased toward high-density, high-momentum regions.
 midpoint local density $\rho(m) = \frac{1}{k}\sum \mathrm{sim}(m, \mathrm{kNN}_i(m))$
 ($k=20$) closest to the \tva{} void's midpoint density.
 
-\subsection{Three-Layer Fill Predicate}
+\subsection{TVV Three-Layer Protocol}
 
-Anchor-eligible val papers:
+We define three ordered indicator functions, applied as a sequential gate:
+if $E=0$ then $G$ and $R$ are not evaluated; if $G=0$ then $R$ is not evaluated.
+
+\paragraph{Local density.}
+$\rho(V) := \frac{1}{k}\sum_{P \in \mathrm{kNN}_{k}(m_V,\mathrm{Train})} \mathrm{sim}(P, m_V),\quad k{=}20.$
+
+\paragraph{Anchor-eligibility threshold.}
+$\tauanchor = \max(Q_{80}^{\mathrm{val}},\, Q_{90}^{\mathrm{train}})$ (computed per anchor and split).
+
+\paragraph{Calibrated geometric threshold.}
+Let $Z(m_0)=\max_{P\in\valq}\mathrm{sim}(P,m_0)$ for a null midpoint $m_0$:
 \[
-\valq = \{P \in \mathrm{Val}_t : \mathrm{sim}(P,q) \ge \tauanchor\}
+\taufill(q,\rho,t) = Q_{1-\alpha}\bigl(\{Z(m_0): m_0\in\mathrm{Null}(q,\rho,t)\}\bigr),\quad\alpha{=}0.05,
 \]
-where $\tauanchor = \max(Q_{80}^{\mathrm{val}},\, Q_{90}^{\mathrm{train}})$.
+where $\mathrm{Null}(q,\rho,t)$ are density-matched null midpoints, calibrated set only
+(finite-sample conformal rank $k{=}\lceil(n_\mathrm{cal}{+}1)(1{-}\alpha)\rceil$).
 
-Geometric filler: $P_V^* = \arg\max_{P \in \valq} \mathrm{sim}(P, m_V)$.
+\paragraph{Three-layer indicators.}
+Let $\valq = \{P \in \mathrm{Val}_t : \mathrm{sim}(P,q) \ge \tauanchor\}$ and
+$P_V^* = \arg\max_{P \in \valq} \mathrm{sim}(P, m_V)$.
 
-Geometric closure and validated fill:
 \begin{align}
-G(V) &= \mathbf{1}[\mathrm{sim}(P_V^*, m_V) \ge \taufill(q, \rho(V), t)] \nonumber\\
-\mathrm{Fill}(V) &= G(V) \wedge R(P_V^*, A, B, q) \nonumber
+E(V) &:= \mathbf{1}\bigl[|\valq| \ge n_{\min}\bigr]
+           \cdot\mathbf{1}\bigl[P_V^* \in \valq\bigr]
+           \tag{anchor eligibility} \\
+G(V) &:= \mathbf{1}\bigl[\mathrm{sim}(P_V^*, m_V) \ge \taufill(q,\rho(V),t)\bigr]
+           \tag{geometric closure} \\
+R(V) &:= \mathbf{1}\bigl[\mathrm{role}(P_V^*,A,B,q) \in
+           \{\mathrm{TRUE\text{-}FILL},\mathrm{PARTIAL\text{-}FILL}\}\bigr]
+           \tag{epistemic role}
 \end{align}
-where $R=1$ iff $\mathrm{role} \in \{\mathrm{TRUE\text{-}FILL},\allowbreak\,\mathrm{PARTIAL\text{-}FILL}\}$.
 
-\textbf{Calibrated threshold} ($\alpha{=}0.05$). Let $Z(m_0)=\max_{P\in\valq}\mathrm{sim}(P,m_0)$:
-\[
-\taufill(q,\rho,t) = Q_{1-\alpha}\bigl(\{Z(m_0): m_0\in\mathrm{Null}(q,\rho,t)\}\bigr)
-\]
+\begin{equation}
+\mathrm{Fill}(V) := E(V)\cdot G(V)\cdot R(V)
+\end{equation}
+
+\noindent\textbf{Proposition (monotone conservatism).}
+For any void $V$: $\mathrm{Fill}(V) \le \mathrm{Fill}_{\mathrm{raw}}(V)$.
+Equality requires $E{=}G{=}R{=}1$ and $\tau_{\mathrm{raw}} \le \taufill(q,\rho,t)$.
+Each additional layer can only reduce apparent fill; no layer inflates it.
+
+\paragraph{Algorithm 1 — TVV adjudication.}
+\begin{enumerate}[nosep,label=\arabic*:]
+\item Compute $\valq$; if $|\valq| < n_{\min}$: return $(0;\,E{=}0)$.
+\item $P_V^* \leftarrow \arg\max_{P\in\valq}\mathrm{sim}(P,m_V)$.
+\item Compute $\taufill(q,\rho(V),t)$ from calibration nulls.
+\item If $\mathrm{sim}(P_V^*, m_V) < \taufill$: return $(0;\,E{=}1,G{=}0)$.
+\item $r \leftarrow \mathrm{role\text{-}classifier}(P_V^*,A,B,q)$.
+\item Return $(\mathbf{1}[r\in\{\mathrm{TRUE},\mathrm{PARTIAL}\}];\;E{=}1,G{=}1,R{=}r)$.
+\end{enumerate}
 
 \section{Results}
 

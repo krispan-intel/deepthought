@@ -125,17 +125,37 @@ arXiv metadata (9 CS categories: OS, AR, PL, SE, DC, NI, CR, AI, LG), three roll
 - **B1 (hot-zone):** 20 random pairs from top-300 anchor C1 pool. Biased toward high-density regions.
 - **B2 (density-matched):** For each TVA void, the B1-style pair with closest midpoint density (ρ(m) = mean sim to 20 nearest train neighbors).
 
-### Three-Layer Fill Predicate
+### TVV Three-Layer Protocol (Algorithm 1)
 
-$$Val_q = \{P \in Val_t : \text{sim}(P,q) \geq \tau_q\}, \quad \tau_q = \max(Q_{80}^{val}, Q_{90}^{train})$$
+**Definitions:**
 
-$$P_V^* = \arg\max_{P \in Val_q} \text{sim}(P, m_V)$$
+$$\rho(V) := \frac{1}{k}\sum_{P \in \text{kNN}_k(m_V,\text{Train})} \text{sim}(P,m_V), \quad k=20 \quad \text{(local density)}$$
 
-$$G(V) = \mathbf{1}[\text{sim}(P_V^*, m_V) \geq \tau_{fill}(q, \rho(V), t)]$$
+$$\tau_q = \max(Q_{80}^{\text{val}}, Q_{90}^{\text{train}}) \quad \text{(anchor eligibility threshold)}$$
 
-$$\text{Fill}(V) = G(V) \wedge R(P_V^*, A, B, q)$$
+$$\tau_\text{fill}(q,\rho,t) = Q_{1-\alpha}\bigl(\{Z(m_0): m_0 \in \text{Null}(q,\rho,t)\}\bigr) \quad \text{(stratified conformal quantile, } \alpha{=}0.05\text{)}$$
 
-**Calibrated threshold:** τ_fill uses a finite-sample conformal quantile from density-matched null midpoints (n=1000, 50/50 cal/test, α=0.05). Held-out null FPR: 6.3% vs nominal 5%.
+**Three ordered indicator functions (sequential gate):**
+
+$$E(V) := \mathbf{1}[|Val_q| \geq n_{\min}] \cdot \mathbf{1}[P_V^* \in Val_q] \quad \text{(anchor eligibility)}$$
+
+$$G(V) := \mathbf{1}[\text{sim}(P_V^*, m_V) \geq \tau_\text{fill}(q,\rho(V),t)] \quad \text{(calibrated geometric closure)}$$
+
+$$R(V) := \mathbf{1}[\text{role}(P_V^*, A, B, q) \in \{\text{TRUE-FILL}, \text{PARTIAL-FILL}\}] \quad \text{(epistemic role)}$$
+
+$$\text{Fill}(V) := E(V) \cdot G(V) \cdot R(V)$$
+
+**Algorithm 1 — TVV adjudication:**
+1. Compute $Val_q$; if $|Val_q| < n_{\min}$: return $(0; E=0)$
+2. $P_V^* \leftarrow \arg\max_{P \in Val_q} \text{sim}(P, m_V)$
+3. Compute $\tau_\text{fill}(q,\rho(V),t)$ from calibration nulls
+4. If $\text{sim}(P_V^*, m_V) < \tau_\text{fill}$: return $(0; E=1, G=0)$
+5. $r \leftarrow \text{role-classifier}(P_V^*, A, B, q)$
+6. Return $(\mathbf{1}[r \in \{\text{TRUE}, \text{PARTIAL}\}];\ E=1, G=1, R=r)$
+
+**Proposition (monotone conservatism):** For any void $V$: $\text{Fill}_\text{TVV}(V) \leq \text{Fill}_\text{raw}(V)$. Each layer can only reduce apparent fill; none inflates it.
+
+**Calibrated threshold:** τ_fill uses finite-sample conformal quantile (n_cal=500, 50/50 cal/test split). Held-out null FPR: 6.3% vs nominal 5% — slightly liberal, reported explicitly.
 
 **Statistical tests:** Hierarchical cluster bootstrap (outer: anchors, inner: voids) + anchor-level sign-flip paired permutation test. All results report paired Δpp, not ratio.
 
