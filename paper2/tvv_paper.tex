@@ -220,6 +220,19 @@ Each additional layer can only reduce apparent fill; no layer inflates it.
 \item Return $(\mathbf{1}[r\in\{\mathrm{TRUE},\mathrm{PARTIAL}\}];\;E{=}1,G{=}1,R{=}r)$.
 \end{enumerate}
 
+\paragraph{Why R requires text-based classification.}
+We investigated whether graph-theoretic surrogates can replace LLM-based role
+assessment for $R$. Specifically, we tested whether the change in effective resistance
+$\Delta R/R_{\mathrm{before}}$ between the A- and B-side communities (before vs.\ after
+inserting $P$) correlates with LLM role labels on 100 sampled cases.
+All $\Delta R/R$ values were numerically zero: in BGE-M3's anisotropic 1024-dimensional
+space, local k-NN graphs are nearly fully connected at the scales used, leaving no
+detectable resistance contrast. Cohen's $\kappa = -1.0$ vs LLM labels confirms that
+effective resistance carries no epistemic-bridge signal in this embedding regime.
+This result supports a fundamental claim of \tvv{}: \emph{epistemic bridging cannot be
+detected by local embedding geometry alone}. The R layer requires text-based semantic
+assessment to distinguish true bridges from boundary expansions and false positives.
+
 \section{Results}
 
 \subsection{Finding 1: Raw Fill Rate Is Density-Confounded}
