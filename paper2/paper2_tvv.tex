@@ -37,35 +37,28 @@
   \textbf{Abstract.}
 Topological Void Analysis (\tva{}) identifies candidate research voids in scientific
 knowledge spaces as geometric gaps between anchor-conditioned paper clusters.
-A natural validation question is whether future papers fill these predicted voids.
-We show that raw fill rate---whether any future paper appears near a void's
-midpoint---fails as a validation target for three compounding reasons.
-First, it is confounded by local corpus density: a hot-zone baseline that samples
-high-density anchor-adjacent pairs outperforms \tva{} on raw fill (36\% vs.\ 28\%),
-but this hot-zone advantage disappears under a density-matched baseline:
-\tva{} shows only small paired differences ($+1.3$ to $+3.0$~pp across splits),
-with hierarchical cluster-bootstrap CIs all including zero and paired permutation
-$p>0.35$; under calibrated thresholds, TVA and B2 collapse to near-parity
-($-0.7$ to $+0.7$~pp).
-Second, it is limited by anchor observability: only 5--7\% of future papers are
-anchor-eligible per split, so many unfilled voids should be treated as right-censored
-rather than invalid.
-Third, even the geometric threshold itself is density-confounded: a fixed threshold of
-0.82 corresponds to a 35.7\% average null occupancy rate, ranging from 1\% to 99\%
-across anchor-density cells.
-Under a null-calibrated threshold ($\taufill \approx 0.841$), fill rates collapse from
-$\sim$27\% to $\sim$0.7\%, confirming that most raw fills are null-zone noise.
-Finally, role-aware epistemic classification shows that even anchor-eligible geometric
-fills rarely represent genuine void resolution: 59--76\% are false positives across all
-groups and splits.
-We do not find statistically significant evidence that TVA produces more epistemic fills
-than density-matched baselines (\tva{}/B2 $\Delta{=}{+}3.0$\,pp, hierarchical CI $\lbrack{-}2.0,+8.3\rbrack$\,pp, $p{=}0.36$).
-Four independent methods fail to substitute for the text-level R layer:
-global and localized effective resistance, ORC path curvature, and cross-encoder
-reranking on the same BGE-M3 backbone ($\kappa \leq 0.01$ for all bridging formats).
-Cross-encoder reranking captures anchor relevance (\text{AUC}$=0.875$, G proxy) but
-\emph{anti-correlates} with bridging (\text{AUC}$=0.352$, Q2 joint format), establishing
-R-layer text assessment as an architectural necessity, not an implementation choice.
+We propose \tvv{} (Topological Void Validation), a three-layer protocol
+(calibrated geometric closure $\to$ anchor eligibility $\to$ epistemic role)
+for evaluating whether predicted voids are genuinely filled by future literature.
+Applying TVV reveals that raw fill rate fails as a validation target for three
+compounding reasons.
+First, it is confounded by local corpus density: a hot-zone baseline outperforms
+\tva{} on raw fill (36\% vs.\ 28\%), but this advantage disappears under a
+density-matched baseline: all hierarchical cluster-bootstrap CIs include zero
+($p>0.35$); under calibrated thresholds, TVA and B2 collapse to near-parity.
+Second, anchor eligibility limits observability: only 5--7\% of future papers are
+anchor-eligible per split; many unfilled voids are right-censored, not invalid.
+Third, the geometric threshold is not portable: $\tau{=}0.82$ corresponds to a
+35.7\% average null occupancy rate (range 1--99\%) and collapses fill rates to
+$\sim$0.7\% after conformal calibration.
+Role-aware classification shows 59--76\% false positives even among gated fills.
+Furthermore, four independent methods fail to substitute for the text-level R layer:
+global effective resistance (degenerate, $\kappa{=}-1.0$), localized effective
+resistance ($\kappa{=}-0.013$), ORC path curvature ($\kappa{=}0.005$), and
+cross-encoder reranking ($\kappa{=}0.01$ on joint A+B queries).
+Cross-encoder reranking captures anchor relevance (AUC$=0.875$, G proxy) but
+\emph{anti-correlates} with bridging (AUC$=0.352$), establishing the R layer as
+an architectural necessity imposed by contrastive bi-encoder representations.
   \end{minipage}
   \end{center}
   \vspace{1em}
@@ -95,22 +88,25 @@ straightforward but is insufficient, and this paper studies why.
 
 \textbf{Contributions:}
 \begin{enumerate}
-\item Raw temporal fill rate is strongly confounded by local historical density and
-  research momentum.
-\item A density-matched baseline shows that the apparent \tva{} disadvantage is not
-  statistically significant (\tva{}/B2 $\Delta{=}{+}3.0$\,pp, hierarchical CI $\lbrack{-}2.0,+8.3\rbrack$\,pp, $p{=}0.36$).
-\item Fixed cosine thresholds are not portable: 0.82 has 35.7\% average null FPR;
-  calibrated thresholds collapse raw fill to $\sim$0.7\%.
-\item Anchor eligibility exposes an observability limit: only $\sim$6\% of future
-  papers are anchor-eligible; unfilled voids are right-censored, not invalid.
-\item LLM-assisted role-aware audit suggests that geometric fill substantially
-  overestimates epistemic resolution: 59--76\% FP across all groups and splits.
+\item \textbf{TVV protocol.} A reproducible three-layer evaluation framework
+  (G$\to$E$\to$R): calibrated geometric closure, anchor eligibility, and LLM-assisted
+  epistemic role --- the first density-controlled, observability-aware protocol for
+  embedding-space research voids.
 \item \textbf{Architectural impossibility.} Four independent methods fail to substitute
-  for the R layer: global effective resistance ($\kappa{=}-1.0$), localized effective
-  resistance ($\kappa{=}-0.013$), ORC path curvature ($\kappa{=}0.005$), and
-  BGE-M3 cross-encoder reranking ($\kappa{=}0.010$ for bridging format, AUC$<$0.5).
-  The cross-encoder can detect anchor relevance (G proxy; AUC=0.875) but anti-predicts
-  bridging, establishing text-based semantic assessment as structurally necessary.
+  for the R layer: global effective resistance (degenerate, $\kappa{=}-1.0$), localized
+  effective resistance ($\kappa{=}-0.013$), ORC path curvature ($\kappa{=}0.005$), and
+  cross-encoder reranking on the same BGE-M3 backbone ($\kappa{=}0.01$, AUC$=0.352$,
+  anti-correlated with bridging). R-layer text assessment is an architectural necessity.
+\item Raw temporal fill rate is strongly confounded by local historical density;
+  density-matched baseline (B2) removes the apparent TVA disadvantage (all CIs include
+  zero, $p>0.35$).
+\item Fixed cosine thresholds are not portable: $\tau{=}0.82$ has 35.7\% average null
+  FPR; calibrated thresholds collapse raw fill to $\sim$0.7\%.
+\item Anchor eligibility limits observability ($\sim$6\% anchor-eligible); unfilled
+  voids are right-censored by corpus coverage, not necessarily invalid.
+\item LLM-assisted role-aware audit suggests 59--76\% FP even among gated fills;
+  cross-LLM agreement (Claude~4.5 vs GPT-5.2) yields $\kappa{=}0.44$ (3-class,
+  moderate).
 \end{enumerate}
 
 \textbf{Scope and framing.} This paper is a \emph{validation stress test}: we do not
@@ -244,19 +240,12 @@ Each additional layer can only reduce apparent fill; no layer inflates it.
 \end{enumerate}
 
 \paragraph{Why R requires text-based classification.}
-We investigated whether graph-theoretic surrogates can replace LLM-based role
-assessment for $R$. Specifically, we tested the change in effective resistance
-$\Delta R/R_{\mathrm{before}}$ between A- and B-side communities before and after
-inserting candidate filler $P$ into the k-NN graph (100 cases, t5).
-Two failure modes were observed: (1)~in BGE-M3's anisotropic 1024-dimensional space,
-local k-NN graphs are nearly fully connected, leaving $\Delta R \approx 0$ at machine
-precision; (2)~on synthetic two-cluster graphs, inserting a bridge node can
-\emph{increase} effective resistance due to altered flow-path distributions, making
-$\Delta R$ non-monotone with respect to bridging.
-These failures confirm that epistemic bridging cannot be reliably detected by local
-embedding topology, even when augmented with graph-spectral structure. The R layer's
-reliance on text-based semantic assessment is therefore structurally necessary, not a
-methodological convenience.
+The R layer cannot be replaced by graph-spectral or attention-based surrogates on the
+same BGE-M3 backbone. We establish this via four independent experiments (global/local
+effective resistance, ORC curvature, cross-encoder reranking) detailed in
+§\ref{sec:finding4}. Briefly: bi-encoder compression discards compositional structure
+that defines bridging, and no downstream geometric operator recovers it. The R layer
+is therefore implemented as LLM-based role classification on candidate filler text.
 
 \section{Results}
 
@@ -419,28 +408,26 @@ merit. Source group labels (\textsf{TVA}/\textsf{B1}/\textsf{B2}/near-miss) are
 \emph{not shown} to the classifier (blind protocol).
 
 \paragraph{Reliability checks.}
-Re-annotation was performed by GPT-5.2 (independent annotator, identical prompt)
-on 100 stratified t5 cases, yielding a cross-LLM agreement measurement between
-Claude Sonnet 4.5 (primary) and GPT-5.2 (re-annotator) from independent model
-families. We consider cross-LLM agreement a more stringent reliability test than
-within-LLM self-consistency.
+We performed two complementary reliability checks.
 
+\textbf{(i) Cross-LLM agreement.}
+Re-annotation was performed by GPT-5.2 (independent annotator, identical prompt)
+on 100 stratified t5 cases: Claude Sonnet~4.5 (primary) vs.\ GPT-5.2 (re-annotator)
+from independent model families. Cross-LLM agreement is a more stringent test than
+within-LLM self-consistency.
 Results: 94\% binary agreement, Cohen's $\kappa = 0.368$ (binary fill/non-fill),
 $\kappa = 0.437$ (collapsed 3-class, ``moderate'' per Landis \& Koch 1977).
-The lower binary $\kappa$ reflects two compounding factors: (i)~the kappa paradox
-under severe class imbalance (2\% fill rate; Feinstein \& Cicchetti 1990), and
-(ii)~low statistical power for the fill class ($n{=}2$). We report $\kappa = 0.437$
-(3-class) as the primary reliability metric; fill-class reliability with adequate
-power is left to future work.
+The lower binary $\kappa$ reflects (a)~the kappa paradox under severe class imbalance
+(2\% fill rate; Feinstein \& Cicchetti 1990), and (b)~low statistical power for the
+fill class ($n{=}2$). We report $\kappa = 0.437$ (3-class) as the primary metric.
+Both LLMs may share pretraining biases; cross-LLM agreement is therefore an upper
+bound on inter-rater reliability.
 
-We note that Claude Sonnet 4.5 and GPT-5.2, while from independent organizations,
-may share systematic biases from overlapping pretraining corpora. Cross-LLM
-agreement therefore provides an upper bound on inter-rater reliability; the human
-audit ($\kappa\approx 0.65$) serves as a complementary, training-independent check.
-
-(ii)~\emph{Human audit}: 60 cases reviewed by a blinded human auditor
-(collapsed 3-class rubric, anchor+A/B+P text only). Binary FP/non-FP agreement:
-$>80\%$. Three-way collapsed label agreement: $\sim65\%$.
+\textbf{(ii) Human audit.}
+60 cases were reviewed by a blinded human auditor (collapsed 3-class rubric,
+anchor+A/B+P text only, source group hidden). Binary FP/non-FP agreement: $>80\%$.
+Three-way collapsed label agreement: $\sim65\%$. The human audit is a
+training-independent plausibility check complementing the cross-LLM agreement.
 
 \begin{table}[h!]
 \centering\small
@@ -579,8 +566,8 @@ Stage & Operator & $N$ & $\Delta$-signal & NM & $\kappa$ \\
 A & $\Delta R$ global & 51k & $0$ & --- & $-1.0$\dag \\
 B & $\Delta R$ local & $\sim$328 & $9e{-}4$ & 74\% & $-0.013$ \\
 C & $\Delta\kappa_\mathrm{ORC}$ & $\sim$329 & $2.4e{-}3$ & 43\% & $0.005$ \\
-3a-Q1 & XEnc anchor & --- & --- & --- & 0.10 \\
-3a-Q2 & XEnc A+B & --- & --- & --- & 0.01 \\
+3a-Q1 & XEnc anchor & 100 & --- & --- & 0.10 \\
+3a-Q2 & XEnc A+B & 100 & --- & --- & 0.01 \\
 \bottomrule
 \end{tabular}%
 }
@@ -641,50 +628,35 @@ Cohen's $\kappa = 0.010$ (Q2), 0.102 (Q1), 0.067 (Q3), $-0.014$ (Q4). No query f
 reliably discriminates fill from non-fill. Cross-encoder reranking is the 4th
 independent method to fail.
 
-\paragraph{Impossibility conjecture.}
-We state the following empirically supported conjecture:
+\paragraph{Synthesis and Impossibility Conjecture.}
+Four independent methods fail across two inference paradigms (geometric operators
+on Stages A--C, cross-encoder joint attention on Stage 3a) and four failure modes:
+anisotropy collapse (Stage A), non-monotone sign instability (Stage B), flat
+curvature (Stage C), and anti-correlated relevance (Stage 3a-Q2).
+The consistency of failure across inference paths sharing the same BGE-M3 backbone
+suggests the bridging signal is absent at the representation level, not merely at
+the bi-encoder readout.
+
 \begin{quote}\small
-\emph{Within the C1-restricted anchor pool of a retrieval-trained embedding
-(BGE-M3, d=1024), the mutual information $I(\text{local geometry};\,R\mid\phi)$
-is empirically negligible across spectral, curvature, and cross-encoder operators.}
-\end{quote}
-This conjecture is grounded in three independent failures with distinct
-failure modes (degenerate scale collapse~/ non-monotone sign instability~/ flat
-curvature), ruling out a single-operator explanation. Formally proving an upper
-bound on $I$ for arbitrary operator families requires adversarial construction
-and is left to future work.
-
-\paragraph{Scope.}
-Diagnostic analysis shows C2/C3/C4 contribute at most 7\% marginal
-selectivity on random pairs; the void population is shaped primarily by C1.
-The conjecture applies to C1-restricted candidates. Tighter C2--C4 calibration
-may alter the void population but is unlikely to rescue graph-spectral
-surrogates given the fundamental anisotropy of BGE-M3 embeddings.
-
-\paragraph{Synthesis: Architectural Impossibility.}
-Four independent methods fail across two inference paradigms (geometric
-operators and cross-encoder joint attention) and three failure modes:
-anisotropy collapse (Stage A), non-monotone sign instability (Stage B),
-flat curvature (Stage C), and anti-correlated relevance (Stage 3a-Q2).
-The consistency of failure across inference paths sharing the same BGE-M3
-backbone suggests the bridging signal is absent at the representation
-level, not merely at the bi-encoder readout.
-
-We formalize this as:
-\begin{quote}\small
-\emph{Conjecture (Architectural Impossibility).} For retrieval-trained dense
-encoders under InfoNCE-class objectives, $I(\text{geometric/attention
-features};\,R\mid\phi) \approx 0$ for cross-domain epistemic bridging
-within C1-restricted anchor pools.
+\emph{Conjecture (Architectural Impossibility).}
+For retrieval-trained dense encoders under InfoNCE-class objectives,
+$I(\text{geometric/attention features};\,R\mid\phi) \approx 0$
+for cross-domain epistemic bridging within C1-restricted anchor pools.
+This conjecture is grounded in four independent failures with distinct failure
+modes, ruling out a single-operator explanation. Scope: C2/C3/C4 contribute
+$\leq$7\% marginal selectivity on random pairs (Diagnostic~1); tighter
+calibration may alter the void population but is unlikely to rescue
+spectral surrogates given BGE-M3 anisotropy. Formal upper bounds on $I$
+for arbitrary operator families require adversarial construction and are
+left to future work.
 \end{quote}
 
 \paragraph{Implication.}
 The R layer's reliance on text-level semantic assessment is a structural
-necessity imposed by the architecture of contrastive bi-encoders, not a
-methodological convenience. The TVV three-layer design (G$\to$E$\to$R)
-reflects this asymmetry: geometric layers are computationally cheap and
-architecturally captured by retrieval encoders, while epistemic role
-requires inference paths that operate beyond fixed-vector compression.
+necessity imposed by the architecture of contrastive bi-encoders.
+The TVV three-layer design (G$\to$E$\to$R) reflects this asymmetry: geometric
+layers are computationally cheap and architecturally captured by retrieval
+encoders, while epistemic role requires inference beyond fixed-vector compression.
 
 \subsection{Case Studies}
 
@@ -824,21 +796,22 @@ Raw temporal fill rate is not a sensitive metric for that kind of value.
 Our empirical impossibility result (Finding~4) has a natural theoretical grounding
 in the form-meaning distinction articulated by \cite{bender2020climbing}:
 \emph{"A system trained only on form has a priori no way to learn meaning."}
-Dense retrieval encoders such as BGE-M3 are trained on form-form alignment: they
-optimize whether two symbol sequences (query and document) co-occur in relevance-annotated
-pairs. This is sufficient for topical similarity (the G layer succeeds on anchor
-relevance, Stage 3a Q1 AUC$=0.875$) but structurally insufficient for adjudicating
-\emph{communicative intent}~--- whether a document's authors synthesize two research
-traditions, rather than merely cite them.
+Dense retrieval encoders such as BGE-M3 are trained on form-form alignment:
+they optimize whether two symbol sequences co-occur in relevance-annotated pairs.
+This is sufficient for topical similarity (G layer, Stage 3a Q1 AUC$=0.875$) but
+structurally insufficient for adjudicating communicative intent --- whether a
+document's authors synthesize two research traditions rather than merely cite them.
+This limitation is consistent with work showing that contrastive uniformity forces
+distinct classes into maximally separated spherical caps~\cite{wang2020understanding},
+and that form-trained dual-encoders fail on compositional benchmarks where surface
+statistics are insufficient~\cite{mccoy2019right}.
 
-The key distinction is \emph{compositionality} rather than dimensionality.
-Bi-encoders compress each paper into a single fixed-length vector; this compression
-discards compositional structure: the information that P uses B's method to address
-A's problem.
+The key distinction is \emph{compositionality} \cite{fodor1988connectionism} rather
+than dimensionality. Bi-encoders compress each paper into a single fixed-length vector,
+discarding compositional structure (P uses B's method to address A's problem).
 Cross-encoders add joint attention but still collapse to a scalar readout; the
-bridging signal is lost at that final compression step (Stage 3a Q2 AUC$=0.352$,
-anti-correlated with fill).
-Language models, by contrast, preserve the full token sequence of P and can
+bridging signal is lost at that final compression (Stage 3a Q2 AUC$=0.352$,
+anti-correlated with fill). Language models preserve the full token sequence and can
 \emph{dynamically recompose} A- and B-side concepts during inference.
 The R layer does not require an LLM because bridging is somehow ``in a higher
 dimension''~--- it requires an LLM because bridging is a relational, compositional
@@ -903,23 +876,9 @@ a future paper actually close the predicted gap? Only the first two are directly
 measurable from pre-publication corpora; realization is what TVV attempts to
 evaluate, and it is expectedly rare.
 
-\begin{table}[h!]
-\centering\small
-\caption{Operational distinction between TVA and B2.}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lll}
-\toprule
-Property & \tva{} & B2 \\
-\midrule
-Purpose & Candidate void triage & Density-matched control \\
-Output & $(q,A,B,m)$ hypothesis & Matched midpoint \\
-Interpretability & Source-side bridge & Not required \\
-Runtime use & Ex-ante discovery & Retrospective evaluation \\
-Validation role & Generates candidates & Estimates background rate \\
-\bottomrule
-\end{tabular}%
-}
-\end{table}
+\noindent\emph{Note}: TVA produces $(q,A,B,m)$ hypotheses for downstream review;
+B2 produces matched midpoints to estimate background occupancy. The two serve
+fundamentally different roles and are not competing discovery systems.
 
 \subsection{From Geometric Occupancy to Role Decomposition}
 
@@ -950,16 +909,16 @@ This dynamic formulation is outside the scope of the present work.
 (2)~\emph{Threshold sensitivity}: calibration uses 200 null midpoints per cell.
 (3)~\emph{Corpus coverage}: fills outside arXiv are unobservable; unfilled voids are right-censored.
 (4)~\emph{LLM classification reliability}: role labels are produced by a single LLM
-using a fixed rubric; we do not treat these as ground truth, since epistemic role is
-an inherently interpretive construct. To assess reliability we perform: (i)~blind
-source-label removal (source group not shown to LLM), (ii)~repeated classification
-on a 30-case subset for self-consistency, and (iii)~a stratified human audit of coarse
-role categories (void-resolution vs.\ boundary vs.\ false positive) on 60 cases as an
-external plausibility check. The human audit is an auditor, not a gold standard:
-agreement between LLM and blinded human reviewer on the binary FP/non-FP split
-exceeds 80\% on the audited subset. Fine-grained role agreement is lower ($\sim$65\%),
-consistent with the inherent interpretability of the task.
+(Claude Sonnet~4.5) using a fixed rubric. To assess reliability: (i)~blind
+source-label removal (source group not shown to classifier); (ii)~cross-LLM
+re-annotation on 100 stratified t5 cases (Claude~4.5 vs.\ GPT-5.2;
+$\kappa_3{=}0.44$, ``moderate''; see §4.3); (iii)~a blinded human audit on
+60 cases ($>$80\% binary FP agreement, $\sim$65\% 3-class). Epistemic role is
+inherently interpretive; neither cross-LLM nor human labels constitute ground truth.
 (5)~\emph{Domain specificity}: CS arXiv categories only.
+(6)~\emph{Encoder generality}: the architectural impossibility result is established
+on BGE-M3 and its cross-encoder sibling. Replication on E5, GTE, or
+instruction-tuned encoders is left to future work.
 
 \section{Related Work}
 
@@ -997,7 +956,7 @@ homological~\cite{carlsson2009topology,edelsbrunner2010computational}.
 
 \textbf{Scientific Claim Verification.}
 Epistemic classification of scientific contributions---argumentative zoning~\cite{teufel2002summarizing},
-overclaiming detection~\cite{wright2022generating}---provides precedents for our role-aware rubric. \cite{wadden2020scifact} introduced scientific fact verification as a retrieval task.
+overclaiming detection~\cite{wright2022generating}---provides precedents for our role-aware rubric. \cite{wadden2020scifact} introduced scientific fact verification as a retrieval task; our R layer extends this from claim-level verification (does evidence support a claim?) to bridge-level role assessment (does P bridge A and B under anchor q?). The form-meaning gap articulated by \cite{bender2020climbing} provides the theoretical backdrop for our architectural impossibility result (\S\ref{sec:finding4}).
 
 \section{Conclusion}
 
