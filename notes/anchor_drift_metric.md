@@ -246,6 +246,26 @@ Linux kernel commit history is the natural ground-truth test:
 
 Use this to reverse-engineer Issue #1: whichever norm choice makes the Linux ground-truth ranking correct IS the right norm.
 
+**Why Linux kernel is an unfairly good testbed (intentional choice):**
+
+RFC introduces a new mechanism = explicit void acknowledgment by domain experts,
+structured as: Problem statement ("no mechanism for X") → proposed fill → community review.
+This gives:
+- Human-expert-labeled void ground truth (no annotation needed)
+- Clean temporal cut (train < T_RFC, RFC is held-out validator)
+- Falsifiable dD_C prediction: RFC commit >> maintenance patch
+- Multi-scale signal: RFC > feature commit > bugfix > style cleanup
+
+Compared to other domains (biology, economics, social science), Linux kernel has:
+- Git history with exact timestamps and diff sizes
+- RFC/patch review threads as explicit epistemic debate records
+- Linus's merge decisions as community consensus labels
+- 30+ years of continuous, structured knowledge accumulation
+
+This is not "cheating" — it is choosing the domain with the cleanest measurement
+instrument to validate the framework first. Standard scientific practice.
+Generalization to noisier domains (arXiv, clinical trials, patent filings) is Paper 3 §6.
+
 ### LLM hallucination definition — keep in abstract
 
 The sentence:
