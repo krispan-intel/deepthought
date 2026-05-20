@@ -158,6 +158,19 @@ t5 & 2018 & 2019--2023 & $\sim$51k & $\sim$193k \\
 
 10 anchor concepts $\times$ top-30 MMR voids = 300 candidate voids per split.
 
+\paragraph{Filter pass rates.}
+Empirical pass-rate analysis of the C1--C4 pipeline on the t5 corpus shows that C1
+(top-300 anchor cohesion) is the dominant pruning operator: C2 (marginality),
+C3 (sparse bridge), and C4 (vacancy) retain 99.97\%, $\sim$94\%, and $\sim$99\%
+of C1-passing pairs, respectively. A random-pair baseline (N=500) confirms that these
+filters also pass 100\%, 93\%, and 100\% of random corpus pairs, indicating that
+with the threshold settings used (C2: $0.30 < \mathrm{sim}(A,B) < 0.85$; C4:
+$\mathrm{sim}(P_m) < 0.95$), C2 and C4 have low marginal selectivity.
+The 1,495$\times$ search-space reduction from 448,500 pairs to 300 top-K voids is
+therefore primarily attributable to C1 combined with MMR ranking.
+This is a limitation of the specific threshold settings used; tighter calibration
+of C2--C4 thresholds is noted as future work.
+
 \subsection{Baselines}
 
 \textbf{B1 (hot-zone):} 20 random pairs from top-300 anchor C1 pool per anchor.
@@ -532,17 +545,30 @@ bridges and positive for false positives (a network-level Braess-paradox effect)
 Cohen's $\kappa = -0.013$ vs LLM labels, and Pearson $r(\Delta R, \mathrm{fill}) = -0.13$
 ($p = 0.21$). The signal is structurally noise.
 
-\paragraph{ORC/ERC Stage C.} [TODO: add after Stage 2 runs]
+\paragraph{Stage C: ORC path curvature (N$\approx$329, n=30).}
+We tested Ollivier-Ricci curvature (ORC) on the same localized subgraph.
+For each void, we computed mean ORC along the A$\to$B shortest path before and after
+inserting $P$, recording $\Delta\kappa_\mathrm{path}$.
+$\Delta\kappa$ showed a distribution with mean $2.4\times10^{-3}$ (p50 $=-3.0\times10^{-3}$,
+p90 $=2.6\times10^{-2}$); 43\% of cases showed positive $\Delta\kappa$ (analogous to
+the non-monotone pattern in Stage B).
+Cohen's $\kappa = 0.005$ vs LLM labels; Pearson $r(\Delta\kappa, \mathrm{fill}) = -0.11$
+($p = 0.57$). ORC path curvature shows no class-discriminative signal.
 
 \paragraph{Implication.}
-Both global and localized effective resistance fail as R-layer surrogates.
-The localized experiment rules out scale as the primary cause: even N$\approx$328
-cannot produce class-discriminative $\Delta R$. This establishes a preliminary
-negative result: graph-topological proximity does not carry sufficient signal for
-epistemic bridging detection in BGE-M3 embedding spaces.
-We conclude that the R layer's reliance on text-based semantic assessment is
-structurally necessary, not merely convenient. Completing the impossibility survey
-by testing ORC/ERC is ongoing (Stage C).
+Three independent spectral surrogates --- effective resistance (global and localized)
+and ORC path curvature --- all fail to produce class-discriminative signals for
+epistemic bridging. Cohen's $\kappa$ is $\leq 0.01$ in all cases; sign-flip rates of
+43--74\% indicate non-monotone behavior across both $\Delta R$ and $\Delta\kappa$.
+This constitutes a systematic negative result: graph-topological methods do not carry
+sufficient signal to distinguish epistemic fills from false positives in BGE-M3
+embedding spaces. The R layer's reliance on text-based semantic assessment is
+therefore structurally necessary. Note that the filter pass-rate analysis
+(C1 is the dominant pruning operator) means the 300 voids are primarily from a
+high-cohesion pool where any graph surrogate faces additional headwinds from
+near-full local connectivity. Tighter C2--C4 calibration may change the void
+population but is unlikely to rescue graph-spectral R surrogates given the
+fundamental anisotropy of the embedding space.
 
 \subsection{Case Studies}
 
