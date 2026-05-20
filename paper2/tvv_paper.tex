@@ -395,39 +395,41 @@ controls show the highest FP rate, confirming that geometric proximity is
 a weak but non-zero signal.}
 \end{figure}
 
-\subsection{Landmark Anchor-Eligibility Diagnostic}
+\subsection{Landmark Three-Layer Diagnostic}
 
-As a positive-control diagnostic, we independently select five bridge-type landmark
-papers (widely cited, cross-area, 2019--2023) and ask a minimal question: are they
-anchor-eligible in the TVA framework using the pre-publication train corpus?
+As a positive-control diagnostic, we select five landmark bridge-type papers
+(pre-specified, widely cited, 2019--2023) and apply the full three-layer TVV
+predicate: geometric closure (G), anchor eligibility (E), and LLM-assisted bridge
+interpretability audit (R). Each landmark uses its publication-year cutoff as the
+train corpus boundary.
 
 \begin{table}[h!]
 \centering\small
-\caption{Anchor eligibility of 5 pre-specified landmark bridge papers. AncSim = sim(landmark title, TVA anchor vector). $P_{90}$ = 90th percentile of train-corpus anchor similarities.}
+\caption{Landmark three-layer diagnostic. All five papers clear G and E; none clear R.}
 \begin{tabular}{lcccc}
 \toprule
-Landmark & Year & Anchor & AncSim & $>P_{90}$? \\
+Landmark & G ($>$null $p_{95}$) & E (anchor-elig.) & R (bridge audit) \\
 \midrule
-vLLM / PagedAttention & 2023 & mm\_vm & 0.718 & \textbf{Yes} \\
-MLIR                  & 2020 & hwsw\_x86 & 0.632 & \textbf{Yes} \\
-Devign                & 2019 & ebpf\_obs & 0.643 & \textbf{Yes} \\
-Ansor                 & 2020 & hwsw\_x86 & 0.599 & No \\
-FlashAttention        & 2022 & hwsw\_x86 & 0.572 & No \\
+vLLM / PagedAttention (2023) & \textbf{Yes} & \textbf{Yes} & No \\
+MLIR (2020)                  & \textbf{Yes} & \textbf{Yes} & No \\
+Devign (2019)                & \textbf{Yes} & \textbf{Yes} & No \\
+Ansor (2020)                 & \textbf{Yes} & \textbf{Yes} & Weak \\
+FlashAttention (2022)        & \textbf{Yes} & \textbf{Yes} & No \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Three of five landmarks pass the anchor-eligibility check (AncSim $> P_{90}$):
-vLLM against the virtual-memory anchor, MLIR against the hardware/software co-design
-anchor, and Devign against the kernel-observability anchor.
-However, geometric midpoint retrieval alone selects semantically incoherent source
-pairs as best candidates (e.g., GPU energy surveys paired with VANET routing papers).
-This failure mode reinforces the main \tvv{} finding: anchor alignment is a
-recoverable screening signal, but geometric proximity alone does not identify
-interpretable bridge hypotheses. The two results together confirm the detector
-analogy: TVA can beep at the right domain region, but recovering the specific bridge
-requires the full TVV adjudication pipeline. Full landmark bridge recovery with
-per-paper cutoff corpora and role-audited void search is left to future work.
+All five landmarks exceed the same-anchor null midpoint $p_{95}$ threshold (G~pass)
+and are anchor-eligible for at least one TVA anchor (E~pass). However, LLM bridge
+audit (R) finds that the corresponding best-void source pairs are semantically
+incoherent: for example, vLLM's best void pairs a GPU energy survey with a VANET
+routing paper, not OS paging with LLM serving.
+
+This 5/5 G+E pass, 0/5 R pass pattern is precisely the failure mode TVV is designed
+to surface. It demonstrates that the three layers are not redundant: geometric
+proximity and anchor alignment are necessary screening signals but are insufficient
+without role-aware interpretation. The detector beeps at the right domain, but
+recovering the correct bridge pair requires the full adjudication pipeline.
 
 \subsection{Case Studies}
 

@@ -1,0 +1,1622 @@
+[
+  {
+    "landmark": {
+      "arxiv_id": "2006.06762",
+      "title": "Ansor: Generating High-Performance Tensor Programs for Deep Learning",
+      "year": 2020,
+      "a_side": "ML framework / tensor computation and DNN operator optimization",
+      "b_side": "compiler optimization / loop tiling / automated code generation",
+      "bridge_rationale": "Redefines tensor code generation as ML-guided search over a compiler search space",
+      "expected_anchors": [
+        "hwsw_x86",
+        "sched_opt"
+      ]
+    },
+    "split_used": "t5",
+    "eligible_anchors": [
+      "sched_opt",
+      "mm_vm",
+      "ebpf_obs",
+      "hwsw_x86",
+      "net_io",
+      "sync_lock",
+      "mem_alloc",
+      "virt_hyp",
+      "power_mgmt",
+      "storage_io"
+    ],
+    "anchor_results": {
+      "sched_opt": {
+        "anchor_sim": 0.6393,
+        "anchor_p90": 0.5819,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6788,
+        "null_p95": 0.6875,
+        "best_void_sim": 0.704,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.704,
+            "void_id": "1210.6447::1702.00208",
+            "paper_a_title": "Disk Scheduling: Selection of Algorithm",
+            "paper_b_title": "Machines and Algorithms"
+          },
+          {
+            "sim": 0.6988,
+            "void_id": "1408.4725::1409.2620",
+            "paper_a_title": "High Level Hardware/Software Embedded System Design with Redsharc",
+            "paper_b_title": "Learning Machines Implemented on Non-Deterministic Hardware"
+          },
+          {
+            "sim": 0.6925,
+            "void_id": "1710.00112::0707.3030",
+            "paper_a_title": "Toward Scalable Machine Learning and Data Mining: the Bioinformatics   Case",
+            "paper_b_title": "Optimal Design of Ad Hoc Injection Networks by Using Genetic Algorithms"
+          }
+        ]
+      },
+      "mm_vm": {
+        "anchor_sim": 0.6038,
+        "anchor_p90": 0.5592,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6727,
+        "null_p95": 0.6804,
+        "best_void_sim": 0.6998,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6998,
+            "void_id": "1205.6423::1709.03413",
+            "paper_a_title": "Proposed Challenges And Areas of Concern in Operating System Research   and Deve",
+            "paper_b_title": "Gigamachine: incremental machine learning on desktop computers"
+          },
+          {
+            "sim": 0.6952,
+            "void_id": "1404.4629::1506.02558",
+            "paper_a_title": "A Survey of Methods For Analyzing and Improving GPU Energy Efficiency",
+            "paper_b_title": "Towards a Grid-based approach to Traffic Routing in VANET"
+          },
+          {
+            "sim": 0.6666,
+            "void_id": "1601.07300::1106.3967",
+            "paper_a_title": "Recollection: an Alternative Restoration Technique for Constraint   Programming ",
+            "paper_b_title": "Intelligent Self-Repairable Web Wrappers"
+          }
+        ]
+      },
+      "ebpf_obs": {
+        "anchor_sim": 0.6202,
+        "anchor_p90": 0.547,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6889,
+        "null_p95": 0.6966,
+        "best_void_sim": 0.7045,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.7045,
+            "void_id": "1409.2223::1107.4850",
+            "paper_a_title": "Assessment of classification techniques on predicting success or failure   of So",
+            "paper_b_title": "WLAN location system: Background theories and future directions"
+          },
+          {
+            "sim": 0.679,
+            "void_id": "1208.3773::1503.02233",
+            "paper_a_title": "Haskell_#: Coordinating Functional Processes",
+            "paper_b_title": "NebulOS: A Big Data Framework for Astrophysics"
+          },
+          {
+            "sim": 0.6763,
+            "void_id": "1705.08320::1307.7429",
+            "paper_a_title": "Explaining Transition Systems through Program Induction",
+            "paper_b_title": "Participation anticipating in elections using data mining methods"
+          }
+        ]
+      },
+      "hwsw_x86": {
+        "anchor_sim": 0.5985,
+        "anchor_p90": 0.5592,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6831,
+        "null_p95": 0.6915,
+        "best_void_sim": 0.6883,
+        "above_null_p90": true,
+        "above_null_p95": false,
+        "top3_voids": [
+          {
+            "sim": 0.6883,
+            "void_id": "1107.5847::1105.1973",
+            "paper_a_title": "Proceedings 10th International Workshop on the Foundations of   Coordination Lan",
+            "paper_b_title": "Brain-like infrastructure for embedded SoC diagnosis"
+          },
+          {
+            "sim": 0.68,
+            "void_id": "1001.3734::0909.2145",
+            "paper_a_title": "Software Components for Web Services",
+            "paper_b_title": "A general XML-based distributed software architecture for accessing and   sharin"
+          },
+          {
+            "sim": 0.6788,
+            "void_id": "1409.2620::0710.4809",
+            "paper_a_title": "Learning Machines Implemented on Non-Deterministic Hardware",
+            "paper_b_title": "C Based Hardware Design for Wireless Applications"
+          }
+        ]
+      },
+      "net_io": {
+        "anchor_sim": 0.6925,
+        "anchor_p90": 0.5741,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.696,
+        "null_p95": 0.7084,
+        "best_void_sim": 0.7167,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.7167,
+            "void_id": "1606.04609::1712.03351",
+            "paper_a_title": "High Throughput Neural Network based Embedded Streaming Multicore   Processors",
+            "paper_b_title": "Peephole: Predicting Network Performance Before Training"
+          },
+          {
+            "sim": 0.7078,
+            "void_id": "1711.00903::1612.03413",
+            "paper_a_title": "Acceleration of tensor-product operations for high-order finite element   method",
+            "paper_b_title": "Efficient Methods and Parallel Execution for Algorithm Sensitivity   Analysis wi"
+          },
+          {
+            "sim": 0.6991,
+            "void_id": "1310.3101::0803.0037",
+            "paper_a_title": "Deep Multiple Kernel Learning",
+            "paper_b_title": "A Survey on Deep Packet Inspection for Intrusion Detection Systems"
+          }
+        ]
+      },
+      "sync_lock": {
+        "anchor_sim": 0.56,
+        "anchor_p90": 0.5591,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6583,
+        "null_p95": 0.6729,
+        "best_void_sim": 0.6766,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6766,
+            "void_id": "1210.6378::1612.00150",
+            "paper_a_title": "Efficient algorithms for tandem queueing system simulation",
+            "paper_b_title": "Decentralized Consensus Optimization with Asynchrony and Delays"
+          },
+          {
+            "sim": 0.6636,
+            "void_id": "1310.2814::1401.5334",
+            "paper_a_title": "IMSuite: A Benchmark Suite for Simulating Distributed Algorithms",
+            "paper_b_title": "A Microkernel Architecture for Constraint Programming"
+          },
+          {
+            "sim": 0.6475,
+            "void_id": "0912.2554::1407.7449",
+            "paper_a_title": "Parallelizing Deadlock Resolution in Symbolic Synthesis of Distributed   Program",
+            "paper_b_title": "A Fast Synchronization Clustering Algorithm"
+          }
+        ]
+      },
+      "mem_alloc": {
+        "anchor_sim": 0.6185,
+        "anchor_p90": 0.5677,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.676,
+        "null_p95": 0.6843,
+        "best_void_sim": 0.6672,
+        "above_null_p90": false,
+        "above_null_p95": false,
+        "top3_voids": [
+          {
+            "sim": 0.6672,
+            "void_id": "1701.00123::0807.1765",
+            "paper_a_title": "SCALL: Software Component Allocator for Heterogeneous Embedded Systems",
+            "paper_b_title": "Archer: A Community Distributed Computing Infrastructure for Computer   Architec"
+          },
+          {
+            "sim": 0.6648,
+            "void_id": "1309.2357::1601.07300",
+            "paper_a_title": "Software for Science: Some Personal Reflections",
+            "paper_b_title": "Recollection: an Alternative Restoration Technique for Constraint   Programming "
+          },
+          {
+            "sim": 0.664,
+            "void_id": "1610.08494::1603.01407",
+            "paper_a_title": "Havens: Explicit Reliable Memory Regions for HPC Applications",
+            "paper_b_title": "TANGO: Transparent heterogeneous hardware Architecture deployment for   eNergy G"
+          }
+        ]
+      },
+      "virt_hyp": {
+        "anchor_sim": 0.6546,
+        "anchor_p90": 0.5548,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6411,
+        "null_p95": 0.6541,
+        "best_void_sim": 0.6831,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6831,
+            "void_id": "1210.3077::1106.5465",
+            "paper_a_title": "Investigating Decision Support Techniques for Automating Cloud Service   Selecti",
+            "paper_b_title": "SPECI-2: An open-source framework for predictive simulation of   cloud-scale dat"
+          },
+          {
+            "sim": 0.6635,
+            "void_id": "1610.02333::1710.01429",
+            "paper_a_title": "Application of Ontologies in Cloud Computing: The State-Of-The-Art",
+            "paper_b_title": "Improving Scientific Workflow with Cloud Offloading"
+          },
+          {
+            "sim": 0.654,
+            "void_id": "1711.05997::1006.5376",
+            "paper_a_title": "Towards a Cloud-based Architecture for Visualization and Augmented   Reality to ",
+            "paper_b_title": "Resource Allocation using Virtual Clusters"
+          }
+        ]
+      },
+      "power_mgmt": {
+        "anchor_sim": 0.6299,
+        "anchor_p90": 0.5628,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6702,
+        "null_p95": 0.6789,
+        "best_void_sim": 0.7059,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.7059,
+            "void_id": "1404.4629::1702.00208",
+            "paper_a_title": "A Survey of Methods For Analyzing and Improving GPU Energy Efficiency",
+            "paper_b_title": "Machines and Algorithms"
+          },
+          {
+            "sim": 0.6558,
+            "void_id": "1111.6661::1510.07787",
+            "paper_a_title": "Unleashing the Power of Distributed CPU/GPU Architectures: Massive   Astronomica",
+            "paper_b_title": "Redesigning pattern mining algorithms for supercomputers"
+          },
+          {
+            "sim": 0.6506,
+            "void_id": "1601.00834::1707.05878",
+            "paper_a_title": "Fast Power and Energy Efficiency Analysis of FPGA-based Wireless   Base-band Pro",
+            "paper_b_title": "On-line Building Energy Optimization using Deep Reinforcement Learning"
+          }
+        ]
+      },
+      "storage_io": {
+        "anchor_sim": 0.6051,
+        "anchor_p90": 0.55,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6735,
+        "null_p95": 0.682,
+        "best_void_sim": 0.7107,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.7107,
+            "void_id": "1711.00903::0802.2127",
+            "paper_a_title": "Acceleration of tensor-product operations for high-order finite element   method",
+            "paper_b_title": "New Implementation Framework for Saturation-Based Reasoning"
+          },
+          {
+            "sim": 0.6729,
+            "void_id": "1210.6447::1611.05187",
+            "paper_a_title": "Disk Scheduling: Selection of Algorithm",
+            "paper_b_title": "Variable Neighborhood Search Algorithms for the multi-depot dial-a-ride   proble"
+          },
+          {
+            "sim": 0.6634,
+            "void_id": "1308.5811::0710.4635",
+            "paper_a_title": "Clean-Slate Design of Next-Generation Optical Access",
+            "paper_b_title": "OS Debugging Method Using a Lightweight Virtual Machine Monitor"
+          }
+        ]
+      }
+    },
+    "best_anchor": "net_io",
+    "best_void_sim": 0.7167,
+    "best_void": {
+      "void_id": "1606.04609::1712.03351",
+      "paper_a_title": "High Throughput Neural Network based Embedded Streaming Multicore   Processors",
+      "paper_b_title": "Peephole: Predicting Network Performance Before Training"
+    },
+    "interpretability_audit": {
+      "plausible_bridge": false,
+      "confidence": 0.62,
+      "a_represents": "embedded/architecture community focused on designing high-throughput multicore processor hardware for neural-network streaming inference",
+      "b_represents": "AutoML/NAS and performance-modeling community focused on predicting end-to-end network performance (latency/throughput) prior to training",
+      "match_to_landmark_a": "partial",
+      "match_to_landmark_b": "partial",
+      "overall_verdict": "weak",
+      "reason": "Ansor\u2019s landmark bridge is specifically between DNN operator/tensor-program optimization in ML frameworks and classical compiler autotuning (loop transformations, tiling, code generation) using an ML-guided cost model over a compiler search space. Paper A (embedded multicore NN processors) aligns more with hardware/architecture for NN execution than with compiler-level tensor program generation, and Paper B (predicting network performance before training) is closer to NAS/system-level performance prediction than to operator-level schedule search and compiler optimization. While both touch \u201cperformance for deep learning,\u201d they do not cleanly correspond to the two communities Ansor directly bridged (tensor-operator compiler autotuning \u2194 compiler optimization/codegen), so this A/B pair is not a strong pre-2020 bridge hypothesis for Ansor."
+    }
+  },
+  {
+    "landmark": {
+      "arxiv_id": "2205.14135",
+      "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",
+      "year": 2022,
+      "a_side": "ML algorithm design / Transformer attention computation",
+      "b_side": "hardware memory hierarchy / IO complexity / SRAM vs HBM bandwidth",
+      "bridge_rationale": "Reframes attention as an IO-complexity optimization problem, bridging ML and hardware memory analysis",
+      "expected_anchors": [
+        "hwsw_x86",
+        "mem_alloc"
+      ]
+    },
+    "split_used": "t5",
+    "eligible_anchors": [
+      "mm_vm",
+      "ebpf_obs",
+      "hwsw_x86",
+      "net_io",
+      "mem_alloc",
+      "virt_hyp",
+      "power_mgmt",
+      "storage_io"
+    ],
+    "anchor_results": {
+      "mm_vm": {
+        "anchor_sim": 0.6121,
+        "anchor_p90": 0.5592,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6633,
+        "null_p95": 0.6751,
+        "best_void_sim": 0.7046,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.7046,
+            "void_id": "1404.4629::1506.02558",
+            "paper_a_title": "A Survey of Methods For Analyzing and Improving GPU Energy Efficiency",
+            "paper_b_title": "Towards a Grid-based approach to Traffic Routing in VANET"
+          },
+          {
+            "sim": 0.7019,
+            "void_id": "1606.06726::0909.1763",
+            "paper_a_title": "Adaptive Just-in-time Value Class Optimization for Lowering Memory   Consumption",
+            "paper_b_title": "Remembrance: The Unbearable Sentience of Being Digital"
+          },
+          {
+            "sim": 0.665,
+            "void_id": "1308.2881::1309.3785",
+            "paper_a_title": "Opacity of Memory Management in Software Transactional Memory",
+            "paper_b_title": "Energy Saving Techniques for Phase Change Memory (PCM)"
+          }
+        ]
+      },
+      "ebpf_obs": {
+        "anchor_sim": 0.5986,
+        "anchor_p90": 0.547,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6588,
+        "null_p95": 0.6679,
+        "best_void_sim": 0.6724,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6724,
+            "void_id": "1409.2223::1107.4850",
+            "paper_a_title": "Assessment of classification techniques on predicting success or failure   of So",
+            "paper_b_title": "WLAN location system: Background theories and future directions"
+          },
+          {
+            "sim": 0.6668,
+            "void_id": "1208.3773::1503.02233",
+            "paper_a_title": "Haskell_#: Coordinating Functional Processes",
+            "paper_b_title": "NebulOS: A Big Data Framework for Astrophysics"
+          },
+          {
+            "sim": 0.6601,
+            "void_id": "1412.5538::1709.02260",
+            "paper_a_title": "Kickstarting High-performance Energy-efficient Manycore Architectures   with Epi",
+            "paper_b_title": "Embedded Binarized Neural Networks"
+          }
+        ]
+      },
+      "hwsw_x86": {
+        "anchor_sim": 0.5723,
+        "anchor_p90": 0.5592,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.656,
+        "null_p95": 0.6667,
+        "best_void_sim": 0.6525,
+        "above_null_p90": false,
+        "above_null_p95": false,
+        "top3_voids": [
+          {
+            "sim": 0.6525,
+            "void_id": "1107.5847::1105.1973",
+            "paper_a_title": "Proceedings 10th International Workshop on the Foundations of   Coordination Lan",
+            "paper_b_title": "Brain-like infrastructure for embedded SoC diagnosis"
+          },
+          {
+            "sim": 0.648,
+            "void_id": "1309.7321::1001.3781",
+            "paper_a_title": "Recycled Error Bits: Energy-Efficient Architectural Support for Higher   Precisi",
+            "paper_b_title": "An Architectural Approach for Decoding and Distributing Functions in   FPUs in a"
+          },
+          {
+            "sim": 0.6477,
+            "void_id": "0710.4850::1603.03022",
+            "paper_a_title": "Hardware Support for QoS-based Function Allocation in Reconfigurable   Systems",
+            "paper_b_title": "Towards Automatic Learning of Heuristics for Mechanical Transformations   of Pro"
+          }
+        ]
+      },
+      "net_io": {
+        "anchor_sim": 0.6197,
+        "anchor_p90": 0.5741,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.671,
+        "null_p95": 0.6782,
+        "best_void_sim": 0.6799,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6799,
+            "void_id": "1507.04221::1707.02647",
+            "paper_a_title": "IP Over ICN - The Better IP? An Unusual Take on Information-Centric   Networking",
+            "paper_b_title": "Cappuccino: Efficient Inference Software Synthesis for Mobile   System-on-Chips"
+          },
+          {
+            "sim": 0.662,
+            "void_id": "1502.02389::1208.3773",
+            "paper_a_title": "Patterns and Rewrite Rules for Systematic Code Generation (From   High-Level Fun",
+            "paper_b_title": "Haskell_#: Coordinating Functional Processes"
+          },
+          {
+            "sim": 0.6575,
+            "void_id": "1510.07787::1502.04025",
+            "paper_a_title": "Redesigning pattern mining algorithms for supercomputers",
+            "paper_b_title": "QPACE 2 and Domain Decomposition on the Intel Xeon Phi"
+          }
+        ]
+      },
+      "mem_alloc": {
+        "anchor_sim": 0.5685,
+        "anchor_p90": 0.5677,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6488,
+        "null_p95": 0.6602,
+        "best_void_sim": 0.6398,
+        "above_null_p90": false,
+        "above_null_p95": false,
+        "top3_voids": [
+          {
+            "sim": 0.6398,
+            "void_id": "1309.2357::1601.07300",
+            "paper_a_title": "Software for Science: Some Personal Reflections",
+            "paper_b_title": "Recollection: an Alternative Restoration Technique for Constraint   Programming "
+          },
+          {
+            "sim": 0.6389,
+            "void_id": "1306.0077::1308.1343",
+            "paper_a_title": "Partition Consistency: A Case Study in Modeling Systems with Weak Memory   Consi",
+            "paper_b_title": "Performance and Optimization Abstractions for Large Scale Heterogeneous   System"
+          },
+          {
+            "sim": 0.6383,
+            "void_id": "1509.05492::1611.00606",
+            "paper_a_title": "Challenges and Considerations for Utilizing Burst Buffers in   High-Performance ",
+            "paper_b_title": "Hybrid CPU-GPU generation of the Hamiltonian and Overlap matrices in   FLAPW met"
+          }
+        ]
+      },
+      "virt_hyp": {
+        "anchor_sim": 0.5719,
+        "anchor_p90": 0.5548,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6288,
+        "null_p95": 0.6358,
+        "best_void_sim": 0.6381,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6381,
+            "void_id": "1210.3077::1106.5465",
+            "paper_a_title": "Investigating Decision Support Techniques for Automating Cloud Service   Selecti",
+            "paper_b_title": "SPECI-2: An open-source framework for predictive simulation of   cloud-scale dat"
+          },
+          {
+            "sim": 0.6307,
+            "void_id": "1711.05997::1006.5376",
+            "paper_a_title": "Towards a Cloud-based Architecture for Visualization and Augmented   Reality to ",
+            "paper_b_title": "Resource Allocation using Virtual Clusters"
+          },
+          {
+            "sim": 0.6258,
+            "void_id": "1504.07070::1501.04473",
+            "paper_a_title": "Deterministically Deterring Timing Attacks in Deterland",
+            "paper_b_title": "Seeking Black Lining In Cloud"
+          }
+        ]
+      },
+      "power_mgmt": {
+        "anchor_sim": 0.6144,
+        "anchor_p90": 0.5628,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.661,
+        "null_p95": 0.6693,
+        "best_void_sim": 0.6784,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6784,
+            "void_id": "1404.4629::1702.00208",
+            "paper_a_title": "A Survey of Methods For Analyzing and Improving GPU Energy Efficiency",
+            "paper_b_title": "Machines and Algorithms"
+          },
+          {
+            "sim": 0.6755,
+            "void_id": "1506.03193::1610.09146",
+            "paper_a_title": "Accelerating Non-volatile/Hybrid Processor Cache Design Space   Exploration for ",
+            "paper_b_title": "Performance evaluation of explicit finite difference algorithms with   varying a"
+          },
+          {
+            "sim": 0.6544,
+            "void_id": "1601.00834::1707.05878",
+            "paper_a_title": "Fast Power and Energy Efficiency Analysis of FPGA-based Wireless   Base-band Pro",
+            "paper_b_title": "On-line Building Energy Optimization using Deep Reinforcement Learning"
+          }
+        ]
+      },
+      "storage_io": {
+        "anchor_sim": 0.6112,
+        "anchor_p90": 0.55,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6692,
+        "null_p95": 0.677,
+        "best_void_sim": 0.6882,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6882,
+            "void_id": "1308.5811::0710.4635",
+            "paper_a_title": "Clean-Slate Design of Next-Generation Optical Access",
+            "paper_b_title": "OS Debugging Method Using a Lightweight Virtual Machine Monitor"
+          },
+          {
+            "sim": 0.6801,
+            "void_id": "1711.01454::1206.0305",
+            "paper_a_title": "Optimal Checkpointing for Secure Intermittently-Powered IoT Devices",
+            "paper_b_title": "Efficient Certificate Management in VANET"
+          },
+          {
+            "sim": 0.6645,
+            "void_id": "1308.6208::1201.4655",
+            "paper_a_title": "Toward Cloud-based Vehicular Networks with Efficient Resource Management",
+            "paper_b_title": "Reengineering multi tiered enterprise business applications for   performance en"
+          }
+        ]
+      }
+    },
+    "best_anchor": "mm_vm",
+    "best_void_sim": 0.7046,
+    "best_void": {
+      "void_id": "1404.4629::1506.02558",
+      "paper_a_title": "A Survey of Methods For Analyzing and Improving GPU Energy Efficiency",
+      "paper_b_title": "Towards a Grid-based approach to Traffic Routing in VANET"
+    },
+    "interpretability_audit": {
+      "plausible_bridge": false,
+      "confidence": 0.9,
+      "a_represents": "GPU architecture/performance/energy-efficiency analysis community (green computing, GPU power/energy optimization, systems evaluation)",
+      "b_represents": "vehicular ad hoc networking (VANET) and traffic-routing algorithms community (network protocols, routing in mobile networks)",
+      "match_to_landmark_a": "no",
+      "match_to_landmark_b": "no",
+      "overall_verdict": "no",
+      "reason": "FlashAttention\u2019s bridge is specifically between Transformer attention algorithm design and hardware memory hierarchy / IO-complexity thinking (SRAM vs HBM, bandwidth-aware tiling). Source A is hardware/GPU energy-efficiency surveying, which is at best a distant cousin of hardware performance analysis and does not naturally connect to exact attention computation or IO-optimal attention kernels as a two-community bridge. Source B is about VANET traffic routing, a networking domain that does not map onto either Transformer attention algorithms or memory/IO complexity. Together, A and B do not plausibly represent the two communities that FlashAttention later bridged."
+    }
+  },
+  {
+    "landmark": {
+      "arxiv_id": "2309.06180",
+      "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention",
+      "year": 2023,
+      "a_side": "LLM inference serving / KV cache management",
+      "b_side": "OS virtual memory management / demand paging / memory fragmentation",
+      "bridge_rationale": "Ports OS demand paging concept directly to LLM KV cache, bridging OS and ML serving communities",
+      "expected_anchors": [
+        "mm_vm",
+        "virt_hyp"
+      ]
+    },
+    "split_used": "t5",
+    "eligible_anchors": [
+      "sched_opt",
+      "mm_vm",
+      "ebpf_obs",
+      "hwsw_x86",
+      "net_io",
+      "sync_lock",
+      "mem_alloc",
+      "virt_hyp",
+      "power_mgmt",
+      "storage_io"
+    ],
+    "anchor_results": {
+      "sched_opt": {
+        "anchor_sim": 0.6405,
+        "anchor_p90": 0.5819,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6809,
+        "null_p95": 0.688,
+        "best_void_sim": 0.7051,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.7051,
+            "void_id": "1710.00112::0707.3030",
+            "paper_a_title": "Toward Scalable Machine Learning and Data Mining: the Bioinformatics   Case",
+            "paper_b_title": "Optimal Design of Ad Hoc Injection Networks by Using Genetic Algorithms"
+          },
+          {
+            "sim": 0.7002,
+            "void_id": "1404.4629::1611.06334",
+            "paper_a_title": "A Survey of Methods For Analyzing and Improving GPU Energy Efficiency",
+            "paper_b_title": "A Survey of Methods for Collective Communication Optimization and Tuning"
+          },
+          {
+            "sim": 0.6858,
+            "void_id": "1210.6447::1702.00208",
+            "paper_a_title": "Disk Scheduling: Selection of Algorithm",
+            "paper_b_title": "Machines and Algorithms"
+          }
+        ]
+      },
+      "mm_vm": {
+        "anchor_sim": 0.7179,
+        "anchor_p90": 0.5592,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6984,
+        "null_p95": 0.7064,
+        "best_void_sim": 0.7254,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.7254,
+            "void_id": "1404.4629::1506.02558",
+            "paper_a_title": "A Survey of Methods For Analyzing and Improving GPU Energy Efficiency",
+            "paper_b_title": "Towards a Grid-based approach to Traffic Routing in VANET"
+          },
+          {
+            "sim": 0.7239,
+            "void_id": "1606.06726::0909.1763",
+            "paper_a_title": "Adaptive Just-in-time Value Class Optimization for Lowering Memory   Consumption",
+            "paper_b_title": "Remembrance: The Unbearable Sentience of Being Digital"
+          },
+          {
+            "sim": 0.7121,
+            "void_id": "0810.2021::1501.01252",
+            "paper_a_title": "Visualization Optimization : Application to the RoboCup Rescue Domain",
+            "paper_b_title": "Optimisation using Natural Language Processing: Personalized Tour   Recommendati"
+          }
+        ]
+      },
+      "ebpf_obs": {
+        "anchor_sim": 0.614,
+        "anchor_p90": 0.547,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6767,
+        "null_p95": 0.6857,
+        "best_void_sim": 0.6921,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6921,
+            "void_id": "1409.2223::1107.4850",
+            "paper_a_title": "Assessment of classification techniques on predicting success or failure   of So",
+            "paper_b_title": "WLAN location system: Background theories and future directions"
+          },
+          {
+            "sim": 0.6755,
+            "void_id": "1208.3773::1503.02233",
+            "paper_a_title": "Haskell_#: Coordinating Functional Processes",
+            "paper_b_title": "NebulOS: A Big Data Framework for Astrophysics"
+          },
+          {
+            "sim": 0.6737,
+            "void_id": "cs/0611067::cs/0502048",
+            "paper_a_title": "Implementing the modular eballot system V0.6",
+            "paper_b_title": "An Automated Analysis of the Security of Quantum Key Distribution"
+          }
+        ]
+      },
+      "hwsw_x86": {
+        "anchor_sim": 0.5654,
+        "anchor_p90": 0.5592,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6681,
+        "null_p95": 0.6784,
+        "best_void_sim": 0.6783,
+        "above_null_p90": true,
+        "above_null_p95": false,
+        "top3_voids": [
+          {
+            "sim": 0.6783,
+            "void_id": "0710.4850::1603.03022",
+            "paper_a_title": "Hardware Support for QoS-based Function Allocation in Reconfigurable   Systems",
+            "paper_b_title": "Towards Automatic Learning of Heuristics for Mechanical Transformations   of Pro"
+          },
+          {
+            "sim": 0.671,
+            "void_id": "1107.5847::1105.1973",
+            "paper_a_title": "Proceedings 10th International Workshop on the Foundations of   Coordination Lan",
+            "paper_b_title": "Brain-like infrastructure for embedded SoC diagnosis"
+          },
+          {
+            "sim": 0.6678,
+            "void_id": "1510.07787::cs/0107009",
+            "paper_a_title": "Redesigning pattern mining algorithms for supercomputers",
+            "paper_b_title": "A Blueprint for Building Serverless Applications on the Net"
+          }
+        ]
+      },
+      "net_io": {
+        "anchor_sim": 0.6518,
+        "anchor_p90": 0.5741,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6872,
+        "null_p95": 0.6946,
+        "best_void_sim": 0.6966,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6966,
+            "void_id": "cs/0405096::1608.03770",
+            "paper_a_title": "Developing Intellectual Network Management Facilities by Means of   Pattern Reco",
+            "paper_b_title": "A Comparison of Approaches for Traffic Engineering in IP and MPLS   Networks"
+          },
+          {
+            "sim": 0.68,
+            "void_id": "1310.3101::0803.0037",
+            "paper_a_title": "Deep Multiple Kernel Learning",
+            "paper_b_title": "A Survey on Deep Packet Inspection for Intrusion Detection Systems"
+          },
+          {
+            "sim": 0.68,
+            "void_id": "1611.09482::1701.00167",
+            "paper_a_title": "Fast Wavenet Generation Algorithm",
+            "paper_b_title": "Very Fast Kernel SVM under Budget Constraints"
+          }
+        ]
+      },
+      "sync_lock": {
+        "anchor_sim": 0.5928,
+        "anchor_p90": 0.5591,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6755,
+        "null_p95": 0.6872,
+        "best_void_sim": 0.694,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.694,
+            "void_id": "1709.00722::1606.00519",
+            "paper_a_title": "Faster Concurrent Range Queries with Contention Adapting Search Trees   Using Im",
+            "paper_b_title": "Massively-Parallel Lossless Data Decompression"
+          },
+          {
+            "sim": 0.6773,
+            "void_id": "1210.3368::1508.02448",
+            "paper_a_title": "An optimized conflict-free replicated set",
+            "paper_b_title": "Equivalence-based Security for Querying Encrypted Databases: Theory and   Applic"
+          },
+          {
+            "sim": 0.675,
+            "void_id": "cs/0408016::0810.2226",
+            "paper_a_title": "Lock-Free and Practical Deques using Single-Word Compare-And-Swap",
+            "paper_b_title": "Enabling Lock-Free Concurrent Fine-Grain Access to Massive Distributed   Data: A"
+          }
+        ]
+      },
+      "mem_alloc": {
+        "anchor_sim": 0.6353,
+        "anchor_p90": 0.5677,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6836,
+        "null_p95": 0.6924,
+        "best_void_sim": 0.6861,
+        "above_null_p90": true,
+        "above_null_p95": false,
+        "top3_voids": [
+          {
+            "sim": 0.6861,
+            "void_id": "1611.02905::cs/9810002",
+            "paper_a_title": "Helping HPC Users Specify Job Memory Requirements via Machine Learning",
+            "paper_b_title": "Pre-fetching tree-structured data in distributed memory"
+          },
+          {
+            "sim": 0.6855,
+            "void_id": "1105.1811::0710.4702",
+            "paper_a_title": "User Mode Memory Page Allocation: A Silver Bullet For Memory Allocation?",
+            "paper_b_title": "A Register Allocation Algorithm in the Presence of Scalar Replacement   for Fine"
+          },
+          {
+            "sim": 0.6759,
+            "void_id": "1309.2357::1601.07300",
+            "paper_a_title": "Software for Science: Some Personal Reflections",
+            "paper_b_title": "Recollection: an Alternative Restoration Technique for Constraint   Programming "
+          }
+        ]
+      },
+      "virt_hyp": {
+        "anchor_sim": 0.5993,
+        "anchor_p90": 0.5548,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6438,
+        "null_p95": 0.6525,
+        "best_void_sim": 0.669,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.669,
+            "void_id": "1711.05997::1006.5376",
+            "paper_a_title": "Towards a Cloud-based Architecture for Visualization and Augmented   Reality to ",
+            "paper_b_title": "Resource Allocation using Virtual Clusters"
+          },
+          {
+            "sim": 0.662,
+            "void_id": "1210.3077::1106.5465",
+            "paper_a_title": "Investigating Decision Support Techniques for Automating Cloud Service   Selecti",
+            "paper_b_title": "SPECI-2: An open-source framework for predictive simulation of   cloud-scale dat"
+          },
+          {
+            "sim": 0.6505,
+            "void_id": "1405.5200::1606.05633",
+            "paper_a_title": "Efficient and Reliable Hybrid Cloud Architechture for Big Data",
+            "paper_b_title": "Equi-depth Histogram Construction for Big Data with Quality Guarantees"
+          }
+        ]
+      },
+      "power_mgmt": {
+        "anchor_sim": 0.6376,
+        "anchor_p90": 0.5628,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6781,
+        "null_p95": 0.6869,
+        "best_void_sim": 0.7117,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.7117,
+            "void_id": "1404.4629::1702.00208",
+            "paper_a_title": "A Survey of Methods For Analyzing and Improving GPU Energy Efficiency",
+            "paper_b_title": "Machines and Algorithms"
+          },
+          {
+            "sim": 0.672,
+            "void_id": "1309.3785::1409.5567",
+            "paper_a_title": "Energy Saving Techniques for Phase Change Memory (PCM)",
+            "paper_b_title": "Rank-Aware Dynamic Migrations and Adaptive Demotions for DRAM Power   Management"
+          },
+          {
+            "sim": 0.6668,
+            "void_id": "1601.00834::1707.05878",
+            "paper_a_title": "Fast Power and Energy Efficiency Analysis of FPGA-based Wireless   Base-band Pro",
+            "paper_b_title": "On-line Building Energy Optimization using Deep Reinforcement Learning"
+          }
+        ]
+      },
+      "storage_io": {
+        "anchor_sim": 0.6105,
+        "anchor_p90": 0.55,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6876,
+        "null_p95": 0.6966,
+        "best_void_sim": 0.716,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.716,
+            "void_id": "1308.6208::1201.4655",
+            "paper_a_title": "Toward Cloud-based Vehicular Networks with Efficient Resource Management",
+            "paper_b_title": "Reengineering multi tiered enterprise business applications for   performance en"
+          },
+          {
+            "sim": 0.6905,
+            "void_id": "1711.00903::0802.2127",
+            "paper_a_title": "Acceleration of tensor-product operations for high-order finite element   method",
+            "paper_b_title": "New Implementation Framework for Saturation-Based Reasoning"
+          },
+          {
+            "sim": 0.6829,
+            "void_id": "1604.08814::1112.4339",
+            "paper_a_title": "Improved IKE Key Exchange Protocol Combined with Computer Security USB   Key Dev",
+            "paper_b_title": "A Multipath Transport Protocol for Future Internet"
+          }
+        ]
+      }
+    },
+    "best_anchor": "mm_vm",
+    "best_void_sim": 0.7254,
+    "best_void": {
+      "void_id": "1404.4629::1506.02558",
+      "paper_a_title": "A Survey of Methods For Analyzing and Improving GPU Energy Efficiency",
+      "paper_b_title": "Towards a Grid-based approach to Traffic Routing in VANET"
+    },
+    "interpretability_audit": {
+      "plausible_bridge": false,
+      "confidence": 0.93,
+      "a_represents": "GPU power/energy efficiency research and survey community (GPU architecture, energy optimization techniques, performance-per-watt analysis)",
+      "b_represents": "Vehicular ad-hoc networking (VANET) and traffic routing/ITS networking community (routing protocols, grid-based routing in mobile networks)",
+      "match_to_landmark_a": "no",
+      "match_to_landmark_b": "no",
+      "overall_verdict": "no",
+      "reason": "The landmark paper bridges LLM inference serving (especially KV-cache allocation/fragmentation) with OS virtual memory ideas (paging, demand-driven allocation). Source A is about GPU energy efficiency methods, which relates to hardware power optimization rather than OS-like paging abstractions for dynamic memory management in serving systems. Source B is about network-layer routing in VANETs, which is orthogonal to memory management and LLM serving. Together, A and B do not correspond to the two communities (LLM serving \u2194 OS VM/demand paging) that PagedAttention connects, so they do not form a plausible pre-publication bridge hypothesis."
+    }
+  },
+  {
+    "landmark": {
+      "arxiv_id": "2002.11054",
+      "title": "MLIR: Scaling Compiler Infrastructure for Domain Specific Computation",
+      "year": 2020,
+      "a_side": "compiler infrastructure / LLVM ecosystem / code optimization",
+      "b_side": "ML hardware accelerators / domain-specific languages (XLA, TPU, custom ASIC)",
+      "bridge_rationale": "Unified multi-level IR hierarchy allowing compiler and ML hardware designers to share infrastructure",
+      "expected_anchors": [
+        "hwsw_x86",
+        "sched_opt"
+      ]
+    },
+    "split_used": "t5",
+    "eligible_anchors": [
+      "sched_opt",
+      "mm_vm",
+      "ebpf_obs",
+      "hwsw_x86",
+      "net_io",
+      "sync_lock",
+      "mem_alloc",
+      "virt_hyp",
+      "power_mgmt",
+      "storage_io"
+    ],
+    "anchor_results": {
+      "sched_opt": {
+        "anchor_sim": 0.6522,
+        "anchor_p90": 0.5819,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6642,
+        "null_p95": 0.6739,
+        "best_void_sim": 0.6811,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6811,
+            "void_id": "1710.00112::0707.3030",
+            "paper_a_title": "Toward Scalable Machine Learning and Data Mining: the Bioinformatics   Case",
+            "paper_b_title": "Optimal Design of Ad Hoc Injection Networks by Using Genetic Algorithms"
+          },
+          {
+            "sim": 0.6802,
+            "void_id": "1210.6447::1702.00208",
+            "paper_a_title": "Disk Scheduling: Selection of Algorithm",
+            "paper_b_title": "Machines and Algorithms"
+          },
+          {
+            "sim": 0.6656,
+            "void_id": "1401.5334::1208.3773",
+            "paper_a_title": "A Microkernel Architecture for Constraint Programming",
+            "paper_b_title": "Haskell_#: Coordinating Functional Processes"
+          }
+        ]
+      },
+      "mm_vm": {
+        "anchor_sim": 0.6171,
+        "anchor_p90": 0.5592,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6593,
+        "null_p95": 0.6705,
+        "best_void_sim": 0.6761,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6761,
+            "void_id": "1205.6423::1709.03413",
+            "paper_a_title": "Proposed Challenges And Areas of Concern in Operating System Research   and Deve",
+            "paper_b_title": "Gigamachine: incremental machine learning on desktop computers"
+          },
+          {
+            "sim": 0.6759,
+            "void_id": "cs/0310008::cs/0312049",
+            "paper_a_title": "Poster on MPI application in Computational Fluid Dynamics",
+            "paper_b_title": "Using virtual processors for SPMD parallel programs"
+          },
+          {
+            "sim": 0.6617,
+            "void_id": "1404.4629::1506.02558",
+            "paper_a_title": "A Survey of Methods For Analyzing and Improving GPU Energy Efficiency",
+            "paper_b_title": "Towards a Grid-based approach to Traffic Routing in VANET"
+          }
+        ]
+      },
+      "ebpf_obs": {
+        "anchor_sim": 0.6143,
+        "anchor_p90": 0.547,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6733,
+        "null_p95": 0.6865,
+        "best_void_sim": 0.6908,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6908,
+            "void_id": "1507.01902::cs/0409018",
+            "paper_a_title": "ScaffCC: Scalable Compilation and Analysis of Quantum Programs",
+            "paper_b_title": "PKI Scalability Issues"
+          },
+          {
+            "sim": 0.6805,
+            "void_id": "1409.2223::1107.4850",
+            "paper_a_title": "Assessment of classification techniques on predicting success or failure   of So",
+            "paper_b_title": "WLAN location system: Background theories and future directions"
+          },
+          {
+            "sim": 0.6719,
+            "void_id": "1208.3773::1503.02233",
+            "paper_a_title": "Haskell_#: Coordinating Functional Processes",
+            "paper_b_title": "NebulOS: A Big Data Framework for Astrophysics"
+          }
+        ]
+      },
+      "hwsw_x86": {
+        "anchor_sim": 0.6319,
+        "anchor_p90": 0.5592,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6784,
+        "null_p95": 0.6863,
+        "best_void_sim": 0.6895,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6895,
+            "void_id": "cs/0501002::0911.5438",
+            "paper_a_title": "A Survey of Fault-Tolerance and Fault-Recovery Techniques in Parallel   Systems",
+            "paper_b_title": "Building and Installing a Hadoop/MapReduce Cluster from Commodity   Components"
+          },
+          {
+            "sim": 0.6888,
+            "void_id": "1207.3872::0710.4700",
+            "paper_a_title": "Top Down Approach: SIMULINK Mixed Hardware / Software Design",
+            "paper_b_title": "A Decompilation Approach to Partitioning Software for   Microprocessor/FPGA Plat"
+          },
+          {
+            "sim": 0.6886,
+            "void_id": "1107.5847::1105.1973",
+            "paper_a_title": "Proceedings 10th International Workshop on the Foundations of   Coordination Lan",
+            "paper_b_title": "Brain-like infrastructure for embedded SoC diagnosis"
+          }
+        ]
+      },
+      "net_io": {
+        "anchor_sim": 0.6376,
+        "anchor_p90": 0.5741,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6661,
+        "null_p95": 0.6749,
+        "best_void_sim": 0.6973,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6973,
+            "void_id": "cs/0405096::1608.03770",
+            "paper_a_title": "Developing Intellectual Network Management Facilities by Means of   Pattern Reco",
+            "paper_b_title": "A Comparison of Approaches for Traffic Engineering in IP and MPLS   Networks"
+          },
+          {
+            "sim": 0.6865,
+            "void_id": "0808.1802::0905.0792",
+            "paper_a_title": "Compute and Storage Clouds Using Wide Area High Performance Networks",
+            "paper_b_title": "Introducing a Performance Model for Bandwidth-Limited Loop Kernels"
+          },
+          {
+            "sim": 0.6773,
+            "void_id": "1510.07787::1502.04025",
+            "paper_a_title": "Redesigning pattern mining algorithms for supercomputers",
+            "paper_b_title": "QPACE 2 and Domain Decomposition on the Intel Xeon Phi"
+          }
+        ]
+      },
+      "sync_lock": {
+        "anchor_sim": 0.5846,
+        "anchor_p90": 0.5591,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6505,
+        "null_p95": 0.659,
+        "best_void_sim": 0.6785,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6785,
+            "void_id": "1310.2814::1401.5334",
+            "paper_a_title": "IMSuite: A Benchmark Suite for Simulating Distributed Algorithms",
+            "paper_b_title": "A Microkernel Architecture for Constraint Programming"
+          },
+          {
+            "sim": 0.6572,
+            "void_id": "1107.5847::1501.05936",
+            "paper_a_title": "Proceedings 10th International Workshop on the Foundations of   Coordination Lan",
+            "paper_b_title": "A unified framework for modeling and implementation of hybrid systems   with syn"
+          },
+          {
+            "sim": 0.6468,
+            "void_id": "1709.00722::1606.00519",
+            "paper_a_title": "Faster Concurrent Range Queries with Contention Adapting Search Trees   Using Im",
+            "paper_b_title": "Massively-Parallel Lossless Data Decompression"
+          }
+        ]
+      },
+      "mem_alloc": {
+        "anchor_sim": 0.6213,
+        "anchor_p90": 0.5677,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6623,
+        "null_p95": 0.6695,
+        "best_void_sim": 0.6841,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6841,
+            "void_id": "1701.00123::0807.1765",
+            "paper_a_title": "SCALL: Software Component Allocator for Heterogeneous Embedded Systems",
+            "paper_b_title": "Archer: A Community Distributed Computing Infrastructure for Computer   Architec"
+          },
+          {
+            "sim": 0.6778,
+            "void_id": "0710.4700::1603.09176",
+            "paper_a_title": "A Decompilation Approach to Partitioning Software for   Microprocessor/FPGA Plat",
+            "paper_b_title": "Enhanced computation method of topological smoothing on shared memory   parallel"
+          },
+          {
+            "sim": 0.6646,
+            "void_id": "1504.06357::cs/0407053",
+            "paper_a_title": "Overview of Swallow --- A Scalable 480-core System for Investigating the   Perfo",
+            "paper_b_title": "Design of a Parallel and Distributed Web Search Engine"
+          }
+        ]
+      },
+      "virt_hyp": {
+        "anchor_sim": 0.644,
+        "anchor_p90": 0.5548,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6501,
+        "null_p95": 0.6613,
+        "best_void_sim": 0.6961,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6961,
+            "void_id": "1210.3077::1106.5465",
+            "paper_a_title": "Investigating Decision Support Techniques for Automating Cloud Service   Selecti",
+            "paper_b_title": "SPECI-2: An open-source framework for predictive simulation of   cloud-scale dat"
+          },
+          {
+            "sim": 0.6736,
+            "void_id": "0808.1802::1710.04049",
+            "paper_a_title": "Compute and Storage Clouds Using Wide Area High Performance Networks",
+            "paper_b_title": "About Microservices, Containers and their Underestimated Impact on   Network Per"
+          },
+          {
+            "sim": 0.6573,
+            "void_id": "1711.05997::1006.5376",
+            "paper_a_title": "Towards a Cloud-based Architecture for Visualization and Augmented   Reality to ",
+            "paper_b_title": "Resource Allocation using Virtual Clusters"
+          }
+        ]
+      },
+      "power_mgmt": {
+        "anchor_sim": 0.6482,
+        "anchor_p90": 0.5628,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6559,
+        "null_p95": 0.6651,
+        "best_void_sim": 0.6814,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6814,
+            "void_id": "1604.02700::1403.0802",
+            "paper_a_title": "GPIC - GPU Power Iteration Cluster",
+            "paper_b_title": "Large-Scale Geospatial Processing on Multi-Core and Many-Core   Processors: Eval"
+          },
+          {
+            "sim": 0.6733,
+            "void_id": "1404.4629::1702.00208",
+            "paper_a_title": "A Survey of Methods For Analyzing and Improving GPU Energy Efficiency",
+            "paper_b_title": "Machines and Algorithms"
+          },
+          {
+            "sim": 0.6412,
+            "void_id": "1111.6661::1510.07787",
+            "paper_a_title": "Unleashing the Power of Distributed CPU/GPU Architectures: Massive   Astronomica",
+            "paper_b_title": "Redesigning pattern mining algorithms for supercomputers"
+          }
+        ]
+      },
+      "storage_io": {
+        "anchor_sim": 0.6207,
+        "anchor_p90": 0.55,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6555,
+        "null_p95": 0.6666,
+        "best_void_sim": 0.6775,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6775,
+            "void_id": "1308.6208::1201.4655",
+            "paper_a_title": "Toward Cloud-based Vehicular Networks with Efficient Resource Management",
+            "paper_b_title": "Reengineering multi tiered enterprise business applications for   performance en"
+          },
+          {
+            "sim": 0.6708,
+            "void_id": "1407.8309::1606.00545",
+            "paper_a_title": "An Alternating Direction Method Approach to Cloud Traffic Management",
+            "paper_b_title": "Development of Krylov and AMG linear solvers for large-scale sparse   matrices o"
+          },
+          {
+            "sim": 0.6622,
+            "void_id": "1604.08814::1112.4339",
+            "paper_a_title": "Improved IKE Key Exchange Protocol Combined with Computer Security USB   Key Dev",
+            "paper_b_title": "A Multipath Transport Protocol for Future Internet"
+          }
+        ]
+      }
+    },
+    "best_anchor": "net_io",
+    "best_void_sim": 0.6973,
+    "best_void": {
+      "void_id": "cs/0405096::1608.03770",
+      "paper_a_title": "Developing Intellectual Network Management Facilities by Means of   Pattern Reco",
+      "paper_b_title": "A Comparison of Approaches for Traffic Engineering in IP and MPLS   Networks"
+    },
+    "interpretability_audit": {
+      "plausible_bridge": false,
+      "confidence": 0.93,
+      "a_represents": "Pattern recognition / early AI theory applied to management or decision-support systems",
+      "b_represents": "IP/MPLS networking / traffic engineering and network operations research",
+      "match_to_landmark_a": "no",
+      "match_to_landmark_b": "no",
+      "overall_verdict": "no",
+      "reason": "The MLIR landmark bridges compiler infrastructure (LLVM-style IRs, optimization pipelines, code generation) with ML hardware accelerators and domain-specific ML compiler stacks (e.g., XLA/TPU, DSLs). Source A (pattern recognition theory for \u201cintellectual network management facilities\u201d) and Source B (traffic engineering in IP/MPLS networks) instead represent AI/pattern-recognition and networking/telecom operations communities, respectively. Neither naturally maps onto the LLVM/IR/compiler-toolchain ecosystem nor the ML-accelerator/DSL compiler community that MLIR unified, so this A/B pair is not a plausible pre-publication bridge hypothesis for MLIR."
+    }
+  },
+  {
+    "landmark": {
+      "arxiv_id": "1909.03496",
+      "title": "Devign: Effective Vulnerability Identification by Learning Comprehensive Program Semantics via Graph Neural Networks",
+      "year": 2019,
+      "a_side": "software vulnerability detection / static analysis / code review",
+      "b_side": "graph neural networks / program representation learning",
+      "bridge_rationale": "First large-scale benchmark combining CFG+DFG+AST with GNN for C/C++ vulnerability detection",
+      "expected_anchors": [
+        "ebpf_obs",
+        "sync_lock"
+      ]
+    },
+    "split_used": "t5",
+    "eligible_anchors": [
+      "mm_vm",
+      "ebpf_obs",
+      "hwsw_x86",
+      "net_io",
+      "mem_alloc",
+      "virt_hyp",
+      "storage_io"
+    ],
+    "anchor_results": {
+      "mm_vm": {
+        "anchor_sim": 0.6346,
+        "anchor_p90": 0.5592,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6671,
+        "null_p95": 0.6751,
+        "best_void_sim": 0.697,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.697,
+            "void_id": "1404.4629::1506.02558",
+            "paper_a_title": "A Survey of Methods For Analyzing and Improving GPU Energy Efficiency",
+            "paper_b_title": "Towards a Grid-based approach to Traffic Routing in VANET"
+          },
+          {
+            "sim": 0.6948,
+            "void_id": "1205.6423::1709.03413",
+            "paper_a_title": "Proposed Challenges And Areas of Concern in Operating System Research   and Deve",
+            "paper_b_title": "Gigamachine: incremental machine learning on desktop computers"
+          },
+          {
+            "sim": 0.6752,
+            "void_id": "0810.2021::1501.01252",
+            "paper_a_title": "Visualization Optimization : Application to the RoboCup Rescue Domain",
+            "paper_b_title": "Optimisation using Natural Language Processing: Personalized Tour   Recommendati"
+          }
+        ]
+      },
+      "ebpf_obs": {
+        "anchor_sim": 0.6433,
+        "anchor_p90": 0.547,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6876,
+        "null_p95": 0.6955,
+        "best_void_sim": 0.6884,
+        "above_null_p90": true,
+        "above_null_p95": false,
+        "top3_voids": [
+          {
+            "sim": 0.6884,
+            "void_id": "1607.01835::1009.2491",
+            "paper_a_title": "Proceedings of the Fourth International Workshop on Verification and   Program T",
+            "paper_b_title": "INDECT Advanced Security Requirements"
+          },
+          {
+            "sim": 0.6863,
+            "void_id": "1704.03397::1211.4839",
+            "paper_a_title": "Debugging Behaviour of Embedded-Software Developers: An Exploratory   Study",
+            "paper_b_title": "An Insight View of Kernel Visual Debugger in System Boot up"
+          },
+          {
+            "sim": 0.6833,
+            "void_id": "1409.2223::1107.4850",
+            "paper_a_title": "Assessment of classification techniques on predicting success or failure   of So",
+            "paper_b_title": "WLAN location system: Background theories and future directions"
+          }
+        ]
+      },
+      "hwsw_x86": {
+        "anchor_sim": 0.5639,
+        "anchor_p90": 0.5592,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6521,
+        "null_p95": 0.6602,
+        "best_void_sim": 0.6567,
+        "above_null_p90": true,
+        "above_null_p95": false,
+        "top3_voids": [
+          {
+            "sim": 0.6567,
+            "void_id": "1301.5075::1705.09902",
+            "paper_a_title": "Connecting the Dots: Computer Systems Education using a Functional   Hardware De",
+            "paper_b_title": "Extending programs with debug-related features, with application to   hardware d"
+          },
+          {
+            "sim": 0.6501,
+            "void_id": "1107.5847::1105.1973",
+            "paper_a_title": "Proceedings 10th International Workshop on the Foundations of   Coordination Lan",
+            "paper_b_title": "Brain-like infrastructure for embedded SoC diagnosis"
+          },
+          {
+            "sim": 0.6483,
+            "void_id": "0710.4850::1603.03022",
+            "paper_a_title": "Hardware Support for QoS-based Function Allocation in Reconfigurable   Systems",
+            "paper_b_title": "Towards Automatic Learning of Heuristics for Mechanical Transformations   of Pro"
+          }
+        ]
+      },
+      "net_io": {
+        "anchor_sim": 0.5812,
+        "anchor_p90": 0.5741,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6648,
+        "null_p95": 0.6762,
+        "best_void_sim": 0.7055,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.7055,
+            "void_id": "1310.3101::0803.0037",
+            "paper_a_title": "Deep Multiple Kernel Learning",
+            "paper_b_title": "A Survey on Deep Packet Inspection for Intrusion Detection Systems"
+          },
+          {
+            "sim": 0.666,
+            "void_id": "cs/0405096::1608.03770",
+            "paper_a_title": "Developing Intellectual Network Management Facilities by Means of   Pattern Reco",
+            "paper_b_title": "A Comparison of Approaches for Traffic Engineering in IP and MPLS   Networks"
+          },
+          {
+            "sim": 0.6656,
+            "void_id": "1611.09482::1701.00167",
+            "paper_a_title": "Fast Wavenet Generation Algorithm",
+            "paper_b_title": "Very Fast Kernel SVM under Budget Constraints"
+          }
+        ]
+      },
+      "mem_alloc": {
+        "anchor_sim": 0.5685,
+        "anchor_p90": 0.5677,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6471,
+        "null_p95": 0.6571,
+        "best_void_sim": 0.6459,
+        "above_null_p90": false,
+        "above_null_p95": false,
+        "top3_voids": [
+          {
+            "sim": 0.6459,
+            "void_id": "1607.06063::1108.6097",
+            "paper_a_title": "Fragment Allocation Configuration in Distributed Database Systems",
+            "paper_b_title": "Proceedings Second Workshop on Logics for Component Configuration"
+          },
+          {
+            "sim": 0.6443,
+            "void_id": "1610.08494::1603.01407",
+            "paper_a_title": "Havens: Explicit Reliable Memory Regions for HPC Applications",
+            "paper_b_title": "TANGO: Transparent heterogeneous hardware Architecture deployment for   eNergy G"
+          },
+          {
+            "sim": 0.6409,
+            "void_id": "1512.02951::1505.05226",
+            "paper_a_title": "Data Protection: Combining Fragmentation, Encryption, and Dispersion, a   final ",
+            "paper_b_title": "Homomorphic Data Isolation for Hardware Trojan Protection"
+          }
+        ]
+      },
+      "virt_hyp": {
+        "anchor_sim": 0.5952,
+        "anchor_p90": 0.5548,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6336,
+        "null_p95": 0.6412,
+        "best_void_sim": 0.6657,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6657,
+            "void_id": "1504.07070::1501.04473",
+            "paper_a_title": "Deterministically Deterring Timing Attacks in Deterland",
+            "paper_b_title": "Seeking Black Lining In Cloud"
+          },
+          {
+            "sim": 0.6543,
+            "void_id": "1506.04130::1606.01966",
+            "paper_a_title": "CloudCV: Large Scale Distributed Computer Vision as a Cloud Service",
+            "paper_b_title": "Distributed Graphical Simulation in the Cloud"
+          },
+          {
+            "sim": 0.648,
+            "void_id": "1210.3077::1106.5465",
+            "paper_a_title": "Investigating Decision Support Techniques for Automating Cloud Service   Selecti",
+            "paper_b_title": "SPECI-2: An open-source framework for predictive simulation of   cloud-scale dat"
+          }
+        ]
+      },
+      "storage_io": {
+        "anchor_sim": 0.6017,
+        "anchor_p90": 0.55,
+        "eligible": true,
+        "n_voids": 30,
+        "null_p90": 0.6622,
+        "null_p95": 0.6715,
+        "best_void_sim": 0.6743,
+        "above_null_p90": true,
+        "above_null_p95": true,
+        "top3_voids": [
+          {
+            "sim": 0.6743,
+            "void_id": "1112.0836::1305.0356",
+            "paper_a_title": "Performance Study on Image Encryption Schemes",
+            "paper_b_title": "A Markovian Model for Assessing the Consistency of Vehicular Storage   Systems"
+          },
+          {
+            "sim": 0.6615,
+            "void_id": "1210.6447::1611.05187",
+            "paper_a_title": "Disk Scheduling: Selection of Algorithm",
+            "paper_b_title": "Variable Neighborhood Search Algorithms for the multi-depot dial-a-ride   proble"
+          },
+          {
+            "sim": 0.6597,
+            "void_id": "1308.5811::0710.4635",
+            "paper_a_title": "Clean-Slate Design of Next-Generation Optical Access",
+            "paper_b_title": "OS Debugging Method Using a Lightweight Virtual Machine Monitor"
+          }
+        ]
+      }
+    },
+    "best_anchor": "net_io",
+    "best_void_sim": 0.7055,
+    "best_void": {
+      "void_id": "1310.3101::0803.0037",
+      "paper_a_title": "Deep Multiple Kernel Learning",
+      "paper_b_title": "A Survey on Deep Packet Inspection for Intrusion Detection Systems"
+    },
+    "interpretability_audit": {
+      "plausible_bridge": false,
+      "confidence": 0.86,
+      "a_represents": "Kernel-method / multiple-kernel learning research in machine learning (classical representation + similarity learning, pre-deep/GNN era)",
+      "b_represents": "Network security / intrusion detection community focused on deep packet inspection (traffic/content-based IDS, often ML/DL for network data)",
+      "match_to_landmark_a": "partial",
+      "match_to_landmark_b": "no",
+      "overall_verdict": "no",
+      "reason": "Devign\u2019s landmark bridge is specifically between software vulnerability detection/static analysis over program structure and graph neural networks/program representation learning. Paper B is in security, but it is network intrusion detection via deep packet inspection rather than program analysis or code vulnerability identification, so it only weakly overlaps at the high-level \u201csecurity detection\u201d theme. Paper A (deep multiple kernel learning) aligns with older kernel-based ML methodology rather than graph-based program semantics or GNN-style representation learning that Devign leverages. Together, A and B do not cleanly map onto the two communities Devign later bridged, nor do they suggest the key CFG/DFG/AST-to-GNN program-graph framing."
+    }
+  }
+]
