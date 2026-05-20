@@ -197,7 +197,7 @@ We define three ordered indicator functions, applied as a sequential gate:
 if $E=0$ then $G$ and $R$ are not evaluated; if $G=0$ then $R$ is not evaluated.
 
 \paragraph{Local density.}
-$\rho(V) = \frac{1}{k}\sum_{P \in \mathrm{kNN}(m_V)} \mathrm{sim}(P,m_V)$, $k{=}20$.
+\[\rho(V) = \frac{1}{k}\sum_{P \in \mathrm{kNN}(m_V)} \mathrm{sim}(P,m_V),\quad k{=}20.\]
 
 \paragraph{Anchor-eligibility threshold.}
 $\tauanchor = \max(Q_{80}^{\mathrm{val}},\, Q_{90}^{\mathrm{train}})$.
@@ -382,11 +382,11 @@ indicating that non-fill partly reflects observability limits rather than false
 predictions. We therefore treat unfilled voids as right-censored, not as negatives.}
 \begin{tabular}{lrrr}
 \toprule
-Exposure bucket & Anchors & Mean $|Val_q|$ & Fill rate \\
+Bucket & Anchors & $|Val_q|$ & Fill \\
 \midrule
-Low  & 3 & 10{,}178 & 23.3\% \\
-Mid  & 4 & 11{,}794 & 26.7\% \\
-High & 3 & 14{,}206 & 32.2\% \\
+Low  & 3 & 10k & 23.3\% \\
+Mid  & 4 & 12k & 26.7\% \\
+High & 3 & 14k & 32.2\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -412,7 +412,7 @@ The LLM role classifier is the primary annotator; human review is an external
 plausibility check, not a gold standard (epistemic role is inherently interpretive).
 
 \paragraph{Model and prompt.}
-We use \texttt{claude-sonnet-4-5} (temperature 0.1) with a fixed nine-label rubric
+We use Claude Sonnet~4.5 (temperature~0.1) with a fixed nine-label rubric
 and structured JSON output. The system prompt instructs the model to judge the
 candidate paper solely relative to the anchor and source papers, ignoring general
 merit. Source group labels (\textsf{TVA}/\textsf{B1}/\textsf{B2}/near-miss) are
@@ -531,6 +531,7 @@ train corpus boundary.
 \begin{table}[h!]
 \centering\small
 \caption{Landmark three-layer diagnostic. All five papers clear G and E; none clear R.}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcccc}
 \toprule
 Landmark & G & E & R \\
@@ -541,7 +542,8 @@ Devign (2019)                & \textbf{Yes} & \textbf{Yes} & No \\
 Ansor (2020)                 & \textbf{Yes} & \textbf{Yes} & Weak \\
 FlashAttention (2022)        & \textbf{Yes} & \textbf{Yes} & No \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 All five landmarks exceed the same-anchor null midpoint $p_{95}$ threshold (G~pass)
@@ -1077,8 +1079,7 @@ from the same anchor's C1 pool (seed 99). Select the pair whose midpoint
 density is closest to $\rho(m_V)$ as the B2 counterpart.
 
 \paragraph{Local density.}
-$\rho(m) = \frac{1}{k}\sum_{i=1}^{k}\mathrm{sim}(m, \mathrm{kNN}_i(m))$, $k{=}20$,
-kNN over train papers only.
+\[\rho(m) = \frac{1}{k}\sum_{i=1}^{k}\mathrm{sim}(m, \mathrm{kNN}_i(m)),\quad k{=}20.\]
 
 \paragraph{Anchor-eligibility threshold.}
 $\tauanchor = \max(Q_{80}^{\mathrm{val}},\, Q_{90}^{\mathrm{train}})$,
@@ -1100,7 +1101,7 @@ percentage points. Secondary check: \emph{anchor-level sign-flip permutation tes
 Both report two-sided $p$-values.
 
 \paragraph{Role annotation.}
-Model: \texttt{claude-sonnet-4-5}, temperature 0.1.
+Model: Claude Sonnet~4.5, temperature~0.1.
 Input: anchor text, source A title+abstract (truncated), source B title+abstract,
 candidate filler title+abstract.
 Output: JSON with role label, confidence, and six ordinal scores.
