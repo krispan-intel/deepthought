@@ -1,5 +1,5 @@
 # Topological Void Validation
-## Density-Controlled and Role-Aware Evaluation of Predicted Research Voids
+## A Three-Layer Protocol for Density-Controlled, Observability-Aware, and Role-Aware Evaluation of Predicted Research Voids
 
 **Kris Pan** · Intel Corporation · kris.pan@intel.com
 
@@ -9,41 +9,34 @@
 
 ## Abstract
 
-Topological Void Analysis (TVA) identifies candidate research voids in scientific
-knowledge spaces as geometric gaps between anchor-conditioned paper clusters.
-A natural validation question is whether future papers fill these predicted voids.
-We show that raw fill rate — whether any future paper appears near a void's midpoint —
-fails as a validation target for three compounding reasons.
+We propose **TVV (Topological Void Validation)**, the first operational, density-controlled,
+and role-aware evaluation protocol for predicted research voids. Unlike document retrieval
+or link prediction, predicted research voids have no established benchmark: exhaustive
+human annotation is infeasible at corpus scale, and raw temporal fill rate conflates
+three distinct confounds. TVV separates them into three layers — calibrated geometric
+closure (G), anchor eligibility (E), and epistemic role (R) — and provides a
+reproducible, auditable adjudication pipeline.
 
-First, it is confounded by local corpus density: a hot-zone baseline outperforms TVA on
-raw fill rate, but this advantage disappears under a density-matched baseline. TVA shows
-a small directional difference (+1.3 to +3.0 pp across three temporal splits), but all
-hierarchical cluster-bootstrap confidence intervals include zero and paired anchor-level
-permutation tests are not significant (p > 0.35). Under null-calibrated thresholds,
-fill rates collapse from ~27% to ~0.7%, revealing that most raw fills are null-zone noise.
+We apply TVV to stress-test raw fill rate as a validation target for Topological Void
+Analysis (TVA) across three rolling temporal splits. **The central finding is not that
+TVA outperforms baselines, but that raw fill rate is an unstable and insufficient
+validation signal.** Specifically:
 
-Second, anchor eligibility gating reveals a corpus observability limit: only 5–7% of
-future papers are anchor-eligible per split. Fill rates increase monotonically with
-anchor exposure (23.3% → 32.2%), confirming that many unfilled voids are right-censored
-by observability rather than invalid predictions.
+- **Density confound.** TVA–B2 (density-matched baseline) paired differences are +1.3
+  to +3.0 pp across splits; all hierarchical cluster-bootstrap CIs include zero (p > 0.35).
+  Under null-calibrated thresholds, fill rates collapse from ~27% to ~0.7% — most raw
+  fills are null-zone noise.
+- **Observability limit.** Only 5–7% of future papers are anchor-eligible. Fill rises
+  monotonically from 23% to 32% with exposure, confirming unfilled voids are
+  right-censored, not invalid.
+- **Epistemic-role mismatch.** 59–76% of gated geometric fills are false positives
+  (1,076 sampled cases); most non-false cases are boundary expansions, not void closure.
 
-Third, role-aware epistemic classification shows that even anchor-eligible geometric
-fills rarely represent genuine void resolution: 59–76% are false positives across all
-groups and splits (1,076 sampled cases, t3+t4+t5), with most non-false cases
-representing boundary expansion rather than void closure.
+A landmark diagnostic confirms the three-layer necessity: five pre-specified bridge-type
+papers all pass G and E, but none pass R — **geometry and anchor alignment are necessary
+screens, not sufficient evidence of epistemic bridge**.
 
-A landmark diagnostic confirms the three-layer structure: five pre-specified bridge-type
-papers all pass geometric (G) and eligibility (E) screening, but none pass role-aware
-bridge interpretation (R) — illustrating that geometry and anchor alignment are necessary
-but not sufficient for epistemic closure.
-
-These findings motivate a three-layer validation framework — calibrated geometric
-closure, anchor eligibility, and epistemic role — and establish that raw fill rate
-measures future local activity near predicted voids but does not validate epistemic
-closure. TVA is best understood as a rapid triage instrument: it compresses an
-otherwise intractable search space (~45,000 candidate pairs per anchor) into a
-human-auditable set of inspectable hypotheses. TVV is the downstream adjudication
-protocol.
+> **TVA is a detector, not an oracle. TVV is the adjudication protocol.**
 
 ---
 
@@ -76,11 +69,12 @@ corpus scale. TVV addresses this by turning void validation into a staged, audit
 protocol.
 
 **Contributions:**
-1. Raw temporal fill rate is strongly confounded by local historical density.
-2. Density-matched baseline shows TVA–B2 difference is not statistically significant.
-3. Fixed cosine thresholds (τ=0.82) are not portable: 35.7% average null FPR.
-4. Anchor eligibility limits observability; unfilled voids are right-censored.
-5. LLM-assisted role audit suggests geometric fill substantially overestimates epistemic resolution.
+1. **TVV protocol.** A reproducible three-layer evaluation framework (G → E → R) — the first density-controlled, observability-aware, and role-aware protocol for predicted embedding-space voids.
+2. Raw temporal fill rate is strongly confounded by local density and research momentum.
+3. Density-matched baseline (B2) shows TVA–B2 difference is not statistically significant under dependence-aware tests.
+4. Fixed cosine thresholds (τ=0.82) are not portable: 35.7% average null FPR across anchor-density cells.
+5. Anchor eligibility limits observability; unfilled voids are right-censored, not invalid.
+6. LLM-assisted role audit suggests geometric fill substantially overestimates epistemic resolution (59–76% FP).
 
 **Scope:** Static retrospective validation against pre-committed future corpus windows.
 This is a *validation stress test*, not a confirmatory demonstration of TVA superiority.
