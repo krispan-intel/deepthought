@@ -20,7 +20,29 @@ from agents.llm_client import LLMClient
 from agents.json_parser import robust_json_parse
 from configs.settings import settings
 
-PAPER2_ABSTRACT = """
+def load_paper_text():
+    """Load full paper text from LaTeX source, stripping commands."""
+    tex_path = Path("paper2/paper2_tvv.tex")
+    if tex_path.exists():
+        raw = tex_path.read_text()
+        # Strip LaTeX preamble (before \begin{document})
+        if r'\begin{document}' in raw:
+            raw = raw[raw.index(r'\begin{document}'):]
+        # Strip \bibliography line and everything after
+        if r'\bibliographystyle' in raw:
+            raw = raw[:raw.index(r'\bibliographystyle')]
+        # Basic cleanup: remove \command{...} patterns where content is useful
+        import re
+        raw = re.sub(r'\\[a-zA-Z]+\{([^}]{1,80})\}', r'\1', raw)
+        raw = re.sub(r'\\[a-zA-Z]+\b', ' ', raw)
+        raw = re.sub(r'[{}]', '', raw)
+        raw = re.sub(r'\s+', ' ', raw)
+        return raw[:12000]  # ~3000 tokens, fits well in prompt
+    return None
+
+_LOADED_PAPER = load_paper_text()
+
+PAPER2_ABSTRACT = _LOADED_PAPER if _LOADED_PAPER else """
 Title: Topological Void Validation: Density-Controlled and Role-Aware Evaluation of Predicted Research Voids
 
 Abstract:
@@ -61,7 +83,7 @@ Claims:
 3. Anchor eligibility limits observability (6% pass rate)
 4. Epistemic fill is rare even among geometrically-close, anchor-eligible papers
 5. Three-layer validation framework is necessary and sufficient for void validation
-"""
+""" if not _LOADED_PAPER else ""
 
 REVIEWERS = [
     {
