@@ -1,0 +1,88 @@
+# TVV Experiment Configuration
+# All parameters pre-specified before running validation.
+
+corpus:
+  categories: [cs.OS, cs.AR, cs.PL, cs.SE, cs.DC, cs.NI, cs.CR, cs.AI, cs.LG]
+  source: arXiv metadata snapshot
+  fields: [title, abstract, categories, update_date]
+  date_field: update_date
+
+splits:
+  t3: {train_end: 2014, val_start: 2015, val_end: 2020}
+  t4: {train_end: 2016, val_start: 2017, val_end: 2022}
+  t5: {train_end: 2018, val_start: 2019, val_end: 2024}
+
+embedding:
+  model: BAAI/bge-m3
+  dimension: 1024
+  metric: cosine
+  normalization: L2
+  input_format: "{title} {abstract}"
+  device: cpu
+
+anchors:
+  sched_opt:  "kernel scheduler optimization and CPU affinity for multicore systems"
+  mm_vm:      "virtual memory management and page reclamation in operating systems"
+  ebpf_obs:   "eBPF programs for kernel tracing and system call observability"
+  hwsw_x86:   "hardware-software co-design for x86 processor microarchitecture features"
+  net_io:     "high-performance network I/O and packet processing in the kernel"
+  sync_lock:  "synchronization primitives and lock-free data structures in concurrent systems"
+  mem_alloc:  "memory allocator design and heap fragmentation in systems software"
+  virt_hyp:   "virtualization and hypervisor design for cloud workloads"
+  power_mgmt: "dynamic power management and CPU frequency scaling"
+  storage_io: "storage I/O path optimization and NVMe device drivers"
+
+void_generation:
+  c1_pool_size: 300        # top-N anchor-nearest train papers
+  top_k_per_anchor: 30     # final MMR-ranked voids returned
+  c2_tau_low: 0.30         # min pair similarity (C2 lower bound)
+  c2_tau_high: 0.85        # max pair similarity (C2 upper bound)
+  c3_min_bridge_tokens: 1  # min shared discriminative tokens
+  c4_vacancy_check: true   # reject if midpoint already occupied
+  mmr_lambda: 0.5          # diversity weight in MMR ranking
+
+baselines:
+  B1_hot_zone:
+    pairs_per_anchor: 20
+    pool: c1_top300
+    seed: 42
+  B2_density_matched:
+    candidate_pairs: 300   # B1-style candidates per TVA void
+    density_k: 20          # k for local density estimation
+    seed: 99
+
+density:
+  k: 20                    # k-NN for local density ρ(m)
+  corpus: train_only       # kNN over train papers only
+  bucket_thresholds: tertiles_per_anchor  # low/mid/high by anchor-split tertiles
+
+anchor_eligibility_threshold:
+  method: hybrid_max
+  val_quantile: 0.80       # Q80 of val-anchor similarities
+  train_quantile: 0.90     # Q90 of train-anchor similarities
+  formula: "tau_q = max(Q80_val, Q90_train)"
+
+null_calibration:
+  null_samples_per_cell: 1000  # null midpoints per (anchor, density_bucket, split)
+  cal_test_split: 0.50         # 50% calibration, 50% held-out test
+  quantile_method: conformal   # k = ceil((n_cal+1)*(1-alpha))
+  alpha: 0.05                  # target null FPR
+  null_source: same_anchor_c1_pool  # pairs from same anchor's C1 pool
+
+statistical_tests:
+  primary_metric: "delta_pp"   # TVA - B2 percentage points
+  bootstrap_type: hierarchical_cluster
+  bootstrap_hierarchy: [split, anchor, void]
+  n_bootstrap: 1000
+  permutation_test: anchor_level_sign_flip
+  n_permutations: 10000
+  significance_level: 0.05
+
+role_classification:
+  model: claude-sonnet-4-5
+  temperature: 0.1
+  blind_protocol: true       # source group not shown to classifier
+  taxonomy: 9_class_collapsed_to_3
+  quantitative_claims: 3_class_only
+  human_audit_n: 60
+  human_audit_stratified: true  # by source group and LLM label

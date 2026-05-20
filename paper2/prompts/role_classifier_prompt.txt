@@ -1,0 +1,60 @@
+SYSTEM:
+You are classifying the epistemic role of a candidate future paper relative to a proposed research void.
+Do not judge whether the paper is generally good. Judge only what the candidate paper does with respect to the void implied by the anchor and the two source papers.
+Return only valid JSON.
+
+USER:
+Anchor (the research direction defining this void):
+{anchor}
+
+Source paper A (year: {year_a}):
+Title: {title_a}
+Abstract: {abstract_a}
+
+Source paper B (year: {year_b}):
+Title: {title_b}
+Abstract: {abstract_b}
+
+Candidate future paper (year: {year_f}):
+Title: {title_f}
+Abstract: {abstract_f}
+
+Classify the candidate paper into exactly one role:
+
+- TRUE_FILL: proposes a new method, theory, mechanism, or synthesis that substantively fills the gap between the source papers under the anchor.
+- PARTIAL_FILL: addresses part of the gap but does not fully resolve it.
+- INCREMENTAL_EXTENSION: mainly extends one source direction without bridging the gap.
+- SUPPORT_EVIDENCE: provides empirical evidence relevant to the gap but does not propose a new solution.
+- BENCHMARK_OR_MEASUREMENT: introduces dataset, benchmark, metric, or evaluation method relevant to the gap.
+- SURVEY_OR_NAMING: names, reviews, or frames the gap without filling it.
+- REFUTATION_OR_COLLAPSE: provides evidence or argument that undermines the gap or makes the proposed direction invalid.
+- FALSE_POSITIVE: semantically close but not actually relevant to the void.
+- UNCLEAR: abstract is insufficient to determine.
+
+Collapsed three-class mapping (for quantitative analysis):
+  VOID-RESOLUTION: TRUE_FILL, PARTIAL_FILL
+  BOUNDARY-ACTIVITY: INCREMENTAL_EXTENSION, SUPPORT_EVIDENCE, BENCHMARK_OR_MEASUREMENT, SURVEY_OR_NAMING
+  FALSE-POSITIVE: FALSE_POSITIVE, REFUTATION_OR_COLLAPSE, UNCLEAR
+
+Return strict JSON only (no markdown, no explanation outside JSON):
+{
+  "role": "ONE_OF_THE_ROLES_ABOVE",
+  "collapsed_class": "VOID-RESOLUTION|BOUNDARY-ACTIVITY|FALSE-POSITIVE",
+  "confidence": 0.0,
+  "anchor_relevance": 0,
+  "void_relevance": 0,
+  "novelty_relative_to_sources": 0,
+  "evidence_strength": 0,
+  "problem_conclusion_alignment": 0,
+  "claim_evidence_strength": 0,
+  "overclaiming_risk": "LOW",
+  "topological_event_type": "VOID_FILL",
+  "reason": "one concise paragraph",
+  "needs_full_text": false
+}
+
+anchor_relevance, void_relevance, novelty_relative_to_sources, evidence_strength: integers 0-3.
+problem_conclusion_alignment: 0=mismatch, 1=partial, 2=well-aligned.
+claim_evidence_strength: 0=weak, 1=moderate, 2=strong.
+overclaiming_risk: LOW / MEDIUM / HIGH.
+topological_event_type: VOID_FILL / BOUNDARY_EXPANSION / DENSIFICATION / RHETORICAL_BRIDGE / COLLAPSE.

@@ -299,6 +299,33 @@ are flagged as \emph{underexposed}: their unfill status reflects observability l
 not void invalidity. ebpf\_obs (6.5\% pass, 0\% fill) illustrates that non-zero
 exposure does not guarantee eligible papers overlap predicted void neighborhoods.
 
+\paragraph{Exposure-conditioned fill (censoring diagnostic).}
+To assess whether unfilled voids are partly right-censored by observability, we
+bucket anchors by the number of anchor-eligible validation papers ($|Val_q|$) and
+report observed fill rates.
+
+\begin{table}[h!]
+\centering\small
+\caption{Exposure-conditioned fill (t5). Fill increases monotonically with $|Val_q|$,
+indicating that non-fill partly reflects observability limits rather than false
+predictions. We therefore treat unfilled voids as right-censored, not as negatives.}
+\begin{tabular}{lrrr}
+\toprule
+Exposure bucket & Anchors & Mean $|Val_q|$ & Fill rate \\
+\midrule
+Low  & 3 & 10{,}178 & 23.3\% \\
+Mid  & 4 & 11{,}794 & 26.7\% \\
+High & 3 & 14{,}206 & 32.2\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Fill rates increase monotonically from 23.3\% to 32.2\% as anchor exposure increases.
+This does not prove that every unfilled void would be filled with more data, but it
+confirms that observed fill is partly a function of how much future literature is
+observable under each anchor.
+We do not interpret non-fill as a negative label.
+
 \begin{figure}[h!]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig4_anchor_exposure.png}
