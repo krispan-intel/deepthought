@@ -39,27 +39,34 @@ BW on k-dim subspace matrices from different bases = garbage (looks like valid n
 # mu_1023_t = mean of v_i_projected_ambient (1023D, rank ≤ k)
 # Sigma_1023_t = (1/n) * V_ambient.T @ V_ambient  (1023×1023, rank-k)
 
-def mat_sqrt_rankdef(S, rank_k=128):
-    """Matrix sqrt for rank-deficient symmetric PSD matrix via eigendecomposition."""
+def mat_sqrt_psd(S, tol=1e-10):
+    """Matrix sqrt for rank-deficient symmetric PSD matrix.
+    Uses tolerance-based rank selection (more robust than fixed rank_k).
+    """
+    S = 0.5 * (S + S.T)                    # symmetrize
     vals, vecs = np.linalg.eigh(S)          # ascending order
-    idx = np.argsort(vals)[::-1]            # descending
-    vals, vecs = vals[idx], vecs[:, idx]
+    vals = np.clip(vals, 0, None)           # clamp numerical negatives
+    max_val = vals.max()
+    keep = vals > tol * max_val if max_val > 0 else np.zeros(len(vals), dtype=bool)
     vals_sqrt = np.zeros_like(vals)
-    vals_sqrt[:rank_k] = np.sqrt(np.clip(vals[:rank_k], 0, None))
+    vals_sqrt[keep] = np.sqrt(vals[keep])
     return vecs @ np.diag(vals_sqrt) @ vecs.T
 
-def bw_distance_sq(mu1, Sigma1, mu2, Sigma2, rank_k=128):
-    """Squared BW distance on rank-deficient Gaussians in shared 1023D ambient space."""
+def bw_distance_sq(mu1, Sigma1, mu2, Sigma2):
+    """Squared BW distance on rank-deficient Gaussians in shared ambient space.
+    Works on UNSCALED z_i (or ambient 1023D projected coords).
+    τ scaling is NOT applied here — τ only affects hyperbolic lift and cone shape.
+    BW drift and hyperbolic curvature are decoupled by design.
+    """
     mean_term = np.sum((mu2 - mu1) ** 2)
-    S1_half = mat_sqrt_rankdef(Sigma1, rank_k)
+    S1_half = mat_sqrt_psd(Sigma1)
     M = S1_half @ Sigma2 @ S1_half
-    M = 0.5 * (M + M.T)           # symmetrize — float arithmetic breaks symmetry
-    M_half = mat_sqrt_rankdef(M, rank_k)
+    M_half = mat_sqrt_psd(M)         # mat_sqrt_psd already symmetrizes internally
     cov_term = max(np.trace(Sigma1) + np.trace(Sigma2) - 2 * np.trace(M_half), 0.0)
-    return mean_term + cov_term   # returns squared BW distance
+    return mean_term + cov_term
 
-def bw_distance(mu1, Sigma1, mu2, Sigma2, rank_k=128):
-    return np.sqrt(bw_distance_sq(mu1, Sigma1, mu2, Sigma2, rank_k))
+def bw_distance(mu1, Sigma1, mu2, Sigma2):
+    return np.sqrt(bw_distance_sq(mu1, Sigma1, mu2, Sigma2))
 ```
 
 ### P0-B: cPCA sign flipping (SILENT FAILURE, cross-run inconsistent)
@@ -85,7 +92,9 @@ vecs_canonical = canonicalize_eigvecs(vecs)
 D_star = vecs_canonical[:, np.argsort(vals)[::-1][:k]].T  # (k, 1023)
 ```
 
-Note: must apply canonicalization consistently at ALL time points for BW to be valid.
+Note: sign canonicalization fixes ± ambiguity (single-time internal consistency).
+It does NOT fix cross-time subspace rotation or eigenvector ordering swaps.
+For cross-time BW: use fixed D*(C, t_ref) — do NOT recompute D* at each t in Milestone 0.
 
 ---
 
@@ -95,10 +104,14 @@ Note: must apply canonicalization consistently at ALL time points for BW to be v
 
 ```python
 def sphere_logmap(C, e, eps=1e-6):
-    """Log map on S^1023 at base point C."""
+    """Log map on S^1023 at base point C (norm-1 vector).
+    C and e must both be on S^1023 (unit norm). Do NOT pass np.zeros(1023).
+    """
     diff = e - C
     if np.linalg.norm(diff) < eps:
-        return diff  # Taylor fallback: v ≈ e - C (first order)
+        # Taylor fallback: project onto tangent plane at C for exact orthogonality
+        v = diff - (diff @ C) * C
+        return v
     cos_theta = np.clip(C @ e, -(1-eps), 1-eps)
     theta = np.arccos(cos_theta)
     sin_theta = np.sin(theta)
@@ -151,16 +164,22 @@ def compute_residual_coords(v_i, D_star):
     z_ambient = D_star.T @ z_coords                  # (1023,) reconstruction
     r_ambient = v_i - z_ambient                      # (1023,) residual
 
-    # Orthogonal complement basis via QR
-    # D_star.T is (1023, k); its null space is (1023-k)-dim
-    Q, _ = np.linalg.qr(
-        np.hstack([D_star.T, np.random.randn(1023, 1023-k)]),
-        mode='complete'
-    )
-    D_perp = Q[:, k:].T                              # (1023-k, 1023)
+    # Orthogonal complement basis via scipy null_space (deterministic, no random)
+    from scipy.linalg import null_space
+    D_perp_T = null_space(D_star)                    # (1023, 1023-k)
+    D_perp = D_perp_T.T                              # (1023-k, 1023)
+    # Sign canonicalize rows of D_perp for cross-call consistency
+    for i in range(D_perp.shape[0]):
+        idx = np.argmax(np.abs(D_perp[i]))
+        if D_perp[i, idx] < 0:
+            D_perp[i] *= -1
+    assert D_perp.shape == (1023 - D_star.shape[0], 1023)
     r_coords = D_perp @ r_ambient                    # (1023-k,)
 
     return z_coords, r_coords
+
+# IMPORTANT: for cross-time product distances, cache D_perp once at t_ref.
+# D_perp recomputed at each t will give different bases → r_coords not comparable.
 
 # Final product space vector: (k+1 Lorentz) + (1023-k Euclidean)
 h_i = lorentz_expmap0(z_coords * tau)               # (k+1,)
@@ -211,13 +230,14 @@ def assert_D_star_orthonormal(D_star, atol=1e-8):
 alphas = [0.1, 0.5, 1.0, 2.0, 5.0]
 
 # τ sweep: [1, 2, 3, 5, 7, 10]
-# Criterion: choose τ* = argmin Gromov_δ / diameter
-# Elbow point in δ vs τ curve
+# Criterion: τ* = argmin Gromov_δ / diameter  (elbow point)
+# τ affects ONLY hyperbolic lift and cone. NOT BW drift (BW uses unscaled z_i).
 taus = [1, 2, 3, 5, 7, 10]
 
 # k sweep: [32, 64, 128, 256]
-# Hard cap: k ≤ len(foreground) // 2
-ks = [32, 64, 128, 256]
+# Hard cap: k ≤ n_foreground // 2  (sample deficiency: n=500 → k_max=250)
+# DO NOT sweep k=512 or k=1024 with n=500 foreground points.
+ks = [32, 64, 128, 256]  # 512/1024 removed — invalid with n=500
 ```
 
 ---
@@ -230,21 +250,28 @@ ks = [32, 64, 128, 256]
 τ must be a **signed scalar projection** so that τ_q > 0 (outward, more specific) vs τ_q < 0 (inward) is meaningful.
 
 ```python
-def get_tau_direction(anchor_C, D_star, tau_scale):
+def get_tau_direction_milestone0(foreground_v, D_star):
     """
-    Radial direction in the k-dim cPCA subspace coordinates.
-    τ direction = direction of anchor C itself in the projected subspace.
-    This is geometrically natural: ||z_C|| = how far anchor is from ℍ^k origin
-    = abstraction depth proxy.
+    τ axis = foreground centroid direction in cPCA subspace.
+    PROVISIONAL for Milestone 0. Semantically: "the mean direction of anchor's
+    neighborhood" — a proxy for abstraction axis, not the abstraction axis itself.
+
+    WHY NOT anchor radial:
+      In anchor-centered tangent chart, anchor C = origin = log_C(C) = 0.
+      Origin has no direction. "Anchor's radial" does not exist in this chart.
+      np.zeros(1023) is NOT a sphere point — sphere_logmap would fail.
+
+    For paper-grade experiments (Phase 2+): replace with Option C —
+      labeled general-specific pairs:
+        tau_hat = mean(z_specific - z_general) for known hierarchy pairs
+        e.g., "BPF verifier" - "BPF subsystem" for Linux RFC
     """
-    # Project anchor C into cPCA subspace
-    v_C = sphere_logmap(np.zeros(1023), anchor_C)  # LogMap at sphere origin (approx)
-    z_C = D_star @ v_C                              # (k,) anchor in cPCA coords
-    norm_z_C = np.linalg.norm(z_C)
-    if norm_z_C < 1e-8:
-        # Anchor at cPCA origin — fall back to first eigenvector
-        return D_star[0]
-    return z_C / norm_z_C                           # unit radial direction in R^k
+    z_fg = foreground_v @ D_star.T    # (n_fg, k) — project foreground into cPCA coords
+    centroid = z_fg.mean(axis=0)      # (k,)
+    norm_c = np.linalg.norm(centroid)
+    if norm_c < 1e-8:
+        return D_star[0]              # degenerate fallback: first eigenvector
+    return centroid / norm_c          # unit vector in R^k
 
 def in_entailment_cone(z_q, tau_hat, angle_threshold=1.0):
     """

@@ -43,9 +43,12 @@ D* is defined from pre-drift cPCA only. Drift is then computed ON D*. No circula
 ### Corpus state as Gaussian
 
 ```
+F_C(t) = kNN(C, K_{<t})   (anchor foreground — NOT all K_{<t})
 S_C(t) = 𝒩(μ_C(t), Σ_C(t))
 ```
-where μ_C(t), Σ_C(t) are mean and covariance of projected points z_i = Π_{D*(C,t)} v_i, over K_{<t}.
+where μ_C(t), Σ_C(t) are mean and covariance of projected points z_i = Π_{D*(C,t)} v_i, over **F_C(t) only**.
+
+**Why foreground not all K_{<t}:** Full corpus would dilute anchor semantics with unrelated documents. Anchor drift should capture the evolution of anchor-proximate knowledge, not global corpus statistics.
 
 ### Drift metric (Bures-Wasserstein, complete)
 
@@ -116,6 +119,39 @@ Future cone: τ_q > 0  AND  ||x_q|| ≤ τ_q · angle_threshold
 Report event changes initial tangent velocity (resets momentum), does NOT jump D_C.
 D_C trajectory remains smooth (no Dirac delta in Void Velocity).
 Anti-snowball damping emerges naturally from Kalman-filter-like uncertainty reduction.
+
+### BW drift vs hyperbolic lift: explicit separation
+
+```
+BW drift (dD_C):    computed on UNSCALED z_i in Euclidean cPCA/ambient space
+                    τ does NOT enter BW computation
+                    statistical quantity — measures distributional change
+
+Hyperbolic lift:    τ·z_i → Lorentz ExpMap → h_i ∈ ℍ^k
+                    used for entailment cone geometry and void candidate ranking
+                    geometric quantity — activates negative curvature
+
+Residual r_i:       used for product-space retrieval/reranking
+                    Euclidean distance in R^(1023-k)
+                    NOT used in BW drift computation
+```
+
+Reviewer question: "Why use Euclidean BW if the paper claims Lorentz/hyperbolic dynamics?"
+Answer: Hyperbolic lift defines causal/entailment geometry; BW defines stable distributional drift in the shared Euclidean tangent chart. Two different measurements on two different aspects of the same data.
+
+### Milestone 0 minimum safe specification
+
+For 6/1-6/3:
+- Use **fixed D*(C, t_ref)**. Do NOT recompute D* at different t.
+- BW drift: unscaled z_i, fixed D* basis, k-dim Euclidean BW (not 1023D ambient yet)
+- τ axis: foreground centroid direction (provisional Option B)
+- No cross-time BW yet
+- No evolving D* yet
+- No LKML event prediction yet (June end)
+
+Upgrade path:
+- Before first RFC event: 1023D ambient BW + sign canonicalization
+- Paper-grade: Procrustes/Grassmann D* alignment + hierarchy-calibrated τ axis
 
 ### Disclaimer (mandatory in paper)
 
