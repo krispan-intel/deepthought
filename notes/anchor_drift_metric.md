@@ -828,6 +828,77 @@ pip install geoopt geomstats contrastive GraphRicciCurvature POT manify
 
 **Why timing is perfect:** 2017-2026 = hyperbolic ML golden 8 years. All tools mature now. 5 years earlier = 6 months building wheels. Now = 1 week using them.
 
+### Void detection pipeline (9 steps)
+
+Void definition upgrade: Paper 1 "coordinate gap" → Paper 3 "causal absence in entailment cone" (geodesically reachable but unoccupied, not statistical anomaly but causal absence).
+
+```
+BGE-M3 corpus + anchor C
+  → k-NN neighborhood (k=500, foreground) + random 5000 (background)
+  → cPCA: 128 anchor-distinctive hierarchy directions
+  → Mixed-curvature lift: ℍ^128 (expmap on cPCA dirs) × 𝕊^896 (cosine)
+  → Entailment cone: {q ∈ ℍ^128 : <C,q>_Lorentz ≤ -cosh(angle)}
+  → Occupancy density: papers within radius r in cone
+  → Void candidates: low-density regions (watershed / persistent homology)
+  → Validation: D_C / L_C / semantic coherence / Paper1 criteria
+  → Dynamic: repeat for t1,t2,t3 → track drift/collapse/expansion
+```
+
+4 dynamic primitives → RFC events:
+- Void drift = RFC thread evolves over years (framing shift)
+- Void collapse = RFC accepted + patch merged (timestamp)
+- Cone expansion = subsystem scope grows (new frontier = auto-void)
+- Anchor migration = maintainer's subsystem charter evolves
+
+### Linux Kernel RFC as ground truth (DO NOT DROP)
+
+**Lab notebook one-liner:**
+> "Paper 3 = arXiv (generality) + RFC (dynamic + predictive), 5-6 months ship"
+
+**Why arXiv alone is insufficient:**
+- arXiv gives you papers (points), no "void fill event" records
+- No causal fill relationship between papers
+- Citation ≠ void fill
+- Can only do cross-sectional (snapshot) analysis
+- Dynamic primitives unverifiable without longitudinal ground truth
+
+**Why Linux Kernel RFC is the gold mine:**
+- RFC = explicit void declaration by domain experts ("we need X")
+- Patch v1/v2/v3 = fill attempts with timestamps
+- merge/reject/stall = outcome labels
+- 25+ years, 1M+ emails, day-resolution timestamps
+- Maintainer = natural anchor (institutional ground truth, no reviewer challenge)
+- Negative samples: rejected/stalled RFCs (arXiv has only survivors)
+- **You are the only paradigm researcher who is simultaneously a kernel engineer**
+
+**4 RFC unfair advantages over arXiv:**
+1. Time-resolved ground truth (day precision vs year precision)
+2. Negative samples preserved (rejected RFC = unfilled void stays)
+3. Maintainer = institutional anchor (unquestionable selection)
+4. Your native expertise = unique fit nobody else has
+
+**4-phase experimental plan:**
+
+| Phase | Corpus | Goal | Duration |
+|---|---|---|---|
+| 1 | arXiv | Prove framework works, generality | 1 month |
+| 2 | RFC | Map predicted voids to RFC events | 1-2 months |
+| 3 | RFC | Retrospective: EAS/BPF/io_uring cases | 1 month |
+| 4 | RFC | **Predictive test: train 1995-2020, predict 2020-2024** | 1 month |
+
+Phase 4 = killer experiment. "framework predicts future voids" = paradigm-level claim.
+
+**RFC corpus prep (Week 2-3 of June):**
+1. Scrape lore.kernel.org (full archive 1995-present)
+2. Filter [RFC] and [PATCH RFC] subjects (~5-10% of messages)
+3. Label outcomes: merged (cross-ref git log) / rejected / stalled / evolved
+4. BGE-M3 embed each RFC body + maintainer anchor embedding
+5. Store as (RFC, anchor, embedding, timestamp, outcome) tuples
+- Total prep time: ~2 weeks
+
+**Without RFC:** Paper 3 = proof of concept
+**With RFC:** Paper 3 = empirical paradigm with predictive power
+
 ### Cartan formalism hint (do not expand now)
 
 Anchor-conditioned local Lorentz ↔ Cartan's method of moving frames:
