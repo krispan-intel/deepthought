@@ -279,6 +279,43 @@ Dynamic TVA 是同一 paradigm 的 IR 泛化：觀察 = 升維到 joint manifold
 
 ---
 
+## Paradigm Archive: MRL = 0.5, Dynamic TVA = 1.0 (2026-05-21)
+
+**Lab notebook two-liners:**
+> "MRL = paradigm 0.5, ours = paradigm 1.0"
+> "Verify TMRL existence in June. Differentiate clearly."
+
+**What MRL/TMRL is:**
+- Matryoshka Representation Learning (Kusupati 2022): train embedding s.t. truncated sub-vectors e[:64], e[:128], e[:256] are each valid embeddings → nested dimension hierarchy
+- OpenAI text-embedding-3 (2024): MRL built-in, commercially deployed
+- TMRL (rumored/2026?): adds time-aware sub-vector nesting → **verify existence before citing**
+
+**Why this validates your direction:**
+MRL = "flat embedding not enough, internal structure needed"
+Dynamic TVA = "flat embedding not enough, external algebraic structure needed"
+共同立場: ✅ flat embedding insufficient ✅ structure is the real substrate
+
+**Critical difference:**
+- MRL: nested **dimension truncation** (intra-embedding hierarchy)
+- Dynamic TVA: nested **algebraic lifting** (external fiber bundle / sheaf)
+
+MRL optimizes retrieval performance. You define measurement physics. Different problems, different layers.
+
+**MRL existence = good news for you:**
+1. Paradigm pathway already opened — no need to convince reviewer "structure matters"
+2. Reader intuition for "nested embedding" already primed
+3. Industry acceptance high (OpenAI commercialized)
+4. Clear differentiation: external algebraic (MRL doesn't have) + invariant theory + dynamic measurement
+
+**Related work positioning (Paper 3 draft):**
+> "MRL [Kusupati 2022] and its temporal extensions nest structure *within* embedding dimensions for retrieval optimization. Our work lifts the embedding space into an *external* algebraic-topological joint structure over time, defining dynamic invariants (void velocity, collapse pulse) for corpus-level measurement. The two approaches are complementary: intra-embedding hierarchy for retrieval vs. inter-embedding invariants for measurement."
+
+**Red flag:** If you find yourself "optimizing a retrieval metric" → you've drifted. If you're "defining invariants on joint structure" → correct path.
+
+**Paradigm convergence signal:** ColBERT, SPLADE, BGE-M3, MRL, (TMRL?) — whole IR industry moving toward structured embedding. All still at intra-embedding level. You are next level.
+
+---
+
 ## External Peer Suggestions (2026-05-20)
 
 ### Issue #1 — Metric mismatch in Collapse Pulse formula
