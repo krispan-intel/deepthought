@@ -140,6 +140,123 @@ Anchor Drift is a knowledge-state metric — it only exists when a system's stat
 
 ---
 
+## Outstanding Issues (post-canonical, 2026-05-21) — must resolve before coding
+
+### P0-1 (FATAL): BW undefined across different subspaces at different times
+
+D*(C,t) changes with t → Σ_C(t₁) lives in D*(C,t₁), Σ_C(t₂) lives in D*(C,t₂).
+These are different subspaces. BW formula requires both Gaussians in the SAME R^k.
+μ(t₁) - μ(t₂) is also meaningless if subspace basis changed.
+
+**Three options — decide before Milestone 0 coding:**
+
+Option A (simplest): Fix reference subspace D*(C, t_ref). All t project into same k-dim space. Loses D* evolution signal.
+
+Option B (recommended): Embed each Σ_C(t) back to R^1023 (zero-pad to orthogonal complement). Compute rank-deficient BW in shared ambient R^1023. Needs pseudo-inverse BW variant.
+
+Option C (research): Grassmannian-aware metric (subspace alignment + Procrustes + BW). New method, needs metric proof. High risk.
+
+**Start with Option A for Milestone 0. Option B for paper.**
+
+---
+
+### P0-2 (FATAL): Φ_C is a point set — point-set subtraction undefined
+
+`ΔO_C^(n) = Φ_C(K_n) - Φ_C(K_{n-1})` is ill-typed. K_n and K_{n-1} have different sizes. Point set minus point set has no meaning. Also contradicts BW distributional definition of dD_C.
+
+**Fix: unify to distributional formulation, demote Φ_C/R_C/ΔO_C to historical notation.**
+
+```
+S_C(t) := empirical distribution of {Π_{D*(C,t_ref)}(log_C(e_i)) : e_i ∈ K_{<t}}
+dD_C(t_{n-1}, t_n) := BW(S_C(t_{n-1}), S_C(t_n))
+```
+
+Φ_C, R_C, ΔO_C stay as intuition / historical notation only, not formal definitions.
+
+---
+
+### P1-3: D_C(T) = Σ dD_C is path length, not endpoint distance
+
+Path length depends on sampling density. 10 events vs 100 events over same period → different D_C.
+θ_stale threshold becomes corpus-density-dependent and non-portable.
+
+**Fix: report two quantities explicitly in paper.**
+- D_C^path(T) = Σ dD_C (cumulative arc length = "total semantic change experienced")
+- D_C^endpoint(T) = BW(S_C(0), S_C(T)) (endpoint distance = "net displacement")
+
+For staleness detection, use D_C^endpoint. For "how much happened" use D_C^path. Never conflate.
+
+---
+
+### P1-4: Entailment cone split v_q = (τ_q, x_q) needs a reference direction
+
+T_C ℍ^k is k-dimensional. Split into (1D "time" + (k-1)D "space") requires choosing which direction is τ_q.
+
+**Fix: use radial direction from origin.**
+
+```
+û_radial = log_0(C) / ||log_0(C)||   (C's position from ℍ^k origin, transported to T_C)
+τ_q = <v_q, û_radial>   (projection onto "abstraction depth" axis)
+x_q = v_q - τ_q · û_radial   (remaining specificity directions)
+
+Future cone: τ_q > 0  AND  ||x_q|| ≤ τ_q
+```
+
+Physical meaning: "more distant from origin = more specific." Future cone = directions that are more specific than anchor C AND within angular spread.
+
+---
+
+### P2-5: cPCA matrix vs sample covariance must be distinguished
+
+Σ_fg - α·Σ_bg is indefinite (PSD minus PSD = possibly negative eigenvalues). NOT a covariance matrix.
+
+**Fix: two-step procedure, clearly stated.**
+```
+Step 1: D*(C,t) = eigvecs of (Σ_fg - α·Σ_bg)  [contrastive matrix, indefinite, just gives directions]
+Step 2: project z_i = Π_{D*(C,t)} v_i
+Step 3: Σ_C(t) = sample_covariance({z_i})  [this IS a PSD covariance, used in BW]
+```
+
+Never use Σ_fg - α·Σ_bg directly as Σ_C(t) in BW. Always recompute sample covariance in the projected subspace.
+
+---
+
+### P2-6: τ (scale factor) needs a selection criterion
+
+τ ∈ [3, 10] affects BW distances (linearly), hyperbolic curvature activation, cone shape, and all 7 Milestone 0 tests.
+
+**Fix: add τ selection criterion.**
+
+Criterion: choose τ* = argmin_{τ} Gromov_δ({h_i}) / diameter({h_i})
+(= choose τ that best activates hyperbolic structure relative to point spread)
+
+Run τ sweep in Milestone 0: τ ∈ {1, 2, 3, 5, 7, 10}, record Gromov δ for each. Pick τ* = elbow point.
+Report τ* in paper. Not a free hyperparameter if selected by this criterion.
+
+---
+
+### Numerical stability (implement before running)
+
+```python
+# Sphere LogMap: unstable when e_i ≈ C (sin(θ) → 0)
+# Use Taylor fallback: if ||e_i - C|| < 1e-6: v_i = e_i - C
+
+# Lorentz ExpMap: unstable when ||v|| → 0
+# Use Maclaurin: if ||v|| < 1e-8: h = (1, v)  (1st order approx)
+
+# Both: use float64 throughout this pipeline
+```
+
+### Critical ablation (decides whether paper ships)
+
+If "tangent cPCA only, Euclidean" beats cosine baseline but Lorentz lift adds nothing → Paper 3 contribution is cPCA subspace discovery, not hyperbolic geometry. Must demonstrate:
+
+`full (cPCA + hyperbolic) > cPCA only (Euclidean) > BGE-M3 cosine`
+
+If middle inequality fails, Lorentz part = interpretability tool only, not predictive core. Adjust paper claims accordingly.
+
+---
+
 ## ⚠️ DEPRECATED DRAFT SECTION — see "Canonical Definition" below for current spec
 ## Core Equations (DEPRECATED)
 
