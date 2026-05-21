@@ -4,6 +4,118 @@
 
 ---
 
+## CANONICAL DEFINITION (2026-05-21, supersedes all earlier formulas)
+
+Definitions below are the formal spec. Earlier sections marked DEPRECATED are retained as historical notes only.
+
+### Coordinate pipeline
+
+```
+BGE-M3 1024D embedding space
+  → normalize to S^1023
+  → Sphere LogMap at anchor C: v_i = log_C(e_i) ∈ T_C S^1023 ≅ R^1023
+  → cPCA on tangent vectors: D*(C,t) = TopK eigvecs of (Σ_fg - α·Σ_bg)
+  → project: z_i = Π_{D*(C,t)} v_i  (k-dim hyperbolic coords)
+  → residual: r_i = v_i - z_i         (1023-k Euclidean coords, NO L2 renorm)
+  → scale: z_i_scaled = τ · z_i       (τ ∈ [3,10], prevents scale collapse)
+  → Lorentz ExpMap: h_i = exp_0(z_i_scaled) ∈ ℍ^k
+  → product space: (h_i, r_i) ∈ ℍ^k × R^(1023-k)
+```
+
+**Key dimension facts:**
+- S^1023 tangent space = R^1023 (NOT R^1024, sphere loses 1 dim)
+- Product space is ℍ^k × R^(1023-k), NOT ℍ^k × S^(1024-k)
+- Residual r_i: keep raw L2 norm (normalizing amplifies noise 20×)
+- Nash theorem citation: removed (not needed, avoid reviewer attack)
+
+### Anchor-distinctive subspace (D* no longer circular)
+
+```
+D*(C,t) = span(TopK eigenvectors of Σ_fg(C,t) - α·Σ_bg(t))
+```
+where:
+- Σ_fg(C,t) = covariance of k-NN(C) in K_{<t}, computed in tangent space
+- Σ_bg(t) = covariance of random sample from K_{<t}
+- α = contrastive strength (tune in Milestone 0)
+
+D* is defined from pre-drift cPCA only. Drift is then computed ON D*. No circularity.
+
+### Corpus state as Gaussian
+
+```
+S_C(t) = 𝒩(μ_C(t), Σ_C(t))
+```
+where μ_C(t), Σ_C(t) are mean and covariance of projected points z_i = Π_{D*(C,t)} v_i, over K_{<t}.
+
+### Drift metric (Bures-Wasserstein, complete)
+
+```
+dD_C²(t₁,t₂) = ||μ_C(t₂) - μ_C(t₁)||²
+              + Tr(Σ_C(t₁) + Σ_C(t₂) - 2(Σ_C(t₁)^{1/2} Σ_C(t₂) Σ_C(t₁)^{1/2})^{1/2})
+```
+
+- First term: mean displacement (semantic center moved)
+- Second term: covariance deformation (second-order distributional shape changed)
+- **NOT "topological volume change"** — say "second-order distributional deformation"
+- dD_C ≥ 0 by construction (Bures-Wasserstein is a metric)
+
+```
+D_C(T) = Σ_{t_i < T} dD_C(t_i, t_{i+1})
+```
+
+### Polarity (direction, separate from magnitude)
+
+```
+σ_C(t_i) = sign(ΔH_C)   or   sign(<μ_C(t_i) - μ_C(t_{i-1}), û_C>)
+```
+
+σ_C is NOT added to dD_C. It is a separate observable.
+
+### Event interpretation (observables, not metric components)
+
+| Event type | dD_C | σ_C | Topology diagnostic |
+|---|---|---|---|
+| Innovation | large | +1 | new void revealed |
+| Falsification | large | -1 | void death, rank drop |
+| Maintenance | small | 0 | no change |
+| Paradigm shift | very large | ±1 | global topology surgery |
+
+ΔH_C, Δrank_C, TDA persistence diagrams = event classifiers / observables, NOT added to metric.
+
+### Observable function
+
+```
+Φ_C(K_t) = Π_{D*(C,t)} [log_C(embeddings in K_{<t})]
+R_C(K_{n-1}, ΔI_n) := Φ_C(U(K_{n-1}, ΔI_n)) - Φ_C(K_{n-1})
+ΔO_C^(n) = Φ_C(K_n) - Φ_C(K_{n-1})
+```
+
+R_C is not a primitive — it emerges from Φ_C applied before and after event.
+
+### Entailment cone (in tangent displacement space, NOT hyperboloid coords)
+
+For anchor C, the future entailment cone is defined on tangent displacements:
+```
+v_q = log_C(q) ∈ T_C ℍ^k,   split as v_q = (τ_q, x_q)
+
+Future cone: τ_q > 0  AND  ||x_q|| ≤ τ_q
+```
+(τ_q = "abstraction-level progression", x_q = "specificity direction")
+
+**Do NOT use hyperboloid coordinate q_0 - 1 directly.** Use tangent displacement split.
+
+### Reflexivity (report as impulse, not state jump)
+
+Report event changes initial tangent velocity (resets momentum), does NOT jump D_C.
+D_C trajectory remains smooth (no Dirac delta in Void Velocity).
+Anti-snowball damping emerges naturally from Kalman-filter-like uncertainty reduction.
+
+### Disclaimer (mandatory in paper)
+
+> We use a Lorentzian-style pseudo-metric as an operational geometry for event-ordered semantic change. This is a measurement geometry, not a physical claim. The construction does not assert that semantic spaces obey Lorentzian physics.
+
+---
+
 ## Ontological Clarification
 
 This framework does not posit the existence of light or time inside latent space.
@@ -28,7 +140,8 @@ Anchor Drift is a knowledge-state metric — it only exists when a system's stat
 
 ---
 
-## Core Equations
+## ⚠️ DEPRECATED DRAFT SECTION — see "Canonical Definition" below for current spec
+## Core Equations (DEPRECATED)
 
 $$\Delta O_C^{(n)} = R_C(K_n,\, \Delta I_n)$$
 
@@ -49,7 +162,7 @@ The response operator decomposes as `R_C = P_C ∘ W_C ∘ T`:
 
 ---
 
-## Working Definition (Implementable)
+## Working Definition (DEPRECATED — cos θ_C can be negative, breaks D_C ≥ 0)
 
 $$\Delta D_C(S_1 \to S_2) = \big\| \Pi_{D^*(\mathbf{C})}(S_2 - S_1) \big\| \cdot \cos\theta_{\mathbf{C}}$$
 
@@ -128,7 +241,7 @@ Reporting a void is a discrete D_C jump. Observation is a topological event that
 
 ---
 
-## Collapse Pulse
+## Collapse Pulse (DEPRECATED — Frankenstein metric, incompatible units — see Canonical Definition)
 
 Entropy decrease does not imply negative drift.
 
@@ -1007,17 +1120,32 @@ Must pre-register: (1) candidate universe definition, (2) K value, (3) hit defin
 
 ---
 
-#### Corrected Milestone 0 pipeline
+#### Corrected Milestone 0 pipeline (canonical)
 
 ```
-Sphere LogMap (base=anchor)
-  → Euclidean tangent space
-  → cPCA (foreground vs background)
-  → Scale by τ (tune τ ∈ [3, 10])
-  → Lorentz ExpMap
-  → Timelike cone (fix 2)
-  → Occupancy density on ℍ^k × ℝ^(1024-k) (fix 6)
+1. Build K_{<t} strictly (assert all timestamps < t)
+2. Normalize embeddings to S^1023
+3. Sphere LogMap at anchor C: v_i = log_C(e_i) ∈ R^1023
+4. fg = kNN(C) from K_{<t} only; bg = random from K_{<t} only
+5. cPCA: eigvecs of (Σ_fg - α·Σ_bg), sweep k ∈ {32,64,128,256}
+6. Split: hyperbolic z_i = top-k projection; residual r_i = remainder
+7. Scale: z_i_scaled = τ · z_i  (τ ∈ [3,10], prevents scale collapse)
+8. Lorentz ExpMap: h_i = exp_0(z_i_scaled)
+9. Product: (h_i, r_i) ∈ ℍ^k × R^(1023-k)  [NOT sphere, no renorm]
+10. Run 7-test battery on {h_i} within anchor cone (tangent split definition)
 ```
+
+Ablation table:
+
+| Model | Tests what |
+|---|---|
+| BGE-M3 cosine only | dense baseline |
+| BM25 + BGE-M3 hybrid | recall baseline |
+| tangent cPCA only, Euclidean | anchor subspace contribution |
+| hyperbolic only, no cPCA | geometry without anchor contrast |
+| full method | proposed |
+
+Critical: if full ≤ cPCA only, Lorentz part = interpretability only, not predictive core. Must demonstrate full > cPCA only > cosine.
 
 ### Milestone 0 toolchain (install Day 0, code Day 1, run Day 2, commit Day 3)
 
