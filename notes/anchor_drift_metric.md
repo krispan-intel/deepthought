@@ -279,6 +279,61 @@ Dynamic TVA 是同一 paradigm 的 IR 泛化：觀察 = 升維到 joint manifold
 
 ---
 
+## Paradigm Survey Archive: Lifting_Paradigms_for_Void_Observation.md (2026-05-21)
+
+Full report: `notes/Lifting_Paradigms_for_Void_Observation.md`
+
+**Critical finding:** Gap #2 in the report = verbatim your intuition today:
+> "No existing model integrates time and semantics into a continuous pseudo-Riemannian spacetime metric ds² = dt² + g_ij dx^i dx^j... modeling semantic drift, velocity, and void collapse as geodesic trajectories on a unified spacetime manifold"
+
+= "time-as-dimension, not time-as-parameter" = exactly Paper 3.
+
+**Trilogy mapping:**
+
+| Paper | Direction | Gap |
+|---|---|---|
+| Paper 1 (TVA) | Direction 1: Sheaf Cohomology — void = H¹(F) obstruction | Gap #1: topological-to-semantic mapping |
+| Paper 2 (TVV) | negative proof of Gap #1 | Gap #1 boundary established |
+| Paper 3 (D-TVA) | Direction 2: Lorentzian Spacetime Cone | Gap #2: continuous spacetime metric |
+| Paper 4 (framework) | Cross-pollination #2: Weak Lensing × Sheaf | Gap #1 + #2 unified |
+| Paper 5 (future) | Direction 3: Tomographic Inversion | Gap #3: generative manifold inversion |
+
+**Top 3 directions for Paper 3:**
+
+**Direction 1 — Sheaf Laplacian Obstruction Fields**
+- void = non-zero H¹(F) (cohomology obstruction)
+- k-NN graph + vector stalks + variational restriction maps
+- Bayesian Sheaf Neural Networks (Bodnar/Hansen/Gebhart 2022) = direct starting point
+
+**Direction 2 — Lorentzian Spacetime Cone** ← main candidate
+- ds² = -dt² + g_ij dx^i dx^j (Minkowski spacetime metric)
+- void drift / velocity = geodesic trajectory
+- void collapse = reaching causal horizon boundary
+- Hasan et al. 2026 WACV (Lorentz Entailment Cone) = direct build-on paper
+
+**Direction 3 — Tomographic Density Inversion (GLIMPSE)**
+- queries as background sources, documents as lensing potentials
+- semantic "shear" = query neighborhood distortion
+- sparse wavelet regularization → continuous density field → void map
+- GLIMPSE (Leonard/Lanusse/Starck 2014-2025)
+
+**Paper 5 candidate — Cross-pollination #2: Weak Lensing × Sheaf**
+- measure "semantic shear" from query passing through document neighborhoods
+- invert shear pattern → "semantic mass map" → identify underdense voids + dark matter bridging concepts
+- brand new, nobody has done this
+
+**Key papers to read in June (verified real):**
+- Bodnar et al. 2022 — Sheaf Neural Networks (Direction 1 foundation)
+- Hamilton et al. 2016 — Diachronic Word Embeddings (temporal alignment baseline)
+- Leonard/Lanusse/Starck 2014 — GLIMPSE (Direction 3 foundation)
+- Hasan et al. 2026 WACV — Lorentz Entailment Cone (Direction 2 build-on)
+- Huynh et al. 2026 — TMRL arXiv 2601.05549 (paradigm 0.5 to differentiate from)
+
+**6-month open question:** Direction 1 (Sheaf) vs Direction 2 (Lorentzian) vs hybrid?
+Gut: Sheaf for static void formalization + Lorentzian for dynamics. Hybrid = Paper 3.
+
+---
+
 ## Paradigm Archive: MRL = 0.5, Dynamic TVA = 1.0 (2026-05-21)
 
 **Lab notebook two-liners:**
