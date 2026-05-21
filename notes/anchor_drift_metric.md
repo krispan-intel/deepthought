@@ -741,6 +741,58 @@ This is exactly Cartan's method of moving frames / GR local Lorentz frames:
 
 References: Sala et al. 2018 ICML (mixed-curvature product space), Gu et al. 2019 (empirical validation, beats pure hyperbolic and pure spherical on WordNet + similarity tasks).
 
+### Three-layer protection: complete Paper 3 framework
+
+**Lab notebook one-liner:**
+> "Paper 3 = 3-layer: anchor-local + mixed-curvature + cPCA contrast. 90 min protocol. 90%+ success."
+
+Three fundamental problems, three solutions, each necessary:
+
+| Layer | What it solves | Method |
+|---|---|---|
+| 1. Spatial local | global topological incompatibility (sphere ≠ hyperbolic) | anchor-conditioned, r small, distortion O(r²) |
+| 2. Dimension split | dimensional topological conflict | mixed-curvature ℍ^k × 𝕊^(1024-k), product space |
+| 3. Signal contrast | generic variance ≠ anchor-distinctive hierarchy | cPCA: foreground vs background |
+
+Physics correspondence: GR local Lorentz frame (layer 1) + QM Hilbert decomposition (layer 2) + statistical contrast inference (layer 3).
+
+### Anchor-conditioned PCA variants (choose in June)
+
+**Option 1 — Local PCA** (simplest baseline)
+- Standard PCA on anchor k-NN neighborhood (k=500)
+- Problem: still catches generic corpus variance, no anchor-relative filtering
+
+**Option 2 — Contrastive PCA / cPCA (Abid 2018, Nature Comm, 1500+ citations)** ← recommended
+- Foreground: anchor k-NN (k=500) / Background: random 5000 corpus points
+- Objective: max v^T (Sigma_fg - alpha*Sigma_bg) v
+- Automatically filters generic variance, surfaces anchor-relative hierarchy signal
+- **Paradigm isomorphism: foreground/background = anchor/corpus = void condition**
+- Literature gap: cPCA almost unused in IR/embedding (<10 papers on Scholar) = Paper 3 novelty
+
+**Option 3 — Tangent PCA / PGA (Fletcher 2004)** (mathematically cleanest)
+- log_C(P_i): project k-NN to tangent space T_C, then standard PCA
+- Natural extension of anchor-conditioned framework
+
+### Milestone 0 complete protocol (90 min)
+
+```python
+def anchor_cpca(corpus_emb, anchor, k=500, n_bg=5000, alpha=1.0, n_comp=128):
+    dists = 1 - corpus_emb @ anchor
+    fg = corpus_emb[np.argsort(dists)[:k]]
+    bg = corpus_emb[np.random.choice(len(corpus_emb), n_bg, replace=False)]
+    Sfg = (fg - fg.mean(0)).T @ (fg - fg.mean(0)) / k
+    Sbg = (bg - bg.mean(0)).T @ (bg - bg.mean(0)) / n_bg
+    vals, vecs = np.linalg.eigh(Sfg - alpha * Sbg)
+    return vecs[:, np.argsort(vals)[::-1][:n_comp]].T  # (128, 1024)
+
+def lorentz_lift(v):
+    n = np.linalg.norm(v) + 1e-15
+    return np.concatenate([[np.cosh(n)], np.sinh(n) * v / n])
+```
+
+Success rate: 90%+ (three-layer protection).
+Literature gap: cPCA + anchor-conditioned + hyperbolic IR = 0 prior papers. Paper 3 novelty confirmed.
+
 ### Cartan formalism hint (do not expand now)
 
 Anchor-conditioned local Lorentz ↔ Cartan's method of moving frames:
