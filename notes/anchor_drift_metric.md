@@ -237,6 +237,48 @@ Open issues: #1 (norm), #2 (reflexivity jump), #3 (Linux experiment).
 
 ---
 
+## Paradigm Archive: Time-as-Dimension (2026-05-21)
+
+**Lab notebook one-liner:**
+> "Dynamic TVA: time-as-dimension, not time-as-parameter. Joint algebraic structure. Quantum-observation paradigm in IR. Milestone 1 (6月): choose joint structure type."
+
+**Core framing shift:**
+- ❌ Galileo: embedding space indexed by t → e(t) ∈ R^768, time is external parameter
+- ✅ Einstein: embedding × time as joint algebraic structure, time is a dimension of the manifold
+
+「傳播 + drift」都是 Galileo 框架——能描述 anchor 軌跡，不能描述 void cosmology 級別的現象。
+
+**4 candidate joint structures (6月選一個):**
+
+| Structure | Dynamics primitive | Invariant | 適合當... |
+|---|---|---|---|
+| Fiber Bundle | section over time | holonomy | anchor trajectory |
+| Sheaf over Time | restriction map | cohomology | historical accumulation |
+| Lorentzian manifold | geodesic | causal structure | citation causality |
+| Time-indexed Lie Group | group orbit | orbit invariant | symmetry-driven drift |
+
+直覺猜: Sheaf over Time + cohomology invariant + Lorentzian causal flavor。但 6 月自己決定。
+
+**Selection heuristic (6月用):**
+1. corpus 演化有自然 group action? → Lie / group cohomology; 否 → bundle / sheaf
+2. 需要因果方向? → Lorentzian; 否 → Riemannian / sheaf
+3. 關心歷史回溯? → Sheaf; 否 → Bundle
+4. invariant 要 numerical 還是 topological? → curvature vs cohomology
+
+**Quantum observation analogy:**
+觀察在量子力學裡 = 升維到 Hilbert space + operator + 投影到 eigenstate。
+Dynamic TVA 是同一 paradigm 的 IR 泛化：觀察 = 升維到 joint manifold + invariant + 投影回 observable。
+
+**Paper 4 implication:**
+有了 embedding-time 聯合結構，Paper 4 從「lifting paradigm」變成：
+> *Algebraic-Topological Foundations of Information Retrieval*
+
+份量 ≈ Deerwester 1990 LSA。
+
+**Milestone 1 is critical:** 選錯結構，後面全部 redo。休息期讓潛意識 incubate，6 月開工再決定。
+
+---
+
 ## External Peer Suggestions (2026-05-20)
 
 ### Issue #1 — Metric mismatch in Collapse Pulse formula
