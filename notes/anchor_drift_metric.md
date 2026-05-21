@@ -603,6 +603,83 @@ Mathematical basis: Riemannian normal coordinates — any smooth manifold is loc
 Expected result improvement: local hyperbolicity > global hyperbolicity.
 Why Paper 1 BGE-M3 worked: likely because local structure near anchors is already hyperbolic.
 
+### Dual-local framework: the final reframing
+
+**Lab notebook two-liners:**
+> "升維 = 雙重 local (space × dimension)"
+> "Milestone 0: add PCA + k sweep, find sweet spot k*"
+
+Two orthogonal constraints, both reducing distortion:
+- Anchor-conditioned (space-local): only lift at anchor C neighborhood, distortion O(r²)
+- Mixed-curvature (dimension-local): only hyperbolic on relevant subspace, distortion O(diameter × k), k << 1024
+
+Combined: **O(r² × k)** — estimated success rate 90%+
+
+### Mixed-curvature product space mechanics
+
+"升維" = upgrade metric structure complexity, NOT increase dimension count.
+
+```
+BGE-M3 original:  R^1024, cosine metric on sphere
+Mixed-curvature:  ℍ^k × 𝕊^(1024-k), product metric
+                  same 1024 numbers, different geometry
+Full Lorentz:     R^1025, Lorentz metric (+1 timelike axis)
+```
+
+**Split operation (PCA-based, recommended):**
+1. Take anchor C's k-NN neighborhood (1000 papers)
+2. Run PCA on neighborhood
+3. Top-k components → hyperbolic subspace e_hyp ∈ R^k
+4. Remaining 1024-k components → spherical subspace e_sph ∈ R^(1024-k)
+
+**Project each subspace:**
+```python
+# Hyperbolic: exponential map to Lorentz model
+# input: v ∈ R^k (tangent vector at origin)
+P_time  = cosh(||v||)
+P_space = sinh(||v||) * v / ||v||
+P = (P_time, P_space) ∈ R^(k+1)   # Lorentz model, +1 timelike
+
+# Spherical: L2 normalize (same as BGE-M3 does already)
+Q = e_sph / ||e_sph||  ∈ S^(1024-k-1)
+```
+
+**Product distance:**
+```
+d²(e1, e2) = w_H · d_H(P1,P2)² + w_S · d_S(Q1,Q2)²
+d_H = arccosh(-<P1,P2>_Lorentz)   # hyperbolic distance
+d_S = arccos(<Q1,Q2>)              # spherical = cosine
+```
+
+**Why split works:**
+- Hyperbolic factor: captures paper abstraction level (general survey ↔ specific technique)
+- Spherical factor: preserves BGE-M3 topical similarity (cosine structure intact)
+- Two geometries decouple — each optimizes own structure, no interference
+
+**Distortion comparison:**
+- Pure Lorentz: O(diameter × 1024) → 35% success
+- Mixed-curvature: O(diameter × k), k << 1024 → 70% success
+- Dual-local combined: O(r² × k) → 90%+ success
+
+### Milestone 0 revised experiment
+
+Original: project 100 vectors, check neighborhood survives
+Revised: PCA sweep to find optimal k*
+
+```
+For each k in [32, 64, 128, 256, 512, 1024]:
+  1. Take anchor C, get 1000-NN
+  2. PCA → top-k subspace
+  3. Run 4 quick tests (Test 1,2,4,5) on k-dim subspace
+  4. Record hyperbolicity score
+  
+Find k* = sweet spot (high hyperbolicity, sufficient info preserved)
+Expected: k* ≈ 64-256
+
+Additional time vs original: +30 min
+Value: directly determines ℍ^k* × 𝕊^(1024-k*) for Paper 3
+```
+
 ### Cartan formalism hint (do not expand now)
 
 Anchor-conditioned local Lorentz ↔ Cartan's method of moving frames:
