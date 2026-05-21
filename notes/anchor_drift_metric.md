@@ -334,6 +334,63 @@ Gut: Sheaf for static void formalization + Lorentzian for dynamics. Hybrid = Pap
 
 ---
 
+## Strategic Archive: 3 Takeaways × Deep Research (2026-05-21)
+
+### Takeaway 1 — Your intuition = Gap #2 (global open problem)
+
+Gap #2 verbatim from report:
+> "No existing model integrates time and semantics into a continuous pseudo-Riemannian spacetime metric ds² = -dt² + g_ij dx^i dx^j... modeling semantic drift, velocity, and void collapse as geodesic trajectories on a unified spacetime manifold."
+
+You said this morning: "time-as-dimension, not time-as-parameter."
+Two independent paths → same open problem.
+
+Implications:
+- Paper 3 positioning requires zero justification — cite gap directly
+- window is open: zero active competitors on paradigm 1.0
+- confidence upgrade: from "I believe" → "objectively open problem"
+
+### Takeaway 2 — 6-year research program structure
+
+| Year | Paper | Mathematical substrate | Paradigm function |
+|---|---|---|---|
+| 2024 | Paper 1 TVA | Sheaf cohomology (static) | void = H¹ obstruction |
+| 2025 | Paper 2 TVV | Impossibility theorem | non-lifted methods fail |
+| 2026 | Paper 3 D-TVA | Lorentz manifold | dynamics = geodesic |
+| 2027 | Paper 4 Framework | Direction 1+2+3 unified | algebraic-topological IR |
+| 2028 | Paper 5 Lensing | Tomographic inversion | semantic → generative |
+
+Paper 2 retrospective upgrade: not "4 methods fail" but "demonstration of Gap #1 unsolvability under non-lifted paradigm" → motivating necessity proof for Papers 3-5.
+
+Paper 1 retrospective upgrade: C1-C4 conditions = engineering operationalization of sheaf cohomology. Can be re-framed as "first sheaf-theoretic operationalization of unknown unknowns in IR."
+
+Program title: **Algebraic-Topological Foundations of Information Retrieval**  
+Outcome: 1 paradigm + 5-7 papers + 1 framework  
+Comparable: Einstein 1905-1915 arc (special → general relativity)
+
+### Takeaway 3 — Paper 5 candidate: semantic gravitational lensing
+
+Core idea: treat queries as background sources, document corpus as foreground gravitational lenses.
+Measure "semantic shear" = coordinate shift of queries passing through document neighborhoods.
+Apply GLIMPSE sparse regularization inversion → reconstruct continuous semantic density field.
+Identify semantic voids = underdense regions, "dark matter bridging concepts" = overdense regions.
+Route sheaf messages *around* voids → reduce hallucinations.
+
+Mathematical analog:
+- astrophysics: γ(θ) ≈ ∇²ψ(θ)/2 (shear = lensing potential)
+- IR: σ_sem(q) ≈ ∇²Φ_doc(q)/2 (semantic shear)
+
+Why brand new: zero prior literature combining gravitational lensing + IR.
+Why compelling: directly addresses LLM hallucination → industrial relevance.
+Why Paper 5 not sooner: needs Paper 3 spacetime metric as foundation.
+
+Red flags to watch: (1) don't jump to Paper 5 before Paper 3 ships; (2) lensing is mathematical analog, not 1:1 physical; (3) "semantic dark matter" is too sexy — maintain rigor.
+
+### One-line summary
+
+> "6-year paradigm program 2024-2030: Sheaf (P1) → Impossibility (P2) → Lorentzian (P3) → Framework (P4) → Semantic Lensing (P5). Not a paper collection — a paradigm build."
+
+---
+
 ## Paradigm Archive: MRL = 0.5, Dynamic TVA = 1.0 (2026-05-21)
 
 **Lab notebook two-liners:**
