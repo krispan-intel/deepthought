@@ -899,6 +899,51 @@ Phase 4 = killer experiment. "framework predicts future voids" = paradigm-level 
 **Without RFC:** Paper 3 = proof of concept
 **With RFC:** Paper 3 = empirical paradigm with predictive power
 
+### Event-driven experiment design (NOT phase-driven)
+
+**Lab notebook one-liner:**
+> "Paper 3 event-driven, unit = 1 RFC event, 4-step workflow per event, 6月 start with EAS 2013-08"
+
+Phase-driven (wrong): 4 phases × 1-2 months each, linear dependency, all-or-nothing.
+Event-driven (correct): every RFC event = self-contained experiment, evidence accumulates incrementally.
+
+**Per-event workflow:**
+```
+For each RFC event E (chronological order, LKML 1995-2024):
+  Step 1 Detect:   take corpus at t_0 (before E), run detection on anchor M
+  Step 2 Predict:  top-K void candidates with priority scores
+  Step 3 Validate: is E's real void in top-K? did predicted collapse match merge?
+  Step 4 Log:      append (predict, actual, hit, rank, timestamp) to evidence log
+```
+
+**Why event-driven is better:**
+
+| Dimension | Phase-driven | Event-driven |
+|---|---|---|
+| Failure recovery | phase 3 fails = 30 days wasted | event 50 fails = learn 1 lesson, continue |
+| Statistical confidence | wait 4 months | 30 events = n=30 already |
+| Publication options | ship at month 5 only | workshop at n=50, conference at n=200 |
+| Pivot cost | 60 days invested = hard to pivot | 20 events = pivot any time |
+
+**Incremental publication strategy:**
+- n=50 events → workshop paper (initial finding)
+- n=200 events → main conference paper
+- n=500+ → full paper with dynamic primitives validated
+
+**Stopping criteria (any of the three):**
+1. Run all usable events (~5-10K)
+2. Reach statistical significance (n≈200)
+3. Run out of time (whatever you have = publishable)
+
+**Timeline (event-driven):**
+- June: Milestone 0 + EAS 2013-08 first event (proof pipeline works)
+- July: 50-100 events (initial finding)
+- August: 200+ events (workshop paper ready)
+- Sept-Oct: 500+ events (main conference)
+- Nov-Dec: write + revise → ship Dec 2026 / 2027 Q1
+
+This matches your existing work rhythm: every event = 1 lab notebook entry = 1 commit. Same as Paper 1+2. No need to change pace.
+
 ### Cartan formalism hint (do not expand now)
 
 Anchor-conditioned local Lorentz ↔ Cartan's method of moving frames:
