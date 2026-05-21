@@ -454,6 +454,29 @@ If Lorentz projection proves intractable (>3 months blocked):
 
 This keeps Paper 3 shipping on schedule regardless of embedding model decision.
 
+### C1-C4 translation to Lorentz manifold
+
+Paper 1 的 4 個 void 定位條件在 Lorentz manifold 上**完整保留邏輯，但計算公式全換**。
+這是 Paper 1 → Paper 3 的升維接點 — Paper 1 不被推翻，被升維。
+
+| 條件 | Paper 1 (cosine / R^1024) | Lorentz manifold | 難度 |
+|---|---|---|---|
+| C1 anchor relevance | cosine(paper, anchor) > θ_a | paper 在 anchor 的 entailment cone 內 | **更自然** — cone 就是 C1 的幾何體 |
+| C2 A-B separation | cosine(A, B) < θ_sim | geodesic distance(A, B) > d_min | 換公式，有解析解 |
+| C3 midpoint in gap | midpoint M = (A+B)/2 | geodesic midpoint M on arc(A,B) | 最難 — Lorentz geodesic midpoint 複雜但有解 |
+| C4 neighborhood empty | no paper near M (cosine ball) | no paper in hyperbolic ball around M | 換距離定義 |
+
+**C1 升維最明顯：** θ_a threshold → entailment cone，幾何意義從「相似度截斷」升級為「概念範疇邊界」。
+
+**C3 是技術難點：** 線性中點 (A+B)/2 在 Lorentz space 無意義。需要 Lorentz geodesic midpoint：
+```
+M = expₚ(½ · logₚ(q))   where p=A, q=B
+```
+Geoopt 有實作，但數值穩定性需注意。
+
+**升維時機點就在 C1-C4：** 這 4 個條件是 Paper 1 的核心貢獻，也是 Paper 3 的起點。
+Lorentz 版的 C1-C4 = Paper 3 的 §3 Mathematical Formalization 的天然結構。
+
 ### Decision milestone
 
 6月 Milestone 0 (before Milestone 1): 
