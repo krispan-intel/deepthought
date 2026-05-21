@@ -39,19 +39,27 @@ BW on k-dim subspace matrices from different bases = garbage (looks like valid n
 # mu_1023_t = mean of v_i_projected_ambient (1023D, rank ≤ k)
 # Sigma_1023_t = (1/n) * V_ambient.T @ V_ambient  (1023×1023, rank-k)
 
-def bw_distance_ambient(mu1, Sigma1, mu2, Sigma2, eps=1e-8):
-    """BW distance on rank-deficient Gaussians in shared R^1023."""
-    mean_sq = np.sum((mu2 - mu1)**2)
-    # Rank-deficient sqrtm via eigendecomposition
-    def mat_sqrt_rankdef(S, eps=eps):
-        vals, vecs = np.linalg.eigh(S)
-        vals = np.maximum(vals, 0)  # clamp negative eigenvalues to 0
-        return vecs @ np.diag(np.sqrt(vals)) @ vecs.T
-    S1_sqrt = mat_sqrt_rankdef(Sigma1)
-    M = S1_sqrt @ Sigma2 @ S1_sqrt
-    M_sqrt = mat_sqrt_rankdef(M)
-    cov_term = np.trace(Sigma1 + Sigma2 - 2 * M_sqrt)
-    return np.sqrt(np.maximum(mean_sq + cov_term, 0))
+def mat_sqrt_rankdef(S, rank_k=128):
+    """Matrix sqrt for rank-deficient symmetric PSD matrix via eigendecomposition."""
+    vals, vecs = np.linalg.eigh(S)          # ascending order
+    idx = np.argsort(vals)[::-1]            # descending
+    vals, vecs = vals[idx], vecs[:, idx]
+    vals_sqrt = np.zeros_like(vals)
+    vals_sqrt[:rank_k] = np.sqrt(np.clip(vals[:rank_k], 0, None))
+    return vecs @ np.diag(vals_sqrt) @ vecs.T
+
+def bw_distance_sq(mu1, Sigma1, mu2, Sigma2, rank_k=128):
+    """Squared BW distance on rank-deficient Gaussians in shared 1023D ambient space."""
+    mean_term = np.sum((mu2 - mu1) ** 2)
+    S1_half = mat_sqrt_rankdef(Sigma1, rank_k)
+    M = S1_half @ Sigma2 @ S1_half
+    M = 0.5 * (M + M.T)           # symmetrize — float arithmetic breaks symmetry
+    M_half = mat_sqrt_rankdef(M, rank_k)
+    cov_term = max(np.trace(Sigma1) + np.trace(Sigma2) - 2 * np.trace(M_half), 0.0)
+    return mean_term + cov_term   # returns squared BW distance
+
+def bw_distance(mu1, Sigma1, mu2, Sigma2, rank_k=128):
+    return np.sqrt(bw_distance_sq(mu1, Sigma1, mu2, Sigma2, rank_k))
 ```
 
 ### P0-B: cPCA sign flipping (SILENT FAILURE, cross-run inconsistent)
@@ -163,6 +171,37 @@ Cache D_perp once per (anchor, t) — QR is expensive inside loops.
 
 ---
 
+## Sign canonicalization (call immediately after every cPCA)
+
+```python
+def canonicalize_signs(D_star):
+    """
+    Force each eigenvector's largest-magnitude entry to be positive.
+    Eliminates cross-run and cross-time sign flipping from np.linalg.eigh.
+    Must call after every cPCA computation.
+    """
+    for i in range(D_star.shape[0]):
+        idx = np.argmax(np.abs(D_star[i]))
+        if D_star[i, idx] < 0:
+            D_star[i] *= -1
+    return D_star
+
+def assert_D_star_orthonormal(D_star, atol=1e-8):
+    """Verify cPCA eigenvectors are orthonormal before QR-based D_perp."""
+    product = D_star @ D_star.T
+    assert np.allclose(product, np.eye(D_star.shape[0]), atol=atol), \
+        f"cPCA eigenvectors not orthonormal (max err={np.max(np.abs(product - np.eye(D_star.shape[0]))):.2e}). " \
+        "QR-based D_perp will be invalid if this fails."
+
+# Usage order (MANDATORY):
+# vals, vecs = np.linalg.eigh(Sfg - alpha * Sbg)
+# idx = np.argsort(vals)[::-1][:k]
+# D_star = vecs[:, idx].T           # (k, 1023)
+# D_star = canonicalize_signs(D_star)
+# assert_D_star_orthonormal(D_star)
+# D_perp = ...QR...
+```
+
 ## cPCA hyperparameter sweeps
 
 ```python
@@ -183,27 +222,50 @@ ks = [32, 64, 128, 256]
 
 ---
 
-## Cone direction: use radial, NOT cPCA first axis
+## Cone direction: τ is signed scalar projection onto radial direction
 
 **DO NOT tie τ axis to cPCA eigenvector.**
-cPCA first axis = "foreground vs background contrast" — no prior relation to abstraction level.
+**DO NOT use τ_q = ||v_q|| (norm is always ≥ 0, cone degenerates to entire space).**
+
+τ must be a **signed scalar projection** so that τ_q > 0 (outward, more specific) vs τ_q < 0 (inward) is meaningful.
 
 ```python
-# Radial direction at anchor C in H^k
-# log_0(C_hyperbolic) = position of anchor from H^k origin
-C_hyperbolic = lorentz_expmap0(D_star @ sphere_logmap(ref_point, anchor_C) * tau)
-# τ direction = radial = log_0(C) normalized
-tau_direction = C_hyperbolic[1:]  # drop time component
-tau_direction = tau_direction / np.linalg.norm(tau_direction)
+def get_tau_direction(anchor_C, D_star, tau_scale):
+    """
+    Radial direction in the k-dim cPCA subspace coordinates.
+    τ direction = direction of anchor C itself in the projected subspace.
+    This is geometrically natural: ||z_C|| = how far anchor is from ℍ^k origin
+    = abstraction depth proxy.
+    """
+    # Project anchor C into cPCA subspace
+    v_C = sphere_logmap(np.zeros(1023), anchor_C)  # LogMap at sphere origin (approx)
+    z_C = D_star @ v_C                              # (k,) anchor in cPCA coords
+    norm_z_C = np.linalg.norm(z_C)
+    if norm_z_C < 1e-8:
+        # Anchor at cPCA origin — fall back to first eigenvector
+        return D_star[0]
+    return z_C / norm_z_C                           # unit radial direction in R^k
 
-# Entailment cone: τ_q > 0 AND ||x_q|| ≤ τ_q
-def in_entailment_cone(v_tangent, tau_direction, angle_threshold=1.0):
-    tau_q = v_tangent @ tau_direction
-    x_q = v_tangent - tau_q * tau_direction
+def in_entailment_cone(z_q, tau_hat, angle_threshold=1.0):
+    """
+    z_q: (k,) projected point in cPCA coordinate space
+    tau_hat: (k,) unit radial direction (from get_tau_direction)
+
+    Split: τ_q = <z_q, tau_hat>  (signed scalar — CAN be negative)
+            x_q = z_q - τ_q * tau_hat  (k-1 dimensional perpendicular component)
+
+    Future cone: τ_q > 0  AND  ||x_q|| ≤ τ_q * angle_threshold
+    """
+    tau_q = z_q @ tau_hat                          # signed scalar
+    x_q = z_q - tau_q * tau_hat                    # perpendicular component
     return (tau_q > 0) and (np.linalg.norm(x_q) <= tau_q * angle_threshold)
 ```
 
-No calibration oracle needed. Radial direction is geometrically natural (distance from origin = abstraction depth).
+**Why signed projection, not norm:**
+- τ_q = ||z_q|| ≥ 0 always → "future cone τ_q > 0" = every point except anchor → cone = entire space (degenerate, useless)
+- τ_q = <z_q, τ̂> is signed → τ_q > 0 means "in the direction of anchor's radial" → proper cone with boundary
+
+**No calibration oracle needed.** Anchor C's own radial direction is the natural τ axis (more specific concepts appear further from ℍ^k origin than C).
 
 ---
 

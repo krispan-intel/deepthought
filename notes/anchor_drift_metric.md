@@ -94,15 +94,22 @@ R_C is not a primitive — it emerges from Φ_C applied before and after event.
 
 ### Entailment cone (in tangent displacement space, NOT hyperboloid coords)
 
-For anchor C, the future entailment cone is defined on tangent displacements:
+For anchor C, the future entailment cone is defined on projected cPCA coordinates z_q:
 ```
-v_q = log_C(q) ∈ T_C ℍ^k,   split as v_q = (τ_q, x_q)
+z_q = D_star @ log_C(q)  ∈ R^k   (cPCA projected coords)
 
-Future cone: τ_q > 0  AND  ||x_q|| ≤ τ_q
+τ̂ = z_C / ||z_C||                (unit radial direction = anchor C's own direction)
+τ_q = <z_q, τ̂>                  (SIGNED scalar projection — CAN be negative)
+x_q = z_q - τ_q · τ̂             (perpendicular component, k-1 dimensional)
+
+Future cone: τ_q > 0  AND  ||x_q|| ≤ τ_q · angle_threshold
 ```
-(τ_q = "abstraction-level progression", x_q = "specificity direction")
 
-**Do NOT use hyperboloid coordinate q_0 - 1 directly.** Use tangent displacement split.
+**Critical:** τ_q must be a signed scalar projection, NOT a norm.
+- τ_q = ||z_q|| ≥ 0 always → cone becomes entire space (degenerate)
+- τ_q = <z_q, τ̂> → properly separates "outward" (more specific) from "inward"
+
+**Do NOT tie τ̂ to cPCA first eigenvector** (that encodes foreground/background contrast, not abstraction depth).
 
 ### Reflexivity (report as impulse, not state jump)
 
