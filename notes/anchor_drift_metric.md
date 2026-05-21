@@ -391,6 +391,76 @@ Red flags to watch: (1) don't jump to Paper 5 before Paper 3 ships; (2) lensing 
 
 ---
 
+## Engineering Risk: BGE-M3 1024D → Lorentz Manifold (2026-05-21)
+
+**Confirmed embedding dimension: 1024D** (tested in Paper 1/2; 1024 outperforms 768 for this domain).
+
+### Why BGE-M3 is insufficient for Paper 3
+
+BGE-M3 is trained with InfoNCE contrastive loss on (query, positive, negative) triplets.
+This enforces **cosine similarity geometry** — the embedding space is optimized for:
+- uniform distribution on hypersphere (Wang & Isola 2020 alignment/uniformity)
+- high cosine similarity = semantically close
+- low cosine similarity = semantically far
+
+Lorentz manifold requires **hyperbolic geometry**:
+- distances are exponential not cosine
+- hierarchy is encoded by distance to origin (general = near origin, specific = far)
+- timelike vs spacelike dimensions have fundamentally different metric signature ds² = -dt² + g_ij dx^i dx^j
+
+**The mismatch:**
+```
+BGE-M3 output:    unit sphere in R^1024 (cosine space)
+Lorentz needs:    Minkowski space R^(1,1024) (indefinite metric)
+
+cosine similarity ≠ hyperbolic distance
+flat sphere      ≠ curved hyperbolic manifold
+no time axis     ≠ timelike dimension required
+```
+
+Projecting BGE-M3 vectors into Lorentz space via exponential map is possible, but:
+- semantic relationships learned under cosine objective may not transfer
+- no guarantee that "close in cosine" = "close in hyperbolic distance"
+- causal cone structure (entailment) has no correspondence in contrastive training
+
+### Three options (choose in June)
+
+**Option A: Post-hoc projection (low cost, high risk)**
+- take frozen BGE-M3 1024D vectors
+- apply exponential map to project into Lorentz model
+- hope cosine neighborhoods survive projection
+- risk: semantic structure may be destroyed
+
+**Option B: Fine-tune with hyperbolic objective (medium cost, medium risk)**
+- start from BGE-M3 weights
+- add hyperbolic contrastive loss (Lorentz distance instead of cosine)
+- fine-tune on domain corpus (arXiv CS + Linux kernel)
+- risk: catastrophic forgetting of general semantic knowledge
+
+**Option C: Train Lorentz-native embedding from scratch (high cost, low risk)**
+- new model trained directly in Lorentz space
+- loss function: Poincaré/Lorentz distance + entailment cone constraints
+- full control over geometry
+- risk: massive compute + need large training corpus
+
+**Current guess:** Option B (fine-tune) is most practical.
+BGE-M3 as initialization + hyperbolic fine-tuning on the anchor domain.
+
+### Fallback plan
+
+If Lorentz projection proves intractable (>3 months blocked):
+- Paper 3a: Direction 1 (Sheaf Cohomology static formalization) — no embedding change needed
+- Paper 3b: Lorentzian dynamics — defer until embedding model resolved
+
+This keeps Paper 3 shipping on schedule regardless of embedding model decision.
+
+### Decision milestone
+
+6月 Milestone 0 (before Milestone 1): 
+Run quick experiment — project 100 BGE-M3 1024D vectors into Lorentz model via exponential map, check if anchor neighborhood structure survives. If yes → Option A viable. If no → Option B.
+
+---
+
 ## Paradigm Archive: MRL = 0.5, Dynamic TVA = 1.0 (2026-05-21)
 
 **Lab notebook two-liners:**
