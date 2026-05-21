@@ -793,6 +793,232 @@ def lorentz_lift(v):
 Success rate: 90%+ (three-layer protection).
 Literature gap: cPCA + anchor-conditioned + hyperbolic IR = 0 prior papers. Paper 3 novelty confirmed.
 
+### Critical fixes before coding (peer review 2026-05-21)
+
+**Overall verdict:** Direction is strong. Three things must be fixed or paper is undefendable.
+
+---
+
+#### Fix 1 (FATAL): dD_C mixes incompatible metric spaces
+
+Current formula:
+```
+dD_C = α·W₂ + β·Wₚ(PD) + γ·|ΔH_C| + δ·|Δrank_C|
+```
+W₂ (optimal transport), Wₚ(PD) (TDA), ΔH_C (information theory), Δrank_C (linear algebra) — different units, scales, sample complexity. Direct linear addition = ad hoc scoring function, not a metric. Reviewer will reject.
+
+**Fix: Bures-Wasserstein as base metric (most elegant)**
+
+cPCA already computes covariance matrix Σ_t of anchor neighborhood. Use:
+```
+dD_C² = Tr(Σ_{t1} + Σ_{t2} - 2(Σ_{t1}^{1/2} · Σ_{t2} · Σ_{t1}^{1/2})^{1/2})
+```
+This single geometric distance encodes both point displacement (means) AND topological volume change (covariances/entropy).
+
+Then: ΔH_C and Δrank_C become **classifiers/observables**, not additive terms:
+- large dD_C + Δrank_C < 0 → Void Collapse (not additive, just co-occurrence)
+
+Alternative fix: factored form
+```
+dD_C = d₀(S₁,S₂) · (1 + λ₁φ_TDA + λ₂φ_H + λ₃φ_rank)
+```
+where d₀ is the base metric and others are perturbation corrections.
+
+---
+
+#### Fix 2 (FATAL): Entailment cone formula defines a ball, not a cone
+
+Current:
+```
+cone(C) = {q ∈ ℍ^128 : <C,q>_Lorentz ≤ -cosh(angle)}
+```
+Math check: d_H(C,q) = arccosh(-<C,q>_L), so condition becomes d_H(C,q) ≥ angle.
+This is an **exterior ball** (outside a certain radius), not a cone. Loses timelike partial order.
+
+**Fix: true future light cone requires timelike ordering**
+
+After translating anchor C to origin in tangent space:
+1. q₀ - 1 > 0  (time/abstraction level progresses)
+2. -(q₀-1)² + ||q_space||² ≤ 0  (inside the cone, timelike interval)
+
+This recovers actual causal/entailment structure.
+
+---
+
+#### Fix 3 (FATAL): cos θ_C breaks D_C ≥ 0
+
+Current:
+```
+ΔD_C = ||Π_{D*(C)}(S₂-S₁)|| · cos θ_C
+```
+cos θ_C can be negative → ΔD_C negative → contradicts "D_C non-negative by construction".
+
+**Fix: separate magnitude and polarity**
+```
+dD_C = ||Π_{D*(C)}(S₂-S₁)|| · |cos θ_C|   (magnitude, always ≥ 0)
+σ_C  = sign(cos θ_C)  or  sign(ΔH_C)       (separate direction scalar)
+```
+
+---
+
+#### Fix 4: Must do Sphere LogMap BEFORE cPCA ("secant distortion")
+
+BGE-M3 vectors live on S^1023. PCA is a Euclidean linear operation. Applying cPCA directly on sphere vectors = principal components "cut through sphere interior" (chords, not geodesics). Carries curvature error into hyperbolic space.
+
+**Fix: mandatory Sphere LogMap first**
+```python
+v_tangent = geomstats.Sphere.log(point=candidates, base_point=anchor)
+# THEN run cPCA on v_tangent (flat Euclidean tangent space)
+```
+
+---
+
+#### Fix 5: Hyperbolic scale collapse — add temperature τ
+
+Current `lorentz_lift(v)` with typical ||v|| ≤ 1.0 squashes all points near hyperbolic origin where geometry ≈ Euclidean flat. Negative curvature never activates. Gromov δ test will fail.
+
+**Fix: scale vector before exponential map**
+```python
+v_scaled = v * tau   # tau ∈ [3.0, 10.0], tune in Milestone 0
+P = lorentz.expmap0(v_scaled)
+```
+
+---
+
+#### Fix 6: Spherical residual L2-normalize amplifies noise
+
+After cPCA removes top-k components, residual e_sph may have ||e_sph|| ≈ 0.05. Normalizing to unit sphere amplifies background noise 20×, destroying cosine structure.
+
+**Fix: use ℍ^k × ℝ^(1024-k), not ℍ^k × 𝕊^(1024-k)**
+```python
+# Don't normalize residual:
+spherical_part = v_sph  # keep original L2 norm, use Euclidean distance
+```
+
+---
+
+#### Fix 7: KL divergence ≠ metric
+
+D_KL is asymmetric, no triangle inequality, blows up at support mismatch. Cannot be called a "metric distance."
+
+**Fix:** Call it "event-level information divergence." If metric needed, use:
+- √JS(P_n, P_{n-1}) (Jensen-Shannon square root = metric), or
+- W₂(P_n, P_{n-1})
+
+---
+
+#### Fix 8: R_C(K_n, ΔI_n) temporal circularity
+
+K_n = state AFTER event n. R_C(K_n, ΔI_n) already sees post-injection result.
+
+**Fix:**
+```
+K_n = U(K_{n-1}, ΔI_n)
+ΔO_C^(n) = Φ_C(K_n) - Φ_C(K_{n-1})
+dD_C^(n) = ||Φ_C(K_n) - Φ_C(K_{n-1})||_C
+```
+R_C absorbed into Φ_C. No circularity.
+
+---
+
+#### Fix 9: D*(C) definition still circular — fix with cPCA
+
+**Fix:**
+```
+D*(C) = span(top-k eigenvectors of Σ_fg(C) - α·Σ_bg)
+```
+= anchor-distinctive subspace defined BEFORE drift computation.
+Then drift is computed ON this subspace. Circularity resolved.
+
+---
+
+#### Fix 10: Reflexivity jump breaks geodesic dynamics
+
+Current D_C^+ = D_C^- + dD_C^report creates jump discontinuity → Void Velocity dM_v/dD_C has Dirac delta → geodesic mechanics breaks.
+
+**Fix: treat report as external impulse, not state jump**
+
+D_C trajectory stays smooth. Report resets tangent velocity (initial condition) and reduces local uncertainty (Kalman filter effect). Anti-snowball damping emerges naturally without explicit damping coefficient.
+
+---
+
+#### Fix 11: Lorentz/hyperbolic/spacetime concepts mixed — need clear separation
+
+Three distinct things currently conflated:
+1. **Lorentzian manifold / spacetime metric**: ds² = -dt² + g_ij dx^i dx^j (pseudo-Riemannian)
+2. **Lorentz model of ℍ^k**: hyperboloid in Minkowski ambient space (Riemannian positive-definite)
+3. **Entailment cones**: hierarchy/partial-order geometry (≠ physical causal cone)
+
+**Fix: explicit layered definition**
+```
+ℳ_C = ℝ_{D_C} × ℍ^k × 𝕊^(1024-k)
+ds_C² = -dD_C² + g_ℍ(dx,dx) + g_𝕊(dy,dy)
+```
+D_C axis = event-order drift coordinate (not physical time)
+ℍ^k = semantic hierarchy (Riemannian hyperbolic)
+𝕊^(1024-k) → ℝ^(1024-k) = topical similarity (fix 6)
+Lorentzian metric = imposed on product space, not inherited from BGE-M3
+
+Add disclaimer: "We use a Lorentzian-style pseudo-metric as an operational geometry for event-ordered semantic change. This is a measurement geometry, not a physical claim."
+
+---
+
+#### System fix: Vector DB recall horizon paradox ("Shadow Voids")
+
+Framework C uses Vector DB top-500/1000 NN, then Lorentz detection on candidates. **Fatal**: a paradigm-shifting RFC with new vocabulary will rank low in cosine space (e.g., rank 5000) and be truncated. Framework declares "void" because nothing is in the cone — but the void is filled, just outside recall window. **Shadow Void = false positive from retrieval truncation.**
+
+**Fix: two-stage asymmetric reranking**
+- Stage 1 (coarse recall): BM25 + dense hybrid search, k=5000-10000
+- Stage 2 (Lorentz reranking): in-memory Lorentz lift on Stage 1 candidates
+
+This proves to reviewer: "causal associations outside cosine horizon can be recovered by Lorentz cone."
+
+---
+
+#### Experiment fix: strict temporal leakage prevention
+
+BGE-M3 may have seen post-2020 kernel text in training. For each RFC event E_t:
+- Corpus: K_{<t} only
+- Anchor embedding: pre-t maintainer text only
+- cPCA background: K_{<t} random sample
+- Void candidates: generated from K_{<t}
+- Thresholds: calibrated on K_{<t}
+
+**Everything must be strictly from K_{<t}. No exceptions.**
+
+---
+
+#### Experiment fix: RFC label taxonomy (6-class, not binary)
+
+| Label | Meaning |
+|---|---|
+| filled_direct | RFC patchset merged |
+| filled_indirect | different patchset solved same problem |
+| rejected_design | need exists, proposed solution rejected |
+| false_void | community says problem not real |
+| stalled | no resolution within window |
+| superseded | absorbed by broader redesign |
+
+---
+
+#### Experiment fix: top-K validation protocol
+
+Must pre-register: (1) candidate universe definition, (2) K value, (3) hit definition (semantic similarity threshold? human judge?), (4) random baseline hit rate. Report: Recall@K, MRR, nDCG@K, AUROC, Average Precision, Δt_predicted_collapse - Δt_actual_merge.
+
+---
+
+#### Corrected Milestone 0 pipeline
+
+```
+Sphere LogMap (base=anchor)
+  → Euclidean tangent space
+  → cPCA (foreground vs background)
+  → Scale by τ (tune τ ∈ [3, 10])
+  → Lorentz ExpMap
+  → Timelike cone (fix 2)
+  → Occupancy density on ℍ^k × ℝ^(1024-k) (fix 6)
+```
+
 ### Milestone 0 toolchain (install Day 0, code Day 1, run Day 2, commit Day 3)
 
 **Lab notebook one-liner:**
