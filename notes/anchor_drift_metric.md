@@ -477,10 +477,64 @@ Geoopt 有實作，但數值穩定性需注意。
 **升維時機點就在 C1-C4：** 這 4 個條件是 Paper 1 的核心貢獻，也是 Paper 3 的起點。
 Lorentz 版的 C1-C4 = Paper 3 的 §3 Mathematical Formalization 的天然結構。
 
-### Decision milestone
+### Option upgrade: Mixed-curvature product space (2026-05-21)
 
-6月 Milestone 0 (before Milestone 1): 
-Run quick experiment — project 100 BGE-M3 1024D vectors into Lorentz model via exponential map, check if anchor neighborhood structure survives. If yes → Option A viable. If no → Option B.
+**Key reframing from second Deep Research report:**
+
+| Option | Description | Est. success rate |
+|---|---|---|
+| A.1 | Pure exponential map → Lorentz | 35% |
+| A.2 | MLP-learned projector (new) | 60% |
+| **A.3** | **Mixed-curvature product space ℍ × 𝕊** | **70% ← recommended** |
+| B | HypLoRA adapter fine-tune | 85% |
+| C | From scratch Lorentz | 95% |
+
+**Option A.3 rationale:**
+- Lorentz factor ℍ: handles hierarchy, entailment cone, causal structure
+- Spherical factor 𝕊: preserves BGE-M3 original cosine structure
+- Two factors decouple — no need to destroy cosine geometry
+- Reference: ProCLIP 2026 (just published, build-on opportunity)
+- Extra cost vs A.1: +1 month. Cost-benefit ratio: best.
+
+**Option A.2 (new, not in previous commit):**
+- Train small MLP to learn cosine → Lorentz mapping
+- Supervised by WordNet hierarchy (small dataset, no BGE-M3 retraining)
+- Engineering cost: 1-2 months (cheaper than Option B)
+- Risk: learned mapping may not generalize
+
+**Risk mitigations (all have solutions):**
+
+| Risk | Mitigation |
+|---|---|
+| R1 Bourgain distortion | mixed-curvature product space ℍ × 𝕊 |
+| R2 Numerical instability | Maclaurin expansion + float64 + retraction |
+| R3 Temporal incoherence | Dynamic Fusion Distance (Euclidean + Lorentz blend) |
+| R4 Anchor instability | Riemannian Karcher Mean |
+| R5 Causal-cone misalign | asymmetric Lorentz entailment loss calibration |
+| R6 Geodesic tractability | Klein-Lorentz hybrid (HNSW upper Klein, ground Lorentz) |
+
+### Milestone 0: 7-test battery (6/1, ~46 min total)
+
+Full protocol from second Deep Research report (`Latent_Hyperbolic_Structure_in_Embeddings.md`).
+
+**Day 1 quick tests (9 min, go/no-go):**
+- Test 1: Gromov δ-hyperbolicity (3 min)
+- Test 2: Sarich-Boomsma tree-additivity (2 min)
+- Test 4: Radial cophenetic correlation CPCC (1 min)
+- Test 5: Exponential map distortion (3 min)
+
+**Day 2 deep tests (37 min, if quick tests pass):**
+- Test 3: Ollivier-Ricci curvature (12 min) ← same metric as Paper 2 §4.5, different task
+- Test 6: Probing classifier on WordNet (15 min)
+- Test 7: Spectral Laplacian (10 min)
+
+**Day 3:** write Milestone 0 commit based on results → decide A.1 / A.2 / A.3 / B.
+
+**Reference verification (Day 1 first, 1 hour):**
+- 🟢 Hasan 2026 WACV, Atigh 2022 CVPR, Khrulkov 2020, Sala 2018 ICML — verified real
+- 🟡 HypLoRA 2025/2026 NeurIPS — verify before citing
+- 🟡 Madan et al. 2026, HypCBM 2026 — check arXiv IDs
+- 🔴 HyperspaceDB (Reddit citation) — academic red flag, discard
 
 ---
 
