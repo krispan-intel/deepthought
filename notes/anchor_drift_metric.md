@@ -235,17 +235,77 @@ Report τ* in paper. Not a free hyperparameter if selected by this criterion.
 
 ---
 
+### Silent failure risk matrix (when does each issue actually bite?)
+
+| Issue | Code crashes? | Silent wrong result? | When does it bite? |
+|---|---|---|---|
+| P0-1 BW subspace mismatch | No | **YES** — numbers look reasonable but are garbage | Phase 2, first RFC event dD_C computation (June end) |
+| P0-2 Φ_C point-set subtract | Yes (numpy shape error) | N/A | Day 1 of coding, forced fix |
+| P1-3 arc length vs endpoint | No | No (single corpus) | Cross-corpus generalization claims in paper |
+| P1-4 cone direction | No | Only if implementation picks wrong sign | Day 1 of coding, self-resolves |
+| P2-5 cPCA vs sample cov | No | Possible | Code review catches it |
+| P2-6 τ no criterion | No | No | Post-hoc claim, Milestone 0 sweep gives data |
+
+**Milestone 0 (6/1-6/3): none of P0-P2 fires. Safe to run.**
+**First RFC event (June end): P0-1 silent failure. Fix before then.**
+
+**P0-1 fix decision (needed before June end):** Use Option A (fixed reference subspace t_ref). Set D*(C, t_ref) once, project all t into same k-dim space. Loses D* evolution signal but BW is well-defined.
+
 ### Numerical stability (implement before running)
 
 ```python
-# Sphere LogMap: unstable when e_i ≈ C (sin(θ) → 0)
-# Use Taylor fallback: if ||e_i - C|| < 1e-6: v_i = e_i - C
+# Day 1: write these fallbacks FIRST before running anything
 
-# Lorentz ExpMap: unstable when ||v|| → 0
-# Use Maclaurin: if ||v|| < 1e-8: h = (1, v)  (1st order approx)
+# 1. Sphere LogMap: unstable when e_i ≈ C (sin(θ) → 0)
+def sphere_logmap(C, e, eps=1e-6):
+    diff = e - C
+    if np.linalg.norm(diff) < eps:
+        return diff  # Taylor fallback: v ≈ e - C
+    cos_theta = np.clip(C @ e, -1+eps, 1-eps)
+    theta = np.arccos(cos_theta)
+    return (theta / np.sin(theta)) * (e - cos_theta * C)
 
-# Both: use float64 throughout this pipeline
+# 2. Lorentz ExpMap: unstable when ||v|| → 0
+def lorentz_expmap0(v, eps=1e-8):
+    n = np.linalg.norm(v)
+    if n < eps:
+        return np.concatenate([[1.0], v])  # Maclaurin O(1) fallback
+    return np.concatenate([[np.cosh(n)], np.sinh(n) * v / n])
+
+# 3. Filter antipodal points before LogMap
+def filter_antipodal(corpus, anchor, threshold=-0.99):
+    cos_sims = corpus @ anchor
+    return corpus[cos_sims > threshold]
+
+# 4. Use float64 throughout
+corpus = corpus.astype(np.float64)
+
+# 5. PCA sample deficiency: n < d → sweep k ≤ min(n//2, 500)
+# With n=500 neighbors, k_max = 250 (not 1024)
+
+# 6. cPCA α sweep: α ∈ [0.1, 0.5, 1.0, 2.0, 5.0]
+# α too large → background top mode flips direction
+# Check: top eigenvector of (Sfg - α*Sbg) should align with foreground, not anti-align
 ```
+
+### P0-1 fix: cone orientation calibration (needed before first RFC event)
+
+cPCA eigenvectors have arbitrary sign (±u both valid). "Future cone τ_q > 0" requires knowing which direction = "more abstract."
+
+```python
+# Calibration oracle: use a known abstract reference concept
+# (e.g., subsystem name, top-level survey paper)
+v_abstract_ref = sphere_logmap(anchor_C, embedding_of_abstract_concept)
+# Project onto first cPCA eigenvector
+sign = np.sign(v_abstract_ref @ cpca_eigvec_0)
+# Flip eigenvector if needed
+cpca_eigvec_0_calibrated = cpca_eigvec_0 * sign
+# τ_q = projection onto calibrated first axis
+tau_q = z_i[:, 0]  # already calibrated
+```
+
+For Linux RFC: abstract reference = subsystem name embedding (e.g., "scheduler", "memory management").
+For arXiv: abstract reference = survey paper embedding in that anchor domain.
 
 ### Critical ablation (decides whether paper ships)
 
