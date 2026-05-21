@@ -211,6 +211,32 @@ Open issues: #1 (norm), #2 (reflexivity jump), #3 (Linux experiment).
 
 ---
 
+## Paradigm Archive: Erdős 2024 × Dynamic TVA (2026-05-21)
+
+**One-line:** Erdős unit distance proof meta-strategy = 「2D 不夠用 → 升維高維代數對稱性 → 製造大量結構 → 投影回 2D 保留性質」，與 Dynamic TVA 結構同構。
+
+**Connection:**
+- Erdős: 2D 平面代數對稱性不足 → 升到 CM 體 K → norm-1 元素大量製造 → Minkowski 嵌入 → 投影回 2D
+- Dynamic TVA: embedding 投影不足以量 void dynamics → 升到 anchor 軌跡 / fiber bundle → 找 invariant → 投影回 observable plane
+
+**5 ideas to revisit in Paper 3 (展開時間: 6 月):**
+
+1. **Invariant-based measurement** — 不測「void 在 t 時刻位置」，測「所有 t 都守恆的 invariant」。比 instantaneous scalar 對 noise 穩定。
+
+2. **升維 → 構造 → 降維 三段論** — anchor C 從點升到軌跡 C(t)；void 從點升到 fiber bundle over time；在 bundle 上定義 holonomy / monodromy；投影回 observable。Void Velocity / Collapse Pulse 可能是 fiber bundle invariant 的投影，不是 vector difference。
+
+3. **鴿籠製造結構** — 不精細定義 collapse，觀察時間窗 [t, t+Δ] 內進入 void 鄰域的 paper 數量碰撞。大數法則替代幾何 measurement，對 noisy embedding 特別 robust。
+
+4. **Bounded discriminant 對應** — Erdős 關鍵: 升維但根判別式有界，投影時點密度不崩。Paper 3 必須找對應的有界性保證（anchor drift 速度有界？embedding norm 變化有界？），否則投影回 observable 時 noise 吞 signal。這是 Paper 3 第一個技術 milestone。
+
+5. **Galois 對稱對應** — CM 體的複數共軛自同構保證代數元素在所有嵌入一致。embedding space 的對應對稱？rotation / paraphrase / cross-lingual invariance + anchor drift commutativity，可能是 Paper 3 的 hidden structure。
+
+**警告:** 借 paradigm 不借具體工具。不要強行把 CM 體 / number field 搬到 embedding space（embedding 沒有自然的 number field 結構）。學 strategy，找 embedding space 本身的代數結構（manifold / group action / bundle）。
+
+**信心來源:** 升維 paradigm 在數學史反覆 work — Wiles (Fermat, modular forms)、Tao-Green (算術級數, Gowers norm)、Erdős 2024。Dynamic TVA 是第 N 次應用，不是 first-of-its-kind。
+
+---
+
 ## External Peer Suggestions (2026-05-20)
 
 ### Issue #1 — Metric mismatch in Collapse Pulse formula
