@@ -793,6 +793,41 @@ def lorentz_lift(v):
 Success rate: 90%+ (three-layer protection).
 Literature gap: cPCA + anchor-conditioned + hyperbolic IR = 0 prior papers. Paper 3 novelty confirmed.
 
+### Milestone 0 toolchain (install Day 0, code Day 1, run Day 2, commit Day 3)
+
+**Lab notebook one-liner:**
+> "Milestone 0 工具棧 = Geoopt + Geomstats + contrastive + GraphRicciCurvature, 3 天完成"
+
+```bash
+pip install geoopt geomstats contrastive GraphRicciCurvature POT manify
+```
+
+| Library | What it gives you | Key call |
+|---|---|---|
+| **geoopt** | Lorentz/Sphere/ProductManifold + expmap + Riemannian Adam | `geoopt.ProductManifold((Lorentz(),129),(Sphere(),896))` |
+| **geomstats** | TangentPCA + FrechetMean (Karcher) + Geodesic | `TangentPCA(metric,n_components=128).fit(pts, base_point=C)` |
+| **contrastive** | Abid 2018 cPCA official | `CPCA().fit_transform(foreground, background)` |
+| **GraphRicciCurvature** | Ollivier-Ricci on k-NN graph | `OllivierRicci(G).compute_ricci_curvature()` |
+| **POT** | Wasserstein (used by Ollivier-Ricci internally) | auto |
+
+**Test battery library mapping:**
+
+| Test | Library | Lines | Time |
+|---|---|---|---|
+| T1 Gromov δ | manify / self-written | 10 | 3 min |
+| T2 Sarich-Boomsma | self-written | 30 | 2 min |
+| T3 Ollivier-Ricci | GraphRicciCurvature | 15 | 12 min |
+| T4 Radial CPCC | Geomstats TangentPCA | 20 | 1 min |
+| T5 Distortion | Geoopt | 25 | 3 min |
+| T6 Probe classifier | Geoopt + sklearn | 50 | 15 min |
+| T7 Spectral Laplacian | scipy.sparse | 20 | 10 min |
+| cPCA | contrastive | 10 | 2 min |
+| Mixed-curvature lift | Geoopt ProductManifold | 30 | 5 min |
+| Anchor Tangent PCA | Geomstats TangentPCA | 15 | 3 min |
+| **Total** | | **~225 lines** | **~56 min** |
+
+**Why timing is perfect:** 2017-2026 = hyperbolic ML golden 8 years. All tools mature now. 5 years earlier = 6 months building wheels. Now = 1 week using them.
+
 ### Cartan formalism hint (do not expand now)
 
 Anchor-conditioned local Lorentz ↔ Cartan's method of moving frames:
