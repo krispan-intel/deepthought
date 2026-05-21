@@ -538,6 +538,83 @@ Full protocol from second Deep Research report (`Latent_Hyperbolic_Structure_in_
 
 ---
 
+## Critical Reframing: Anchor-Conditioned Lift (2026-05-21)
+
+**Lab notebook one-liner:**
+> "Paper 3 = anchor-conditioned lift, not global. Milestone 0 scope = anchor neighborhood. Cartan frame hint (defer)."
+
+### Why anchor-conditioned > global lifting
+
+Global Lorentz violated the paradigm's own anchor-centric nature.
+Paper 1 is anchor-conditioned. Paper 2 proves non-anchor methods fail. Paper 3 should complete the paradigm, not contradict it.
+
+```
+Global lift:  distortion O(diameter) — affects entire corpus
+Anchor lift:  distortion O(r²)       — only at C neighborhood, r = distance to C
+              → r small near C → distortion negligible
+              → far from C you don't care → distortion irrelevant
+```
+
+Mathematical basis: Riemannian normal coordinates — any smooth manifold is locally Euclidean (or locally Lorentzian). Einstein's GR uses exactly this: local Lorentz frame at each point, not global Lorentz manifold.
+
+**Success rate revision:** Global A.3 mixed-curvature 70% → Anchor-conditioned 85%+
+
+### Three framework candidates
+
+**Framework A — Tangent Space Lift (recommended for math)**
+1. Take anchor C ∈ BGE-M3 1024D sphere
+2. Compute tangent space T_C ≅ R^1023 via log map: v_P = log_C(P)
+3. Attach Lorentz metric on T_C: ds² = -dt² + g_ij dv^i dv^j
+4. All dynamic primitives (drift, velocity, collapse) computed on T_C
+- Pro: simplest, distortion minimal, no fine-tuning needed
+- Con: per-anchor chart, multi-anchor needs coordination
+
+**Framework B — Cartan G-structure / Moving Frames (mathematically deep)**
+- attach Lorentz frame bundle at each anchor C
+- connect frames via connection (parallel transport)
+- anchor drift = holonomy of connection
+- void dynamic = connection curvature
+- corresponds exactly to Cartan's method of moving frames (1920s)
+- Pro: multi-anchor natural, holonomy = cumulative drift effect
+- Con: uncommon in ML, needs differential geometry depth
+- NOTE: defer decision until Milestone 0
+
+**Framework C — Conditional Hyperbolic Embedding (recommended for implementation)**
+- keep BGE-M3 frozen globally
+- at query time: find anchor C(Q), dynamically project (C + candidate docs) to local Lorentz
+- compute dynamic primitives in local Lorentz
+- project results back for cosine ranking
+- Pro: no pre-compute needed, GPU parallelizable
+- Con: higher query-time latency (acceptable for research)
+
+**Recommended: Framework A math + Framework C implementation.**
+
+### Milestone 0 scope revision
+
+7-test battery unchanged, but **scope = anchor k-NN neighborhood, not full corpus**.
+
+| Test | Original scope | Revised scope |
+|---|---|---|
+| Test 1 Gromov δ | sample 100K quadruplets from full corpus | sample 100K from anchor neighborhood |
+| Test 3 Ollivier-Ricci | full corpus k-NN graph | anchor-centered k-NN (k=500) |
+| Test 4 CPCC | full WordNet hierarchy | anchor C as root, sub-hierarchy only |
+| Others | full corpus | anchor neighborhood |
+
+Expected result improvement: local hyperbolicity > global hyperbolicity.
+Why Paper 1 BGE-M3 worked: likely because local structure near anchors is already hyperbolic.
+
+### Cartan formalism hint (do not expand now)
+
+Anchor-conditioned local Lorentz ↔ Cartan's method of moving frames:
+- not global symmetry, local frame at each point
+- connection links frames
+- curvature = frame inconsistency measure
+
+If Milestone 0 confirms local hyperbolicity, seriously consider Cartan formalism for Paper 3 §3.
+Defer until 6/3 commit.
+
+---
+
 ## Paradigm Archive: MRL = 0.5, Dynamic TVA = 1.0 (2026-05-21)
 
 **Lab notebook two-liners:**
