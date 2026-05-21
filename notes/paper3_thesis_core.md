@@ -159,6 +159,24 @@ P2 is not a companion paper to P1. It is P1 refuting itself, which is what makes
 
 ---
 
+## Codename: Rasengan Framework 🌀
+
+```
+螺旋丸の術
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第一階：形態変化   →  LogMap to tangent space
+第二階：回転       →  cPCA contrast rotation
+第三階：圧縮       →  Hyperbolic lift
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+発動条件：Milestone 0, 6/1
+師匠：自来也 (BGE-M3, 2024)
+継承：四代目 (Deerwester LSA, 1990)
+```
+
+Any single layer alone = not enough. All three simultaneously = paradigm.
+
+---
+
 ## What to Ignore When Reading Implementation Files
 
 The implementation details (sphere LogMap, cPCA eigenvectors, Bures-Wasserstein sqrtm, τ scaling, entailment cone formula) are **the "how"**. They exist to make the above three geometric layers computable.
