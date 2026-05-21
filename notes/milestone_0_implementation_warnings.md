@@ -52,21 +52,24 @@ def mat_sqrt_psd(S, tol=1e-10):
     vals_sqrt[keep] = np.sqrt(vals[keep])
     return vecs @ np.diag(vals_sqrt) @ vecs.T
 
-def bw_distance_sq(mu1, Sigma1, mu2, Sigma2):
-    """Squared BW distance on rank-deficient Gaussians in shared ambient space.
-    Works on UNSCALED z_i (or ambient 1023D projected coords).
-    τ scaling is NOT applied here — τ only affects hyperbolic lift and cone shape.
+def bw_distance_sq(mu1, Sigma1, mu2, Sigma2, eps=1e-8):
+    """Squared BW distance. Uses scipy sqrtm + symmetrize + eps floor.
+    Computed on UNSCALED z_i. τ does NOT enter here.
     BW drift and hyperbolic curvature are decoupled by design.
     """
-    mean_term = np.sum((mu2 - mu1) ** 2)
-    S1_half = mat_sqrt_psd(Sigma1)
-    M = S1_half @ Sigma2 @ S1_half
-    M_half = mat_sqrt_psd(M)         # mat_sqrt_psd already symmetrizes internally
-    cov_term = max(np.trace(Sigma1) + np.trace(Sigma2) - 2 * np.trace(M_half), 0.0)
+    from scipy.linalg import sqrtm
+    mean_term = np.linalg.norm(mu1 - mu2) ** 2
+    S1 = 0.5 * (Sigma1 + Sigma1.T) + eps * np.eye(len(Sigma1))
+    S2 = 0.5 * (Sigma2 + Sigma2.T)
+    S1_half = sqrtm(S1).real
+    M = S1_half @ S2 @ S1_half
+    M = 0.5 * (M + M.T) + eps * np.eye(len(M))  # symmetrize before second sqrtm
+    M_half = sqrtm(M).real
+    cov_term = max(np.trace(S1) + np.trace(S2) - 2 * np.trace(M_half), 0.0)
     return mean_term + cov_term
 
-def bw_distance(mu1, Sigma1, mu2, Sigma2):
-    return np.sqrt(bw_distance_sq(mu1, Sigma1, mu2, Sigma2))
+def bw_distance(mu1, Sigma1, mu2, Sigma2, eps=1e-8):
+    return np.sqrt(bw_distance_sq(mu1, Sigma1, mu2, Sigma2, eps))
 ```
 
 ### P0-B: cPCA sign flipping (SILENT FAILURE, cross-run inconsistent)
@@ -221,23 +224,57 @@ def assert_D_star_orthonormal(D_star, atol=1e-8):
 # D_perp = ...QR...
 ```
 
-## cPCA hyperparameter sweeps
+## gcPCA: use generalized eigenvalue instead of cPCA (eliminates α hyperparameter)
+
+**Replace anchor_cpca with anchor_gcpca. Eliminates α sweep entirely.**
 
 ```python
-# α sweep: [0.1, 0.5, 1.0, 2.0, 5.0]
-# Check: top eigenvector of (Sfg - α*Sbg) should align with foreground centroid
-# If projection_sign < 0 for all corpus points → α too large, flipped direction
-alphas = [0.1, 0.5, 1.0, 2.0, 5.0]
+from scipy.linalg import eigh
 
+def anchor_gcpca(tangent_vectors, anchor_idx, k_fg=500, n_bg=5000, n_comp=128, ridge=1e-6):
+    """
+    Generalized eigenvalue cPCA: solve Σ_fg v = λ Σ_bg v.
+    No α hyperparameter. λ_i = fg/bg variance ratio (scale-invariant).
+    Top eigenvectors = most anchor-distinctive directions.
+
+    Input: tangent_vectors = sphere LogMap output, shape (N, 1023)
+    """
+    dists = np.linalg.norm(tangent_vectors - tangent_vectors[anchor_idx], axis=1)
+    fg = tangent_vectors[np.argsort(dists)[:k_fg]]
+    bg = tangent_vectors[np.random.choice(len(tangent_vectors), n_bg, replace=False)]
+
+    fg_c = fg - fg.mean(0)
+    bg_c = bg - bg.mean(0)
+    Sfg = fg_c.T @ fg_c / k_fg
+    Sbg = bg_c.T @ bg_c / n_bg + ridge * np.eye(tangent_vectors.shape[1])  # ridge for PD
+
+    vals, vecs = eigh(Sfg, Sbg)          # ascending order
+    D_star = vecs[:, -n_comp:][:, ::-1].T  # (n_comp, 1023), largest λ first
+    D_star = canonicalize_signs(D_star)
+    assert_D_star_orthonormal(D_star)
+    return D_star, vals[-n_comp:][::-1]   # (D_star, eigenvalues)
+
+# WHY gcPCA > cPCA:
+# - No α to sweep (was: [0.1, 0.5, 1.0, 2.0, 5.0])
+# - λ_i = fg/bg ratio, scale-invariant
+# - "Top-K largest eigenvalues" is unambiguous (most positive λ = fg dominates bg)
+# - Removes one reviewer attack surface
+# - Same mathematical intent: find anchor-distinctive directions
+```
+
+## τ sweep and k sweep
+
+```python
 # τ sweep: [1, 2, 3, 5, 7, 10]
 # Criterion: τ* = argmin Gromov_δ / diameter  (elbow point)
 # τ affects ONLY hyperbolic lift and cone. NOT BW drift (BW uses unscaled z_i).
+# Fix κ=-1, only sweep τ. Do NOT simultaneously tune both κ and τ.
 taus = [1, 2, 3, 5, 7, 10]
 
-# k sweep: [32, 64, 128, 256]
-# Hard cap: k ≤ n_foreground // 2  (sample deficiency: n=500 → k_max=250)
-# DO NOT sweep k=512 or k=1024 with n=500 foreground points.
-ks = [32, 64, 128, 256]  # 512/1024 removed — invalid with n=500
+# k sweep: [32, 64, 128]  (NOT 256 — BW sample covariance needs k ≤ n/4)
+# n=500 foreground → k_max ≈ 125 for reliable BW
+# PCA sample deficiency cap: k ≤ n//2, but BW is stricter: k ≤ n//4
+ks = [32, 64, 128]  # 256/512/1024 removed
 ```
 
 ---

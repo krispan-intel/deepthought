@@ -95,24 +95,30 @@ R_C(K_{n-1}, ΔI_n) := Φ_C(U(K_{n-1}, ΔI_n)) - Φ_C(K_{n-1})
 
 R_C is not a primitive — it emerges from Φ_C applied before and after event.
 
-### Entailment cone (in tangent displacement space, NOT hyperboloid coords)
+### Entailment cone (angular cone in hyperbolic space, Ganea 2018)
 
-For anchor C, the future entailment cone is defined on projected cPCA coordinates z_q:
+ℍ^k is a Riemannian manifold with positive-definite metric — NO timelike/spacelike split,
+NO Minkowski light cone. The correct cone is the **angular entailment cone** (Ganea 2018).
+
 ```
-z_q = D_star @ log_C(q)  ∈ R^k   (cPCA projected coords)
+cone(C, ψ) = { q ∈ ℍ^k : angle(log_C(q), τ̂) ≤ ψ }
 
-τ̂ = z_C / ||z_C||                (unit radial direction = anchor C's own direction)
-τ_q = <z_q, τ̂>                  (SIGNED scalar projection — CAN be negative)
-x_q = z_q - τ_q · τ̂             (perpendicular component, k-1 dimensional)
+τ̂ = foreground centroid direction in cPCA coords (Milestone 0 provisional):
+    z_fg = foreground_v @ D_star.T      # (n_fg, k)
+    τ̂ = mean(z_fg) / ||mean(z_fg)||
 
-Future cone: τ_q > 0  AND  ||x_q|| ≤ τ_q · angle_threshold
+Cone membership:
+    z_q = D_star @ log_C(q)            # (k,)
+    τ_q = <z_q, τ̂>                    # signed scalar (CAN be negative)
+    x_q = z_q - τ_q * τ̂
+    in_cone: τ_q > 0  AND  arctan(||x_q||/τ_q) ≤ ψ
 ```
 
-**Critical:** τ_q must be a signed scalar projection, NOT a norm.
-- τ_q = ||z_q|| ≥ 0 always → cone becomes entire space (degenerate)
-- τ_q = <z_q, τ̂> → properly separates "outward" (more specific) from "inward"
+**REMOVED (was wrong):**
+- `τ̂ = z_C / ||z_C||` — log_C(C) = 0, so z_C = 0, τ̂ = 0/0 (undefined)
+- Minkowski condition `q₀-1 > 0, -(q₀-1)² + ||q_space||² ≤ 0` — empty set on ℍ^k
 
-**Do NOT tie τ̂ to cPCA first eigenvector** (that encodes foreground/background contrast, not abstraction depth).
+**cPCA → gcPCA for Milestone 0:** use generalized eigenvalue `eigh(Σ_fg, Σ_bg)`, no α hyperparameter.
 
 ### Reflexivity (report as impulse, not state jump)
 
