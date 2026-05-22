@@ -348,3 +348,106 @@ This is the direction the paradigm points, not a retreat from it.
 
 List the 30 calibration pairs for Linux kernel. Takes 30 minutes.
 Gives you Test 8 data on 6/1, and fallback τ̂ if gcPCA fails.
+
+---
+
+## Strategic Pivot: LLM as Hierarchy Oracle (2026-05-22)
+
+### The decision
+
+gcPCA hierarchy extraction: **systematically fails** (not noisily).
+Rayleigh quotient proof: sibling axes always dominate hierarchy axes.
+LLM-as-oracle: **only affordable high-density directional semantic source**.
+
+Paper 3 pivots from "mathematical paper with 2 silent failure risks"
+to "engineering paper with 1 verifiable experiment."
+
+### What changes
+
+| Dimension | Before (math-heavy) | After (LLM-hybrid) |
+|---|---|---|
+| Risk type | 2 silent assumptions | 1 measurable experiment |
+| Engineering complexity | High (Lorentz + 7 fixes) | Low (LLM call + Ridge) |
+| Time to ship | 6 months | 3-4 months |
+| Reviewer attack surface | Large (every fix = attack) | Focused (LLM choice + benchmark) |
+| Reproducibility | cPCA sensitive to k-NN choice | Open-weights + frozen + public benchmark |
+
+### What gets dropped from anchor_drift_metric.md (~60% of content)
+
+- All Lorentz ExpMap / hyperbolic lifting complexity
+- τ scaling sweep and Gromov δ calibration
+- Mixed-curvature ℍ^k × R^(1023-k) geometry
+- All τ̂ / cone direction debate (3 conflicting versions)
+- Entailment cone hyperbolic formula (Ganea 2018)
+- Cartan formalism / HypLoRA / fine-tuning fallbacks
+- Fix 2 (Minkowski cone), Fix 11 (3-layer Lorentz separation)
+
+### What the paper still says about hyperbolic (framing)
+
+> "Entailment cone structure is most naturally expressed in hyperbolic geometry
+> (Ganea 2018). However, contrastive embedders (BGE-M3) trained with InfoNCE
+> enforce spherical uniformity, incompatible with hyperbolic structure
+> (Wang & Isola 2020). We circumvent this by using a large language model
+> to provide hierarchical supervision directly in tangent space.
+> This preserves directional semantics without hyperbolic implementation debt."
+
+You keep the depth, drop the debt.
+
+### The architecture that emerges
+
+```
+BGE-M3 (geometric substrate):  fast, cheap, indexable, 95% of compute
+LLM (semantic operator):        slow, expensive, but provides direction
+Anchor (scope control):         LLM calls only on k-NN neighborhood
+Event-driven (cost amortization): LLM triggered only when needed
+```
+
+Each component does what it's designed for. Clean separation of concerns.
+LLM = directional semantic operator. NOT: retrieval, distance metric, anchor selection.
+
+### Revised Milestone 0 (6/1-6/3)
+
+```
+Day 1 AM:  List 200 (general, specific) pairs — you alone, 3 hours
+Day 1 PM:  Run open-source LLM benchmark (Copilot CLI)
+Day 2 AM:  Run commercial LLM models
+Day 2 PM:  gcPCA + density + Procrustes baselines
+Day 3 AM:  Analysis, Pareto curve, pick production model
+Day 3 PM:  Commit + LKHJB v1 to Zenodo
+```
+
+Output by 6/3:
+- LKHJB benchmark (standalone arXiv candidate)
+- Production model confirmed
+- Paper 3 narrative locked
+- Zero hyperbolic math debt
+
+### Do not let LLM become a maximalist solution
+
+```
+LLM is correct for:
+  - hierarchy direction (paradigm justification: only source of directional semantics)
+  - (general, specific) pair annotation
+  - void candidate final ranking
+  - RFC outcome explanation
+
+LLM is wrong for:
+  - dense corpus retrieval (too expensive)
+  - drift distance metric (LLM doesn't produce metrics)
+  - anchor selection (anchor = human expert grounding)
+  - event detection (time-axis structure, not LLM domain)
+```
+
+LLM = "directional semantic operator." Keep this boundary or contribution blurs.
+
+### Why this is the right time (2026)
+
+```
+2017-2022: encoder is everything
+2023-2024: encoder + LLM rerank (RAG era)
+2025-2026: encoder as substrate + LLM as semantic operator  ← you are here
+2026-2027: LLM-native retrieval
+```
+
+Paper 3 sits exactly at the inflection point.
+BGE-M3 + LLM hybrid is not behind the curve — it is the curve.
