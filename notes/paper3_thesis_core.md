@@ -3,6 +3,15 @@
 # Distilled 2026-05-21. Read this before opening any implementation file.
 ---
 
+**This file is the paradigm context (why it exists).**
+For implementation details (how to build it):
+→ `notes/anchor_drift_metric.md`  — canonical math spec, pipeline, outstanding issues
+→ `notes/milestone_0_implementation_warnings.md`  — Day 1 coding checklist, fallbacks
+→ `notes/lkhjb_benchmark_design.md`  — LKHJB benchmark, LLM oracle evaluation
+→ `notes/paper3_experiment_design.md`  — 5-phase experiment, architecture diagram
+
+---
+
 ## The Big Question
 
 Knowledge evolves. How do we *measure* this evolution?

@@ -1,6 +1,16 @@
-# Anchor Drift Metric — Working Draft
+# Anchor Drift Metric — Implementation Spec (Paper 3 D-TVA)
 
 *2026-05-11. Kris Pan.*
+
+**This file is the implementation spec (how to build it).**
+For the paradigm context (why it exists, strategic positioning):
+→ `notes/paper3_thesis_core.md`  — Lifted Retrieval paradigm, 3-paper arc, naming moment
+→ `notes/paper3_experiment_design.md`  — 5-phase experiment design, story arc
+→ `notes/lkhjb_benchmark_design.md`  — LKHJB benchmark, LLM oracle evaluation
+
+**One-line paradigm summary (Lifted Retrieval):**
+BGE-M3 gives geometry. LLM gives direction. Anchor limits scope. Event drives scheduling.
+This file implements the geometry+direction combination as a drift metric.
 
 ---
 
