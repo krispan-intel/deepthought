@@ -1,0 +1,21 @@
+\begin{thebibliography}{1}
+
+\bibitem{pan2026tva}
+Kris Pan.
+\newblock Topological void analysis: A mathematical framework for systematic
+  technical innovation discovery in knowledge spaces, 2026.
+\newblock Preprint. \url{https://zenodo.org/records/19836730}.
+
+\bibitem{pan2026tvv}
+Kris Pan.
+\newblock Topological void validation: Density-controlled and role-aware
+  evaluation of predicted research voids, 2026.
+\newblock Preprint. \url{https://zenodo.org/records/20303369}.
+
+\bibitem{wang2020understanding}
+Tongzhou Wang and Phillip Isola.
+\newblock Understanding contrastive representation learning through alignment
+  and uniformity on the hypersphere.
+\newblock In {\em Proceedings of ICML}, pages 9929--9939, 2020.
+
+\end{thebibliography}
