@@ -1,15 +1,19 @@
 \documentclass[twocolumn]{article}
 \usepackage{times}
 \usepackage{graphicx}
-\usepackage{amsmath,amssymb}
+\usepackage{amsmath,amssymb,amsthm}
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{natbib}
 
 \newcommand{\dtva}{\textsc{D-TVA}}
 \newcommand{\tva}{\textsc{TVA}}
 \newcommand{\tvv}{\textsc{TVV}}
 \newcommand{\lr}{\textsc{LR}}
+
+\newtheorem{definition}{Definition}
 
 \title{%
   Dynamic Topological Void Analysis (D-TVA):\\
@@ -63,7 +67,6 @@ Benchmark), 200 expert-curated concept pairs for evaluating
 LLM-as-hierarchy-oracle in specialized technical domains.
 Experiments are ongoing; this preprint establishes the paradigm
 and benchmark design.
-
 \end{abstract}
 
 %% ---------------------------------------------------------------
@@ -82,12 +85,27 @@ By the alignment--uniformity framework of~\citet{wang2020understanding},
 InfoNCE maximizes cosine similarity for positive pairs without any
 asymmetric supervision signal.
 No amount of scale or fine-tuning within this paradigm can produce a
-direction-aware encoder.
+direction-aware encoder.%
+\footnote{The name ``Lifted Retrieval'' was assigned on 2026-05-22
+during the design of \dtva{}, upon recognizing the recurrent
+architectural pattern across three prior systems~\cite{pan2026tva,
+pan2026tvv}. This preprint serves as the priority record for the term.}
 
 We propose to resolve this asymmetry gap through \textbf{Lifted Retrieval}:
 rather than modifying the encoder, we \emph{lift} the retrieval system
 into a richer semantic space by introducing a large language model as a
 directional operator, anchored to a local neighborhood to control cost.
+
+\paragraph{Why this paradigm, why now.}
+Three converging trends make this the right moment.
+(i)~Contrastive encoders have reached diminishing returns on standard
+benchmarks, indicating fundamental rather than incremental limitations.
+(ii)~Open-weight LLMs (Llama-3.3-70B, Qwen-2.5-72B) now offer
+inference at $<$\$0.001 per call, making per-neighborhood LLM operators
+economically deployable.
+(iii)~The symmetry impossibility~\cite{wang2020understanding} clarifies
+why no scale-up of contrastive training will close the asymmetry gap.
+\lr{} is not a method but a recognition of these convergent constraints.
 
 \paragraph{Relation to prior work.}
 In retrospect, our earlier work on void taxonomy~\cite{pan2026tva} and
@@ -98,23 +116,194 @@ Neither paper explicitly named the paradigm.
 A forthcoming framework paper will formalize the full operator algebra.
 
 \paragraph{Contributions.}
-\begin{enumerate}
-\item \textbf{Lifted Retrieval paradigm}: formalization of the
-  encoder--anchor--LLM operator architecture.
+\begin{enumerate}[leftmargin=*,itemsep=1pt]
+\item \textbf{Lifted Retrieval paradigm} (Definition~\ref{def:lr}):
+  formal definition of the encoder--anchor--LLM operator architecture.
 \item \textbf{D-TVA}: an instantiation of \lr{} for anchor-conditioned
-  semantic drift detection with BW-based drift metric and LLM
-  hierarchy axis.
+  semantic drift detection with Bures-Wasserstein drift metric and
+  LLM-calibrated hierarchy axis.
 \item \textbf{LKHJB benchmark}: 200 expert-curated Linux kernel
-  hierarchy pairs with 12-model evaluation, released as open data.
-\item \textbf{Linux RFC evaluation}: event-driven prediction of
-  RFC outcomes over 25 years of kernel development history.
+  hierarchy pairs with multi-model evaluation protocol, released
+  as open data.
+\item \textbf{Linux RFC evaluation (ongoing)}: event-driven prediction
+  of RFC outcomes over 25 years of kernel development history.
 \end{enumerate}
 
-% remainder of paper: §2 Related Work, §3 Lifted Retrieval Formalism,
-% §4 D-TVA instantiation, §5 LKHJB benchmark, §6 RFC experiments,
-% §7 Conclusion
+%% ---------------------------------------------------------------
+\section{Related Work}
+\label{sec:related}
 
-\bibliographystyle{plain}
+\paragraph{Dense retrieval and its limits.}
+State-of-the-art dense encoders (BGE-M3~\cite{bge-m3}, E5, GTE) achieve
+high performance on symmetric relevance tasks but lack asymmetric
+semantic structure by construction~\cite{wang2020understanding}.
+Reranking with cross-encoders partially addresses this but at full-corpus
+inference cost.
+
+\paragraph{Hyperbolic embeddings for hierarchy.}
+Poincar\'e embeddings~\cite{nickel2017poincare} and hyperbolic probing
+methods~\cite{chen2021probing} show that transformer representations
+contain latent hyperbolic structure.
+However, extracting this structure from InfoNCE-trained encoders via
+unsupervised lifting is unreliable: the Rayleigh quotient of contrastive
+PCA is systematically biased toward sibling-class axes rather than the
+abstraction depth axis.
+
+\paragraph{LLM-augmented retrieval.}
+Prior work uses LLMs for query expansion, reranking, or summarization
+(RAG pipelines), but treats LLMs as supplementary tools rather than as
+\emph{primary semantic operators} that resolve a structural limitation
+of the encoder.
+\lr{} provides a principled architectural foundation for this distinction.
+
+%% ---------------------------------------------------------------
+\section{Lifted Retrieval: Definition and Architecture}
+\label{sec:lr}
+
+\begin{definition}[Lifted Retrieval]
+\label{def:lr}
+A retrieval system instantiates the \emph{Lifted Retrieval} (\lr{})
+paradigm if it composes three components:
+\begin{enumerate}[leftmargin=*,itemsep=1pt]
+\item A \textbf{dense geometric substrate}
+  $\mathcal{E}: \text{text} \to \mathbb{R}^d$
+  providing continuous topical proximity (typically a contrastive
+  sentence encoder).
+\item An \textbf{anchor} $C \in \mathbb{R}^d$ defining a local region
+  of interest $\mathcal{N}_C \subset \mathbb{R}^d$, typically the
+  $k$-nearest neighbors of $C$ under $\mathcal{E}$.
+\item A \textbf{directional semantic operator}
+  $\mathcal{T}: \mathcal{N}_C \to \mathcal{S}$, realized by a large
+  language model, supplying asymmetric semantic structure $\mathcal{S}$
+  that $\mathcal{E}$ cannot represent.
+\end{enumerate}
+The system is \emph{lifted} in the sense that $\mathcal{T}$ provides
+capabilities beyond what $\mathcal{E}$'s symmetric training objective
+admits.
+\end{definition}
+
+\paragraph{Scope and non-claims.}
+We do not claim that LLMs are the only possible instantiation of
+$\mathcal{T}$; any system providing asymmetric semantic structure
+(e.g., knowledge graphs, symbolic reasoners) could in principle
+serve as the operator.
+We do not claim \lr{} is novel in its individual components---encoders,
+anchors, and LLMs are widely used.
+The contribution is the \emph{architectural composition} and the
+explicit recognition that this composition resolves a \emph{fundamental}
+representational limitation rather than an empirical one.
+This preprint establishes the paradigm and benchmark protocol;
+empirical validation is ongoing.
+
+\begin{figure}[t]
+\centering
+\footnotesize
+\begin{verbatim}
+Corpus (docs over time)
+  | encoder E (BGE-M3)
+  v
+Geometric Substrate    <-- cheap, indexable
+  | + Anchor C
+  v
+Neighborhood N_C       <-- bounds LLM cost
+  | + LLM operator T
+  v
+Directional Signal S   <-- hierarchy, entailment
+  | + aggregation
+  v
+Output:
+  D-TVA: drift/void
+  TVA:   void taxonomy
+  TVV:   void validation
+\end{verbatim}
+\caption{Lifted Retrieval architecture.
+\dtva{}, \tva{}~\cite{pan2026tva}, \tvv{}~\cite{pan2026tvv}
+are three operator instantiations.}
+\label{fig:lr-arch}
+\end{figure}
+
+%% ---------------------------------------------------------------
+\section{D-TVA: Lifted Retrieval for Semantic Drift}
+\label{sec:dtva}
+
+\dtva{} instantiates \lr{} with operator type
+$\mathcal{T} = \text{hierarchy-score}$:
+the LLM assigns an abstraction-depth score to each neighbor
+$n \in \mathcal{N}_C$, enabling construction of an
+\emph{anchor-conditioned hierarchy axis} $\hat{u}_h$ via ridge
+regression in the anchor tangent space.
+
+The full D-TVA pipeline is:
+(1)~sphere log-map at anchor $C$;
+(2)~generalized contrastive PCA (gcPCA) for anchor-distinctive
+subspace $D^*$;
+(3)~LLM-supervised hierarchy axis $\hat{u}_h$;
+(4)~Bures-Wasserstein drift metric $dD_C(t_1,t_2)$ on the
+Gaussian state $S_C(t) = \mathcal{N}(\mu_C(t), \Sigma_C(t))$;
+(5)~drift polarity $\sigma_C = \operatorname{sign}(\langle
+\Delta\mu_C, \hat{u}_h \rangle)$.
+
+Mathematical details, implementation warnings, and failure modes
+are documented in the companion technical report
+\texttt{notes/anchor\_drift\_metric.md}.
+
+%% ---------------------------------------------------------------
+\section{LKHJB: Linux Kernel Hierarchy Judgement Benchmark}
+\label{sec:lkhjb}
+
+The \textbf{Linux Kernel Hierarchy Judgement Benchmark} (LKHJB) is a
+set of 200 expert-curated (general, specific) concept pairs drawn from
+8 kernel subsystems: scheduler, memory management, networking,
+filesystem, block layer, locking, security, and tracing.
+
+Each pair satisfies at least one of: specific \emph{is-a} general,
+specific \emph{implements} general, specific \emph{is-a-mechanism-for}
+general, or specific \emph{is-a-special-case-of} general.
+Ambiguous sibling pairs (e.g., mutex vs.\ spinlock) are excluded.
+
+The evaluation protocol uses pairwise LLM judgement with position
+randomization (each pair evaluated in both orderings; correct only if
+both orderings agree), reported as accuracy against the expert labels.
+
+LKHJB will be released to Zenodo alongside the full paper.
+Preliminary comparisons across unsupervised geometric baselines (gcPCA,
+density gradient) and LLM oracles are in progress.
+
+%% ---------------------------------------------------------------
+\section{Open Questions}
+\label{sec:open}
+
+The \lr{} paradigm raises several questions for future work:
+\begin{enumerate}[leftmargin=*,itemsep=1pt]
+\item \textbf{Operator algebra.} What is the complete class of
+  semantic structures expressible by autoregressive LLMs but not by
+  symmetric contrastive encoders?
+\item \textbf{Domain generalization.} Does the LLM-as-hierarchy-oracle
+  transfer to domains where LLM pretraining coverage is lower (clinical,
+  legal, proprietary)?
+\item \textbf{Anchor selection.} What makes a good anchor, and can
+  anchor quality be measured without human labeling?
+\item \textbf{Operator cost vs.\ accuracy tradeoff.} What is the
+  minimum LLM size that provides reliable directional semantics,
+  and how does this interact with domain specificity?
+\item \textbf{Dynamic anchor evolution.} How should the anchor itself
+  be updated as the corpus evolves?
+\end{enumerate}
+
+%% ---------------------------------------------------------------
+\section{Conclusion}
+\label{sec:conclusion}
+
+We introduced \textbf{Lifted Retrieval} (\lr{}), a paradigm that
+resolves the fundamental asymmetry limitation of contrastive encoders
+by composing them with an anchor-conditioned LLM operator.
+The paradigm is instantiated as \dtva{} for semantic drift detection,
+and is retrospectively recognized as the common pattern across three
+prior systems.
+The LKHJB benchmark and the Linux RFC evaluation are in progress.
+We release this preprint as the priority record for the \lr{} paradigm.
+
+\bibliographystyle{plainnat}
 \bibliography{paper3}
 
 \end{document}
