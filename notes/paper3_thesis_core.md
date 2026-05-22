@@ -187,3 +187,72 @@ When you feel lost in implementation details, come back to:
 3. Does this code preserve observer-relativity (anchor-conditioned)?
 
 If a code change violates observer-relativity (e.g., global normalization that destroys anchor-local structure), it is wrong regardless of whether it makes the numbers look better.
+
+---
+
+## 6/1 Decision Tree (from A1 report analysis)
+
+A1 report claimed 5-12% chance of hyperbolic structure in BGE-M3 neighborhood.
+**Their proof is a strawman** — they attacked naive direct lift of L2-normalized vectors,
+not the actual pipeline (LogMap → cPCA → τ scaling → ExpMap).
+Corrected estimate: **25-35%**.
+
+But their Alternative 2 recommendation (cPCA + Euclidean tangent cone) is exactly the fallback.
+
+### What depends on hyperbolic structure
+
+| Component | Uses hyperbolic? | A1 failure impact |
+|---|---|---|
+| BW drift dD_C | NO | zero |
+| gcPCA anchor-conditioned filtering | NO | zero |
+| Event-driven RFC prediction | NO | zero |
+| Void detection in cone | YES | switch to Euclidean angular cone |
+| Paper narrative | YES | demote to "anchor-conditioned cPCA" |
+
+Core engineering system is hyperbolic-independent. Only paper sexy-ness changes.
+
+### Day 1 (6/1) morning: 7-minute test
+
+```
+Test 1: Gromov δ on anchor neighborhood (3 min)
+Test 4: CPCC radial (1 min)
+Test 5: ExpMap distortion (3 min)
+
+IF δ/diameter < 0.25:
+    A1 holds → continue full Lorentz pipeline → Paper A narrative
+    "Anchor-Conditioned Lorentzian Geometry for Semantic Drift"
+
+IF 0.25 ≤ δ/diameter < 0.4:
+    Borderline → run Test 6 (hierarchy probing)
+    If probing wins in ℍ^k → keep hyperbolic; else pivot
+
+IF δ/diameter ≥ 0.4:
+    A1 fails → pivot to Alternative 2 by noon
+    Drop all Lorentz/expmap code
+    cPCA → R^k Euclidean angular cone
+    BW drift unchanged
+    Paper B narrative: "Anchor-Conditioned Contrastive PCA for Event-Driven Semantic Drift"
+```
+
+### Paper narrative versions
+
+**Version A (hyperbolic holds):**
+"Anchor-Conditioned Lorentzian Geometry for Semantic Drift"
+
+**Version B (hyperbolic fails):**
+"Anchor-Conditioned Contrastive PCA for Event-Driven Semantic Drift Detection"
+- Main contribution: gcPCA + anchor-local + BW drift + RFC prediction
+- Simpler, more reproducible, fewer reviewer attack surfaces
+- "Local Euclidean Tangent Cones for sentence embeddings" = still novelty (nobody did this systematically)
+- Version B may be the better arXiv paper anyway
+
+Prepare both outlines before 6/1. Decision is made by test data, not by preference.
+
+### A1 report's valid concerns (keep in mind regardless)
+
+- BGE-M3 neighborhoods may be more "co-occurrence" than "taxonomy" (Sandhu et al.)
+- InfoNCE uniformity pressure fights tree structure globally
+- Anisotropy "pockets of hierarchy" exist but L2-normalization suppresses radial scale
+  → this is exactly why LogMap + cPCA + τ scaling are needed
+
+None of these are fatal to Version B. They explain why Version A is uncertain.
