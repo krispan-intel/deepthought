@@ -451,3 +451,80 @@ LLM = "directional semantic operator." Keep this boundary or contribution blurs.
 
 Paper 3 sits exactly at the inflection point.
 BGE-M3 + LLM hybrid is not behind the curve — it is the curve.
+
+---
+
+## Paradigm Lock-In: Lifted Retrieval (2026-05-22)
+
+**Codename for the 6-year program.**
+
+All papers share one architecture:
+- BGE-M3: continuous geometric substrate (cheap, indexable, fast)
+- LLM: directional semantic operator (expensive, but anchor-constrained)
+- Anchor: limits LLM cost to semantically hot regions
+- Event-driven: amortizes LLM cost over time
+
+This is one paradigm — **Lifted Retrieval** — with multiple operator instantiations.
+
+### Operator algebra
+
+```
+AnchorConditionedLLMOperator(anchor C, neighborhood N_C, operator_type T) → signal
+
+Paper 1 TVA:  T = void_judge      (is this void semantically meaningful?)
+Paper 2 TVV:  T = void_validate   (does this void actually exist?)
+Paper 3 DTVA: T = hierarchy_score (what is the abstraction depth?)
+Paper 4:      formalize {T_1, T_2, T_3, ...} as operator algebra
+Paper 5:      T = semantic_density_estimate (gravitational lensing)
+```
+
+### Why LLM is architecturally necessary (not just convenient)
+
+InfoNCE (contrastive loss used by BGE-M3) is symmetric: cos(a,b) = cos(b,a).
+Symmetric training cannot encode asymmetric relations (hierarchy, entailment, causality).
+This is fundamental impossibility, not implementation failure. (Wang & Isola 2020)
+
+LLMs trained autoregressively see "X is-a Y", "X implements Y", "X causes Y".
+They naturally encode asymmetric directional semantics.
+
+**Reviewer response to "why not fine-tune encoder":
+"No encoder trained with symmetric contrastive loss can encode asymmetric
+semantic relations, by Wang-Isola theorem. LLM-as-operator is architectural
+necessity, not engineering choice."**
+
+### Paradigm name: Lifted Retrieval
+
+"Lifted" has precise mathematical meaning: mapping from base space to total space.
+BGE-M3 = base space (topical proximity, continuous)
+LLM operator = lifting to total space (directional semantics, discrete)
+
+Proposed Paper 4 subtitle:
+"Lifted Retrieval: A Paradigm for LLM-Conditioned Geometric Information Retrieval"
+
+LKHJB benchmark rename:
+"LKHJB: A Benchmark for LLM-as-Hierarchy-Oracle in Specialized Technical Domains"
+
+### 6-year program re-positioned
+
+| Year | Paper | Lifted Retrieval role |
+|---|---|---|
+| 2024 | TVA | First LLM-as-void-judge application |
+| 2025 | TVV | Proves LLM-lift necessary for void validation |
+| 2026 | D-TVA | LLM-as-hierarchy-oracle for drift |
+| 2026 Q4 | Framework | Lifted Retrieval: unify the paradigm |
+| 2028 | Lensing | LLM-as-semantic-lens for density inversion |
+
+### Window
+
+LLM-augmented IR: people are fine-tuning encoders, building rerankers, doing RAG.
+Nobody is using LLM as anchor-conditioned directional semantic operator.
+A2 deep research report didn't even list it as a primary alternative.
+Window: ~12-18 months before someone else defines this paradigm.
+
+### What to retrofit into Paper 1/2 if still in revision
+
+Add one sentence to abstract:
+> "Following the Lifted Retrieval paradigm, we use a large language model as
+> an anchor-conditioned void judgement operator over BGE-M3 neighborhoods."
+
+Creates paradigm consistency across all three papers when Paper 3 cites them.
