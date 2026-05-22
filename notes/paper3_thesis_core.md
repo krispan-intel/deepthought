@@ -528,3 +528,54 @@ Add one sentence to abstract:
 > an anchor-conditioned void judgement operator over BGE-M3 neighborhoods."
 
 Creates paradigm consistency across all three papers when Paper 3 cites them.
+
+---
+
+## Paradigm Recognition Moment (2026-05-22)
+
+Three papers in, the pattern is undeniable:
+- Paper 1 (TVA, 2024): LLM judges void semantic meaningfulness
+- Paper 2 (TVV, 2025): LLM validates void real-world existence
+- Paper 3 (D-TVA, 2026): LLM provides hierarchy direction
+
+**Not planned. Discovered.** Each paper, I reached for LLM at the exact
+point where BGE-M3 hit its symmetric-contrastive ceiling.
+Three independent reaches → same architectural solution → not coincidence.
+
+Paper 1+2 not retrofitted — they remain as discovered.
+Paper 3 is the conscious naming moment.
+Paper 4 will formalize the operator algebra.
+
+### How to write this in Paper 3 (exact language)
+
+> "Across three independent systems developed over 2024-2026, we found ourselves
+> repeatedly reaching for the same architectural solution: a large language model
+> as an anchor-conditioned operator over a dense embedding neighborhood. In each
+> system, we arrived at this pattern empirically, driven by the specific problem
+> at hand. Only in retrospect did we recognize that these are not three solutions
+> but one paradigm, which we name **Lifted Retrieval**."
+
+"Found ourselves repeatedly reaching for" — passive, honest, not marketing.
+"Only in retrospect" — marks the naming moment explicitly.
+Readers who know paradigm history will recognize the pattern immediately.
+
+### Why not retrofitting Paper 1+2 is stronger
+
+Retrofitting would look like post-hoc branding.
+Letting Paper 1+2 stand as organic exploration means:
+- Paper 3 "in retrospect" has historical weight
+- Paper 4 is "formalizing what was discovered organically" — maximum credibility
+- Narrative arc: exploration → recognition → naming → formalization
+  This is the standard paradigm formation arc (Shannon, LSA, Transformer attention)
+
+### Draft Paper 3 abstract paragraph
+
+> "We propose Lifted Retrieval, a paradigm in which a dense encoder provides
+> a continuous geometric substrate, an anchor restricts attention to a local
+> neighborhood, and a large language model acts as a directional semantic
+> operator. Anchor conditioning is essential: it constrains LLM inference to
+> semantically hot regions, making the architecture deployable at corpus scale.
+>
+> In retrospect, our prior work on void taxonomy [1] and void validation [2]
+> also instantiate this paradigm under different operator choices; we formalize
+> the full operator algebra in forthcoming work [4]."
