@@ -548,7 +548,7 @@ Paper 4 will formalize the operator algebra.
 
 ### How to write this in Paper 3 (exact language)
 
-> "Across three independent systems developed over 2024-2026, we found ourselves
+> "Across three independent systems developed over 2025-2026, we found ourselves
 > repeatedly reaching for the same architectural solution: a large language model
 > as an anchor-conditioned operator over a dense embedding neighborhood. In each
 > system, we arrived at this pattern empirically, driven by the specific problem
