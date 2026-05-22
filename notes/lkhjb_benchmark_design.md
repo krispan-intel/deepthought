@@ -193,6 +193,13 @@ o1-mini:       400 × $0.03  = $12
 Commercial total: < $35
 ```
 
+### Tooling: GitHub Copilot CLI
+Use Copilot CLI to run multi-model experiments.
+- Multiple models available in single interface, no separate API setup needed
+- Model selection decided at experiment time based on CLI availability
+- Copilot subscription already paid — marginal cost ≈ $0
+- Write batch eval script that loops pairs through `gh copilot` or Copilot API
+
 ### Extended (5 anchors instead of 1)
 All above × 5 = < $200 total
 
