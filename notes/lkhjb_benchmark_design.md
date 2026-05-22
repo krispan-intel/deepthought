@@ -333,3 +333,102 @@ If benchmark quality is high (inter-annotator κ > 0.80, 12 models tested):
 → Can publish as 4-page short paper: "LKHJB: Benchmarking Hierarchical Judgement in Specialized Technical Domains"
 → Gives Paper 3 a self-citation, builds credibility
 → Only pursue after Paper 3 is submitted
+
+---
+
+## A2 Report Analysis (2026-05-22)
+
+### Core mathematical finding: gcPCA SYSTEMATICALLY fails (not noisily)
+
+Rayleigh quotient analysis (from deep research report):
+```
+max v^T Σ_fg v / v^T Σ_bg v
+
+Sibling direction (CFS vs RT vs deadline):
+  Σ_fg numerator: HIGH (local sibling discrimination is strong)
+  Σ_bg denominator: LOW (global corpus doesn't have these sibling splits)
+  → ratio explodes → top eigenvector
+
+Hierarchy direction (scheduler → CFS bandwidth):
+  Σ_fg numerator: LOW (smooth gradient, low local variance)
+  Σ_bg denominator: HIGH (general→specific is universal, exists everywhere)
+  → ratio suppressed → not selected
+```
+
+**This is systematic failure, not noisy failure.**
+- Noisy: might work 30% of the time → retry or ensemble
+- Systematic: will ALWAYS find sibling axis → must change method
+
+This mathematically confirms A2 silent failure. Justifies the LLM benchmark.
+
+### Upgraded baseline tiers
+
+**Tier 0 (sanity):** Random, BGE-M3 cosine, BGE-M3 L2 norm
+
+**Tier 1 (unsupervised geometric):**
+- gcPCA top-1 (expected ~65%)
+- Density gradient: diversity = mean pairwise dist in k-NN (expected ~60-70%)
+
+**Tier 2 (small-supervision, n=30 pairs):**
+- Anchor-displacement mean vector: mean(specific - general)
+- Procrustes alignment (SVD): closed-form, ~50 lines code
+- Ridge structural probe (Hewitt-Manning 2019): 40 lines sklearn
+
+**Tier 3 (LLM pairwise judge):**
+- Llama-3-8B, Qwen-2.5-32B, Llama-3.3-70B, Qwen-2.5-72B
+- GPT-4o, Claude Sonnet, GPT-4, Claude Opus, o1-mini
+- Via Copilot CLI at experiment time
+
+**Tier 4 (LLM dense supervision — main candidate):**
+- LLM scores 500 neighbors → Ridge regression → axis
+- Expected ~88-92%
+
+### Two additional validation metrics (from report)
+
+**Normality test on projections (Finding 2 — Specificity AAAI 2019):**
+```python
+from scipy.stats import normaltest
+projections = neighborhood @ candidate_axis
+stat, p = normaltest(projections)
+# p > 0.05 → Gaussian-like → likely hierarchy axis
+# p < 0.01 → bimodal/clustered → likely sibling axis
+```
+
+**Cross-method correlation heatmap (killer experiment):**
+Compute pairwise cosine similarity between all candidate axes.
+Expected: gcPCA / cosine baseline cluster together (sibling group).
+LLM / calibration / Procrustes cluster together (hierarchy group).
+Two clusters nearly orthogonal → visual proof of the systematic failure.
+→ This is Paper 3 Figure 2.
+
+### Probability update after A2 report
+
+| Method | Est. success rate |
+|---|---|
+| Unsupervised linear (gcPCA) | 10-15% (mathematically bounded) |
+| Density gradient (unsupervised nonlinear) | 60-70% |
+| Procrustes / Ridge (small-supervision) | 75-80% |
+| LLM pairwise ≥ 30B | 85-92% |
+| LLM dense scoring + Ridge | 88-93% |
+| Ensemble (LLM + density + Procrustes) | 93-95% |
+
+### Canonical hierarchy axis construction (post-benchmark)
+
+If LLM large wins (expected):
+```
+1. Retrieve k-NN neighborhood N_C (k≈500) from K_{<t}
+2. For each n ∈ N_C: LLM(anchor C, paper n) → hierarchy_score ∈ [0,10]
+3. v_n = sphere_logmap(C, embed(n))  ← tangent vectors
+4. Ridge regression: û_h = argmin_w  Σ ||w·v_n - score_n||² + λ||w||²
+   û_h = û_h / ||û_h||
+5. Validate: normaltest(N_C projected onto û_h) — should be Gaussian
+6. Cross-validate: correlate û_h with density gradient axis
+```
+
+û_h replaces ALL prior τ̂ definitions (deprecated: cPCA top eigvec, z_C/||z_C||, etc.)
+
+### Bottom line
+
+A2 report: systematic gcPCA failure is mathematically provable.
+Your insight: LLM is the only affordable high-density supervision source.
+Combined: $500 + 2 days converts A2 from "unknown risk" to "measured + solved".
