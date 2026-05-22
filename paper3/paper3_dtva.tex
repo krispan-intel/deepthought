@@ -1,0 +1,120 @@
+\documentclass[twocolumn]{article}
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{microtype}
+
+\newcommand{\dtva}{\textsc{D-TVA}}
+\newcommand{\tva}{\textsc{TVA}}
+\newcommand{\tvv}{\textsc{TVV}}
+\newcommand{\lr}{\textsc{LR}}
+
+\title{%
+  Dynamic Topological Void Analysis (D-TVA):\\
+  Lifted Retrieval: Toward LLM-Conditioned\\
+  Geometric Information Retrieval
+}
+
+\author{
+  Pan, Kris \\
+  Intel Corporation \\
+  \texttt{TODO\_EMAIL}
+}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Dense contrastive encoders such as BGE-M3 provide a continuous geometric
+substrate for information retrieval, but their InfoNCE training objective
+enforces symmetry---making it \emph{mathematically impossible} to encode
+asymmetric semantic relations such as hierarchical depth, entailment, or
+causal direction~\cite{wang2020understanding}.
+We address this limitation in the context of \emph{semantic drift detection}
+over an evolving corpus.
+
+We propose \textbf{Lifted Retrieval} (\lr{}), a paradigm in which:
+(i)~a dense encoder provides a continuous geometric substrate,
+(ii)~a chosen anchor restricts attention to a local neighborhood, and
+(iii)~a large language model acts as a directional semantic operator
+over that neighborhood, supplying the asymmetric structure the encoder
+cannot represent.
+Anchor conditioning is essential: it constrains LLM inference to
+semantically hot regions, making the architecture deployable at corpus scale.
+
+We instantiate \lr{} as \dtva{} (Dynamic Topological Void Analysis),
+the third in a series of systems---following \tva{}~\cite{pan2026tva}
+and \tvv{}~\cite{pan2026tvv}---that, in retrospect, all share this
+architectural pattern.
+In \dtva{}, the LLM operator supplies a hierarchy axis used to construct
+anchor-conditioned entailment cones, measure drift polarity, and predict
+research void evolution.
+
+We evaluate on the Linux Kernel Mailing List archive (1995--2026,
+$>$1M messages), where RFC events provide explicit human-expert void
+declarations with known outcomes.
+We further introduce \textbf{LKHJB} (Linux Kernel Hierarchy Judgement
+Benchmark), 200 expert-curated concept pairs, on which large language
+models ($\geq$30B parameters) achieve $>$80\% hierarchy accuracy versus
+$\sim$65\% for unsupervised geometric methods (gcPCA), justifying the
+LLM-as-oracle design choice.
+
+\end{abstract}
+
+%% ---------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+
+Modern information retrieval systems built on dense sentence encoders
+excel at topical proximity but are blind to \emph{direction}.
+A query can retrieve documents near a concept, but the encoder cannot
+distinguish whether a document is a generalization, a specialization,
+or a sibling of that concept.
+This blindness is not an artifact of insufficient training: it is a
+consequence of the symmetric contrastive objective (InfoNCE) used to
+train state-of-the-art encoders including BGE-M3, E5, and GTE.
+By the alignment--uniformity framework of~\citet{wang2020understanding},
+InfoNCE maximizes cosine similarity for positive pairs without any
+asymmetric supervision signal.
+No amount of scale or fine-tuning within this paradigm can produce a
+direction-aware encoder.
+
+We propose to resolve this asymmetry gap through \textbf{Lifted Retrieval}:
+rather than modifying the encoder, we \emph{lift} the retrieval system
+into a richer semantic space by introducing a large language model as a
+directional operator, anchored to a local neighborhood to control cost.
+
+\paragraph{Relation to prior work.}
+In retrospect, our earlier work on void taxonomy~\cite{pan2026tva} and
+void validation~\cite{pan2026tvv} both employed this pattern: dense
+encoder for geometry, anchor for scope, LLM for semantic judgement.
+Neither paper explicitly named the paradigm.
+\dtva{} is the conscious naming moment.
+A forthcoming framework paper will formalize the full operator algebra.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+\item \textbf{Lifted Retrieval paradigm}: formalization of the
+  encoder--anchor--LLM operator architecture.
+\item \textbf{D-TVA}: an instantiation of \lr{} for anchor-conditioned
+  semantic drift detection with BW-based drift metric and LLM
+  hierarchy axis.
+\item \textbf{LKHJB benchmark}: 200 expert-curated Linux kernel
+  hierarchy pairs with 12-model evaluation, released as open data.
+\item \textbf{Linux RFC evaluation}: event-driven prediction of
+  RFC outcomes over 25 years of kernel development history.
+\end{enumerate}
+
+% remainder of paper: §2 Related Work, §3 Lifted Retrieval Formalism,
+% §4 D-TVA instantiation, §5 LKHJB benchmark, §6 RFC experiments,
+% §7 Conclusion
+
+\bibliographystyle{plain}
+\bibliography{paper3}
+
+\end{document}
