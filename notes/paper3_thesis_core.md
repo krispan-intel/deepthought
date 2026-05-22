@@ -256,3 +256,95 @@ Prepare both outlines before 6/1. Decision is made by test data, not by preferen
   → this is exactly why LogMap + cPCA + τ scaling are needed
 
 None of these are fatal to Version B. They explain why Version A is uncertain.
+
+---
+
+## A2: Hierarchy Direction Problem (the real bottleneck)
+
+A1 failure = fallback to Euclidean cone. Still works.
+A2 failure = cone has no direction, drift has no polarity. dD_C still computes, but "drifting toward what" is unanswerable.
+
+**Root cause:** BGE-M3 trained on (query, relevant_doc) pairs — topic relevance only.
+"Abstract ↔ specific" dimension was never in the supervision signal.
+Hierarchy in BGE-M3 is an accidental side-effect, not a designed feature.
+You are not "extracting" hierarchy — you are **defining** an operational hierarchy direction and injecting it.
+
+### Three routes by engineering cost
+
+| Route | Method | Cost | Est. success |
+|---|---|---|---|
+| 1 | Pure gcPCA (hope it works) | 0 | 20-30% |
+| **2** | **30 calibration pairs (human expert)** | **1 hour** | **60-70% ← best ROI** |
+| 3b | LLM oracle (500 neighbors, Ridge fit) | half day | 70-80% |
+| 3c | Structural proxy (citation count, term density) | 1 day | medium |
+
+### Route 2: 30 calibration pairs (do this first)
+
+```python
+calibration_pairs = [
+    ("scheduler", "CFS bandwidth control"),
+    ("memory management", "slab allocator NUMA balancing"),
+    ("networking", "TCP BBR congestion control"),
+    # ... 30 pairs, kernel engineer lists in 1 hour
+]
+
+# Compute hierarchy direction in BGE-M3 tangent space
+directions = []
+for general, specific in calibration_pairs:
+    v_g = sphere_logmap(anchor_C, bge_embed(general))
+    v_s = sphere_logmap(anchor_C, bge_embed(specific))
+    d = (v_s - v_g); directions.append(d / np.linalg.norm(d))
+
+hierarchy_axis = np.mean(directions, axis=0)
+hierarchy_axis /= np.linalg.norm(hierarchy_axis)
+
+# Find which gcPCA eigenvector aligns best
+alignment = D_star @ hierarchy_axis
+best_idx = np.argmax(np.abs(alignment))
+tau_hat = np.sign(alignment[best_idx]) * D_star[best_idx]
+```
+
+### Test 8: hierarchy direction validation (add to Milestone 0, 30 min)
+
+```
+1. List 30 (general, specific) pairs (done before 6/1)
+2. Compute three candidate directions:
+   v_cPCA  = top gcPCA eigenvector (route 1)
+   v_calib = mean(specific - general) from 30 pairs (route 2)
+   v_LLM   = Ridge fit on LLM hierarchy scores of 500 neighbors (route 3b)
+3. Hold out 10 pairs
+4. Ranking accuracy on hold-out: <specific - general, v> > 0
+5. Pick best v as τ̂
+
+Decision:
+  any v > 70% accuracy → use it
+  all v < 70%           → hierarchy is not recoverable from BGE-M3
+                          → drop polarity σ_C from paper
+                          → cone becomes directionless (detect voids but not "future" vs "past")
+```
+
+### Correct paper framing (honest)
+
+```
+WRONG: "BGE-M3 contains latent hierarchical structure that our method extracts"
+
+RIGHT: "We define an operational hierarchy direction by combining BGE-M3's local geometry
+        with calibration pairs as weak supervision. This direction constructs
+        anchor-conditioned entailment cones."
+```
+
+Second framing is stronger — reviewer cannot attack "unverified assumption" because there is no assumption. You use weak supervision to define, not discover.
+
+### Key reframe: "upgrading" not "failing"
+
+Your paradigm already accepts that pure embedding is insufficient (anchor = external grounding).
+Hierarchy calibration = same kind of move: BGE-M3 + external grounding.
+This is the direction the paradigm points, not a retreat from it.
+
+"Upgraded from closed system (embedding only) to open system (embedding + domain expert grounding)"
+= consistent with observer-relative design throughout.
+
+### Start today (before 6/1)
+
+List the 30 calibration pairs for Linux kernel. Takes 30 minutes.
+Gives you Test 8 data on 6/1, and fallback τ̂ if gcPCA fails.
