@@ -1,0 +1,16 @@
+{
+  "test": "Gromov delta hyperbolicity",
+  "date": "2026-05-26",
+  "corpus": "kernel_source (121,561 docs)",
+  "embedding": "BGE-M3 1024D, sphere LogMap at anchor",
+  "n_neighbors": 500,
+  "n_quadruplets": 10000,
+  "results": [
+    {"anchor": "scheduler",  "query": "CPU scheduler task scheduling CFS policy",        "delta": 0.1480, "diameter": 1.8882, "ratio": 0.0784, "verdict": "STRONG"},
+    {"anchor": "memory",     "query": "virtual memory management page reclamation",       "delta": 0.1545, "diameter": 1.9233, "ratio": 0.0804, "verdict": "STRONG"},
+    {"anchor": "networking", "query": "TCP network packet processing kernel socket",       "delta": 0.1493, "diameter": 1.8996, "ratio": 0.0786, "verdict": "STRONG"},
+    {"anchor": "locking",    "query": "mutex spinlock RCU synchronization primitives",    "delta": 0.1440, "diameter": 1.9060, "ratio": 0.0756, "verdict": "STRONG"}
+  ],
+  "decision": "A1 CONFIRMED — proceed with Lorentz pipeline (Version A)",
+  "note": "All 4 anchors δ/diam ~0.078, well below 0.25 threshold. Consistent across subsystems."
+}
