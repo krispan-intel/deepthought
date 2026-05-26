@@ -13,10 +13,10 @@
         {"name": "locking",    "delta": 0.1440, "diameter": 1.9060, "ratio": 0.0756, "verdict": "STRONG"}
       ],
       "controls": [
-        {"name": "random_corpus_broad_query", "ratio": 0.0596, "note": "broad query top-500, still hyperbolic"},
-        {"name": "random_gaussian_null",      "ratio": 0.0336, "note": "true null, 2.3x lower than real embeddings"}
+        {"name": "random_corpus_broad_query", "ratio": 0.0596, "note": "broad query top-500, also low — not specific to anchor kNN"},
+        {"name": "random_gaussian_null",      "ratio": 0.0336, "note": "true null baseline — lower than real embeddings"}
       ],
-      "interpretation": "BGE-M3 embeddings have genuine hyperbolic structure (2.3x above null baseline). Anchor kNN ~0.078, consistently STRONG across all 4 subsystems."
+      "interpretation": "All anchor neighborhoods show low normalized Gromov delta, so the Lorentz path is not blocked. However, random corpus controls also show low delta (0.060), meaning low delta is a property of BGE-M3 embeddings generally, not specific to anchor kNN hierarchy. T1 is treated as a non-obstruction sanity check, NOT positive proof of anchor-specific hyperbolic hierarchy. The random Gaussian null (0.034) is lower still, confirming real embeddings are not flat Euclidean, but this does not establish hierarchy specifically."
     },
     "T5_expmap_distortion": {
       "description": "Spearman correlation: Euclidean tangent distance vs hyperbolic distance after Lorentz lift",
@@ -30,6 +30,6 @@
       "interpretation": "Lorentz lift (tau=3, k=64) preserves pairwise distance ordering with rho=0.997. Pipeline is geometrically stable."
     }
   },
-  "decision": "A1 CONFIRMED — Version A Lorentz pipeline viable. Proceed to LKHJB + hierarchy oracle.",
-  "next": "LKHJB 200 pairs (LKHJB benchmark), then LLM hierarchy oracle evaluation"
+  "decision": "Version A NOT BLOCKED — Lorentz pipeline is geometrically viable (T5 ρ=0.997). T1 alone does not prove anchor-specific hierarchy. True hierarchy direction evidence must come from LKHJB LLM oracle evaluation.",
+  "next": "LKHJB 200 pairs benchmark — LLM hierarchy oracle vs gcPCA/cosine baselines"
 }
