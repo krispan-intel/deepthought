@@ -1,0 +1,35 @@
+{
+  "date": "2026-05-26",
+  "corpus": "kernel_source (121,561 docs, BGE-M3 1024D)",
+  "tests": {
+    "T1_gromov_delta": {
+      "description": "Gromov delta-hyperbolicity on anchor k-NN tangent space",
+      "n_neighbors": 500,
+      "n_quadruplets": 10000,
+      "anchors": [
+        {"name": "scheduler",  "delta": 0.1480, "diameter": 1.8882, "ratio": 0.0784, "verdict": "STRONG"},
+        {"name": "memory",     "delta": 0.1545, "diameter": 1.9233, "ratio": 0.0804, "verdict": "STRONG"},
+        {"name": "networking", "delta": 0.1493, "diameter": 1.8996, "ratio": 0.0786, "verdict": "STRONG"},
+        {"name": "locking",    "delta": 0.1440, "diameter": 1.9060, "ratio": 0.0756, "verdict": "STRONG"}
+      ],
+      "controls": [
+        {"name": "random_corpus_broad_query", "ratio": 0.0596, "note": "broad query top-500, still hyperbolic"},
+        {"name": "random_gaussian_null",      "ratio": 0.0336, "note": "true null, 2.3x lower than real embeddings"}
+      ],
+      "interpretation": "BGE-M3 embeddings have genuine hyperbolic structure (2.3x above null baseline). Anchor kNN ~0.078, consistently STRONG across all 4 subsystems."
+    },
+    "T5_expmap_distortion": {
+      "description": "Spearman correlation: Euclidean tangent distance vs hyperbolic distance after Lorentz lift",
+      "anchor": "scheduler",
+      "k_dims": 64,
+      "tau": 3.0,
+      "n_pairs": 200,
+      "spearman_rho": 0.9969,
+      "p_value": "5.31e-221",
+      "verdict": "ORDER PRESERVED",
+      "interpretation": "Lorentz lift (tau=3, k=64) preserves pairwise distance ordering with rho=0.997. Pipeline is geometrically stable."
+    }
+  },
+  "decision": "A1 CONFIRMED — Version A Lorentz pipeline viable. Proceed to LKHJB + hierarchy oracle.",
+  "next": "LKHJB 200 pairs (LKHJB benchmark), then LLM hierarchy oracle evaluation"
+}
